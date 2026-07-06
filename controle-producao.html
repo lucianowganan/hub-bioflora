@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle de Produção — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC;
+    --info:#3E6B93; --info-tint:#E9F0F6;
+    --warn:#C9922B; --warn-tint:#FBF1E0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{width:38px;height:38px;border-radius:10px;background:var(--burgundy);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:19px;}
+  .brand-text h1{font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+
+  .config-banner{background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;padding:14px 18px;font-size:13px;color:#7A5C15;margin-bottom:22px;display:none;}
+  .config-banner.show{display:block;}
+
+  .tabs{display:flex;gap:8px;margin-bottom:20px;}
+  .tab{font-family:'Maven Pro',sans-serif;font-size:13.5px;font-weight:600;padding:10px 20px;border-radius:9px 9px 0 0;border:1px solid var(--line);border-bottom:none;background:#fff;cursor:pointer;color:var(--gray);}
+  .tab.active{color:var(--burgundy);background:var(--burgundy-tint);}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .panel h2{font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+
+  .quick-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px;padding-bottom:18px;border-bottom:1px dashed var(--line);}
+  .quick-form .field{display:flex;flex-direction:column;gap:4px;}
+  .quick-form label{font-size:11px;color:var(--gray);font-weight:600;}
+  .quick-form input, .quick-form select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:7px;}
+  .quick-form input.colaborador{width:160px;}
+  .quick-form input.requisicao{width:150px;}
+  .quick-form input.hora{width:110px;}
+  .quick-form select.tamanho{width:90px;}
+
+  .filter-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+  .filter-row select, .filter-row input{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:7px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:600;padding:0 10px 10px;border-bottom:1px solid var(--ink);}
+  tbody td{padding:9px 10px;border-bottom:1px solid var(--line);}
+  tbody tr:hover{background:var(--burgundy-tint);}
+  .tam-badge{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;}
+  .tam-P{background:var(--good-tint);color:var(--good);}
+  .tam-M{background:var(--warn-tint);color:#8A6512;}
+  .tam-G{background:var(--bad-tint) ;color:#B4472F;}
+  .del-btn{font-family:'Maven Pro',sans-serif;font-size:10.5px;color:var(--gray);border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 9px;cursor:pointer;}
+  .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .kpi .label{font-size:10.5px;text-transform:uppercase;color:var(--gray);font-weight:600;}
+  .kpi .value{font-family:'Fraunces',serif;font-size:22px;margin-top:4px;font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">B</div>
+      <div class="brand-text">
+        <h1>Controle de Produção</h1>
+        <p>Farmácia Bioflora — registro diário individual</p>
+      </div>
+    </div>
+    <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+  </header>
+
+  <div id="configBanner" class="config-banner">
+    ⚠️ Configure SUPABASE_URL e SUPABASE_ANON_KEY no início do código antes de usar.
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" id="tabManip" onclick="switchTab('manip')">Manipulação</div>
+    <div class="tab" id="tabPesagem" onclick="switchTab('pesagem')">Pesagem</div>
+  </div>
+
+  <!-- MANIPULAÇÃO -->
+  <div id="viewManip">
+    <div class="panel">
+      <h2>Registrar manipulação</h2>
+      <p class="desc">Cada colaborador registra sua própria requisição e horário</p>
+      <div class="quick-form">
+        <div class="field"><label>Colaborador</label><input class="colaborador" id="mColaborador" placeholder="Seu nome" /></div>
+        <div class="field"><label>Requisição</label><input class="requisicao" id="mRequisicao" placeholder="Nº requisição" /></div>
+        <div class="field"><label>Hora</label><input class="hora" id="mHora" type="time" /></div>
+        <div class="field"><label>Data</label><input id="mData" type="date" /></div>
+        <button class="btn" id="mSalvar">Adicionar</button>
+      </div>
+      <div class="kpi-row" id="mKpis"></div>
+      <div class="filter-row">
+        <select id="mFiltroColab"><option value="">Todos os colaboradores</option></select>
+        <input id="mFiltroData" type="date" />
+        <button class="btn secondary" id="mLimparFiltro" style="padding:6px 14px;font-size:12px">Limpar filtro</button>
+      </div>
+      <table>
+        <thead><tr><th>Data</th><th>Hora</th><th>Colaborador</th><th>Requisição</th><th></th></tr></thead>
+        <tbody id="mTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PESAGEM -->
+  <div id="viewPesagem" style="display:none">
+    <div class="panel">
+      <h2>Registrar pesagem</h2>
+      <p class="desc">Cada colaborador registra sua própria requisição, horário e tamanho da fórmula</p>
+      <div class="quick-form">
+        <div class="field"><label>Colaborador</label><input class="colaborador" id="pColaborador" placeholder="Seu nome" /></div>
+        <div class="field"><label>Requisição</label><input class="requisicao" id="pRequisicao" placeholder="Nº requisição" /></div>
+        <div class="field"><label>Hora</label><input class="hora" id="pHora" type="time" /></div>
+        <div class="field"><label>Tamanho</label><select class="tamanho" id="pTamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option></select></div>
+        <div class="field"><label>Data</label><input id="pData" type="date" /></div>
+        <button class="btn" id="pSalvar">Adicionar</button>
+      </div>
+      <div class="kpi-row" id="pKpis"></div>
+      <div class="filter-row">
+        <select id="pFiltroColab"><option value="">Todos os colaboradores</option></select>
+        <select id="pFiltroTamanho"><option value="">Todos os tamanhos</option><option value="P">P</option><option value="M">M</option><option value="G">G</option></select>
+        <input id="pFiltroData" type="date" />
+        <button class="btn secondary" id="pLimparFiltro" style="padding:6px 14px;font-size:12px">Limpar filtro</button>
+      </div>
+      <table>
+        <thead><tr><th>Data</th><th>Hora</th><th>Colaborador</th><th>Requisição</th><th>Tamanho</th><th></th></tr></thead>
+        <tbody id="pTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+
+let supa = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+  document.getElementById('configBanner').classList.add('show');
+}
+
+const todayStr = new Date().toISOString().slice(0,10);
+document.getElementById('mData').value = todayStr;
+document.getElementById('pData').value = todayStr;
+
+function switchTab(tab){
+  document.getElementById('viewManip').style.display = tab==='manip' ? 'block':'none';
+  document.getElementById('viewPesagem').style.display = tab==='pesagem' ? 'block':'none';
+  document.getElementById('tabManip').classList.toggle('active', tab==='manip');
+  document.getElementById('tabPesagem').classList.toggle('active', tab==='pesagem');
+}
+window.switchTab = switchTab;
+
+function fmtHora(h){ return h ? h.slice(0,5) : '—'; }
+function fmtData(d){ return d ? new Date(d+'T00:00:00').toLocaleDateString('pt-BR') : '—'; }
+
+// ---------- MANIPULAÇÃO ----------
+document.getElementById('mSalvar').addEventListener('click', async ()=>{
+  const colaborador = document.getElementById('mColaborador').value.trim();
+  const requisicao = document.getElementById('mRequisicao').value.trim();
+  const hora = document.getElementById('mHora').value;
+  const data = document.getElementById('mData').value;
+  if(!colaborador || !requisicao || !hora){ alert('Preencha colaborador, requisição e hora.'); return; }
+  if(!supa){ alert('Supabase não configurado.'); return; }
+  const { error } = await supa.from('registro_manipulacao').insert({colaborador, requisicao, hora, data});
+  if(error){ alert('Erro: '+error.message); return; }
+  document.getElementById('mRequisicao').value='';
+  document.getElementById('mHora').value='';
+  loadManip();
+});
+
+async function deleteManip(id){
+  if(!confirm('Remover este registro?')) return;
+  await supa.from('registro_manipulacao').delete().eq('id', id);
+  loadManip();
+}
+window.deleteManip = deleteManip;
+
+let allManip = [];
+async function loadManip(){
+  if(!supa) return;
+  const { data, error } = await supa.from('registro_manipulacao').select('*').order('data',{ascending:false}).order('hora',{ascending:false});
+  if(error){ console.error(error); return; }
+  allManip = data;
+  const colabs = [...new Set(data.map(d=>d.colaborador))].sort();
+  const sel = document.getElementById('mFiltroColab');
+  sel.innerHTML = '<option value="">Todos os colaboradores</option>' + colabs.map(c=>`<option value="${c}">${c}</option>`).join('');
+  renderManip();
+}
+function renderManip(){
+  const filtroColab = document.getElementById('mFiltroColab').value;
+  const filtroData = document.getElementById('mFiltroData').value;
+  let rows = allManip;
+  if(filtroColab) rows = rows.filter(r=>r.colaborador===filtroColab);
+  if(filtroData) rows = rows.filter(r=>r.data===filtroData);
+
+  document.getElementById('mKpis').innerHTML = `
+    <div class="kpi"><div class="label">Registros (filtro atual)</div><div class="value">${rows.length}</div></div>
+    <div class="kpi"><div class="label">Colaboradores ativos</div><div class="value">${new Set(allManip.map(r=>r.colaborador)).size}</div></div>
+    <div class="kpi"><div class="label">Hoje</div><div class="value">${allManip.filter(r=>r.data===todayStr).length}</div></div>
+  `;
+  document.getElementById('mTbody').innerHTML = rows.length ? rows.map(r=>`
+    <tr><td>${fmtData(r.data)}</td><td>${fmtHora(r.hora)}</td><td>${r.colaborador}</td><td>${r.requisicao}</td>
+    <td><button class="del-btn" onclick="deleteManip('${r.id}')">Remover</button></td></tr>
+  `).join('') : `<tr><td colspan="5" class="empty-state">Nenhum registro encontrado.</td></tr>`;
+}
+document.getElementById('mFiltroColab').addEventListener('change', renderManip);
+document.getElementById('mFiltroData').addEventListener('change', renderManip);
+document.getElementById('mLimparFiltro').addEventListener('click', ()=>{
+  document.getElementById('mFiltroColab').value='';
+  document.getElementById('mFiltroData').value='';
+  renderManip();
+});
+
+// ---------- PESAGEM ----------
+document.getElementById('pSalvar').addEventListener('click', async ()=>{
+  const colaborador = document.getElementById('pColaborador').value.trim();
+  const requisicao = document.getElementById('pRequisicao').value.trim();
+  const hora = document.getElementById('pHora').value;
+  const tamanho = document.getElementById('pTamanho').value;
+  const data = document.getElementById('pData').value;
+  if(!colaborador || !requisicao || !hora){ alert('Preencha colaborador, requisição e hora.'); return; }
+  if(!supa){ alert('Supabase não configurado.'); return; }
+  const { error } = await supa.from('registro_pesagem').insert({colaborador, requisicao, hora, tamanho, data});
+  if(error){ alert('Erro: '+error.message); return; }
+  document.getElementById('pRequisicao').value='';
+  document.getElementById('pHora').value='';
+  loadPesagem();
+});
+
+async function deletePesagem(id){
+  if(!confirm('Remover este registro?')) return;
+  await supa.from('registro_pesagem').delete().eq('id', id);
+  loadPesagem();
+}
+window.deletePesagem = deletePesagem;
+
+let allPesagem = [];
+async function loadPesagem(){
+  if(!supa) return;
+  const { data, error } = await supa.from('registro_pesagem').select('*').order('data',{ascending:false}).order('hora',{ascending:false});
+  if(error){ console.error(error); return; }
+  allPesagem = data;
+  const colabs = [...new Set(data.map(d=>d.colaborador))].sort();
+  const sel = document.getElementById('pFiltroColab');
+  sel.innerHTML = '<option value="">Todos os colaboradores</option>' + colabs.map(c=>`<option value="${c}">${c}</option>`).join('');
+  renderPesagem();
+}
+function renderPesagem(){
+  const filtroColab = document.getElementById('pFiltroColab').value;
+  const filtroTamanho = document.getElementById('pFiltroTamanho').value;
+  const filtroData = document.getElementById('pFiltroData').value;
+  let rows = allPesagem;
+  if(filtroColab) rows = rows.filter(r=>r.colaborador===filtroColab);
+  if(filtroTamanho) rows = rows.filter(r=>r.tamanho===filtroTamanho);
+  if(filtroData) rows = rows.filter(r=>r.data===filtroData);
+
+  document.getElementById('pKpis').innerHTML = `
+    <div class="kpi"><div class="label">Registros (filtro atual)</div><div class="value">${rows.length}</div></div>
+    <div class="kpi"><div class="label">Colaboradores ativos</div><div class="value">${new Set(allPesagem.map(r=>r.colaborador)).size}</div></div>
+    <div class="kpi"><div class="label">Hoje</div><div class="value">${allPesagem.filter(r=>r.data===todayStr).length}</div></div>
+  `;
+  document.getElementById('pTbody').innerHTML = rows.length ? rows.map(r=>`
+    <tr><td>${fmtData(r.data)}</td><td>${fmtHora(r.hora)}</td><td>${r.colaborador}</td><td>${r.requisicao}</td>
+    <td><span class="tam-badge tam-${r.tamanho}">${r.tamanho}</span></td>
+    <td><button class="del-btn" onclick="deletePesagem('${r.id}')">Remover</button></td></tr>
+  `).join('') : `<tr><td colspan="6" class="empty-state">Nenhum registro encontrado.</td></tr>`;
+}
+document.getElementById('pFiltroColab').addEventListener('change', renderPesagem);
+document.getElementById('pFiltroTamanho').addEventListener('change', renderPesagem);
+document.getElementById('pFiltroData').addEventListener('change', renderPesagem);
+document.getElementById('pLimparFiltro').addEventListener('click', ()=>{
+  document.getElementById('pFiltroColab').value='';
+  document.getElementById('pFiltroTamanho').value='';
+  document.getElementById('pFiltroData').value='';
+  renderPesagem();
+});
+
+loadManip();
+loadPesagem();
+</script>
+</body>
+</html>
