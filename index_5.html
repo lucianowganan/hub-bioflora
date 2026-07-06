@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC;
+    --info:#3E6B93; --info-tint:#E9F0F6;
+    --warn:#C9922B; --warn-tint:#FBF1E0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  .wrap{max-width:1000px;margin:0 auto;padding:60px 28px 80px;}
+
+  .brand{display:flex;align-items:center;gap:14px;margin-bottom:8px;}
+  .brand-mark{width:48px;height:48px;border-radius:12px;background:var(--burgundy);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:24px;flex-shrink:0;}
+  .brand h1{font-family:'Fraunces',serif;font-weight:600;font-size:28px;margin:0;letter-spacing:-0.01em;}
+  .brand p{margin:2px 0 0;font-size:13.5px;color:var(--gray);}
+
+  .modules{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:44px;}
+  .module-card{
+    background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px;
+    text-decoration:none;color:var(--ink);display:block;transition:.15s;position:relative;overflow:hidden;
+  }
+  .module-card:hover{border-color:var(--burgundy);transform:translateY(-2px);box-shadow:0 8px 24px rgba(139,26,58,.08);}
+  .module-card .stripe{position:absolute;top:0;left:0;right:0;height:4px;}
+  .module-card .icon{font-size:30px;margin-bottom:14px;}
+  .module-card h2{font-family:'Fraunces',serif;font-size:18px;font-weight:600;margin:0 0 6px;}
+  .module-card p{font-size:12.8px;color:var(--gray);margin:0;line-height:1.5;}
+  .module-card .go{font-size:12px;font-weight:600;color:var(--burgundy);margin-top:16px;display:flex;align-items:center;gap:4px;}
+
+  .card-horas .stripe{background:var(--burgundy);}
+  .card-rotulos .stripe{background:var(--warn);}
+  .card-producao .stripe{background:var(--info);}
+
+  .status-banner{
+    background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;
+    padding:12px 16px;font-size:12.5px;color:#7A5C15;margin-top:40px;
+  }
+
+  footer{margin-top:50px;text-align:center;font-size:11.5px;color:var(--gray);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <div class="brand-mark">B</div>
+    <div>
+      <h1>Hub Bioflora</h1>
+      <p>Painel interno — Farmácia Bioflora</p>
+    </div>
+  </div>
+
+  <div class="modules">
+    <a class="module-card card-horas" href="banco-de-horas.html">
+      <div class="stripe"></div>
+      <div class="icon">⏱️</div>
+      <h2>Banco de Horas</h2>
+      <p>Upload do espelho de ponto mensal, cálculo automático de saldo, atrasos e faltas, com histórico entre meses.</p>
+      <div class="go">Abrir módulo →</div>
+    </a>
+
+    <a class="module-card card-rotulos" href="rotulos.html">
+      <div class="stripe"></div>
+      <div class="icon">🏷️</div>
+      <h2>Controle de Rótulos</h2>
+      <p>Quadro de acompanhamento: a comprar, pedido e chegou — visão rápida do estoque de rótulos.</p>
+      <div class="go">Abrir módulo →</div>
+    </a>
+
+    <a class="module-card card-producao" href="producao.html">
+      <div class="stripe"></div>
+      <div class="icon">🧪</div>
+      <h2>Ordem de Produção</h2>
+      <p>Rastreamento completo: solicitante, nº da ordem, responsável pela manipulação e liberação (CQ).</p>
+      <div class="go">Abrir módulo →</div>
+    </a>
+  </div>
+
+  <div class="status-banner">
+    ⓘ Login e permissões por setor ainda não foram ativados — qualquer pessoa com o link acessa todos os módulos por enquanto.
+    Isso é intencional nesta fase de testes; será a próxima etapa antes de liberar para toda a equipe.
+  </div>
+
+  <footer>Hub interno Bioflora · construído sob medida</footer>
+</div>
+</body>
+</html>

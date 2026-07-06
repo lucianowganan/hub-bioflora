@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ordem de Produção — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC;
+    --bad:#B4472F; --bad-tint:#FBEBE6;
+    --warn:#C9922B; --warn-tint:#FBF1E0;
+    --info:#3E6B93; --info-tint:#E9F0F6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1360px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{width:38px;height:38px;border-radius:10px;background:var(--burgundy);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:19px;}
+  .brand-text h1{font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn.small{padding:6px 12px;font-size:11.5px;}
+
+  .config-banner{background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;padding:14px 18px;font-size:13px;color:#7A5C15;margin-bottom:22px;display:none;}
+  .config-banner.show{display:block;}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px;cursor:pointer;transition:.15s;}
+  .kpi:hover{border-color:var(--burgundy);}
+  .kpi.active{border-color:var(--burgundy);background:var(--burgundy-tint);}
+  .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);font-weight:600;}
+  .kpi .value{font-family:'Fraunces',serif;font-size:26px;margin-top:4px;font-weight:600;}
+  .kpi[data-status="em_falta"] .value{color:var(--bad);}
+  .kpi[data-status="ordem_criada"] .value{color:var(--warn);}
+  .kpi[data-status="em_manipulacao"] .value{color:var(--info);}
+  .kpi[data-status="liberado"] .value{color:var(--good);}
+
+  .add-form{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:20px;display:none;}
+  .add-form.show{display:block;}
+  .add-form h2{font-family:'Fraunces',serif;font-size:16px;margin:0 0 14px;}
+  .form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+  .form-grid label{font-size:11px;color:var(--gray);font-weight:600;display:block;margin-bottom:4px;}
+  .form-grid input, .form-grid select{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;}
+  .panel h2{font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  thead th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);font-weight:600;padding:0 8px 10px;border-bottom:1px solid var(--ink);white-space:nowrap;}
+  tbody td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:hover{background:var(--burgundy-tint);}
+  .produto{font-weight:600;}
+  .ordem-num{font-variant-numeric:tabular-nums;color:var(--gray);font-size:11.5px;}
+  .tag{display:inline-block;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;text-transform:uppercase;white-space:nowrap;}
+  .tag.em_falta{background:var(--bad-tint);color:var(--bad);}
+  .tag.ordem_criada{background:var(--warn-tint);color:#8A6512;}
+  .tag.em_manipulacao{background:var(--info-tint);color:var(--info);}
+  .tag.liberado{background:var(--good-tint);color:var(--good);}
+  .prio.alta, .prio.urgente{color:var(--bad);font-weight:600;}
+  .prio.normal{color:var(--gray);}
+  .prio.baixa{color:var(--gray);}
+  .trace{font-size:11px;color:var(--gray);line-height:1.6;}
+  .trace strong{color:var(--ink);}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--gray);}
+
+  .row-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .row-actions button{font-family:'Maven Pro',sans-serif;font-size:10.5px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--gray);}
+  .row-actions button.primary{color:var(--burgundy);border-color:var(--burgundy-tint);}
+  .row-actions button.del{color:var(--bad);}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:50;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:14px;padding:24px;max-width:480px;width:92%;max-height:85vh;overflow:auto;}
+  .modal h3{font-family:'Fraunces',serif;margin:0 0 14px;}
+  .modal .form-grid{grid-template-columns:1fr 1fr;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">B</div>
+      <div class="brand-text">
+        <h1>Ordem de Produção</h1>
+        <p>Farmácia Bioflora — Hub interno · rastreabilidade completa</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" class="btn secondary" style="text-decoration:none">← Voltar ao Hub</a>
+      <button class="btn" id="toggleForm">+ Nova ordem</button>
+    </div>
+  </header>
+
+  <div id="configBanner" class="config-banner">
+    ⚠️ Configure SUPABASE_URL e SUPABASE_ANON_KEY no início do código antes de usar.
+  </div>
+
+  <div class="add-form" id="addForm">
+    <h2>Registrar novo item</h2>
+    <div class="form-grid">
+      <div><label>Produto*</label><input id="fProduto" placeholder="Nome do produto" /></div>
+      <div><label>Quantidade</label><input id="fQtd" type="number" /></div>
+      <div><label>Solicitado por</label><input id="fSolicitante" placeholder="Nome" /></div>
+      <div><label>Prioridade</label><select id="fPrioridade">
+        <option value="normal">Normal</option><option value="baixa">Baixa</option>
+        <option value="alta">Alta</option><option value="urgente">Urgente</option>
+      </select></div>
+    </div>
+    <div class="form-grid">
+      <div style="grid-column:span 4"><label>Observação (opcional)</label><input id="fObs" placeholder="Ex: aguardando insumo X" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="cancelForm">Cancelar</button>
+      <button class="btn" id="saveCard">Salvar (entra como "Em falta")</button>
+    </div>
+  </div>
+
+  <div class="kpi-row" id="kpis"></div>
+
+  <div class="panel">
+    <h2>Ordens em acompanhamento</h2>
+    <p class="desc">Clique numa linha para avançar a etapa, registrar responsável ou ver o histórico completo</p>
+    <table>
+      <thead><tr>
+        <th>Produto</th><th>Nº ordem</th><th>Qtd</th><th>Prioridade</th>
+        <th>Status</th><th>Rastreabilidade</th><th>Ações</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Modal de avanço de etapa -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Atualizar ordem</h3>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="modalCancel">Cancelar</button>
+      <button class="btn" id="modalSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+
+let supa = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+  document.getElementById('configBanner').classList.add('show');
+}
+
+const STATUS_LABELS = {em_falta:'Em falta', ordem_criada:'Ordem criada', em_manipulacao:'Em manipulação', liberado:'Liberado'};
+const STATUS_ORDER = ['em_falta','ordem_criada','em_manipulacao','liberado'];
+let currentFilter = null;
+let allOrdens = [];
+
+document.getElementById('toggleForm').addEventListener('click', ()=> document.getElementById('addForm').classList.toggle('show'));
+document.getElementById('cancelForm').addEventListener('click', ()=> document.getElementById('addForm').classList.remove('show'));
+
+document.getElementById('saveCard').addEventListener('click', async ()=>{
+  const produto = document.getElementById('fProduto').value.trim();
+  if(!produto){ alert('Informe o nome do produto.'); return; }
+  if(!supa){ alert('Supabase não configurado.'); return; }
+  const { error } = await supa.from('ordens_producao').insert({
+    produto,
+    quantidade: document.getElementById('fQtd').value || null,
+    solicitado_por: document.getElementById('fSolicitante').value.trim() || null,
+    prioridade: document.getElementById('fPrioridade').value,
+    observacoes: document.getElementById('fObs').value.trim() || null
+  });
+  if(error){ alert('Erro ao salvar: '+error.message); return; }
+  ['fProduto','fQtd','fSolicitante','fObs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('addForm').classList.remove('show');
+  loadBoard();
+});
+
+function fmtDate(d){ if(!d) return '—'; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('pt-BR'); }
+
+function traceHtml(o){
+  let lines = [];
+  if(o.solicitado_por) lines.push(`<strong>Solicitado por:</strong> ${o.solicitado_por}`);
+  if(o.data_ordem_criada) lines.push(`<strong>Ordem criada:</strong> ${fmtDate(o.data_ordem_criada)}`);
+  if(o.data_entrada_lab) lines.push(`<strong>Entrada no lab:</strong> ${fmtDate(o.data_entrada_lab)}${o.responsavel_manipulacao ? ' — manipulado por '+o.responsavel_manipulacao : ''}`);
+  if(o.data_liberacao) lines.push(`<strong>Liberado (CQ):</strong> ${fmtDate(o.data_liberacao)}${o.responsavel_liberacao ? ' — por '+o.responsavel_liberacao : ''}`);
+  if(o.observacoes) lines.push(`<em>${o.observacoes}</em>`);
+  return lines.length ? lines.join('<br>') : '—';
+}
+
+function renderRow(o){
+  const nextActions = {
+    em_falta: `<button class="primary" onclick="openModal('${o.id}','ordem_criada')">Gerar ordem</button>`,
+    ordem_criada: `<button class="primary" onclick="openModal('${o.id}','em_manipulacao')">Registrar entrada no lab</button>`,
+    em_manipulacao: `<button class="primary" onclick="openModal('${o.id}','liberado')">Registrar liberação (CQ)</button>`,
+    liberado: ''
+  };
+  return `<tr>
+    <td class="produto">${o.produto}</td>
+    <td class="ordem-num">${o.numero_ordem || '—'}</td>
+    <td>${o.quantidade || '—'}</td>
+    <td class="prio ${o.prioridade}">${o.prioridade}</td>
+    <td><span class="tag ${o.status}">${STATUS_LABELS[o.status]}</span></td>
+    <td class="trace">${traceHtml(o)}</td>
+    <td><div class="row-actions">${nextActions[o.status]}<button class="del" onclick="deleteOrdem('${o.id}')">Remover</button></div></td>
+  </tr>`;
+}
+
+async function deleteOrdem(id){
+  if(!confirm('Remover esta ordem?')) return;
+  const { error } = await supa.from('ordens_producao').delete().eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  loadBoard();
+}
+window.deleteOrdem = deleteOrdem;
+
+// ---------- Modal para avançar etapa ----------
+const modalOverlay = document.getElementById('modalOverlay');
+const modalBody = document.getElementById('modalBody');
+let modalContext = null;
+
+function openModal(id, targetStatus){
+  const o = allOrdens.find(x=>x.id===id);
+  modalContext = {id, targetStatus};
+  document.getElementById('modalTitle').textContent = o.produto + ' — ' + STATUS_LABELS[targetStatus];
+
+  let fields = '';
+  if(targetStatus === 'ordem_criada'){
+    fields = `
+      <div class="form-grid">
+        <div><label>Nº da ordem</label><input id="mNumeroOrdem" placeholder="ex: 88749" /></div>
+        <div><label>Data da criação</label><input id="mDataOrdem" type="date" value="${new Date().toISOString().slice(0,10)}" /></div>
+      </div>`;
+  } else if(targetStatus === 'em_manipulacao'){
+    fields = `
+      <div class="form-grid">
+        <div><label>Data de entrada no lab</label><input id="mDataEntrada" type="date" value="${new Date().toISOString().slice(0,10)}" /></div>
+        <div><label>Responsável (manipulação)</label><input id="mRespManip" placeholder="Nome" /></div>
+      </div>`;
+  } else if(targetStatus === 'liberado'){
+    fields = `
+      <div class="form-grid">
+        <div><label>Data de liberação</label><input id="mDataLiberacao" type="date" value="${new Date().toISOString().slice(0,10)}" /></div>
+        <div><label>Responsável (CQ)</label><input id="mRespLiberacao" placeholder="Nome" /></div>
+      </div>`;
+  }
+  modalBody.innerHTML = fields;
+  modalOverlay.classList.add('show');
+}
+window.openModal = openModal;
+
+document.getElementById('modalCancel').addEventListener('click', ()=> modalOverlay.classList.remove('show'));
+document.getElementById('modalSave').addEventListener('click', async ()=>{
+  const {id, targetStatus} = modalContext;
+  let update = {};
+  if(targetStatus === 'ordem_criada'){
+    update.numero_ordem = document.getElementById('mNumeroOrdem').value.trim() || null;
+    update.data_ordem_criada = document.getElementById('mDataOrdem').value || null;
+  } else if(targetStatus === 'em_manipulacao'){
+    update.data_entrada_lab = document.getElementById('mDataEntrada').value || null;
+    update.responsavel_manipulacao = document.getElementById('mRespManip').value.trim() || null;
+  } else if(targetStatus === 'liberado'){
+    update.data_liberacao = document.getElementById('mDataLiberacao').value || null;
+    update.responsavel_liberacao = document.getElementById('mRespLiberacao').value.trim() || null;
+  }
+  const { error } = await supa.from('ordens_producao').update(update).eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  modalOverlay.classList.remove('show');
+  loadBoard();
+});
+
+// ---------- KPIs / filtro ----------
+function renderKpis(){
+  const counts = {em_falta:0, ordem_criada:0, em_manipulacao:0, liberado:0};
+  allOrdens.forEach(o=> counts[o.status]++);
+  document.getElementById('kpis').innerHTML = STATUS_ORDER.map(s=>`
+    <div class="kpi ${currentFilter===s?'active':''}" data-status="${s}" onclick="setFilter('${s}')">
+      <div class="label">${STATUS_LABELS[s]}</div>
+      <div class="value">${counts[s]}</div>
+    </div>`).join('');
+}
+function setFilter(status){
+  currentFilter = currentFilter === status ? null : status;
+  renderKpis();
+  renderTable();
+}
+window.setFilter = setFilter;
+
+function renderTable(){
+  const rows = currentFilter ? allOrdens.filter(o=>o.status===currentFilter) : allOrdens;
+  document.getElementById('tbody').innerHTML = rows.length
+    ? rows.map(renderRow).join('')
+    : `<tr><td colspan="7" class="empty-state">Nenhuma ordem ${currentFilter ? 'nesta etapa' : 'registrada ainda'}.</td></tr>`;
+}
+
+async function loadBoard(){
+  if(!supa) return;
+  const { data, error } = await supa.from('ordens_producao').select('*').order('criado_em', {ascending:false});
+  if(error){ console.error(error); return; }
+  allOrdens = data;
+  renderKpis();
+  renderTable();
+}
+loadBoard();
+</script>
+</body>
+</html>

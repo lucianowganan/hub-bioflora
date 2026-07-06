@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banco de Horas — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC;
+    --bad:#B4472F; --bad-tint:#FBEBE6;
+    --warn:#C9922B; --warn-tint:#FBF1E0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1220px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{width:38px;height:38px;border-radius:10px;background:var(--burgundy);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:19px;}
+  .brand-text h1{font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+
+  .config-banner{background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;padding:14px 18px;font-size:13px;color:#7A5C15;margin-bottom:22px;display:none;}
+  .config-banner.show{display:block;}
+  .config-banner code{background:#fff;padding:1px 6px;border-radius:4px;font-size:12px;}
+
+  .upload-panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:20px;}
+  .upload-panel h2{font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 6px;}
+  .upload-panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+  .upload-zone{border:2px dashed var(--line);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:.15s;}
+  .upload-zone:hover, .upload-zone.drag{border-color:var(--burgundy);background:var(--burgundy-tint);}
+  .upload-zone input{display:none;}
+  .upload-zone .icon{font-size:28px;margin-bottom:8px;}
+  .upload-zone .label{font-size:13.5px;font-weight:600;}
+  .upload-zone .sub{font-size:12px;color:var(--gray);margin-top:4px;}
+  .period-row{display:flex;gap:12px;margin-top:16px;align-items:center;flex-wrap:wrap;}
+  .period-row label{font-size:12.5px;color:var(--gray);}
+  .period-row input[type=date]{font-family:'Maven Pro',sans-serif;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;}
+  .btn:disabled{background:#ccc;cursor:not-allowed;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .status-msg{font-size:13px;margin-top:12px;padding:10px 14px;border-radius:8px;display:none;}
+  .status-msg.show{display:block;}
+  .status-msg.ok{background:var(--good-tint);color:var(--good);}
+  .status-msg.err{background:var(--bad-tint);color:var(--bad);}
+  .status-msg.info{background:#F1ECEA;color:var(--gray);}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);font-weight:600;}
+  .kpi .value{font-family:'Fraunces',serif;font-size:26px;margin-top:5px;font-weight:600;}
+  .kpi .sub{font-size:12px;color:var(--gray);margin-top:3px;}
+  .kpi.accent{background:var(--burgundy);color:#fff;}
+  .kpi.accent .label,.kpi.accent .sub{color:rgba(255,255,255,.75);}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .panel h2{font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+  .period-select{display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:14px;}
+  .period-select select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;}
+
+  .grid-2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:12.5px;}
+  .bar-name{width:150px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar-track{flex:1;height:16px;background:#F1ECEA;border-radius:4px;position:relative;overflow:hidden;}
+  .bar-fill{position:absolute;top:0;bottom:0;border-radius:4px;}
+  .bar-fill.pos{background:var(--good);left:50%;} .bar-fill.neg{background:var(--bad);right:50%;}
+  .bar-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line);}
+  .bar-val{width:56px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;flex-shrink:0;}
+  .bar-val.pos{color:var(--good);} .bar-val.neg{color:var(--bad);}
+
+  table{width:100%;border-collapse:collapse;font-size:12.8px;}
+  thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:600;padding:0 8px 10px;border-bottom:1px solid var(--ink);}
+  tbody td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  .emp-name{font-weight:600;} .emp-cargo{font-size:11px;color:var(--gray);display:block;margin-top:1px;}
+  .tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;text-transform:uppercase;}
+  .tag.good{background:var(--good-tint);color:var(--good);}
+  .tag.bad{background:var(--bad-tint);color:var(--bad);}
+  .tag.neutral{background:#F1ECEA;color:var(--gray);}
+  .num{font-variant-numeric:tabular-nums;text-align:right;}
+  .num.pos{color:var(--good);} .num.neg{color:var(--bad);}
+  th.num, td.num{text-align:right;}
+
+  .empty-state{text-align:center;padding:50px 20px;color:var(--gray);}
+  .empty-state .big{font-size:36px;margin-bottom:10px;}
+  .setor-input{font-family:'Maven Pro',sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;width:110px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">B</div>
+      <div class="brand-text">
+        <h1>Banco de Horas</h1>
+        <p>Farmácia Bioflora — Hub interno</p>
+      </div>
+    </div>
+    <a href="index.html" class="btn secondary" style="text-decoration:none">← Voltar ao Hub</a>
+  </header>
+
+  <div id="configBanner" class="config-banner">
+    ⚠️ Ainda não conectado ao banco de dados. Preencha <code>SUPABASE_URL</code> e <code>SUPABASE_ANON_KEY</code>
+    no início do arquivo (você pega isso em Project Settings → API, depois de criar o projeto gratuito em supabase.com).
+    Sem isso, o upload processa mas não salva o histórico entre sessões.
+  </div>
+
+  <div class="upload-panel">
+    <h2>Enviar folha de ponto do mês</h2>
+    <p class="desc">Faça upload do xlsx exportado do aplicativo de ponto. O sistema calcula tudo automaticamente.</p>
+    <div class="upload-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".xlsx">
+      <div class="icon">📄</div>
+      <div class="label">Clique ou arraste o arquivo .xlsx aqui</div>
+      <div class="sub">Mesmo formato do espelho de ponto mensal</div>
+    </div>
+    <div class="period-row">
+      <label>Período: <input type="date" id="periodoInicio"> até <input type="date" id="periodoFim"></label>
+      <button class="btn" id="processBtn" disabled>Processar e salvar</button>
+    </div>
+    <div class="status-msg" id="statusMsg"></div>
+  </div>
+
+  <div id="dashboardArea"></div>
+
+</div>
+
+<script>
+// ============================================================
+// CONFIGURAÇÃO — preencher depois de criar o projeto no Supabase
+// (Project Settings → API → Project URL / anon public key)
+// ============================================================
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+
+let supa = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+  document.getElementById('configBanner').classList.add('show');
+}
+
+// ---------- Parsing do xlsx (mesma lógica validada no protótipo) ----------
+function toMin(t){
+  if(!t || String(t).indexOf(':')===-1) return 0;
+  const neg = String(t).startsWith('-');
+  const s = String(t).replace('-','');
+  const [h,m] = s.split(':');
+  const v = parseInt(h)*60+parseInt(m);
+  return neg ? -v : v;
+}
+function hmToMin(s){
+  if(!s || String(s).indexOf(':')===-1) return null;
+  const [h,m] = String(s).split(':');
+  return parseInt(h)*60+parseInt(m);
+}
+function fmtMin(m){
+  const sign = m<0?'-':'+';
+  const abs = Math.abs(m);
+  const h = Math.floor(abs/60), mm = abs%60;
+  return sign+String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+}
+function titleCase(s){ return (s||'—').charAt(0)+(s||'—').slice(1).toLowerCase(); }
+
+function parseWorkbook(wb){
+  const results = [];
+  wb.SheetNames.forEach(sheetName => {
+    const ws = wb.Sheets[sheetName];
+    const get = (cell) => { const c = ws[cell]; return c ? c.v : undefined; };
+    const nome = (get('B2')||'').toString().trim();
+    if(!nome) return;
+    const cargo = get('B3');
+    const setor = get('B4') || null;
+    const saldoInicial = get('B8');
+    const ht = get('B45');
+    const fa = get('B48');
+    const totalTrabalhar = get('B50');
+    const bh = get('B53');
+    const saldoIniMin = toMin(saldoInicial);
+    const bhMin = toMin(bh);
+
+    // turno agendado por dia da semana (linhas 3-8, col D=dia, E=entrada1)
+    const sched = {};
+    for(let r=3;r<=8;r++){
+      const wd = get('D'+r);
+      const e1 = get('E'+r);
+      if(wd && e1) sched[wd] = hmToMin(e1);
+    }
+
+    let diasComPonto=0, leve=0, grave=0;
+    for(let r=13; r<=60; r++){
+      const a = get('A'+r);
+      if(a===undefined) break;
+      const label = String(a).trim();
+      const m = label.match(/- (\w+)$/);
+      const wd = m ? m[1] : null;
+      const ponto1 = get('B'+r);
+      if(ponto1 && String(ponto1).indexOf(':')!==-1){
+        diasComPonto++;
+        const p1 = hmToMin(ponto1);
+        const exp = sched[wd];
+        if(exp!==undefined && p1!==null){
+          const diff = p1-exp;
+          if(diff>=1 && diff<=10) leve++;
+          else if(diff>10) grave++;
+        }
+      }
+    }
+
+    results.push({
+      nome, cargo, setor,
+      saldo_inicial_min: saldoIniMin,
+      variacao_mes_min: bhMin,
+      saldo_final_min: saldoIniMin+bhMin,
+      horas_trabalhadas_min: ht ? hmToMin(ht.toString().padStart(5,'0')) || parseInt(ht) : null,
+      dias_com_ponto: diasComPonto,
+      atrasos_leve: leve, atrasos_grave: grave,
+      faltas_min: toMin(fa),
+      ativo: totalTrabalhar !== '00:00'
+    });
+  });
+  return results;
+}
+
+// ---------- Upload UI ----------
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const processBtn = document.getElementById('processBtn');
+const statusMsg = document.getElementById('statusMsg');
+let currentWorkbook = null;
+
+dropZone.addEventListener('click', ()=>fileInput.click());
+dropZone.addEventListener('dragover', e=>{e.preventDefault(); dropZone.classList.add('drag');});
+dropZone.addEventListener('dragleave', ()=>dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e=>{
+  e.preventDefault(); dropZone.classList.remove('drag');
+  if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e=>{ if(e.target.files.length) handleFile(e.target.files[0]); });
+
+function handleFile(file){
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const data = new Uint8Array(e.target.result);
+    currentWorkbook = XLSX.read(data, {type:'array'});
+    dropZone.querySelector('.label').textContent = '✓ ' + file.name;
+    processBtn.disabled = false;
+    showStatus('Arquivo lido. Confirme o período e clique em processar.', 'info');
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showStatus(msg, type){
+  statusMsg.textContent = msg;
+  statusMsg.className = 'status-msg show ' + type;
+}
+
+processBtn.addEventListener('click', async () => {
+  if(!currentWorkbook) return;
+  const inicio = document.getElementById('periodoInicio').value;
+  const fim = document.getElementById('periodoFim').value;
+  if(!inicio || !fim){ showStatus('Informe o período (início e fim) antes de salvar.', 'err'); return; }
+
+  processBtn.disabled = true;
+  showStatus('Processando planilha...', 'info');
+  const parsed = parseWorkbook(currentWorkbook).filter(d=>d.ativo);
+
+  if(!supa){
+    showStatus(`Processado ${parsed.length} funcionários — mas o banco de dados ainda não está conectado (veja o aviso no topo). Exibindo apenas nesta sessão.`, 'err');
+    renderDashboard([{periodo_inicio:inicio, periodo_fim:fim, registros:parsed}]);
+    processBtn.disabled = false;
+    return;
+  }
+
+  try {
+    for(const d of parsed){
+      let { data: existing } = await supa.from('funcionarios').select('id,setor').eq('nome', d.nome).maybeSingle();
+      let funcionarioId;
+      if(!existing){
+        const { data: inserted, error } = await supa.from('funcionarios').insert({nome:d.nome, cargo:d.cargo, setor:d.setor}).select().single();
+        if(error) throw error;
+        funcionarioId = inserted.id;
+      } else {
+        funcionarioId = existing.id;
+        // se veio setor novo do xlsx e o cadastro não tinha, atualiza
+        if(!existing.setor && d.setor){
+          await supa.from('funcionarios').update({setor:d.setor}).eq('id', funcionarioId);
+        }
+      }
+      const { error: upsertErr } = await supa.from('folhas_ponto').upsert({
+        funcionario_id: funcionarioId,
+        periodo_inicio: inicio,
+        periodo_fim: fim,
+        saldo_inicial_min: d.saldo_inicial_min,
+        variacao_mes_min: d.variacao_mes_min,
+        saldo_final_min: d.saldo_final_min,
+        horas_trabalhadas_min: d.horas_trabalhadas_min,
+        dias_com_ponto: d.dias_com_ponto,
+        atrasos_leve: d.atrasos_leve,
+        atrasos_grave: d.atrasos_grave,
+        faltas_min: d.faltas_min
+      }, { onConflict: 'funcionario_id,periodo_inicio' });
+      if(upsertErr) throw upsertErr;
+    }
+    showStatus(`✓ ${parsed.length} funcionários salvos para o período ${inicio} a ${fim}.`, 'ok');
+    await loadDashboard();
+  } catch(err){
+    console.error(err);
+    showStatus('Erro ao salvar: ' + err.message, 'err');
+  }
+  processBtn.disabled = false;
+});
+
+// ---------- Dashboard (lê do Supabase; se não conectado, usa o que foi processado na sessão) ----------
+async function loadDashboard(){
+  if(!supa) return;
+  const { data: folhas, error } = await supa
+    .from('folhas_ponto')
+    .select('*, funcionarios(nome, cargo, setor)')
+    .order('periodo_inicio', {ascending:true});
+  if(error){ console.error(error); return; }
+  if(!folhas || !folhas.length){
+    document.getElementById('dashboardArea').innerHTML = `<div class="panel empty-state"><div class="big">📊</div>Nenhum período enviado ainda. Envie o primeiro xlsx acima.</div>`;
+    return;
+  }
+  const periodos = [...new Set(folhas.map(f=>f.periodo_inicio))].sort();
+  const byPeriodo = {};
+  periodos.forEach(p => byPeriodo[p] = folhas.filter(f=>f.periodo_inicio===p).map(f => ({
+    nome: f.funcionarios.nome, cargo: f.funcionarios.cargo, setor: f.funcionarios.setor,
+    saldo_inicial_min: f.saldo_inicial_min, variacao_mes_min: f.variacao_mes_min,
+    saldo_final_min: f.saldo_final_min, dias_com_ponto: f.dias_com_ponto,
+    atrasos_leve: f.atrasos_leve, atrasos_grave: f.atrasos_grave, faltas_min: f.faltas_min
+  })));
+  renderDashboard(periodos.map(p => ({periodo_inicio:p, registros:byPeriodo[p]})));
+}
+
+function renderDashboard(periodosData){
+  const latest = periodosData[periodosData.length-1];
+  const active = latest.registros;
+  const area = document.getElementById('dashboardArea');
+
+  let periodOptionsHtml = periodosData.map((p,i)=>`<option value="${i}" ${i===periodosData.length-1?'selected':''}>${p.periodo_inicio}</option>`).join('');
+
+  const negCount = active.filter(d=>d.saldo_final_min<0).length;
+  const graveTotal = active.reduce((a,d)=>a+d.atrasos_grave,0);
+  const worst = active.reduce((a,b)=> a.saldo_final_min < b.saldo_final_min ? a : b);
+  const avgMin = active.reduce((a,d)=>a+d.variacao_mes_min,0)/active.length;
+
+  area.innerHTML = `
+    <div class="panel">
+      <div class="period-select">
+        <span>Período exibido:</span>
+        <select id="periodoSelect">${periodOptionsHtml}</select>
+        <span style="color:var(--gray);font-size:12px">${periodosData.length} período(s) no histórico</span>
+      </div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi accent"><div class="label">Funcionários</div><div class="value">${active.length}</div><div class="sub">com apontamento</div></div>
+      <div class="kpi"><div class="label">Saldo médio no mês</div><div class="value" style="color:${avgMin>=0?'var(--good)':'var(--bad)'}">${fmtMin(Math.round(avgMin))}</div><div class="sub">por funcionário</div></div>
+      <div class="kpi"><div class="label">Em saldo negativo</div><div class="value" style="color:var(--bad)">${negCount}</div><div class="sub">precisam de atenção</div></div>
+      <div class="kpi"><div class="label">Atrasos graves</div><div class="value" style="color:var(--warn)">${graveTotal}</div><div class="sub">soma da equipe</div></div>
+      <div class="kpi"><div class="label">Maior saldo devedor</div><div class="value" style="color:var(--bad);font-size:18px">${worst.nome.split(' ').slice(0,2).join(' ')}</div><div class="sub">${fmtMin(worst.saldo_final_min)}</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="panel"><h2>Saldo acumulado por funcionário</h2><p class="desc">Saldo final do período selecionado</p><div id="bars"></div></div>
+      <div class="panel"><h2>Por setor</h2><p class="desc">Soma do saldo acumulado</p><div id="sectors"></div></div>
+    </div>
+    <div class="panel">
+      <h2>Detalhe por funcionário</h2>
+      <table><thead><tr>
+        <th>Funcionário</th><th>Setor</th><th class="num">Saldo final</th>
+        <th class="num">Dias c/ ponto</th><th class="num">Atrasos (leve/grave)</th>
+        <th class="num">Faltas</th><th>Situação</th>
+      </tr></thead><tbody id="tbody"></tbody></table>
+    </div>
+  `;
+
+  document.getElementById('periodoSelect').addEventListener('change', (e)=>{
+    renderPeriodContent(periodosData[parseInt(e.target.value)].registros);
+  });
+  renderPeriodContent(active);
+}
+
+function renderPeriodContent(active){
+  const sorted = [...active].sort((a,b)=>a.saldo_final_min-b.saldo_final_min);
+  const maxAbs = Math.max(...sorted.map(d=>Math.abs(d.saldo_final_min)), 1);
+  document.getElementById('bars').innerHTML = sorted.map(d=>{
+    const pct = Math.min(100, Math.abs(d.saldo_final_min)/maxAbs*50);
+    const cls = d.saldo_final_min>=0?'pos':'neg';
+    return `<div class="bar-row"><div class="bar-name" title="${d.nome}">${d.nome.split(' ').slice(0,2).join(' ')}</div>
+      <div class="bar-track"><div class="bar-mid"></div><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+      <div class="bar-val ${cls}">${fmtMin(d.saldo_final_min)}</div></div>`;
+  }).join('');
+
+  const sectorMap = {};
+  active.forEach(d=>{
+    const s = d.setor || 'NÃO DEFINIDO';
+    if(!sectorMap[s]) sectorMap[s]={count:0,total:0};
+    sectorMap[s].count++; sectorMap[s].total+=d.saldo_final_min;
+  });
+  document.getElementById('sectors').innerHTML = Object.entries(sectorMap).sort((a,b)=>b[1].total-a[1].total).map(([name,v])=>{
+    const cls = v.total>=0?'good':'bad';
+    return `<div class="bar-row" style="justify-content:space-between"><div><strong>${titleCase(name)}</strong> <span style="color:var(--gray);font-size:12px">(${v.count})</span></div><div style="color:var(--${cls});font-weight:600">${fmtMin(v.total)}</div></div>`;
+  }).join('');
+
+  document.getElementById('tbody').innerHTML = sorted.map(d=>{
+    let tagCls='good', tagLabel='Em dia';
+    if(d.saldo_final_min < -600){ tagCls='bad'; tagLabel='Atenção'; }
+    else if(d.saldo_final_min < 0){ tagCls='neutral'; tagLabel='Devedor leve'; }
+    return `<tr>
+      <td><span class="emp-name">${d.nome}</span><span class="emp-cargo">${d.cargo||''}</span></td>
+      <td>${titleCase(d.setor)}</td>
+      <td class="num ${d.saldo_final_min>=0?'pos':'neg'}"><strong>${fmtMin(d.saldo_final_min)}</strong></td>
+      <td class="num">${d.dias_com_ponto||'—'}</td>
+      <td class="num">${d.atrasos_leve||0} / ${d.atrasos_grave||0}</td>
+      <td class="num">${d.faltas_min ? fmtMin(d.faltas_min) : '—'}</td>
+      <td><span class="tag ${tagCls}">${tagLabel}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// Ao carregar a página, tenta puxar o histórico já salvo
+loadDashboard();
+if(!supa){
+  document.getElementById('dashboardArea').innerHTML = `<div class="panel empty-state"><div class="big">🔌</div>Conecte o Supabase (veja o aviso no topo) para ver o histórico salvo.<br>Você ainda pode processar um arquivo acima para testar o cálculo nesta sessão.</div>`;
+}
+</script>
+</body>
+</html>

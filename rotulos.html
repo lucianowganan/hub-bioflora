@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kanban de Rótulos — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC;
+    --bad:#B4472F; --bad-tint:#FBEBE6;
+    --warn:#C9922B; --warn-tint:#FBF1E0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1220px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{width:38px;height:38px;border-radius:10px;background:var(--burgundy);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:19px;}
+  .brand-text h1{font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+
+  .config-banner{background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;padding:14px 18px;font-size:13px;color:#7A5C15;margin-bottom:22px;display:none;}
+  .config-banner.show{display:block;}
+
+  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start;}
+  .column{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;min-height:200px;}
+  .column-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--ink);}
+  .column-head h2{font-family:'Fraunces',serif;font-size:15px;font-weight:600;margin:0;}
+  .column-count{font-size:11.5px;color:var(--gray);background:#F1ECEA;padding:2px 9px;border-radius:12px;}
+  .column[data-status="a_comprar"] .column-head{border-color:var(--bad);}
+  .column[data-status="pedido"] .column-head{border-color:var(--warn);}
+  .column[data-status="chegou"] .column-head{border-color:var(--good);}
+
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:13px;position:relative;}
+  .card .produto{font-weight:600;margin-bottom:4px;}
+  .card .meta{font-size:11.5px;color:var(--gray);line-height:1.5;}
+  .card .obs{font-size:11.5px;color:var(--ink);margin-top:6px;font-style:italic;}
+  .card-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+  .card-actions button{font-family:'Maven Pro',sans-serif;font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--gray);}
+  .card-actions button.move{color:var(--burgundy);border-color:var(--burgundy-tint);}
+  .card-actions button.del{color:var(--bad);}
+  .empty-col{font-size:12px;color:var(--gray);text-align:center;padding:20px 0;}
+
+  .add-form{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:20px;display:none;}
+  .add-form.show{display:block;}
+  .add-form h2{font-family:'Fraunces',serif;font-size:16px;margin:0 0 14px;}
+  .form-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .form-row input, .form-row select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:7px;}
+  .form-row input.produto{flex:2;min-width:200px;}
+  .form-row input.qtd{width:90px;}
+  .form-row input.solicitante{flex:1;min-width:150px;}
+  .form-row input.obs{flex:1;min-width:200px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">B</div>
+      <div class="brand-text">
+        <h1>Kanban de Rótulos</h1>
+        <p>Farmácia Bioflora — Hub interno</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" class="btn secondary" style="text-decoration:none">← Voltar ao Hub</a>
+      <button class="btn" id="toggleForm">+ Novo rótulo</button>
+    </div>
+  </header>
+
+  <div id="configBanner" class="config-banner">
+    ⚠️ Configure SUPABASE_URL e SUPABASE_ANON_KEY no início do código antes de usar.
+  </div>
+
+  <div class="add-form" id="addForm">
+    <h2>Adicionar rótulo</h2>
+    <div class="form-row">
+      <input class="produto" id="fProduto" placeholder="Nome do produto/rótulo" />
+      <input class="qtd" id="fQtd" type="number" placeholder="Qtd" />
+      <input class="solicitante" id="fSolicitante" placeholder="Solicitado por" />
+    </div>
+    <div class="form-row">
+      <input class="obs" id="fObs" placeholder="Observação (opcional)" />
+      <button class="btn" id="saveCard">Adicionar à coluna "A comprar"</button>
+      <button class="btn secondary" id="cancelForm">Cancelar</button>
+    </div>
+  </div>
+
+  <div class="board" id="board">
+    <div class="column" data-status="a_comprar">
+      <div class="column-head"><h2>A comprar</h2><span class="column-count" id="count_a_comprar">0</span></div>
+      <div class="cards" id="cards_a_comprar"></div>
+    </div>
+    <div class="column" data-status="pedido">
+      <div class="column-head"><h2>Pedido</h2><span class="column-count" id="count_pedido">0</span></div>
+      <div class="cards" id="cards_pedido"></div>
+    </div>
+    <div class="column" data-status="chegou">
+      <div class="column-head"><h2>Chegou</h2><span class="column-count" id="count_chegou">0</span></div>
+      <div class="cards" id="cards_chegou"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// Mesmas credenciais do módulo de Banco de Horas (mesmo projeto Supabase)
+// ============================================================
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+
+let supa = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+  document.getElementById('configBanner').classList.add('show');
+}
+
+const STATUS_LABELS = {a_comprar:'A comprar', pedido:'Pedido', chegou:'Chegou'};
+const STATUS_ORDER = ['a_comprar','pedido','chegou'];
+
+document.getElementById('toggleForm').addEventListener('click', ()=>{
+  document.getElementById('addForm').classList.toggle('show');
+});
+document.getElementById('cancelForm').addEventListener('click', ()=>{
+  document.getElementById('addForm').classList.remove('show');
+});
+
+document.getElementById('saveCard').addEventListener('click', async ()=>{
+  const produto = document.getElementById('fProduto').value.trim();
+  if(!produto){ alert('Informe o nome do produto/rótulo.'); return; }
+  const qtd = document.getElementById('fQtd').value || null;
+  const solicitante = document.getElementById('fSolicitante').value.trim() || null;
+  const obs = document.getElementById('fObs').value.trim() || null;
+
+  if(!supa){ alert('Supabase não configurado.'); return; }
+  const { error } = await supa.from('rotulos_kanban').insert({
+    produto, quantidade: qtd, solicitado_por: solicitante, observacao: obs, status: 'a_comprar'
+  });
+  if(error){ alert('Erro ao salvar: '+error.message); return; }
+
+  document.getElementById('fProduto').value='';
+  document.getElementById('fQtd').value='';
+  document.getElementById('fSolicitante').value='';
+  document.getElementById('fObs').value='';
+  document.getElementById('addForm').classList.remove('show');
+  loadBoard();
+});
+
+async function moveCard(id, newStatus){
+  const { error } = await supa.from('rotulos_kanban').update({status:newStatus, atualizado_em:new Date().toISOString()}).eq('id', id);
+  if(error){ alert('Erro ao mover: '+error.message); return; }
+  loadBoard();
+}
+async function deleteCard(id){
+  if(!confirm('Remover este rótulo do quadro?')) return;
+  const { error } = await supa.from('rotulos_kanban').delete().eq('id', id);
+  if(error){ alert('Erro ao remover: '+error.message); return; }
+  loadBoard();
+}
+window.moveCard = moveCard;
+window.deleteCard = deleteCard;
+
+function renderCard(card){
+  const idx = STATUS_ORDER.indexOf(card.status);
+  const prev = STATUS_ORDER[idx-1];
+  const next = STATUS_ORDER[idx+1];
+  let actions = '';
+  if(prev) actions += `<button class="move" onclick="moveCard('${card.id}','${prev}')">← ${STATUS_LABELS[prev]}</button>`;
+  if(next) actions += `<button class="move" onclick="moveCard('${card.id}','${next}')">${STATUS_LABELS[next]} →</button>`;
+  actions += `<button class="del" onclick="deleteCard('${card.id}')">Remover</button>`;
+
+  return `<div class="card">
+    <div class="produto">${card.produto}</div>
+    <div class="meta">${card.quantidade ? 'Qtd: '+card.quantidade+' · ' : ''}${card.solicitado_por ? 'Pedido por: '+card.solicitado_por : ''}</div>
+    ${card.observacao ? `<div class="obs">"${card.observacao}"</div>` : ''}
+    <div class="card-actions">${actions}</div>
+  </div>`;
+}
+
+async function loadBoard(){
+  if(!supa) return;
+  const { data, error } = await supa.from('rotulos_kanban').select('*').order('criado_em', {ascending:false});
+  if(error){ console.error(error); return; }
+  STATUS_ORDER.forEach(status=>{
+    const items = data.filter(c=>c.status===status);
+    document.getElementById('count_'+status).textContent = items.length;
+    document.getElementById('cards_'+status).innerHTML = items.length
+      ? items.map(renderCard).join('')
+      : '<div class="empty-col">Nenhum item</div>';
+  });
+}
+
+loadBoard();
+</script>
+</body>
+</html>
