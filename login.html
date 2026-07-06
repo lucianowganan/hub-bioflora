@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --bad:#B4472F; --bad-tint:#FBEBE6; --good:#3F7A57; --good-tint:#E8F3EC;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;-webkit-font-smoothing:antialiased;}
+  .box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:40px;width:100%;max-width:380px;}
+  .logo{height:34px;margin-bottom:10px;}
+  .logo svg{height:100%;width:auto;}
+  h1{font-family:'Fraunces',serif;font-size:20px;margin:0 0 4px;}
+  p.sub{font-size:12.5px;color:var(--gray);margin:0 0 26px;}
+  label{font-size:11.5px;font-weight:600;color:var(--gray);display:block;margin-bottom:5px;}
+  input{width:100%;font-family:'Maven Pro',sans-serif;font-size:14px;padding:10px 13px;border:1px solid var(--line);border-radius:8px;margin-bottom:14px;}
+  .btn{width:100%;font-family:'Maven Pro',sans-serif;font-size:14px;font-weight:600;padding:11px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;margin-top:6px;}
+  .toggle{text-align:center;font-size:12.5px;color:var(--gray);margin-top:18px;}
+  .toggle a{color:var(--burgundy);font-weight:600;cursor:pointer;text-decoration:none;}
+  .msg{font-size:12.5px;padding:9px 12px;border-radius:8px;margin-bottom:14px;display:none;}
+  .msg.show{display:block;}
+  .msg.err{background:var(--bad-tint);color:var(--bad);}
+  .msg.ok{background:var(--good-tint);color:var(--good);}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo"><svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 31.3 8.7">
+  <defs>
+    <style>
+      .st0 {
+        fill: none;
+        stroke: #8B1A3A;
+        stroke-miterlimit: 10;
+        stroke-width: 0px;
+      }
+
+      .st1 {
+        display: none;
+        opacity: .5;
+      }
+
+      .st2 {
+        font-family: Helvetica, Helvetica;
+        font-size: 1.7px;
+        letter-spacing: .3em;
+      }
+
+      .st2, .st3, .st4 {
+        fill: #8B1A3A;
+      }
+
+      .st4 {
+        font-family: ArialMT, Arial;
+        font-size: .5px;
+        letter-spacing: .3em;
+      }
+    </style>
+  </defs>
+  <image class="st1" width="1000" height="250" transform="translate(-1 -.4) scale(0)" xlink:href="Bioflora/logo-bioflora-vinho-e-cinza.png"/>
+  <path class="st3" d="M12.1,3.5s.2-.2.2-.3c.3-.8-.1-1.6-.9-1.7-.3,0-1.5,0-1.8,0-.2,0-.3.2-.4.4,0,1.1,0,2.3,0,3.3,0,.3.1.4.4.5.4,0,1.6,0,1.9,0,.7-.2,1-1,.8-1.6,0-.1-.2-.4-.2-.5ZM11.4,4.6s-.2.1-.2.1h-1.1v-.9h1.2s.1,0,.2.1c.2.2.2.6,0,.7ZM11.4,2.9s-.2.2-.2.2h-1.2v-.7s0,0,0,0h1.1s.2,0,.2.1c.2.1.2.3,0,.5Z"/>
+  <path class="st3" d="M7.1,3.6c0,.1,0,0,0,0,0-.6-.9-.9-1.3-1.1-1.3-.4-2.5,0-3.8-.3S0,1.2,0,0c.5.4.9.6,1.6.8,1.1.2,2.4,0,3.5,0s2.5,1.5,2,2.8Z"/>
+  <path class="st3" d="M7.9,5.9c-.1-.2-.3-.3-.5-.4-1.7-.9-5.3.4-6.4-1.5s-.2-.4,0-.4c.6,0,1.4,0,2,0,1.5,0,3.3-.3,4.4,1s.5.9.4,1.4Z"/>
+  <path class="st3" d="M4.4,7.5C2.3,7.3.8,5.4.3,3.5s-.1-.5,0-.7c0,0,.3.6.4.7.7,1.4,1.8,2.7,3.4,3.1s1.4.2,1.9-.1.4-.7,0-1.1c.5,0,1.8.1,1.9.8.2,1.1-1.3,1.5-2.1,1.5-.1,0-.2,0-.3,0-.2,0-.3,0-.6,0-.1,0-.2,0-.3,0Z"/>
+  <path class="st3" d="M30.5,3.6c-.3-1.2-2-1.6-2.8-.6-.9,1.1,0,2.5,1.3,2.5.2,0,.6,0,.7-.1,0,0,0,0,.2.1.2.1.5,0,.6-.3,0-.3,0-1.4,0-1.7ZM29.1,4.7c-1,.1-1.2-1.3-.2-1.5.9,0,1.1,1.3.2,1.5Z"/>
+  <path class="st3" d="M15.6,2.4c-2.3,0-2,3.6.3,3.1,1.8-.4,1.5-3.2-.3-3.1ZM16.3,4.3c-.3.8-1.6.4-1.4-.5.1-.5.8-.7,1.2-.3.2.2.3.5.2.8Z"/>
+  <path class="st3" d="M23.1,2.5c-1.9.3-1.7,3.3.4,3.2,2.1-.1,1.9-3.5-.4-3.2ZM22.9,4.6c-.5-.4-.3-1.3.4-1.3.3,0,.6.2.7.5.3.7-.5,1.3-1.1.9Z"/>
+  <path class="st3" d="M19,3.2c.7,0,.7.9,0,.9,0,.8.2,1.8-.6,2.3s-1,.1-.9-.4.7-.2.7-.5,0-1,0-1.4c-.7,0-.7-.9,0-.9,0-.6,0-1.3.6-1.6s1.1-.3,1,.4-.7.2-.7.5,0,.6,0,.8Z"/>
+  <path class="st3" d="M20.8,1.6c0,0,.1.3.1.4v2.6c.1.3.4.2.6.3.3.2.1.7-.2.7-.6,0-1.2-.4-1.2-.9,0-.9,0-1.9,0-2.9,0-.3.5-.4.7-.2Z"/>
+  <path class="st3" d="M25.7,2.9c.3-.3,1.2-.7,1.5-.3s.1.4,0,.6c-.3.2-.6,0-.9.4s0,1.2-.1,1.6-.8.4-.8,0,0-1.1,0-1.4.2-.7.4-1Z"/>
+  <path class="st3" d="M13.5,2.6c0,0,.1.2.1.3,0,.7,0,1.6,0,2.4,0,.5-.8.5-.9,0,0-.8,0-1.6,0-2.3s.4-.6.7-.3Z"/>
+  <path class="st3" d="M6.9,3.8c-.4-.2-.8-.3-1.2-.4,0-.2,0-.3,0-.5s-.2-.3-.2-.4c.6.1,1.8.5,1.5,1.3Z"/>
+  <path class="st3" d="M13.1,1.5c.7-.1.7,1,0,.8s-.5-.8,0-.8Z"/>
+  <circle class="st0" cx="30.9" cy="2.7" r=".4"/>
+  <text class="st2" transform="translate(19.1 7.9) scale(1 1)"><tspan x="0" y="0">FARMÁCIA</tspan></text>
+  <text class="st4" transform="translate(30.7 2.9)"><tspan x="0" y="0">R</tspan></text>
+</svg></div>
+  <h1 id="formTitle">Entrar no Hub</h1>
+  <p class="sub">Farmácia Bioflora — acesso interno</p>
+  <div class="msg" id="msg"></div>
+  <label>Email</label>
+  <input id="email" type="email" autocomplete="username" />
+  <label>Senha</label>
+  <input id="senha" type="password" autocomplete="current-password" />
+  <button class="btn" id="btnAction">Entrar</button>
+  <div class="toggle" id="toggleText">Ainda não tem conta? <a onclick="toggleMode()">Criar conta</a></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let mode = 'login'; // ou 'signup'
+
+function toggleMode(){
+  mode = mode === 'login' ? 'signup' : 'login';
+  document.getElementById('formTitle').textContent = mode === 'login' ? 'Entrar no Hub' : 'Criar conta';
+  document.getElementById('btnAction').textContent = mode === 'login' ? 'Entrar' : 'Criar conta';
+  document.getElementById('toggleText').innerHTML = mode === 'login'
+    ? 'Ainda não tem conta? <a onclick="toggleMode()">Criar conta</a>'
+    : 'Já tem conta? <a onclick="toggleMode()">Entrar</a>';
+}
+window.toggleMode = toggleMode;
+
+function showMsg(text, type){
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg show ' + type;
+}
+
+document.getElementById('btnAction').addEventListener('click', async ()=>{
+  const email = document.getElementById('email').value.trim();
+  const senha = document.getElementById('senha').value;
+  if(!email || !senha){ showMsg('Preencha email e senha.', 'err'); return; }
+
+  if(mode === 'login'){
+    const { error } = await supa.auth.signInWithPassword({ email, password: senha });
+    if(error){ showMsg('Erro ao entrar: ' + error.message, 'err'); return; }
+    window.location.href = 'index.html';
+  } else {
+    const { error } = await supa.auth.signUp({ email, password: senha });
+    if(error){ showMsg('Erro ao criar conta: ' + error.message, 'err'); return; }
+    showMsg('Conta criada! Já pode entrar — mas primeiro peça pra chefia liberar seu papel na tela de administração.', 'ok');
+    toggleMode();
+  }
+});
+
+// Se já estiver logado, manda direto pro hub
+supa.auth.getSession().then(({data})=>{
+  if(data.session) window.location.href = 'index.html';
+});
+</script>
+</body>
+</html>
