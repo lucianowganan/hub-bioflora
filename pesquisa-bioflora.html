@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bioflora · Pesquisa</title>
+<style>
+  @font-face {
+    font-family: 'Cal Sans';
+    src: local('Cal Sans');
+  }
+  :root{
+    --wine:#7a1730;
+    --wine-dark:#5a1023;
+    --wine-light:#a5385a;
+    --cream:#faf6f2;
+    --ink:#2a1c20;
+    --muted:#8a7377;
+    --line:#e8dcdf;
+    --gold:#c9a35a;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:'Maven Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    overflow:hidden;
+    touch-action:pan-y;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  #app{
+    height:100vh;
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    overflow:hidden;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    padding: 28px 32px 0 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'Cal Sans','Maven Pro',sans-serif;
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--wine);
+    opacity:0.55;
+  }
+  .brand img{ height:18px; width:auto; display:block; }
+  .logo-chip{
+    background:var(--wine);
+    border-radius:8px;
+    padding:8px 12px;
+    display:flex;
+    align-items:center;
+  }
+  .logo-chip svg{ height:14px; width:auto; }
+  .brand-logo-welcome{
+    background:var(--wine);
+    border-radius:16px;
+    padding:18px 22px;
+    display:inline-flex;
+    margin-bottom:26px;
+  }
+  .brand-logo-welcome svg{ height:24px; width:auto; }
+
+  @media (max-height: 500px){
+    .screen{ padding:16px 36px 18px 36px; }
+    .topbar{ padding:14px 32px 0 32px; }
+    h1{ font-size:clamp(20px, 3vw, 28px); margin-bottom:4px; }
+    .sub{ margin-bottom:14px; }
+    .options{ gap:8px; }
+    .opt{ padding:12px 18px; font-size:16px; }
+    .eyebrow{ margin-bottom:6px; }
+  }
+
+  @media (max-width: 520px){
+    .topbar{ padding:20px 20px 0 20px; }
+    .screen{ padding:20px 22px 26px 22px; }
+    .bottombar{ padding:0 22px 22px 22px; }
+    h1{ font-size:clamp(22px, 6vw, 30px); }
+    .opt{ padding:17px 18px; font-size:17px; gap:12px; }
+    .sub{ margin-bottom:24px; }
+    .welcome-title{ font-size:clamp(24px,7vw,32px); }
+    .start-btn{ padding:19px 40px; font-size:18px; width:100%; }
+    textarea.free{ min-height:100px; }
+  }
+  .progress-dots{
+    display:flex;
+    gap:8px;
+  }
+  .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--line);
+    transition:all .35s ease;
+  }
+  .dot.done{background:var(--wine); width:8px;}
+  .dot.active{background:var(--wine); width:22px; border-radius:5px;}
+
+  /* ---------- screens ---------- */
+  .screen{
+    flex:1;
+    display:none;
+    flex-direction:column;
+    justify-content:center;
+    padding:28px 36px 40px 36px;
+    animation:fade .4s ease;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+    min-height:0;
+  }
+  .screen.active{display:flex;}
+  @keyframes fade{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  .eyebrow{
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--wine-light);
+    margin-bottom:14px;
+  }
+  h1{
+    font-family:'Cal Sans','Maven Pro',sans-serif;
+    font-weight:700;
+    font-size:clamp(26px, 4.2vw, 40px);
+    line-height:1.18;
+    margin:0 0 8px 0;
+    color:var(--wine-dark);
+    max-width: 720px;
+  }
+  .sub{
+    font-size:16px;
+    color:var(--muted);
+    margin:0 0 34px 0;
+    max-width:600px;
+  }
+
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    max-width:720px;
+  }
+  .opt{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    background:#fff;
+    border:2px solid var(--line);
+    border-radius:16px;
+    padding:20px 22px;
+    font-size:19px;
+    font-weight:600;
+    color:var(--ink);
+    cursor:pointer;
+    text-align:left;
+    transition: border-color .15s ease, transform .1s ease, background .15s ease;
+  }
+  .opt:active{ transform:scale(0.985); background:#fbeff2; }
+  .opt.selected{
+    border-color:var(--wine);
+    background:#fbeff2;
+  }
+  .opt-mark{
+    width:26px; height:26px; min-width:26px;
+    border-radius:50%;
+    border:2px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    transition:all .15s ease;
+  }
+  .opt.selected .opt-mark{
+    border-color:var(--wine);
+    background:var(--wine);
+  }
+  .opt-mark svg{opacity:0; transition:opacity .15s ease; width:14px; height:14px;}
+  .opt.selected .opt-mark svg{opacity:1;}
+
+  .other-input{
+    margin-top:6px;
+    display:none;
+    max-width:720px;
+  }
+  .other-input.show{display:block;}
+  .other-input input{
+    width:100%;
+    border:2px solid var(--line);
+    border-radius:14px;
+    padding:16px 18px;
+    font-size:17px;
+    font-family:inherit;
+    color:var(--ink);
+    outline:none;
+    background:#fff;
+  }
+  .other-input input:focus{border-color:var(--wine);}
+
+  textarea.free{
+    width:100%;
+    max-width:720px;
+    border:2px solid var(--line);
+    border-radius:16px;
+    padding:18px 20px;
+    font-size:17px;
+    font-family:inherit;
+    color:var(--ink);
+    outline:none;
+    resize:none;
+    min-height:120px;
+    background:#fff;
+  }
+  textarea.free:focus{border-color:var(--wine);}
+
+  /* ---------- bottom nav ---------- */
+  .bottombar{
+    padding:0 36px 30px 36px;
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+  .btn{
+    border:none;
+    border-radius:14px;
+    padding:18px 28px;
+    font-size:17px;
+    font-weight:700;
+    font-family:inherit;
+    cursor:pointer;
+    transition:transform .1s ease, opacity .15s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{
+    background:var(--wine);
+    color:#fff;
+    flex:1;
+  }
+  .btn-primary:disabled{
+    opacity:0.35;
+    pointer-events:none;
+  }
+  .btn-ghost{
+    background:transparent;
+    color:var(--muted);
+    padding:18px 20px;
+  }
+  .btn-skip{
+    background:transparent;
+    color:var(--wine-light);
+    text-decoration:underline;
+    padding:18px 10px;
+  }
+
+  /* ---------- welcome / thanks ---------- */
+  .center-screen{
+    align-items:center;
+    text-align:center;
+  }
+  .mark{
+    width:64px;height:64px;
+    border-radius:50%;
+    background:var(--wine);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:26px;
+  }
+  .mark svg{width:30px;height:30px;}
+  .welcome-title{
+    font-family:'Cal Sans','Maven Pro',sans-serif;
+    font-size:clamp(28px,5vw,44px);
+    color:var(--wine-dark);
+    margin:0 0 14px 0;
+    max-width:600px;
+  }
+  .welcome-sub{
+    font-size:17px;
+    color:var(--muted);
+    max-width:440px;
+    line-height:1.55;
+    margin:0 0 40px 0;
+  }
+  .start-btn{
+    background:var(--wine);
+    color:#fff;
+    border:none;
+    border-radius:16px;
+    padding:22px 52px;
+    font-size:19px;
+    font-weight:700;
+    font-family:inherit;
+    cursor:pointer;
+  }
+  .start-btn:active{transform:scale(0.97);}
+  .anon-note{
+    margin-top:26px;
+    font-size:13px;
+    color:var(--muted);
+    letter-spacing:0.02em;
+  }
+  .thanks-icon{
+    width:72px;height:72px;
+    border-radius:50%;
+    background:var(--wine);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:24px;
+  }
+
+  /* ---------- admin ---------- */
+  .admin{
+    display:none;
+    height:100vh; height:100dvh;
+    overflow-y:auto;
+    background:var(--cream);
+    padding:32px 28px 60px 28px;
+    -webkit-user-select:text; user-select:text;
+  }
+  .admin.active{display:block;}
+  .admin h2{
+    font-family:'Cal Sans','Maven Pro',sans-serif;
+    color:var(--wine-dark);
+    font-size:26px;
+    margin:0 0 4px 0;
+  }
+  .admin .meta{color:var(--muted); font-size:14px; margin-bottom:24px;}
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:12px;
+    margin-bottom:28px;
+  }
+  .stat-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px 18px;
+  }
+  .stat-card .num{font-size:28px; font-weight:800; color:var(--wine);}
+  .stat-card .lbl{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-top:2px;}
+  .bar-block{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 20px;
+    margin-bottom:16px;
+  }
+  .bar-block h3{margin:0 0 14px 0; font-size:15px; color:var(--ink);}
+  .bar-row{margin-bottom:10px;}
+  .bar-row .bar-label{
+    display:flex; justify-content:space-between;
+    font-size:13.5px; color:var(--ink); margin-bottom:4px;
+  }
+  .bar-track{
+    height:8px; background:var(--line); border-radius:4px; overflow:hidden;
+  }
+  .bar-fill{height:100%; background:var(--wine); border-radius:4px;}
+  .free-list{
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    padding:6px 20px;
+  }
+  .free-item{
+    padding:14px 0; border-bottom:1px solid var(--line); font-size:14.5px;
+  }
+  .free-item:last-child{border-bottom:none;}
+  .free-item .fi-meta{color:var(--muted); font-size:11.5px; margin-top:4px;}
+  .admin-actions{display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap;}
+  .admin-actions button{
+    border:1px solid var(--line); background:#fff; color:var(--ink);
+    padding:10px 16px; border-radius:10px; font-size:13.5px; font-weight:600;
+    cursor:pointer; font-family:inherit;
+  }
+  .admin-actions button.danger{color:#a33; border-color:#e6c8c8;}
+  .back-link{
+    display:inline-block; margin-bottom:18px; color:var(--wine); font-size:14px;
+    font-weight:700; cursor:pointer;
+  }
+  .empty-state{
+    color:var(--muted); font-size:14px; padding:30px 0; text-align:center;
+  }
+</style>
+</head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<body>
+<div id="app">
+
+  <div class="topbar" id="topbar" style="display:none;">
+    <div class="brand">
+      <span class="logo-chip">
+        <svg viewBox="0 0 31.3 8.7" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#fff" d="M12.1,3.5s.2-.2.2-.3c.3-.8-.1-1.6-.9-1.7-.3,0-1.5,0-1.8,0-.2,0-.3.2-.4.4,0,1.1,0,2.3,0,3.3,0,.3.1.4.4.5.4,0,1.6,0,1.9,0,.7-.2,1-1,.8-1.6,0-.1-.2-.4-.2-.5ZM11.4,4.6s-.2.1-.2.1h-1.1v-.9h1.2s.1,0,.2.1c.2.2.2.6,0,.7ZM11.4,2.9s-.2.2-.2.2h-1.2v-.7s0,0,0,0h1.1s.2,0,.2.1c.2.1.2.3,0,.5Z"/>
+          <path fill="#fff" d="M7.1,3.6c0,.1,0,0,0,0,0-.6-.9-.9-1.3-1.1-1.3-.4-2.5,0-3.8-.3S0,1.2,0,0c.5.4.9.6,1.6.8,1.1.2,2.4,0,3.5,0s2.5,1.5,2,2.8Z"/>
+          <path fill="#fff" d="M7.9,5.9c-.1-.2-.3-.3-.5-.4-1.7-.9-5.3.4-6.4-1.5s-.2-.4,0-.4c.6,0,1.4,0,2,0,1.5,0,3.3-.3,4.4,1s.5.9.4,1.4Z"/>
+          <path fill="#fff" d="M4.4,7.5C2.3,7.3.8,5.4.3,3.5s-.1-.5,0-.7c0,0,.3.6.4.7.7,1.4,1.8,2.7,3.4,3.1s1.4.2,1.9-.1.4-.7,0-1.1c.5,0,1.8.1,1.9.8.2,1.1-1.3,1.5-2.1,1.5-.1,0-.2,0-.3,0-.2,0-.3,0-.6,0-.1,0-.2,0-.3,0Z"/>
+          <path fill="#fff" d="M30.5,3.6c-.3-1.2-2-1.6-2.8-.6-.9,1.1,0,2.5,1.3,2.5.2,0,.6,0,.7-.1,0,0,0,0,.2.1.2.1.5,0,.6-.3,0-.3,0-1.4,0-1.7ZM29.1,4.7c-1,.1-1.2-1.3-.2-1.5.9,0,1.1,1.3.2,1.5Z"/>
+          <path fill="#fff" d="M15.6,2.4c-2.3,0-2,3.6.3,3.1,1.8-.4,1.5-3.2-.3-3.1ZM16.3,4.3c-.3.8-1.6.4-1.4-.5.1-.5.8-.7,1.2-.3.2.2.3.5.2.8Z"/>
+          <path fill="#fff" d="M23.1,2.5c-1.9.3-1.7,3.3.4,3.2,2.1-.1,1.9-3.5-.4-3.2ZM22.9,4.6c-.5-.4-.3-1.3.4-1.3.3,0,.6.2.7.5.3.7-.5,1.3-1.1.9Z"/>
+          <path fill="#fff" d="M19,3.2c.7,0,.7.9,0,.9,0,.8.2,1.8-.6,2.3s-1,.1-.9-.4.7-.2.7-.5,0-1,0-1.4c-.7,0-.7-.9,0-.9,0-.6,0-1.3.6-1.6s1.1-.3,1,.4-.7.2-.7.5,0,.6,0,.8Z"/>
+          <path fill="#fff" d="M20.8,1.6c0,0,.1.3.1.4v2.6c.1.3.4.2.6.3.3.2.1.7-.2.7-.6,0-1.2-.4-1.2-.9,0-.9,0-1.9,0-2.9,0-.3.5-.4.7-.2Z"/>
+          <path fill="#fff" d="M25.7,2.9c.3-.3,1.2-.7,1.5-.3s.1.4,0,.6c-.3.2-.6,0-.9.4s0,1.2-.1,1.6-.8.4-.8,0,0-1.1,0-1.4.2-.7.4-1Z"/>
+          <path fill="#fff" d="M13.5,2.6c0,0,.1.2.1.3,0,.7,0,1.6,0,2.4,0,.5-.8.5-.9,0,0-.8,0-1.6,0-2.3s.4-.6.7-.3Z"/>
+          <path fill="#fff" d="M6.9,3.8c-.4-.2-.8-.3-1.2-.4,0-.2,0-.3,0-.5s-.2-.3-.2-.4c.6.1,1.8.5,1.5,1.3Z"/>
+          <path fill="#fff" d="M13.1,1.5c.7-.1.7,1,0,.8s-.5-.8,0-.8Z"/>
+          <text x="19.1" y="7.9" font-family="Helvetica, Arial" font-size="1.7" letter-spacing="0.3" fill="#fff">FARMÁCIA</text>
+        </svg>
+      </span>
+    </div>
+    <div class="progress-dots" id="dots"></div>
+  </div>
+
+  <!-- WELCOME -->
+  <div class="screen center-screen active" id="screen-welcome">
+    <div class="brand-logo-welcome">
+      <svg viewBox="0 0 31.3 8.7" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#fff" d="M12.1,3.5s.2-.2.2-.3c.3-.8-.1-1.6-.9-1.7-.3,0-1.5,0-1.8,0-.2,0-.3.2-.4.4,0,1.1,0,2.3,0,3.3,0,.3.1.4.4.5.4,0,1.6,0,1.9,0,.7-.2,1-1,.8-1.6,0-.1-.2-.4-.2-.5ZM11.4,4.6s-.2.1-.2.1h-1.1v-.9h1.2s.1,0,.2.1c.2.2.2.6,0,.7ZM11.4,2.9s-.2.2-.2.2h-1.2v-.7s0,0,0,0h1.1s.2,0,.2.1c.2.1.2.3,0,.5Z"/>
+        <path fill="#fff" d="M7.1,3.6c0,.1,0,0,0,0,0-.6-.9-.9-1.3-1.1-1.3-.4-2.5,0-3.8-.3S0,1.2,0,0c.5.4.9.6,1.6.8,1.1.2,2.4,0,3.5,0s2.5,1.5,2,2.8Z"/>
+        <path fill="#fff" d="M7.9,5.9c-.1-.2-.3-.3-.5-.4-1.7-.9-5.3.4-6.4-1.5s-.2-.4,0-.4c.6,0,1.4,0,2,0,1.5,0,3.3-.3,4.4,1s.5.9.4,1.4Z"/>
+        <path fill="#fff" d="M4.4,7.5C2.3,7.3.8,5.4.3,3.5s-.1-.5,0-.7c0,0,.3.6.4.7.7,1.4,1.8,2.7,3.4,3.1s1.4.2,1.9-.1.4-.7,0-1.1c.5,0,1.8.1,1.9.8.2,1.1-1.3,1.5-2.1,1.5-.1,0-.2,0-.3,0-.2,0-.3,0-.6,0-.1,0-.2,0-.3,0Z"/>
+        <path fill="#fff" d="M30.5,3.6c-.3-1.2-2-1.6-2.8-.6-.9,1.1,0,2.5,1.3,2.5.2,0,.6,0,.7-.1,0,0,0,0,.2.1.2.1.5,0,.6-.3,0-.3,0-1.4,0-1.7ZM29.1,4.7c-1,.1-1.2-1.3-.2-1.5.9,0,1.1,1.3.2,1.5Z"/>
+        <path fill="#fff" d="M15.6,2.4c-2.3,0-2,3.6.3,3.1,1.8-.4,1.5-3.2-.3-3.1ZM16.3,4.3c-.3.8-1.6.4-1.4-.5.1-.5.8-.7,1.2-.3.2.2.3.5.2.8Z"/>
+        <path fill="#fff" d="M23.1,2.5c-1.9.3-1.7,3.3.4,3.2,2.1-.1,1.9-3.5-.4-3.2ZM22.9,4.6c-.5-.4-.3-1.3.4-1.3.3,0,.6.2.7.5.3.7-.5,1.3-1.1.9Z"/>
+        <path fill="#fff" d="M19,3.2c.7,0,.7.9,0,.9,0,.8.2,1.8-.6,2.3s-1,.1-.9-.4.7-.2.7-.5,0-1,0-1.4c-.7,0-.7-.9,0-.9,0-.6,0-1.3.6-1.6s1.1-.3,1,.4-.7.2-.7.5,0,.6,0,.8Z"/>
+        <path fill="#fff" d="M20.8,1.6c0,0,.1.3.1.4v2.6c.1.3.4.2.6.3.3.2.1.7-.2.7-.6,0-1.2-.4-1.2-.9,0-.9,0-1.9,0-2.9,0-.3.5-.4.7-.2Z"/>
+        <path fill="#fff" d="M25.7,2.9c.3-.3,1.2-.7,1.5-.3s.1.4,0,.6c-.3.2-.6,0-.9.4s0,1.2-.1,1.6-.8.4-.8,0,0-1.1,0-1.4.2-.7.4-1Z"/>
+        <path fill="#fff" d="M13.5,2.6c0,0,.1.2.1.3,0,.7,0,1.6,0,2.4,0,.5-.8.5-.9,0,0-.8,0-1.6,0-2.3s.4-.6.7-.3Z"/>
+        <path fill="#fff" d="M6.9,3.8c-.4-.2-.8-.3-1.2-.4,0-.2,0-.3,0-.5s-.2-.3-.2-.4c.6.1,1.8.5,1.5,1.3Z"/>
+        <path fill="#fff" d="M13.1,1.5c.7-.1.7,1,0,.8s-.5-.8,0-.8Z"/>
+        <text x="19.1" y="7.9" font-family="Helvetica, Arial" font-size="1.7" letter-spacing="0.3" fill="#fff">FARMÁCIA</text>
+      </svg>
+    </div>
+    <div class="welcome-title">Enquanto seu orçamento é preparado...</div>
+    <div class="welcome-sub">4 perguntas rápidas, leva menos de 1 minuto. Nos ajuda a te atender cada vez melhor.</div>
+    <button class="start-btn" onclick="goTo('q1')">Responder agora</button>
+    <div class="anon-note">Sem identificação. Suas respostas são anônimas.</div>
+  </div>
+
+  <!-- Q1 -->
+  <div class="screen" id="screen-q1">
+    <div class="eyebrow">Pergunta 1 de 4</div>
+    <h1>Essa é sua primeira vez na Bioflora, ou você já é cliente?</h1>
+    <div class="options" id="q1-options">
+      <button class="opt" data-v="Primeira vez">
+        <span class="opt-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Primeira vez aqui
+      </button>
+      <button class="opt" data-v="Já sou cliente">
+        <span class="opt-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Já sou cliente
+      </button>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="screen" id="screen-q2">
+    <div class="eyebrow">Pergunta 2 de 4</div>
+    <h1>O que mais pesou na hora de escolher a Bioflora?</h1>
+    <div class="sub">Escolha a opção que mais combina.</div>
+    <div class="options" id="q2-options">
+      <button class="opt" data-v="Indicação médica">
+        <span class="opt-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Indicação do médico
+      </button>
+      <button class="opt" data-v="Já confiava na Bioflora">
+        <span class="opt-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Eu já confiava na Bioflora
+      </button>
+      <button class="opt" data-v="Preço ou condição">
+        <span class="opt-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Preço ou condição
+      </button>
+      <button class="opt" data-v="Indicação de amigo ou familiar">
+        <span class="opt-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Indicação de amigo ou familiar
+      </button>
+      <button class="opt" data-v="Foi por acaso">
+        <span class="opt-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Foi por acaso
+      </button>
+      <button class="opt" data-v="Outro">
+        <span class="opt-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Outro motivo
+      </button>
+    </div>
+    <div class="other-input" id="q2-other-wrap">
+      <input type="text" id="q2-other-text" placeholder="Qual foi o motivo?" maxlength="140">
+    </div>
+  </div>
+
+  <!-- Q3 (conditional) -->
+  <div class="screen" id="screen-q3">
+    <div class="eyebrow">Pergunta 3 de 4</div>
+    <h1>Sobre a indicação médica: o médico recomendou a Bioflora por conta própria, ou foi você quem perguntou por uma opção de manipulação?</h1>
+    <div class="options" id="q3-options">
+      <button class="opt" data-v="Médico recomendou por conta própria">
+        <span class="opt-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        O médico recomendou por conta própria
+      </button>
+      <button class="opt" data-v="Eu perguntei sobre manipulação">
+        <span class="opt-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Eu perguntei sobre manipulação
+      </button>
+      <button class="opt" data-v="Não sei dizer">
+        <span class="opt-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Não sei dizer
+      </button>
+    </div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="screen" id="screen-q4">
+    <div class="eyebrow">Pergunta 4 de 4 · opcional</div>
+    <h1>O que faria você voltar sempre aqui — ou parar de vir?</h1>
+    <div class="sub">Fique à vontade, é opcional.</div>
+    <textarea class="free" id="q4-text" placeholder="Escreva aqui, se quiser..." maxlength="400"></textarea>
+  </div>
+
+  <!-- THANKS -->
+  <div class="screen center-screen" id="screen-thanks">
+    <div class="thanks-icon">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="welcome-title">Obrigado!</div>
+    <div class="welcome-sub">Sua resposta foi salva. Já pode devolver o tablet.</div>
+  </div>
+
+  <!-- BOTTOM NAV (fixed) -->
+  <div class="bottombar" id="bottombar" style="display:none;">
+    <button class="btn btn-ghost" id="btn-back" onclick="goBack()">Voltar</button>
+    <button class="btn btn-skip" id="btn-skip" onclick="skipQ4()" style="display:none;">Pular</button>
+    <button class="btn btn-primary" id="btn-next" disabled onclick="goNext()">Continuar</button>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="admin" id="admin-panel">
+    <span class="back-link" onclick="closeAdmin()">‹ Voltar para a pesquisa</span>
+    <h2>Resultados da pesquisa</h2>
+    <div class="meta" id="admin-meta">carregando...</div>
+    <div class="admin-actions">
+      <button onclick="exportCSV()">Exportar CSV</button>
+      <button onclick="refreshAdmin()">Atualizar</button>
+      <button class="danger" onclick="confirmClear()">Limpar tudo</button>
+    </div>
+    <div class="stat-grid" id="admin-stats"></div>
+    <div class="bar-block">
+      <h3>O que mais pesou na escolha</h3>
+      <div id="chart-motivo"></div>
+    </div>
+    <div class="bar-block">
+      <h3>Primeira vez × já cliente</h3>
+      <div id="chart-trajetoria"></div>
+    </div>
+    <div class="bar-block" id="block-submotivo" style="display:none;">
+      <h3>Entre quem veio por indicação médica</h3>
+      <div id="chart-submotivo"></div>
+    </div>
+    <div class="bar-block">
+      <h3>Respostas livres (o que traria de volta / afastaria)</h3>
+      <div class="free-list" id="free-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const TABLE = 'pesquisa_bioflora';
+
+const flow = ['q1','q2','q3','q4','thanks'];
+let current = 'welcome';
+let answers = {};
+
+function resetAnswers(){
+  answers = { trajetoria:null, motivo:null, motivoOutro:null, submotivo:null, livre:null };
+}
+resetAnswers();
+
+function updateDots(){
+  const dotsEl = document.getElementById('dots');
+  const topbar = document.getElementById('topbar');
+  const bottombar = document.getElementById('bottombar');
+  if(current === 'welcome' || current === 'thanks'){
+    topbar.style.display = 'none';
+    bottombar.style.display = 'none';
+    return;
+  }
+  topbar.style.display = 'flex';
+  bottombar.style.display = 'flex';
+  const steps = ['q1','q2','q3','q4'];
+  dotsEl.innerHTML = '';
+  steps.forEach((s,i)=>{
+    const idx = steps.indexOf(current);
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < idx ? ' done' : i === idx ? ' active' : '');
+    dotsEl.appendChild(d);
+  });
+}
+
+function goTo(screen){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+screen).classList.add('active');
+  current = screen;
+  updateDots();
+  updateNextButton();
+  const back = document.getElementById('btn-back');
+  back.style.visibility = (screen === 'q1') ? 'hidden' : 'visible';
+  document.getElementById('btn-skip').style.display = (screen === 'q4') ? 'inline-block' : 'none';
+}
+
+function nextScreenAfter(screen){
+  if(screen === 'q2') return (answers.motivo === 'Indicação médica') ? 'q3' : 'q4';
+  if(screen === 'q1') return 'q2';
+  if(screen === 'q3') return 'q4';
+  if(screen === 'q4') return 'thanks';
+}
+function prevScreenBefore(screen){
+  if(screen === 'q2') return 'q1';
+  if(screen === 'q3') return 'q2';
+  if(screen === 'q4') return (answers.motivo === 'Indicação médica') ? 'q3' : 'q2';
+}
+
+function goNext(){
+  if(current === 'q4'){ finishSurvey(); return; }
+  const next = nextScreenAfter(current);
+  goTo(next);
+}
+function goBack(){
+  if(current === 'q1') return;
+  goTo(prevScreenBefore(current));
+}
+function skipQ4(){
+  answers.livre = null;
+  finishSurvey();
+}
+
+function selectOption(groupId, btn, key){
+  document.querySelectorAll('#'+groupId+' .opt').forEach(o=>o.classList.remove('selected'));
+  btn.classList.add('selected');
+  answers[key] = btn.dataset.v;
+  if(groupId === 'q2-options'){
+    const wrap = document.getElementById('q2-other-wrap');
+    if(btn.dataset.v === 'Outro'){
+      wrap.classList.add('show');
+      document.getElementById('q2-other-text').focus();
+    } else {
+      wrap.classList.remove('show');
+      answers.motivoOutro = null;
+      document.getElementById('q2-other-text').value = '';
+    }
+  }
+  updateNextButton();
+}
+
+document.getElementById('q1-options').addEventListener('click', e=>{
+  const btn = e.target.closest('.opt'); if(!btn) return;
+  selectOption('q1-options', btn, 'trajetoria');
+});
+document.getElementById('q2-options').addEventListener('click', e=>{
+  const btn = e.target.closest('.opt'); if(!btn) return;
+  selectOption('q2-options', btn, 'motivo');
+});
+document.getElementById('q3-options').addEventListener('click', e=>{
+  const btn = e.target.closest('.opt'); if(!btn) return;
+  selectOption('q3-options', btn, 'submotivo');
+});
+document.getElementById('q2-other-text').addEventListener('input', e=>{
+  answers.motivoOutro = e.target.value.trim();
+  updateNextButton();
+});
+document.getElementById('q4-text').addEventListener('input', e=>{
+  answers.livre = e.target.value.trim();
+});
+
+function updateNextButton(){
+  const nextBtn = document.getElementById('btn-next');
+  if(current === 'q1'){ nextBtn.disabled = !answers.trajetoria; nextBtn.textContent='Continuar'; }
+  else if(current === 'q2'){
+    let ok = !!answers.motivo;
+    if(answers.motivo === 'Outro') ok = ok && !!(answers.motivoOutro && answers.motivoOutro.length>0);
+    nextBtn.disabled = !ok;
+    nextBtn.textContent='Continuar';
+  }
+  else if(current === 'q3'){ nextBtn.disabled = !answers.submotivo; nextBtn.textContent='Continuar'; }
+  else if(current === 'q4'){ nextBtn.disabled = false; nextBtn.textContent='Finalizar'; }
+}
+
+async function finishSurvey(){
+  const nextBtn = document.getElementById('btn-next');
+  nextBtn.disabled = true;
+  nextBtn.textContent = 'Salvando...';
+  const record = {
+    trajetoria: answers.trajetoria,
+    motivo: answers.motivo === 'Outro' ? ('Outro: ' + answers.motivoOutro) : answers.motivo,
+    motivo_categoria: answers.motivo,
+    submotivo: answers.submotivo || null,
+    livre: (answers.livre && answers.livre.length>0) ? answers.livre : null,
+    ts: new Date().toISOString()
+  };
+  try{
+    const { error } = await sb.from(TABLE).insert([{
+      trajetoria: record.trajetoria,
+      motivo_categoria: record.motivo_categoria,
+      motivo: record.motivo,
+      submotivo: record.submotivo,
+      livre: record.livre
+    }]);
+    if(error) console.error('Falha ao salvar', error);
+  } catch(err){
+    console.error('Falha ao salvar', err);
+  }
+  goTo('thanks');
+  setTimeout(()=>{
+    resetAnswers();
+    document.querySelectorAll('.opt').forEach(o=>o.classList.remove('selected'));
+    document.getElementById('q2-other-wrap').classList.remove('show');
+    document.getElementById('q2-other-text').value='';
+    document.getElementById('q4-text').value='';
+    goTo('welcome');
+  }, 3200);
+}
+
+/* ---------- secret admin entry: tap brand text 5x ---------- */
+let tapCount = 0, tapTimer = null;
+document.addEventListener('click', (e)=>{
+  const brandEl = e.target.closest('.brand');
+  if(!brandEl) return;
+  tapCount++;
+  clearTimeout(tapTimer);
+  tapTimer = setTimeout(()=>{ tapCount = 0; }, 1500);
+  if(tapCount >= 5){ tapCount = 0; openAdmin(); }
+});
+// also allow opening admin via ?admin=1 in URL, and 5 taps on welcome mark
+document.querySelector('.brand-logo-welcome')?.addEventListener('click', ()=>{
+  tapCount++;
+  clearTimeout(tapTimer);
+  tapTimer = setTimeout(()=>{ tapCount = 0; }, 1500);
+  if(tapCount >= 5){ tapCount = 0; openAdmin(); }
+});
+
+async function openAdmin(){
+  document.getElementById('admin-panel').classList.add('active');
+  await refreshAdmin();
+}
+function closeAdmin(){
+  document.getElementById('admin-panel').classList.remove('active');
+}
+
+async function fetchAllResponses(){
+  const { data, error } = await sb.from(TABLE).select('*').order('criado_em', { ascending:false });
+  if(error){ console.error('Erro ao buscar respostas', error); return []; }
+  return (data || []).map(d => ({ ...d, ts: d.criado_em }));
+}
+
+function bar(container, dataObj, total){
+  container.innerHTML = '';
+  const entries = Object.entries(dataObj).sort((a,b)=>b[1]-a[1]);
+  if(entries.length === 0){
+    container.innerHTML = '<div class="empty-state">Sem dados ainda</div>';
+    return;
+  }
+  entries.forEach(([label,count])=>{
+    const pct = total > 0 ? Math.round((count/total)*100) : 0;
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `<div class="bar-label"><span>${label}</span><span>${count} · ${pct}%</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>`;
+    container.appendChild(row);
+  });
+}
+
+async function refreshAdmin(){
+  document.getElementById('admin-meta').textContent = 'Carregando...';
+  const data = await fetchAllResponses();
+  const total = data.length;
+  document.getElementById('admin-meta').textContent = total + (total===1?' resposta salva':' respostas salvas');
+
+  const statsEl = document.getElementById('admin-stats');
+  const primeiraVez = data.filter(d=>d.trajetoria==='Primeira vez').length;
+  const jaCliente = data.filter(d=>d.trajetoria==='Já sou cliente').length;
+  const comLivre = data.filter(d=>d.livre).length;
+  statsEl.innerHTML = `
+    <div class="stat-card"><div class="num">${total}</div><div class="lbl">Total de respostas</div></div>
+    <div class="stat-card"><div class="num">${primeiraVez}</div><div class="lbl">Primeira vez</div></div>
+    <div class="stat-card"><div class="num">${jaCliente}</div><div class="lbl">Já cliente</div></div>
+    <div class="stat-card"><div class="num">${comLivre}</div><div class="lbl">Com comentário livre</div></div>
+  `;
+
+  const motivoCounts = {};
+  data.forEach(d=>{
+    const label = d.motivo_categoria === 'Outro' ? 'Outro' : d.motivo_categoria;
+    if(!label) return;
+    motivoCounts[label] = (motivoCounts[label]||0) + 1;
+  });
+  bar(document.getElementById('chart-motivo'), motivoCounts, total);
+
+  const trajCounts = {};
+  data.forEach(d=>{ if(d.trajetoria) trajCounts[d.trajetoria] = (trajCounts[d.trajetoria]||0)+1; });
+  bar(document.getElementById('chart-trajetoria'), trajCounts, total);
+
+  const comIndicacao = data.filter(d=>d.motivo_categoria === 'Indicação médica');
+  const submotivoBlock = document.getElementById('block-submotivo');
+  if(comIndicacao.length > 0){
+    submotivoBlock.style.display = 'block';
+    const subCounts = {};
+    comIndicacao.forEach(d=>{ if(d.submotivo) subCounts[d.submotivo] = (subCounts[d.submotivo]||0)+1; });
+    bar(document.getElementById('chart-submotivo'), subCounts, comIndicacao.length);
+  } else {
+    submotivoBlock.style.display = 'none';
+  }
+
+  const freeListEl = document.getElementById('free-list');
+  const withFree = data.filter(d=>d.livre);
+  if(withFree.length === 0){
+    freeListEl.innerHTML = '<div class="empty-state">Nenhum comentário ainda</div>';
+  } else {
+    freeListEl.innerHTML = withFree.map(d=>{
+      const date = new Date(d.ts);
+      const dateStr = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      return `<div class="free-item">"${escapeHtml(d.livre)}"<div class="fi-meta">${dateStr} · ${escapeHtml(d.motivo_categoria||'-')}</div></div>`;
+    }).join('');
+  }
+  window._lastData = data;
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function exportCSV(){
+  const data = window._lastData || [];
+  if(data.length === 0){ alert('Sem dados para exportar ainda.'); return; }
+  const headers = ['data_hora','trajetoria','motivo','submotivo','comentario_livre'];
+  const rows = data.map(d=>[
+    d.ts, d.trajetoria||'', (d.motivo||'').replace(/,/g,';'), d.submotivo||'', (d.livre||'').replace(/,/g,';').replace(/\n/g,' ')
+  ]);
+  const csv = [headers.join(','), ...rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','))].join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'pesquisa-bioflora-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function confirmClear(){
+  if(!confirm('Isso apaga todas as respostas salvas. Tem certeza?')) return;
+  const { error } = await sb.from(TABLE).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  if(error) console.error('Erro ao limpar', error);
+  await refreshAdmin();
+}
+
+updateDots();
+</script>
+</body>
+</html>
