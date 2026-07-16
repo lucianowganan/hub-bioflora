@@ -453,14 +453,14 @@
       </svg>
     </div>
     <div class="welcome-title">Enquanto seu orçamento é preparado...</div>
-    <div class="welcome-sub">8 perguntas rápidas, sem enrolação. Nos ajuda a te atender cada vez melhor.</div>
+    <div class="welcome-sub">7 perguntas rápidas, sem enrolação. Nos ajuda a te atender cada vez melhor.</div>
     <button class="start-btn" onclick="goTo('q1')">Responder agora</button>
     <div class="anon-note">Sem identificação. Suas respostas são anônimas.</div>
   </div>
 
   <!-- Q1 trajetoria -->
   <div class="screen" id="screen-q1">
-    <div class="eyebrow">1 de 8</div>
+    <div class="eyebrow">1 de 7</div>
     <h1>Essa é sua primeira vez na Bioflora, ou você já é cliente?</h1>
     <div class="options" id="q1-options">
       <button class="opt" data-v="Primeira vez">
@@ -476,7 +476,7 @@
 
   <!-- Q2 motivo (multi-select) -->
   <div class="screen" id="screen-q2">
-    <div class="eyebrow">2 de 8</div>
+    <div class="eyebrow">2 de 7</div>
     <h1>O que te faz — ou fez — escolher a Bioflora?</h1>
     <div class="multi-hint">Pode marcar mais de uma opção</div>
     <div class="options" id="q2-options">
@@ -512,7 +512,7 @@
 
   <!-- Q2b condicional -->
   <div class="screen" id="screen-q2b">
-    <div class="eyebrow">2 de 8 · sobre a indicação médica</div>
+    <div class="eyebrow">2 de 7 · sobre a indicação médica</div>
     <h1>Que legal! Agora me diz: você pediu pra ele alguma recomendação de farmácia, ou ele falou pra vir aqui manipular?</h1>
     <div class="options" id="q2b-options">
       <button class="opt" data-v="Eu pedi a recomendação">
@@ -532,7 +532,7 @@
 
   <!-- Q3 entrega gratis -->
   <div class="screen" id="screen-q3">
-    <div class="eyebrow">3 de 8</div>
+    <div class="eyebrow">3 de 7</div>
     <h1>A entrega grátis na zona urbana de Itajubá é relevante para você?</h1>
     <div class="pill-row" id="q3-options">
       <button class="pill" data-v="Sim">Sim</button>
@@ -543,7 +543,7 @@
 
   <!-- Q4 whatsapp scale -->
   <div class="screen" id="screen-q4">
-    <div class="eyebrow">4 de 8</div>
+    <div class="eyebrow">4 de 7</div>
     <h1>O quanto você avalia o tempo de resposta do nosso WhatsApp?</h1>
     <div class="scale-wrap" id="q4-scale">
       <div class="scale-row">
@@ -558,19 +558,9 @@
     </div>
   </div>
 
-  <!-- Q5 valor justo -->
-  <div class="screen" id="screen-q5">
-    <div class="eyebrow">5 de 8</div>
-    <h1>Você considera o valor da sua fórmula justo?</h1>
-    <div class="pill-row" id="q5-options">
-      <button class="pill" data-v="Sim">Sim</button>
-      <button class="pill" data-v="Não">Não</button>
-    </div>
-  </div>
-
   <!-- Q6 fidelidade -->
   <div class="screen" id="screen-q6">
-    <div class="eyebrow">6 de 8</div>
+    <div class="eyebrow">5 de 7</div>
     <h1>Você participa do programa de fidelidade da Bioflora?</h1>
     <div class="pill-row" id="q6-options">
       <button class="pill" data-v="Sim">Sim</button>
@@ -581,7 +571,7 @@
 
   <!-- Q6b condicional -->
   <div class="screen" id="screen-q6b">
-    <div class="eyebrow">6 de 8 · sobre o programa de fidelidade</div>
+    <div class="eyebrow">5 de 7 · sobre o programa de fidelidade</div>
     <h1>Como você avalia o programa de fidelidade?</h1>
     <div class="sub">Pensa em ruim, bom, brindes legais, o que fizer sentido pra você.</div>
     <div class="scale-wrap" id="q6b-scale">
@@ -599,7 +589,7 @@
 
   <!-- Q7 atendimento -->
   <div class="screen" id="screen-q7">
-    <div class="eyebrow">7 de 8</div>
+    <div class="eyebrow">6 de 7</div>
     <h1>Qual a sua nota para o atendimento de hoje?</h1>
     <div class="scale-wrap" id="q7-scale">
       <div class="scale-row">
@@ -616,7 +606,7 @@
 
   <!-- Q8 tempo manipulacao -->
   <div class="screen" id="screen-q8">
-    <div class="eyebrow">8 de 8</div>
+    <div class="eyebrow">7 de 7</div>
     <h1>O prazo pra ficar pronta a sua manipulação atendeu sua expectativa?</h1>
     <div class="scale-wrap" id="q8-scale">
       <div class="scale-row">
@@ -661,7 +651,6 @@
     <div class="bar-block" id="block-submotivo" style="display:none;"><h3>Entre quem veio por indicação médica</h3><div id="chart-submotivo"></div></div>
     <div class="bar-block"><h3>Entrega grátis é relevante?</h3><div id="chart-entrega"></div></div>
     <div class="bar-block"><h3>Avaliação do WhatsApp <span class="avg-chip" id="avg-whatsapp">-</span></h3><div id="chart-whatsapp"></div></div>
-    <div class="bar-block"><h3>Considera o valor da fórmula justo?</h3><div id="chart-valor"></div></div>
     <div class="bar-block"><h3>Participa da fidelidade?</h3><div id="chart-fidelidade"></div></div>
     <div class="bar-block" id="block-fidelidade-nota" style="display:none;"><h3>Nota do programa de fidelidade <span class="avg-chip" id="avg-fidelidade">-</span></h3><div id="chart-fidelidade-nota"></div></div>
     <div class="bar-block"><h3>Nota do atendimento <span class="avg-chip" id="avg-atendimento">-</span></h3><div id="chart-atendimento"></div></div>
@@ -676,7 +665,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const TABLE = 'pesquisa_bioflora';
 
-const stepOrder = ['q1','q2','q2b','q3','q4','q5','q6','q6b','q7','q8'];
+const stepOrder = ['q1','q2','q2b','q3','q4','q6','q6b','q7','q8'];
 let current = 'welcome';
 let answers = {};
 
@@ -687,7 +676,6 @@ function resetAnswers(){
     submotivo:null,
     entrega:null,
     whatsapp:null,
-    valorJusto:null,
     fidelidade:null, fidelidadeNota:null,
     atendimento:null,
     manipulacao:null
@@ -798,10 +786,6 @@ document.getElementById('q4-scale').addEventListener('click', e=>{
   const btn = e.target.closest('.scale-btn'); if(!btn) return;
   selectSingle('q4-scale', btn, 'whatsapp', 'scale-btn');
 });
-document.getElementById('q5-options').addEventListener('click', e=>{
-  const btn = e.target.closest('.pill'); if(!btn) return;
-  selectSingle('q5-options', btn, 'valorJusto', 'pill');
-});
 document.getElementById('q6-options').addEventListener('click', e=>{
   const btn = e.target.closest('.pill'); if(!btn) return;
   selectSingle('q6-options', btn, 'fidelidade', 'pill');
@@ -830,7 +814,6 @@ function updateNextButton(){
   else if(current === 'q2b') ok = !!answers.submotivo;
   else if(current === 'q3') ok = !!answers.entrega;
   else if(current === 'q4') ok = answers.whatsapp !== null;
-  else if(current === 'q5') ok = !!answers.valorJusto;
   else if(current === 'q6') ok = !!answers.fidelidade;
   else if(current === 'q6b') ok = answers.fidelidadeNota !== null;
   else if(current === 'q7') ok = answers.atendimento !== null;
@@ -852,7 +835,6 @@ async function finishSurvey(){
     submotivo: answers.submotivo,
     entrega: answers.entrega,
     whatsapp: answers.whatsapp !== null ? Number(answers.whatsapp) : null,
-    valor_justo: answers.valorJusto,
     fidelidade: answers.fidelidade,
     fidelidade_nota: answers.fidelidadeNota !== null ? Number(answers.fidelidadeNota) : null,
     atendimento: answers.atendimento !== null ? Number(answers.atendimento) : null,
@@ -973,10 +955,6 @@ async function refreshAdmin(){
   scaleBar(document.getElementById('chart-whatsapp'), whatsappVals);
   document.getElementById('avg-whatsapp').textContent = 'média ' + avg(whatsappVals);
 
-  const valorCounts = {};
-  data.forEach(d=>{ if(d.valor_justo) valorCounts[d.valor_justo] = (valorCounts[d.valor_justo]||0)+1; });
-  bar(document.getElementById('chart-valor'), valorCounts, total);
-
   const fidCounts = {};
   data.forEach(d=>{ if(d.fidelidade) fidCounts[d.fidelidade] = (fidCounts[d.fidelidade]||0)+1; });
   bar(document.getElementById('chart-fidelidade'), fidCounts, total);
@@ -1004,10 +982,10 @@ async function refreshAdmin(){
 function exportCSV(){
   const data = window._lastData || [];
   if(data.length === 0){ alert('Sem dados para exportar ainda.'); return; }
-  const headers = ['data_hora','trajetoria','motivos','submotivo','entrega_gratis','whatsapp','valor_justo','fidelidade','fidelidade_nota','atendimento','manipulacao'];
+  const headers = ['data_hora','trajetoria','motivos','submotivo','entrega_gratis','whatsapp','fidelidade','fidelidade_nota','atendimento','manipulacao'];
   const rows = data.map(d=>[
     d.criado_em, d.trajetoria||'', (d.motivos||[]).join(' | '), d.submotivo||'', d.entrega||'',
-    d.whatsapp ?? '', d.valor_justo||'', d.fidelidade||'', d.fidelidade_nota ?? '', d.atendimento ?? '', d.manipulacao ?? ''
+    d.whatsapp ?? '', d.fidelidade||'', d.fidelidade_nota ?? '', d.atendimento ?? '', d.manipulacao ?? ''
   ]);
   const csv = [headers.join(','), ...rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','))].join('\n');
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
