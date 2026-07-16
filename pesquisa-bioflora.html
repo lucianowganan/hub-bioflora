@@ -474,6 +474,16 @@
     </div>
   </div>
 
+  <!-- Q1b condicional: já cliente -->
+  <div class="screen" id="screen-q1b">
+    <div class="eyebrow">Sobre você já ser cliente</div>
+    <h1>Você já teve alguma experiência ruim com a Bioflora?</h1>
+    <div class="pill-row" id="q1b-options">
+      <button class="pill" data-v="Sim">Sim</button>
+      <button class="pill" data-v="Não">Não</button>
+    </div>
+  </div>
+
   <!-- Q2 motivo (multi-select) -->
   <div class="screen" id="screen-q2">
     <div class="eyebrow">2 de 7</div>
@@ -647,6 +657,7 @@
     </div>
     <div class="stat-grid" id="admin-stats"></div>
     <div class="bar-block"><h3>Trajetória</h3><div id="chart-trajetoria"></div></div>
+    <div class="bar-block" id="block-exp-ruim" style="display:none;"><h3>Entre clientes antigos: já teve experiência ruim?</h3><div id="chart-exp-ruim"></div></div>
     <div class="bar-block"><h3>Motivo de escolha (pode ter mais de um por resposta)</h3><div id="chart-motivo"></div></div>
     <div class="bar-block" id="block-submotivo" style="display:none;"><h3>Entre quem veio por indicação médica</h3><div id="chart-submotivo"></div></div>
     <div class="bar-block"><h3>Entrega grátis é relevante?</h3><div id="chart-entrega"></div></div>
@@ -665,13 +676,14 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const TABLE = 'pesquisa_bioflora';
 
-const stepOrder = ['q1','q2','q2b','q3','q4','q6','q6b','q7','q8'];
+const stepOrder = ['q1','q1b','q2','q2b','q3','q4','q6','q6b','q7','q8'];
 let current = 'welcome';
 let answers = {};
 
 function resetAnswers(){
   answers = {
     trajetoria:null,
+    experienciaRuim:null,
     motivos:[], motivoOutro:null,
     submotivo:null,
     entrega:null,
@@ -684,6 +696,7 @@ function resetAnswers(){
 resetAnswers();
 
 function includesSubstep(step){
+  if(step === 'q1b') return answers.trajetoria === 'Já sou cliente';
   if(step === 'q2b') return answers.motivos.includes('Indicação médica');
   if(step === 'q6b') return answers.fidelidade === 'Sim';
   return true;
@@ -766,6 +779,10 @@ document.getElementById('q1-options').addEventListener('click', e=>{
   const btn = e.target.closest('.opt'); if(!btn) return;
   selectSingle('q1-options', btn, 'trajetoria', 'opt');
 });
+document.getElementById('q1b-options').addEventListener('click', e=>{
+  const btn = e.target.closest('.pill'); if(!btn) return;
+  selectSingle('q1b-options', btn, 'experienciaRuim', 'pill');
+});
 document.getElementById('q2-options').addEventListener('click', e=>{
   const btn = e.target.closest('.opt'); if(!btn) return;
   toggleMulti(btn);
@@ -807,6 +824,7 @@ function updateNextButton(){
   const nextBtn = document.getElementById('btn-next');
   let ok = false;
   if(current === 'q1') ok = !!answers.trajetoria;
+  else if(current === 'q1b') ok = !!answers.experienciaRuim;
   else if(current === 'q2'){
     ok = answers.motivos.length > 0;
     if(answers.motivos.includes('Outro')) ok = ok && !!(answers.motivoOutro && answers.motivoOutro.length>0);
@@ -831,6 +849,7 @@ async function finishSurvey(){
     : answers.motivos;
   const record = {
     trajetoria: answers.trajetoria,
+    experiencia_ruim: answers.experienciaRuim,
     motivos: motivoFinal,
     submotivo: answers.submotivo,
     entrega: answers.entrega,
@@ -929,6 +948,15 @@ async function refreshAdmin(){
     'Primeira vez': primeiraVez, 'Já sou cliente': jaCliente
   }, total);
 
+  const jaClienteData = data.filter(d=>d.trajetoria === 'Já sou cliente');
+  const expBlock = document.getElementById('block-exp-ruim');
+  if(jaClienteData.length > 0){
+    expBlock.style.display = 'block';
+    const expCounts = {};
+    jaClienteData.forEach(d=>{ if(d.experiencia_ruim) expCounts[d.experiencia_ruim] = (expCounts[d.experiencia_ruim]||0)+1; });
+    bar(document.getElementById('chart-exp-ruim'), expCounts, jaClienteData.length);
+  } else { expBlock.style.display = 'none'; }
+
   const motivoCounts = {};
   data.forEach(d=>{
     (d.motivos || []).forEach(m=>{
@@ -982,9 +1010,9 @@ async function refreshAdmin(){
 function exportCSV(){
   const data = window._lastData || [];
   if(data.length === 0){ alert('Sem dados para exportar ainda.'); return; }
-  const headers = ['data_hora','trajetoria','motivos','submotivo','entrega_gratis','whatsapp','fidelidade','fidelidade_nota','atendimento','manipulacao'];
+  const headers = ['data_hora','trajetoria','experiencia_ruim','motivos','submotivo','entrega_gratis','whatsapp','fidelidade','fidelidade_nota','atendimento','manipulacao'];
   const rows = data.map(d=>[
-    d.criado_em, d.trajetoria||'', (d.motivos||[]).join(' | '), d.submotivo||'', d.entrega||'',
+    d.criado_em, d.trajetoria||'', d.experiencia_ruim||'', (d.motivos||[]).join(' | '), d.submotivo||'', d.entrega||'',
     d.whatsapp ?? '', d.fidelidade||'', d.fidelidade_nota ?? '', d.atendimento ?? '', d.manipulacao ?? ''
   ]);
   const csv = [headers.join(','), ...rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','))].join('\n');
