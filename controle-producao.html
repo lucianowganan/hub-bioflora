@@ -18,7 +18,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
-  .wrap{max-width:1180px;margin:0 auto;padding:36px 28px 80px;}
+  .wrap{max-width:1000px;margin:0 auto;padding:36px 28px 80px;}
   header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
   .brand{display:flex;align-items:center;gap:12px;}
   .brand-mark{height:34px;display:flex;align-items:center;}
@@ -42,11 +42,9 @@
   .quick-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px;padding-bottom:18px;border-bottom:1px dashed var(--line);}
   .quick-form .field{display:flex;flex-direction:column;gap:4px;}
   .quick-form label{font-size:11px;color:var(--gray);font-weight:600;}
-  .quick-form input, .quick-form select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:7px;}
-  .quick-form input.colaborador{width:160px;}
-  .quick-form input.requisicao{width:150px;}
-  .quick-form input.hora{width:110px;}
-  .quick-form select.tamanho{width:90px;}
+  .quick-form input{font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:7px;}
+  .quick-form input.colaborador{width:200px;}
+  .quick-form input.qtd{width:100px;}
 
   .filter-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
   .filter-row select, .filter-row input{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:7px;}
@@ -55,10 +53,7 @@
   thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:600;padding:0 10px 10px;border-bottom:1px solid var(--ink);}
   tbody td{padding:9px 10px;border-bottom:1px solid var(--line);}
   tbody tr:hover{background:var(--burgundy-tint);}
-  .tam-badge{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;}
-  .tam-P{background:var(--good-tint);color:var(--good);}
-  .tam-M{background:var(--warn-tint);color:#8A6512;}
-  .tam-G{background:var(--bad-tint) ;color:#B4472F;}
+  .qtd-badge{font-family:'Fraunces',serif;font-weight:600;font-size:15px;}
   .del-btn{font-family:'Maven Pro',sans-serif;font-size:10.5px;color:var(--gray);border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 9px;cursor:pointer;}
   .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
 
@@ -66,6 +61,8 @@
   .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
   .kpi .label{font-size:10.5px;text-transform:uppercase;color:var(--gray);font-weight:600;}
   .kpi .value{font-family:'Fraunces',serif;font-size:22px;margin-top:4px;font-weight:600;}
+
+  .hint{font-size:11.5px;color:var(--gray);margin-top:4px;}
 </style>
 </head>
 <body>
@@ -125,10 +122,13 @@
 </svg></div>
       <div class="brand-text">
         <h1>Controle de Produção</h1>
-        <p>Farmácia Bioflora — registro diário individual</p>
+        <p>Farmácia Bioflora — total diário por colaborador</p>
       </div>
     </div>
-    <a href="index.html" class="btn secondary">← Voltar ao Hub</a> <button onclick="logout()" class="btn secondary" style="margin-left:6px">Sair</button>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button onclick="logout()" class="btn secondary">Sair</button>
+    </div>
   </header>
 
   <div id="configBanner" class="config-banner">
@@ -143,15 +143,15 @@
   <!-- MANIPULAÇÃO -->
   <div id="viewManip">
     <div class="panel">
-      <h2>Registrar manipulação</h2>
-      <p class="desc">Cada colaborador registra sua própria requisição e horário</p>
+      <h2>Registrar total do dia — Manipulação</h2>
+      <p class="desc">No final do dia, cada colaborador informa quantas fórmulas manipulou ao todo</p>
       <div class="quick-form">
         <div class="field"><label>Colaborador</label><input class="colaborador" id="mColaborador" placeholder="Seu nome" /></div>
-        <div class="field"><label>Requisição</label><input class="requisicao" id="mRequisicao" placeholder="Nº requisição" /></div>
-        <div class="field"><label>Hora</label><input class="hora" id="mHora" type="time" /></div>
+        <div class="field"><label>Total de fórmulas</label><input class="qtd" id="mQtd" type="number" min="0" /></div>
         <div class="field"><label>Data</label><input id="mData" type="date" /></div>
-        <button class="btn" id="mSalvar">Adicionar</button>
+        <button class="btn" id="mSalvar">Salvar dia</button>
       </div>
+      <p class="hint">Se já existir um registro para esse colaborador nessa data, o valor é atualizado (não duplica).</p>
       <div class="kpi-row" id="mKpis"></div>
       <div class="filter-row">
         <select id="mFiltroColab"><option value="">Todos os colaboradores</option></select>
@@ -159,7 +159,7 @@
         <button class="btn secondary" id="mLimparFiltro" style="padding:6px 14px;font-size:12px">Limpar filtro</button>
       </div>
       <table>
-        <thead><tr><th>Data</th><th>Hora</th><th>Colaborador</th><th>Requisição</th><th></th></tr></thead>
+        <thead><tr><th>Data</th><th>Colaborador</th><th>Total de fórmulas</th><th></th></tr></thead>
         <tbody id="mTbody"></tbody>
       </table>
     </div>
@@ -168,25 +168,23 @@
   <!-- PESAGEM -->
   <div id="viewPesagem" style="display:none">
     <div class="panel">
-      <h2>Registrar pesagem</h2>
-      <p class="desc">Cada colaborador registra sua própria requisição, horário e tamanho da fórmula</p>
+      <h2>Registrar total do dia — Pesagem</h2>
+      <p class="desc">No final do dia, cada colaborador informa quantas pesagens fez ao todo</p>
       <div class="quick-form">
         <div class="field"><label>Colaborador</label><input class="colaborador" id="pColaborador" placeholder="Seu nome" /></div>
-        <div class="field"><label>Requisição</label><input class="requisicao" id="pRequisicao" placeholder="Nº requisição" /></div>
-        <div class="field"><label>Hora</label><input class="hora" id="pHora" type="time" /></div>
-        <div class="field"><label>Tamanho</label><select class="tamanho" id="pTamanho"><option value="P">P</option><option value="M">M</option><option value="G">G</option></select></div>
+        <div class="field"><label>Total de pesagens</label><input class="qtd" id="pQtd" type="number" min="0" /></div>
         <div class="field"><label>Data</label><input id="pData" type="date" /></div>
-        <button class="btn" id="pSalvar">Adicionar</button>
+        <button class="btn" id="pSalvar">Salvar dia</button>
       </div>
+      <p class="hint">Se já existir um registro para esse colaborador nessa data, o valor é atualizado (não duplica).</p>
       <div class="kpi-row" id="pKpis"></div>
       <div class="filter-row">
         <select id="pFiltroColab"><option value="">Todos os colaboradores</option></select>
-        <select id="pFiltroTamanho"><option value="">Todos os tamanhos</option><option value="P">P</option><option value="M">M</option><option value="G">G</option></select>
         <input id="pFiltroData" type="date" />
         <button class="btn secondary" id="pLimparFiltro" style="padding:6px 14px;font-size:12px">Limpar filtro</button>
       </div>
       <table>
-        <thead><tr><th>Data</th><th>Hora</th><th>Colaborador</th><th>Requisição</th><th>Tamanho</th><th></th></tr></thead>
+        <thead><tr><th>Data</th><th>Colaborador</th><th>Total de pesagens</th><th></th></tr></thead>
         <tbody id="pTbody"></tbody>
       </table>
     </div>
@@ -206,7 +204,6 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY) {
 }
 requireRole(['chefia','laboratorio']).catch(()=>{});
 
-
 const todayStr = new Date().toISOString().slice(0,10);
 document.getElementById('mData').value = todayStr;
 document.getElementById('pData').value = todayStr;
@@ -219,27 +216,25 @@ function switchTab(tab){
 }
 window.switchTab = switchTab;
 
-function fmtHora(h){ return h ? h.slice(0,5) : '—'; }
 function fmtData(d){ return d ? new Date(d+'T00:00:00').toLocaleDateString('pt-BR') : '—'; }
 
 // ---------- MANIPULAÇÃO ----------
 document.getElementById('mSalvar').addEventListener('click', async ()=>{
   const colaborador = document.getElementById('mColaborador').value.trim();
-  const requisicao = document.getElementById('mRequisicao').value.trim();
-  const hora = document.getElementById('mHora').value;
+  const quantidade = document.getElementById('mQtd').value;
   const data = document.getElementById('mData').value;
-  if(!colaborador || !requisicao || !hora){ alert('Preencha colaborador, requisição e hora.'); return; }
+  if(!colaborador || quantidade === ''){ alert('Preencha colaborador e total de fórmulas.'); return; }
   if(!supa){ alert('Supabase não configurado.'); return; }
-  const { error } = await supa.from('registro_manipulacao').insert({colaborador, requisicao, hora, data});
+  const { error } = await supa.from('registro_manipulacao_diario')
+    .upsert({colaborador, data, quantidade, atualizado_em: new Date().toISOString()}, {onConflict:'colaborador,data'});
   if(error){ alert('Erro: '+error.message); return; }
-  document.getElementById('mRequisicao').value='';
-  document.getElementById('mHora').value='';
+  document.getElementById('mQtd').value='';
   loadManip();
 });
 
 async function deleteManip(id){
   if(!confirm('Remover este registro?')) return;
-  await supa.from('registro_manipulacao').delete().eq('id', id);
+  await supa.from('registro_manipulacao_diario').delete().eq('id', id);
   loadManip();
 }
 window.deleteManip = deleteManip;
@@ -247,7 +242,7 @@ window.deleteManip = deleteManip;
 let allManip = [];
 async function loadManip(){
   if(!supa) return;
-  const { data, error } = await supa.from('registro_manipulacao').select('*').order('data',{ascending:false}).order('hora',{ascending:false});
+  const { data, error } = await supa.from('registro_manipulacao_diario').select('*').order('data',{ascending:false}).order('colaborador',{ascending:true});
   if(error){ console.error(error); return; }
   allManip = data;
   const colabs = [...new Set(data.map(d=>d.colaborador))].sort();
@@ -262,15 +257,16 @@ function renderManip(){
   if(filtroColab) rows = rows.filter(r=>r.colaborador===filtroColab);
   if(filtroData) rows = rows.filter(r=>r.data===filtroData);
 
+  const totalFiltro = rows.reduce((a,r)=>a+r.quantidade,0);
   document.getElementById('mKpis').innerHTML = `
-    <div class="kpi"><div class="label">Registros (filtro atual)</div><div class="value">${rows.length}</div></div>
+    <div class="kpi"><div class="label">Total de fórmulas (filtro atual)</div><div class="value">${totalFiltro}</div></div>
     <div class="kpi"><div class="label">Colaboradores ativos</div><div class="value">${new Set(allManip.map(r=>r.colaborador)).size}</div></div>
-    <div class="kpi"><div class="label">Hoje</div><div class="value">${allManip.filter(r=>r.data===todayStr).length}</div></div>
+    <div class="kpi"><div class="label">Hoje (todos)</div><div class="value">${allManip.filter(r=>r.data===todayStr).reduce((a,r)=>a+r.quantidade,0)}</div></div>
   `;
   document.getElementById('mTbody').innerHTML = rows.length ? rows.map(r=>`
-    <tr><td>${fmtData(r.data)}</td><td>${fmtHora(r.hora)}</td><td>${r.colaborador}</td><td>${r.requisicao}</td>
+    <tr><td>${fmtData(r.data)}</td><td>${r.colaborador}</td><td class="qtd-badge">${r.quantidade}</td>
     <td><button class="del-btn" onclick="deleteManip('${r.id}')">Remover</button></td></tr>
-  `).join('') : `<tr><td colspan="5" class="empty-state">Nenhum registro encontrado.</td></tr>`;
+  `).join('') : `<tr><td colspan="4" class="empty-state">Nenhum registro encontrado.</td></tr>`;
 }
 document.getElementById('mFiltroColab').addEventListener('change', renderManip);
 document.getElementById('mFiltroData').addEventListener('change', renderManip);
@@ -283,22 +279,20 @@ document.getElementById('mLimparFiltro').addEventListener('click', ()=>{
 // ---------- PESAGEM ----------
 document.getElementById('pSalvar').addEventListener('click', async ()=>{
   const colaborador = document.getElementById('pColaborador').value.trim();
-  const requisicao = document.getElementById('pRequisicao').value.trim();
-  const hora = document.getElementById('pHora').value;
-  const tamanho = document.getElementById('pTamanho').value;
+  const quantidade = document.getElementById('pQtd').value;
   const data = document.getElementById('pData').value;
-  if(!colaborador || !requisicao || !hora){ alert('Preencha colaborador, requisição e hora.'); return; }
+  if(!colaborador || quantidade === ''){ alert('Preencha colaborador e total de pesagens.'); return; }
   if(!supa){ alert('Supabase não configurado.'); return; }
-  const { error } = await supa.from('registro_pesagem').insert({colaborador, requisicao, hora, tamanho, data});
+  const { error } = await supa.from('registro_pesagem_diario')
+    .upsert({colaborador, data, quantidade, atualizado_em: new Date().toISOString()}, {onConflict:'colaborador,data'});
   if(error){ alert('Erro: '+error.message); return; }
-  document.getElementById('pRequisicao').value='';
-  document.getElementById('pHora').value='';
+  document.getElementById('pQtd').value='';
   loadPesagem();
 });
 
 async function deletePesagem(id){
   if(!confirm('Remover este registro?')) return;
-  await supa.from('registro_pesagem').delete().eq('id', id);
+  await supa.from('registro_pesagem_diario').delete().eq('id', id);
   loadPesagem();
 }
 window.deletePesagem = deletePesagem;
@@ -306,7 +300,7 @@ window.deletePesagem = deletePesagem;
 let allPesagem = [];
 async function loadPesagem(){
   if(!supa) return;
-  const { data, error } = await supa.from('registro_pesagem').select('*').order('data',{ascending:false}).order('hora',{ascending:false});
+  const { data, error } = await supa.from('registro_pesagem_diario').select('*').order('data',{ascending:false}).order('colaborador',{ascending:true});
   if(error){ console.error(error); return; }
   allPesagem = data;
   const colabs = [...new Set(data.map(d=>d.colaborador))].sort();
@@ -316,30 +310,26 @@ async function loadPesagem(){
 }
 function renderPesagem(){
   const filtroColab = document.getElementById('pFiltroColab').value;
-  const filtroTamanho = document.getElementById('pFiltroTamanho').value;
   const filtroData = document.getElementById('pFiltroData').value;
   let rows = allPesagem;
   if(filtroColab) rows = rows.filter(r=>r.colaborador===filtroColab);
-  if(filtroTamanho) rows = rows.filter(r=>r.tamanho===filtroTamanho);
   if(filtroData) rows = rows.filter(r=>r.data===filtroData);
 
+  const totalFiltro = rows.reduce((a,r)=>a+r.quantidade,0);
   document.getElementById('pKpis').innerHTML = `
-    <div class="kpi"><div class="label">Registros (filtro atual)</div><div class="value">${rows.length}</div></div>
+    <div class="kpi"><div class="label">Total de pesagens (filtro atual)</div><div class="value">${totalFiltro}</div></div>
     <div class="kpi"><div class="label">Colaboradores ativos</div><div class="value">${new Set(allPesagem.map(r=>r.colaborador)).size}</div></div>
-    <div class="kpi"><div class="label">Hoje</div><div class="value">${allPesagem.filter(r=>r.data===todayStr).length}</div></div>
+    <div class="kpi"><div class="label">Hoje (todos)</div><div class="value">${allPesagem.filter(r=>r.data===todayStr).reduce((a,r)=>a+r.quantidade,0)}</div></div>
   `;
   document.getElementById('pTbody').innerHTML = rows.length ? rows.map(r=>`
-    <tr><td>${fmtData(r.data)}</td><td>${fmtHora(r.hora)}</td><td>${r.colaborador}</td><td>${r.requisicao}</td>
-    <td><span class="tam-badge tam-${r.tamanho}">${r.tamanho}</span></td>
+    <tr><td>${fmtData(r.data)}</td><td>${r.colaborador}</td><td class="qtd-badge">${r.quantidade}</td>
     <td><button class="del-btn" onclick="deletePesagem('${r.id}')">Remover</button></td></tr>
-  `).join('') : `<tr><td colspan="6" class="empty-state">Nenhum registro encontrado.</td></tr>`;
+  `).join('') : `<tr><td colspan="4" class="empty-state">Nenhum registro encontrado.</td></tr>`;
 }
 document.getElementById('pFiltroColab').addEventListener('change', renderPesagem);
-document.getElementById('pFiltroTamanho').addEventListener('change', renderPesagem);
 document.getElementById('pFiltroData').addEventListener('change', renderPesagem);
 document.getElementById('pLimparFiltro').addEventListener('click', ()=>{
   document.getElementById('pFiltroColab').value='';
-  document.getElementById('pFiltroTamanho').value='';
   document.getElementById('pFiltroData').value='';
   renderPesagem();
 });

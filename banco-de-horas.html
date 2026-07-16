@@ -31,6 +31,10 @@
   .config-banner.show{display:block;}
   .config-banner code{background:#fff;padding:1px 6px;border-radius:4px;font-size:12px;}
 
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn:disabled{background:#ccc;cursor:not-allowed;}
+
   .upload-panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:20px;}
   .upload-panel h2{font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 6px;}
   .upload-panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
@@ -43,9 +47,6 @@
   .period-row{display:flex;gap:12px;margin-top:16px;align-items:center;flex-wrap:wrap;}
   .period-row label{font-size:12.5px;color:var(--gray);}
   .period-row input[type=date]{font-family:'Maven Pro',sans-serif;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;}
-  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;}
-  .btn:disabled{background:#ccc;cursor:not-allowed;}
-  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
   .status-msg{font-size:13px;margin-top:12px;padding:10px 14px;border-radius:8px;display:none;}
   .status-msg.show{display:block;}
   .status-msg.ok{background:var(--good-tint);color:var(--good);}
@@ -90,7 +91,6 @@
 
   .empty-state{text-align:center;padding:50px 20px;color:var(--gray);}
   .empty-state .big{font-size:36px;margin-bottom:10px;}
-  .setor-input{font-family:'Maven Pro',sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;width:110px;}
 </style>
 </head>
 <body>
@@ -153,16 +153,18 @@
         <p>Farmácia Bioflora — Hub interno</p>
       </div>
     </div>
-    <a href="index.html" class="btn secondary" style="text-decoration:none">← Voltar ao Hub</a> <button onclick="logout()" class="btn secondary" style="margin-left:6px">Sair</button>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button onclick="logout()" class="btn secondary">Sair</button>
+    </div>
   </header>
 
   <div id="configBanner" class="config-banner">
     ⚠️ Ainda não conectado ao banco de dados. Preencha <code>SUPABASE_URL</code> e <code>SUPABASE_ANON_KEY</code>
-    no início do arquivo (você pega isso em Project Settings → API, depois de criar o projeto gratuito em supabase.com).
-    Sem isso, o upload processa mas não salva o histórico entre sessões.
+    no início do arquivo.
   </div>
 
-  <div class="upload-panel">
+  <div class="upload-panel" id="uploadPanel">
     <h2>Enviar folha de ponto do mês</h2>
     <p class="desc">Faça upload do xlsx exportado do aplicativo de ponto. O sistema calcula tudo automaticamente.</p>
     <div class="upload-zone" id="dropZone">
@@ -183,10 +185,6 @@
 </div>
 
 <script>
-// ============================================================
-// CONFIGURAÇÃO — preencher depois de criar o projeto no Supabase
-// (Project Settings → API → Project URL / anon public key)
-// ============================================================
 const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 
@@ -196,10 +194,16 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY) {
 } else {
   document.getElementById('configBanner').classList.add('show');
 }
-requireRole(['chefia','rh']).catch(()=>{});
 
+requireRole(['chefia','rh','gestao']).then(({papel})=>{
+  if(papel === 'rh'){
+    document.getElementById('dashboardArea').style.display = 'none';
+  }
+  if(papel === 'gestao'){
+    document.getElementById('uploadPanel').style.display = 'none';
+  }
+}).catch(()=>{});
 
-// ---------- Parsing do xlsx (mesma lógica validada no protótipo) ----------
 function toMin(t){
   if(!t || String(t).indexOf(':')===-1) return 0;
   const neg = String(t).startsWith('-');
@@ -238,7 +242,6 @@ function parseWorkbook(wb){
     const saldoIniMin = toMin(saldoInicial);
     const bhMin = toMin(bh);
 
-    // turno agendado por dia da semana (linhas 3-8, col D=dia, E=entrada1)
     const sched = {};
     for(let r=3;r<=8;r++){
       const wd = get('D'+r);
@@ -281,7 +284,6 @@ function parseWorkbook(wb){
   return results;
 }
 
-// ---------- Upload UI ----------
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const processBtn = document.getElementById('processBtn');
@@ -325,8 +327,7 @@ processBtn.addEventListener('click', async () => {
   const parsed = parseWorkbook(currentWorkbook).filter(d=>d.ativo);
 
   if(!supa){
-    showStatus(`Processado ${parsed.length} funcionários — mas o banco de dados ainda não está conectado (veja o aviso no topo). Exibindo apenas nesta sessão.`, 'err');
-    renderDashboard([{periodo_inicio:inicio, periodo_fim:fim, registros:parsed}]);
+    showStatus(`Processado ${parsed.length} funcionários — mas o banco de dados ainda não está conectado.`, 'err');
     processBtn.disabled = false;
     return;
   }
@@ -341,7 +342,6 @@ processBtn.addEventListener('click', async () => {
         funcionarioId = inserted.id;
       } else {
         funcionarioId = existing.id;
-        // se veio setor novo do xlsx e o cadastro não tinha, atualiza
         if(!existing.setor && d.setor){
           await supa.from('funcionarios').update({setor:d.setor}).eq('id', funcionarioId);
         }
@@ -370,7 +370,6 @@ processBtn.addEventListener('click', async () => {
   processBtn.disabled = false;
 });
 
-// ---------- Dashboard (lê do Supabase; se não conectado, usa o que foi processado na sessão) ----------
 async function loadDashboard(){
   if(!supa) return;
   const { data: folhas, error } = await supa
@@ -379,7 +378,7 @@ async function loadDashboard(){
     .order('periodo_inicio', {ascending:true});
   if(error){ console.error(error); return; }
   if(!folhas || !folhas.length){
-    document.getElementById('dashboardArea').innerHTML = `<div class="panel empty-state"><div class="big">📊</div>Nenhum período enviado ainda. Envie o primeiro xlsx acima.</div>`;
+    document.getElementById('dashboardArea').innerHTML = `<div class="panel empty-state"><div class="big">📊</div>Nenhum período enviado ainda.</div>`;
     return;
   }
   const periodos = [...new Set(folhas.map(f=>f.periodo_inicio))].sort();
@@ -478,11 +477,7 @@ function renderPeriodContent(active){
   }).join('');
 }
 
-// Ao carregar a página, tenta puxar o histórico já salvo
 loadDashboard();
-if(!supa){
-  document.getElementById('dashboardArea').innerHTML = `<div class="panel empty-state"><div class="big">🔌</div>Conecte o Supabase (veja o aviso no topo) para ver o histórico salvo.<br>Você ainda pode processar um arquivo acima para testar o cálculo nesta sessão.</div>`;
-}
 </script>
 </body>
 </html>

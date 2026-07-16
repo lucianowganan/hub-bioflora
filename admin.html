@@ -40,6 +40,7 @@
   .tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;text-transform:uppercase;}
   .tag.chefia{background:var(--burgundy-tint);color:var(--burgundy);}
   .tag.rh{background:var(--good-tint);color:var(--good);}
+  .tag.gestao{background:#EFE7F5;color:#6E4A8C;}
   .tag.laboratorio{background:var(--warn-tint);color:#8A6512;}
   .tag.recepcao{background:#E9F0F6;color:#3E6B93;}
   .tag.sem_papel{background:#F1ECEA;color:var(--gray);}
@@ -117,7 +118,7 @@ const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const ROLE_LABELS = {chefia:'Chefia', rh:'RH', laboratorio:'Laboratório', recepcao:'Recepção', sem_papel:'Sem papel'};
+const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', sem_papel:'Sem papel'};
 
 async function logout(){ await supa.auth.signOut(); window.location.href = 'login.html'; }
 
@@ -158,9 +159,12 @@ async function init(){
         </tbody>
       </table>
       <div class="roles-legend">
-        <strong>Chefia</strong>: acessa todos os módulos · <strong>RH</strong>: banco de horas ·
+        <strong>Chefia</strong>: acessa todos os módulos, inclusive administração ·
+        <strong>RH</strong>: só a área de envio de planilhas do banco de horas ·
+        <strong>Gestão</strong>: só os resultados do banco de horas (visualização) ·
         <strong>Laboratório</strong>: ordem de produção e controle de produção ·
-        <strong>Recepção</strong>: kanban de rótulos · <strong>Sem papel</strong>: nenhum módulo até ser definido
+        <strong>Recepção</strong>: kanban de rótulos ·
+        <strong>Sem papel</strong>: nenhum módulo até ser definido
       </div>
     </div>`;
 }
