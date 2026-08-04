@@ -572,8 +572,18 @@
   <!-- Q6 fidelidade comentada -->
   <div class="screen" id="screen-q6">
     <div class="eyebrow">6 de 7</div>
-    <h1>O atendente comentou com você sobre o programa Cliente Fiel hoje?</h1>
+    <h1>Você já participa do programa Cliente Fiel da Bioflora?</h1>
     <div class="pill-row" id="q6-options">
+      <button class="pill" data-v="Sim">Sim</button>
+      <button class="pill" data-v="Não">Não</button>
+    </div>
+  </div>
+
+  <!-- Q6b condicional -->
+  <div class="screen" id="screen-q6b">
+    <div class="eyebrow">6 de 7 · sobre o programa</div>
+    <h1>O atendente comentou com você sobre o programa Cliente Fiel hoje?</h1>
+    <div class="pill-row" id="q6b-options">
       <button class="pill" data-v="Sim">Sim</button>
       <button class="pill" data-v="Não">Não</button>
     </div>
@@ -618,7 +628,8 @@
     <div class="bar-block"><h3>Havia oferta/novidade em exposição?</h3><div id="chart-oferta"></div></div>
     <div class="bar-block" id="block-oferta-atencao" style="display:none;"><h3>Entre quem viu oferta: chamou atenção? <span class="avg-chip" id="avg-oferta-atencao">-</span></h3><div id="chart-oferta-atencao"></div></div>
     <div class="bar-block"><h3>Atendente sugeriu produto complementar?</h3><div id="chart-produto-complementar"></div></div>
-    <div class="bar-block"><h3>Atendente comentou sobre o Cliente Fiel?</h3><div id="chart-fidelidade-comentada"></div></div>
+    <div class="bar-block"><h3>Participa do Cliente Fiel?</h3><div id="chart-participa-fidelidade"></div></div>
+    <div class="bar-block" id="block-fidelidade-comentada"><h3>Entre quem não participa: atendente comentou sobre o Cliente Fiel?</h3><div id="chart-fidelidade-comentada"></div></div>
     <div class="bar-block"><h3>Comentários / desabafos</h3><div class="free-list" id="free-list-desabafo"></div></div>
   </div>
 
@@ -627,10 +638,19 @@
 <script>
 const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let sb = null;
+try{
+  if(window.supabase){
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } else {
+    console.error('Biblioteca do Supabase não carregou — respostas não serão salvas nesta sessão.');
+  }
+} catch(e){
+  console.error('Falha ao iniciar Supabase', e);
+}
 const TABLE = 'pesquisa_recepcao';
 
-const stepOrder = ['q1','q2','q3','q4','q4b','q5','q6','q7'];
+const stepOrder = ['q1','q2','q3','q4','q4b','q5','q6','q6b','q7'];
 let current = 'welcome';
 let answers = {};
 
@@ -641,6 +661,7 @@ function resetAnswers(){
     variedade:null,
     ofertaHoje:null, ofertaChamouAtencao:null,
     produtoComplementar:null,
+    participaFidelidade:null,
     fidelidadeComentada:null,
     desabafo:null
   };
@@ -649,6 +670,7 @@ resetAnswers();
 
 function includesSubstep(step){
   if(step === 'q4b') return answers.ofertaHoje === 'Sim';
+  if(step === 'q6b') return answers.participaFidelidade !== 'Sim';
   return true;
 }
 
@@ -760,7 +782,11 @@ document.getElementById('q5-options').addEventListener('click', e=>{
 });
 document.getElementById('q6-options').addEventListener('click', e=>{
   const btn = e.target.closest('.pill'); if(!btn) return;
-  selectSingle('q6-options', btn, 'fidelidadeComentada', 'pill');
+  selectSingle('q6-options', btn, 'participaFidelidade', 'pill');
+});
+document.getElementById('q6b-options').addEventListener('click', e=>{
+  const btn = e.target.closest('.pill'); if(!btn) return;
+  selectSingle('q6b-options', btn, 'fidelidadeComentada', 'pill');
 });
 document.getElementById('q7-text').addEventListener('input', e=>{
   answers.desabafo = e.target.value.trim();
@@ -775,7 +801,8 @@ function updateNextButton(){
   else if(current === 'q4') ok = !!answers.ofertaHoje;
   else if(current === 'q4b') ok = answers.ofertaChamouAtencao !== null;
   else if(current === 'q5') ok = !!answers.produtoComplementar;
-  else if(current === 'q6') ok = !!answers.fidelidadeComentada;
+  else if(current === 'q6') ok = !!answers.participaFidelidade;
+  else if(current === 'q6b') ok = !!answers.fidelidadeComentada;
   else if(current === 'q7') ok = true;
   nextBtn.disabled = !ok;
   nextBtn.textContent = (current === 'q7') ? 'Finalizar' : 'Continuar';
@@ -793,9 +820,11 @@ async function finishSurvey(){
     oferta_chamou_atencao: answers.ofertaChamouAtencao !== null ? Number(answers.ofertaChamouAtencao) : null,
     produto_complementar: answers.produtoComplementar,
     fidelidade_comentada: answers.fidelidadeComentada,
+    participa_fidelidade: answers.participaFidelidade,
     desabafo: (answers.desabafo && answers.desabafo.length > 0) ? answers.desabafo : null
   };
   try{
+    if(!sb) throw new Error('Supabase indisponível');
     const { error } = await sb.from(TABLE).insert([record]);
     if(error) console.error('Falha ao salvar', error);
   } catch(err){
@@ -831,6 +860,7 @@ function closeAdmin(){
 }
 
 async function fetchAllResponses(){
+  if(!sb) return [];
   const { data, error } = await sb.from(TABLE).select('*').order('criado_em', { ascending:false });
   if(error){ console.error('Erro ao buscar respostas', error); return []; }
   return data || [];
@@ -906,9 +936,14 @@ async function refreshAdmin(){
   data.forEach(d=>{ if(d.produto_complementar) prodCounts[d.produto_complementar] = (prodCounts[d.produto_complementar]||0)+1; });
   bar(document.getElementById('chart-produto-complementar'), prodCounts, total);
 
+  const partFidCounts = {};
+  data.forEach(d=>{ if(d.participa_fidelidade) partFidCounts[d.participa_fidelidade] = (partFidCounts[d.participa_fidelidade]||0)+1; });
+  bar(document.getElementById('chart-participa-fidelidade'), partFidCounts, total);
+
+  const naoParticipa = data.filter(d=>d.participa_fidelidade === 'Não');
   const fidComCounts = {};
-  data.forEach(d=>{ if(d.fidelidade_comentada) fidComCounts[d.fidelidade_comentada] = (fidComCounts[d.fidelidade_comentada]||0)+1; });
-  bar(document.getElementById('chart-fidelidade-comentada'), fidComCounts, total);
+  naoParticipa.forEach(d=>{ if(d.fidelidade_comentada) fidComCounts[d.fidelidade_comentada] = (fidComCounts[d.fidelidade_comentada]||0)+1; });
+  bar(document.getElementById('chart-fidelidade-comentada'), fidComCounts, naoParticipa.length);
 
   const comDesabafo = data.filter(d=>d.desabafo);
   const freeListEl = document.getElementById('free-list-desabafo');
@@ -929,9 +964,9 @@ async function refreshAdmin(){
 function exportCSV(){
   const data = window._lastData || [];
   if(data.length === 0){ alert('Sem dados para exportar ainda.'); return; }
-  const headers = ['data_hora','atendimento','ambiente','variedade','oferta_hoje','oferta_chamou_atencao','produto_complementar','fidelidade_comentada','desabafo'];
+  const headers = ['data_hora','atendimento','ambiente','variedade','oferta_hoje','oferta_chamou_atencao','produto_complementar','participa_fidelidade','fidelidade_comentada','desabafo'];
   const rows = data.map(d=>[
-    d.criado_em, d.atendimento ?? '', d.ambiente ?? '', d.variedade ?? '', d.oferta_hoje||'', d.oferta_chamou_atencao ?? '', d.produto_complementar||'', d.fidelidade_comentada||'', (d.desabafo||'').replace(/,/g,';').replace(/\n/g,' ')
+    d.criado_em, d.atendimento ?? '', d.ambiente ?? '', d.variedade ?? '', d.oferta_hoje||'', d.oferta_chamou_atencao ?? '', d.produto_complementar||'', d.participa_fidelidade||'', d.fidelidade_comentada||'', (d.desabafo||'').replace(/,/g,';').replace(/\n/g,' ')
   ]);
   const csv = [headers.join(','), ...rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','))].join('\n');
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
@@ -944,6 +979,7 @@ function exportCSV(){
 }
 
 async function confirmClear(){
+  if(!sb){ alert('Sem conexão com o banco agora.'); return; }
   if(!confirm('Isso apaga todas as respostas salvas. Tem certeza?')) return;
   const { error } = await sb.from(TABLE).delete().neq('id', '00000000-0000-0000-0000-000000000000');
   if(error) console.error('Erro ao limpar', error);
