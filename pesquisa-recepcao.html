@@ -63,6 +63,22 @@
     margin-bottom:22px;
   }
   .brand-logo-welcome svg{ height:24px; width:auto; }
+  .right-group{
+    display:flex;
+    align-items:center;
+    gap:16px;
+  }
+  .cancel-btn{
+    background:transparent;
+    border:none;
+    color:var(--muted);
+    font-size:13px;
+    font-weight:700;
+    font-family:inherit;
+    cursor:pointer;
+    text-decoration:underline;
+    padding:4px 0;
+  }
   .progress-dots{
     display:flex;
     gap:6px;
@@ -433,7 +449,10 @@
         </svg>
       </span>
     </div>
-    <div class="progress-dots" id="dots"></div>
+    <div class="right-group">
+      <div class="progress-dots" id="dots"></div>
+      <button class="cancel-btn" id="btn-cancel" onclick="cancelSurvey()">Desistir</button>
+    </div>
   </div>
 
   <!-- WELCOME -->
@@ -460,6 +479,8 @@
     <div class="welcome-sub">7 perguntas rápidas, sem enrolação. Nos ajuda a te atender cada vez melhor.</div>
     <button class="start-btn" onclick="goTo('q1')">Responder agora</button>
     <div class="anon-note">Sem identificação. Suas respostas são anônimas.</div>
+  </div>
+
   <!-- Q1 atendimento -->
   <div class="screen" id="screen-q1">
     <div class="eyebrow">1 de 7</div>
@@ -679,6 +700,15 @@ function goNext(){
 function goBack(){
   const p = prevStep(current);
   if(p) goTo(p);
+}
+
+function cancelSurvey(){
+  if(!confirm('Desistir da pesquisa? As respostas dessa rodada não serão salvas.')) return;
+  resetAnswers();
+  document.querySelectorAll('.opt, .pill, .scale-btn').forEach(o=>o.classList.remove('selected'));
+  const textArea = document.getElementById('q7-text');
+  if(textArea) textArea.value = '';
+  goTo('welcome');
 }
 
 function toggleMulti(btn){
