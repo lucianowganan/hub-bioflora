@@ -305,6 +305,10 @@
     line-height:1.55;
     margin:0 0 34px 0;
   }
+  .welcome-sub.error{
+    color:#a33;
+    font-weight:600;
+  }
   .start-btn{
     background:var(--wine);
     color:#fff;
@@ -424,7 +428,6 @@
   }
 </style>
 </head>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <body>
 <div id="app">
 
@@ -603,7 +606,7 @@
       <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
     <div class="welcome-title">Obrigado!</div>
-    <div class="welcome-sub">Sua resposta foi salva. Já pode devolver o tablet.</div>
+    <div class="welcome-sub" id="thanks-status">Sua resposta foi salva. Já pode devolver o tablet.</div>
   </div>
 
   <div class="bottombar" id="bottombar" style="display:none;">
@@ -638,17 +641,48 @@
 <script>
 const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
-let sb = null;
-try{
-  if(window.supabase){
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  } else {
-    console.error('Biblioteca do Supabase não carregou — respostas não serão salvas nesta sessão.');
-  }
-} catch(e){
-  console.error('Falha ao iniciar Supabase', e);
-}
 const TABLE = 'pesquisa_recepcao';
+
+async function supaInsert(table, record){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify([record])
+  });
+  if(!res.ok){
+    const text = await res.text().catch(()=> '');
+    throw new Error('Insert falhou: ' + res.status + ' ' + text);
+  }
+  return true;
+}
+
+async function supaSelect(table){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*&order=criado_em.desc`, {
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+    }
+  });
+  if(!res.ok) throw new Error('Select falhou: ' + res.status);
+  return await res.json();
+}
+
+async function supaDeleteAll(table){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=neq.00000000-0000-0000-0000-000000000000`, {
+    method: 'DELETE',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+    }
+  });
+  if(!res.ok) throw new Error('Delete falhou: ' + res.status);
+  return true;
+}
 
 const stepOrder = ['q1','q2','q3','q4','q4b','q5','q6','q6b','q7'];
 let current = 'welcome';
@@ -823,20 +857,35 @@ async function finishSurvey(){
     participa_fidelidade: answers.participaFidelidade,
     desabafo: (answers.desabafo && answers.desabafo.length > 0) ? answers.desabafo : null
   };
-  try{
-    if(!sb) throw new Error('Supabase indisponível');
-    const { error } = await sb.from(TABLE).insert([record]);
-    if(error) console.error('Falha ao salvar', error);
-  } catch(err){
-    console.error('Falha ao salvar', err);
+  let saved = false;
+  for(let attempt=0; attempt<2 && !saved; attempt++){
+    try{
+      await supaInsert(TABLE, record);
+      saved = true;
+    } catch(err){
+      console.error('Falha ao salvar (tentativa ' + (attempt+1) + ')', err);
+      if(attempt === 0) await new Promise(r=>setTimeout(r, 900));
+    }
   }
-  goTo('thanks');
+  showThanks(saved);
   setTimeout(()=>{
     resetAnswers();
     document.querySelectorAll('.opt, .pill, .scale-btn').forEach(o=>o.classList.remove('selected'));
     document.getElementById('q7-text').value='';
     goTo('welcome');
-  }, 3000);
+  }, saved ? 3000 : 6000);
+}
+
+function showThanks(saved){
+  const msgEl = document.getElementById('thanks-status');
+  if(saved){
+    msgEl.textContent = 'Sua resposta foi salva. Já pode devolver o tablet.';
+    msgEl.classList.remove('error');
+  } else {
+    msgEl.textContent = 'Não conseguimos salvar sua resposta agora (sem conexão). Chame o atendente, por favor.';
+    msgEl.classList.add('error');
+  }
+  goTo('thanks');
 }
 
 let tapCount = 0, tapTimer = null;
@@ -860,10 +909,12 @@ function closeAdmin(){
 }
 
 async function fetchAllResponses(){
-  if(!sb) return [];
-  const { data, error } = await sb.from(TABLE).select('*').order('criado_em', { ascending:false });
-  if(error){ console.error('Erro ao buscar respostas', error); return []; }
-  return data || [];
+  try{
+    return await supaSelect(TABLE);
+  } catch(err){
+    console.error('Erro ao buscar respostas', err);
+    return [];
+  }
 }
 
 function bar(container, dataObj, total){
@@ -979,10 +1030,13 @@ function exportCSV(){
 }
 
 async function confirmClear(){
-  if(!sb){ alert('Sem conexão com o banco agora.'); return; }
   if(!confirm('Isso apaga todas as respostas salvas. Tem certeza?')) return;
-  const { error } = await sb.from(TABLE).delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  if(error) console.error('Erro ao limpar', error);
+  try{
+    await supaDeleteAll(TABLE);
+  } catch(err){
+    console.error('Erro ao limpar', err);
+    alert('Não foi possível limpar agora.');
+  }
   await refreshAdmin();
 }
 
