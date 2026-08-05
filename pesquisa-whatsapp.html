@@ -857,17 +857,7 @@ function showThanks(saved){
   goTo('thanks');
 }
 
-let tapCount = 0, tapTimer = null;
-function handleSecretTap(){
-  tapCount++;
-  clearTimeout(tapTimer);
-  tapTimer = setTimeout(()=>{ tapCount = 0; }, 1500);
-  if(tapCount >= 5){ tapCount = 0; openAdmin(); }
-}
-document.addEventListener('click', (e)=>{
-  if(e.target.closest('.brand')) handleSecretTap();
-});
-document.querySelector('.brand-logo-welcome')?.addEventListener('click', handleSecretTap);
+const ADMIN_PASSCODE = 'bioflora2026';
 
 async function openAdmin(){
   document.getElementById('admin-panel').classList.add('active');
@@ -875,6 +865,12 @@ async function openAdmin(){
 }
 function closeAdmin(){
   document.getElementById('admin-panel').classList.remove('active');
+}
+function checkAdminAccess(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('admin') === ADMIN_PASSCODE){
+    openAdmin();
+  }
 }
 
 async function fetchAllResponses(){
@@ -991,6 +987,7 @@ async function confirmClear(){
 }
 
 updateDots();
+checkAdminAccess();
 </script>
 </body>
 </html>
