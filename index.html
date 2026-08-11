@@ -40,6 +40,8 @@
   .card-rotulos .stripe{background:var(--warn);}
   .card-producao .stripe{background:var(--info);}
   .card-controle .stripe{background:#6E4A8C;}
+  .card-erros .stripe{background:#B4472F;}
+  .card-meuserros .stripe{background:#3F7A57;}
 
   .status-banner{
     background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;
@@ -141,6 +143,22 @@
       <div class="icon">📋</div>
       <h2>Controle de Produção</h2>
       <p>Total diário por colaborador: fórmulas manipuladas e pesagens feitas.</p>
+      <div class="go">Abrir módulo →</div>
+    </a>
+
+    <a class="module-card card-erros" href="erros.html" data-roles="chefia,laboratorio">
+      <div class="stripe"></div>
+      <div class="icon">📝</div>
+      <h2>Registro de Erros</h2>
+      <p>Planilha de conferência: cada atendente numa linha, cada tipo de erro numa coluna — clique para lançar.</p>
+      <div class="go">Abrir módulo →</div>
+    </a>
+
+    <a class="module-card card-meuserros" href="meus-erros.html" data-roles="chefia,rh,gestao,laboratorio,recepcao">
+      <div class="stripe"></div>
+      <div class="icon">📈</div>
+      <h2>Meus Erros</h2>
+      <p>Acompanhamento individual — cada pessoa vê só o próprio desempenho de conferência.</p>
       <div class="go">Abrir módulo →</div>
     </a>
 
