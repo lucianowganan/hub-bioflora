@@ -11,12 +11,13 @@
     --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
     --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
     --good:#3F7A57; --good-tint:#E8F3EC;
+    --bad:#B4472F; --bad-tint:#FBEBE6;
     --info:#3E6B93; --info-tint:#E9F0F6;
     --warn:#C9922B; --warn-tint:#FBF1E0;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
-  .wrap{max-width:1000px;margin:0 auto;padding:60px 28px 80px;}
+  .wrap{max-width:1100px;margin:0 auto;padding:60px 28px 80px;}
 
   .brand{display:flex;align-items:center;gap:14px;margin-bottom:8px;}
   .brand-mark{height:42px;display:flex;align-items:center;flex-shrink:0;}
@@ -47,6 +48,21 @@
     background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;
     padding:12px 16px;font-size:12.5px;color:#7A5C15;margin-top:40px;
   }
+
+  /* ---- Resumo (só chefia) ---- */
+  .resumo{margin-top:52px;}
+  .resumo-title{font-family:'Fraunces',serif;font-size:19px;font-weight:600;margin:0 0 4px;}
+  .resumo-sub{font-size:12.5px;color:var(--gray);margin:0 0 18px;}
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
+  .kpi-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+  .kpi-card .label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:600;}
+  .kpi-card .value{font-family:'Fraunces',serif;font-size:28px;margin-top:6px;font-weight:600;}
+  .kpi-card .value.warn{color:var(--warn);}
+  .kpi-card .value.bad{color:var(--bad);}
+  .kpi-card .value.good{color:var(--good);}
+  .kpi-card .sub-list{font-size:11.5px;color:var(--gray);margin-top:8px;line-height:1.6;}
+  .kpi-card .sub-list strong{color:var(--ink);}
+  .kpi-loading{font-size:12px;color:var(--gray);}
 
   footer{margin-top:50px;text-align:center;font-size:11.5px;color:var(--gray);}
 </style>
@@ -122,7 +138,7 @@
       <div class="go">Abrir módulo →</div>
     </a>
 
-    <a class="module-card card-rotulos" href="rotulos.html" data-roles="chefia,recepcao">
+    <a class="module-card card-rotulos" href="rotulos.html" data-roles="chefia,recepcao,conferencia,atendente">
       <div class="stripe"></div>
       <div class="icon">🏷️</div>
       <h2>Controle de Rótulos</h2>
@@ -130,7 +146,7 @@
       <div class="go">Abrir módulo →</div>
     </a>
 
-    <a class="module-card card-producao" href="producao.html" data-roles="chefia,laboratorio">
+    <a class="module-card card-producao" href="producao.html" data-roles="chefia,laboratorio,conferencia,atendente">
       <div class="stripe"></div>
       <div class="icon">🧪</div>
       <h2>Ordem de Produção</h2>
@@ -146,7 +162,7 @@
       <div class="go">Abrir módulo →</div>
     </a>
 
-    <a class="module-card card-erros" href="erros.html" data-roles="chefia,laboratorio">
+    <a class="module-card card-erros" href="erros.html" data-roles="chefia,conferencia">
       <div class="stripe"></div>
       <div class="icon">📝</div>
       <h2>Registro de Erros</h2>
@@ -154,7 +170,7 @@
       <div class="go">Abrir módulo →</div>
     </a>
 
-    <a class="module-card card-meuserros" href="meus-erros.html" data-roles="chefia,rh,gestao,laboratorio,recepcao">
+    <a class="module-card card-meuserros" href="meus-erros.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
       <div class="stripe"></div>
       <div class="icon">📈</div>
       <h2>Meus Erros</h2>
@@ -172,6 +188,12 @@
   </div>
 
   <div class="status-banner" id="roleBanner" style="display:none"></div>
+
+  <div class="resumo" id="resumoArea" style="display:none">
+    <div class="resumo-title">Resumo geral</div>
+    <p class="resumo-sub">Visão rápida dos pontos de atenção em todos os módulos</p>
+    <div class="kpi-row" id="kpiRow"><div class="kpi-loading">Carregando resumo...</div></div>
+  </div>
 
   <footer>Hub interno Bioflora · construído sob medida</footer>
 </div>
@@ -207,7 +229,79 @@ async function init(){
     const roles = el.dataset.roles.split(',');
     el.style.display = roles.includes(papel) ? 'block' : 'none';
   });
+
+  if(papel === 'chefia'){
+    document.getElementById('resumoArea').style.display = 'block';
+    loadResumo();
+  }
 }
+
+async function loadResumo(){
+  const kpis = [];
+
+  // Rótulos parados há mais de 7 dias em "a_comprar"
+  try{
+    const seteDiasAtras = new Date(); seteDiasAtras.setDate(seteDiasAtras.getDate()-7);
+    const { data: rotulosParados } = await supa.from('rotulos_kanban')
+      .select('produto,criado_em').eq('status','a_comprar').lte('criado_em', seteDiasAtras.toISOString())
+      .order('criado_em', {ascending:true});
+    const lista = (rotulosParados||[]).slice(0,3).map(r=>r.produto).join(', ');
+    kpis.push({
+      label: 'Rótulos parados (+7 dias)', value: (rotulosParados||[]).length,
+      cls: (rotulosParados||[]).length>0 ? 'warn' : 'good',
+      sub: lista ? `Ex: ${lista}${(rotulosParados||[]).length>3?'...':''}` : 'Nada parado, ótimo sinal'
+    });
+  }catch(e){}
+
+  // Ordens de produção não liberadas
+  try{
+    const { data: ordensAbertas } = await supa.from('ordens_producao').select('produto,status').neq('status','liberado');
+    kpis.push({
+      label: 'Ordens em andamento', value: (ordensAbertas||[]).length,
+      cls: (ordensAbertas||[]).length>5 ? 'warn' : '',
+      sub: 'Ainda não liberadas pelo CQ'
+    });
+  }catch(e){}
+
+  // Erros nos últimos 7 dias — total e atendente com mais erros
+  try{
+    const seteDiasAtras = new Date(); seteDiasAtras.setDate(seteDiasAtras.getDate()-7);
+    const { data: errosRecentes } = await supa.from('erros_registrados')
+      .select('atendente').gte('registrado_em', seteDiasAtras.toISOString());
+    const porAtendente = {};
+    (errosRecentes||[]).forEach(e => { porAtendente[e.atendente] = (porAtendente[e.atendente]||0)+1; });
+    const ranking = Object.entries(porAtendente).sort((a,b)=>b[1]-a[1]);
+    kpis.push({
+      label: 'Erros na última semana', value: (errosRecentes||[]).length,
+      cls: (errosRecentes||[]).length>15 ? 'bad' : '',
+      sub: ranking.length ? `Mais erros: <strong>${ranking[0][0]}</strong> (${ranking[0][1]})` : 'Nenhum registrado'
+    });
+  }catch(e){}
+
+  // Banco de horas — saldo negativo no período mais recente
+  try{
+    const { data: ultimoPeriodo } = await supa.from('folhas_ponto').select('periodo_inicio').order('periodo_inicio',{ascending:false}).limit(1);
+    if(ultimoPeriodo && ultimoPeriodo.length){
+      const periodo = ultimoPeriodo[0].periodo_inicio;
+      const { data: folhas } = await supa.from('folhas_ponto').select('saldo_final_min, funcionarios(nome)').eq('periodo_inicio', periodo);
+      const negativos = (folhas||[]).filter(f=>f.saldo_final_min<0);
+      kpis.push({
+        label: 'Saldo negativo (banco de horas)', value: negativos.length,
+        cls: negativos.length>5 ? 'bad' : (negativos.length>0 ? 'warn' : 'good'),
+        sub: `Período ${periodo}`
+      });
+    }
+  }catch(e){}
+
+  document.getElementById('kpiRow').innerHTML = kpis.length ? kpis.map(k => `
+    <div class="kpi-card">
+      <div class="label">${k.label}</div>
+      <div class="value ${k.cls}">${k.value}</div>
+      <div class="sub-list">${k.sub}</div>
+    </div>
+  `).join('') : `<div class="kpi-loading">Ainda não há dados suficientes nos módulos para gerar o resumo.</div>`;
+}
+
 init();
 </script>
 </body>

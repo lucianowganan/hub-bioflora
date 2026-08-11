@@ -16,7 +16,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
-  .wrap{max-width:1000px;margin:0 auto;padding:36px 28px 80px;}
+  .wrap{max-width:1050px;margin:0 auto;padding:36px 28px 80px;}
   header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
   .brand{display:flex;align-items:center;gap:12px;}
   .brand-mark{height:34px;display:flex;align-items:center;}
@@ -37,12 +37,14 @@
   thead th{text-align:left;font-size:10.5px;text-transform:uppercase;color:var(--gray);font-weight:600;padding:0 10px 10px;border-bottom:1px solid var(--ink);}
   tbody td{padding:10px;border-bottom:1px solid var(--line);}
   select{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:7px;}
-  .tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;text-transform:uppercase;}
+  .tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;text-transform:uppercase;white-space:nowrap;}
   .tag.chefia{background:var(--burgundy-tint);color:var(--burgundy);}
   .tag.rh{background:var(--good-tint);color:var(--good);}
   .tag.gestao{background:#EFE7F5;color:#6E4A8C;}
   .tag.laboratorio{background:var(--warn-tint);color:#8A6512;}
   .tag.recepcao{background:#E9F0F6;color:#3E6B93;}
+  .tag.conferencia{background:var(--bad-tint);color:var(--bad);}
+  .tag.atendente{background:#E4F0EA;color:#2F5F42;}
   .tag.sem_papel{background:#F1ECEA;color:var(--gray);}
 
   .roles-legend{font-size:11.5px;color:var(--gray);margin-top:18px;line-height:1.7;}
@@ -118,7 +120,7 @@ const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', sem_papel:'Sem papel'};
+const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', conferencia:'Conferência', atendente:'Atendente', sem_papel:'Sem papel'};
 
 async function logout(){ await supa.auth.signOut(); window.location.href = 'login.html'; }
 
@@ -145,7 +147,7 @@ async function init(){
   document.getElementById('content').innerHTML = `
     <div class="panel">
       <h2>Usuários cadastrados</h2>
-      <p class="desc">Defina o papel de cada pessoa e, se ela participar do módulo de conferência, vincule ao nome dela na planilha de erros</p>
+      <p class="desc">Defina o papel de cada pessoa e, se ela participar da conferência, vincule ao nome dela na planilha de erros</p>
       <table>
         <thead><tr><th>Email</th><th>Papel atual</th><th>Alterar</th><th>Vincular a atendente (erros)</th></tr></thead>
         <tbody id="tbody">
@@ -168,13 +170,15 @@ async function init(){
         </tbody>
       </table>
       <div class="roles-legend">
-        <strong>Chefia</strong>: acessa todos os módulos, inclusive administração ·
-        <strong>RH</strong>: só a área de envio de planilhas do banco de horas ·
-        <strong>Gestão</strong>: só os resultados do banco de horas (visualização) ·
-        <strong>Laboratório</strong>: ordem de produção, controle de produção e registro de erros ·
+        <strong>Chefia</strong>: acessa tudo, inclusive administração ·
+        <strong>RH</strong>: só envio de planilhas do banco de horas ·
+        <strong>Gestão</strong>: só resultados do banco de horas ·
+        <strong>Laboratório</strong>: controle de produção (fórmulas/pesagens) ·
         <strong>Recepção</strong>: kanban de rótulos ·
+        <strong>Conferência</strong>: rótulos, ordens de produção e a grade completa de erros ·
+        <strong>Atendente</strong>: rótulos, ordens de produção e o próprio desempenho em "Meus erros" ·
         <strong>Sem papel</strong>: nenhum módulo até ser definido<br><br>
-        O vínculo com atendente é usado só na tela "Meus erros" — cada pessoa vinculada só vê o próprio desempenho lá.
+        O vínculo com atendente é usado na tela "Meus erros" — cada pessoa vinculada só vê o próprio desempenho lá.
       </div>
     </div>`;
 }
