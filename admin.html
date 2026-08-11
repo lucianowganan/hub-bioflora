@@ -16,7 +16,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
-  .wrap{max-width:900px;margin:0 auto;padding:36px 28px 80px;}
+  .wrap{max-width:1000px;margin:0 auto;padding:36px 28px 80px;}
   header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
   .brand{display:flex;align-items:center;gap:12px;}
   .brand-mark{height:34px;display:flex;align-items:center;}
@@ -139,12 +139,15 @@ async function init(){
   const { data: perfis, error } = await supa.from('perfis').select('*').order('criado_em', {ascending:true});
   if(error){ document.getElementById('content').innerHTML = `<div class="panel">Erro ao carregar: ${error.message}</div>`; return; }
 
+  const { data: atendentesList } = await supa.from('atendentes_erros').select('nome').order('nome');
+  const atendentes = (atendentesList||[]).map(a=>a.nome);
+
   document.getElementById('content').innerHTML = `
     <div class="panel">
       <h2>Usuários cadastrados</h2>
-      <p class="desc">Defina o papel de cada pessoa — isso controla quais módulos ela acessa</p>
+      <p class="desc">Defina o papel de cada pessoa e, se ela participar do módulo de conferência, vincule ao nome dela na planilha de erros</p>
       <table>
-        <thead><tr><th>Email</th><th>Papel atual</th><th>Alterar</th></tr></thead>
+        <thead><tr><th>Email</th><th>Papel atual</th><th>Alterar</th><th>Vincular a atendente (erros)</th></tr></thead>
         <tbody id="tbody">
           ${perfis.map(p => `
             <tr>
@@ -155,6 +158,12 @@ async function init(){
                   ${Object.entries(ROLE_LABELS).map(([k,l]) => `<option value="${k}" ${k===p.papel?'selected':''}>${l}</option>`).join('')}
                 </select>
               </td>
+              <td>
+                <select onchange="updateVinculo('${p.id}', this.value)">
+                  <option value="">— nenhum —</option>
+                  ${atendentes.map(a => `<option value="${a}" ${a===p.atendente_vinculado?'selected':''}>${a}</option>`).join('')}
+                </select>
+              </td>
             </tr>`).join('')}
         </tbody>
       </table>
@@ -162,9 +171,10 @@ async function init(){
         <strong>Chefia</strong>: acessa todos os módulos, inclusive administração ·
         <strong>RH</strong>: só a área de envio de planilhas do banco de horas ·
         <strong>Gestão</strong>: só os resultados do banco de horas (visualização) ·
-        <strong>Laboratório</strong>: ordem de produção e controle de produção ·
+        <strong>Laboratório</strong>: ordem de produção, controle de produção e registro de erros ·
         <strong>Recepção</strong>: kanban de rótulos ·
-        <strong>Sem papel</strong>: nenhum módulo até ser definido
+        <strong>Sem papel</strong>: nenhum módulo até ser definido<br><br>
+        O vínculo com atendente é usado só na tela "Meus erros" — cada pessoa vinculada só vê o próprio desempenho lá.
       </div>
     </div>`;
 }
@@ -175,6 +185,13 @@ async function updatePapel(id, papel){
   init();
 }
 window.updatePapel = updatePapel;
+
+async function updateVinculo(id, atendente_vinculado){
+  const { error } = await supa.from('perfis').update({atendente_vinculado: atendente_vinculado || null}).eq('id', id);
+  if(error){ alert('Erro ao vincular: ' + error.message); return; }
+  init();
+}
+window.updateVinculo = updateVinculo;
 
 init();
 </script>

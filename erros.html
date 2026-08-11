@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registro de Erros — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC;
+    --bad:#B4472F; --bad-tint:#FBEBE6;
+    --warn:#C9922B; --warn-tint:#FBF1E0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:100%;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{height:34px;display:flex;align-items:center;}
+  .brand-mark svg{height:100%;width:auto;display:block;}
+  .brand-text h1{font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+
+  .config-banner{background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;padding:14px 18px;font-size:13px;color:#7A5C15;margin-bottom:22px;display:none;}
+  .config-banner.show{display:block;}
+
+  .toolbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+  .toolbar label{font-size:12.5px;color:var(--gray);}
+  .toolbar input[type=date]{font-family:'Maven Pro',sans-serif;font-size:13px;padding:7px 11px;border:1px solid var(--line);border-radius:7px;}
+  .toolbar .today-btn{font-size:11.5px;padding:6px 12px;}
+  .hint{font-size:11.5px;color:var(--gray);}
+  kbd{background:#F1ECEA;border-radius:4px;padding:1px 6px;font-family:monospace;font-size:11px;}
+
+  .grid-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:auto;max-width:100%;}
+  table{border-collapse:collapse;font-size:12px;}
+  thead th{
+    position:sticky;top:0;background:#fff;z-index:2;padding:10px 6px;border-bottom:2px solid var(--ink);
+    font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--gray);font-weight:700;
+    writing-mode:vertical-rl;text-orientation:mixed;height:130px;white-space:nowrap;text-align:left;
+  }
+  thead th.corner{position:sticky;left:0;top:0;z-index:3;writing-mode:horizontal-tb;height:auto;background:#fff;min-width:110px;}
+  tbody td{border-bottom:1px solid var(--line);padding:0;text-align:center;}
+  tbody td.name-cell{
+    position:sticky;left:0;background:#fff;z-index:1;font-weight:600;text-align:left;padding:10px 12px;
+    border-right:2px solid var(--ink);white-space:nowrap;font-size:12.5px;
+  }
+  tbody tr:hover td.name-cell{background:var(--burgundy-tint);}
+  .cell-btn{
+    width:46px;height:44px;border:none;background:transparent;cursor:pointer;font-family:'Fraunces',serif;
+    font-weight:600;font-size:14px;color:var(--gray);position:relative;transition:.1s;
+  }
+  .cell-btn:hover{background:var(--burgundy-tint);}
+  .cell-btn.has-count{color:var(--burgundy);background:var(--good-tint);}
+  .cell-btn.has-count:hover{background:var(--bad-tint);color:var(--bad);}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:#fff;padding:12px 22px;border-radius:10px;font-size:13px;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);display:none;align-items:center;gap:12px;z-index:100;
+  }
+  .toast.show{display:flex;}
+  .toast button{background:none;border:none;color:#F7C6D4;font-weight:700;cursor:pointer;font-family:'Maven Pro',sans-serif;font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark"><svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 31.3 8.7">
+  <defs>
+    <style>
+      .st0 {
+        fill: none;
+        stroke: #8B1A3A;
+        stroke-miterlimit: 10;
+        stroke-width: 0px;
+      }
+
+      .st1 {
+        display: none;
+        opacity: .5;
+      }
+
+      .st2 {
+        font-family: Helvetica, Helvetica;
+        font-size: 1.7px;
+        letter-spacing: .3em;
+      }
+
+      .st2, .st3, .st4 {
+        fill: #8B1A3A;
+      }
+
+      .st4 {
+        font-family: ArialMT, Arial;
+        font-size: .5px;
+        letter-spacing: .3em;
+      }
+    </style>
+  </defs>
+  <image class="st1" width="1000" height="250" transform="translate(-1 -.4) scale(0)" xlink:href="Bioflora/logo-bioflora-vinho-e-cinza.png"/>
+  <path class="st3" d="M12.1,3.5s.2-.2.2-.3c.3-.8-.1-1.6-.9-1.7-.3,0-1.5,0-1.8,0-.2,0-.3.2-.4.4,0,1.1,0,2.3,0,3.3,0,.3.1.4.4.5.4,0,1.6,0,1.9,0,.7-.2,1-1,.8-1.6,0-.1-.2-.4-.2-.5ZM11.4,4.6s-.2.1-.2.1h-1.1v-.9h1.2s.1,0,.2.1c.2.2.2.6,0,.7ZM11.4,2.9s-.2.2-.2.2h-1.2v-.7s0,0,0,0h1.1s.2,0,.2.1c.2.1.2.3,0,.5Z"/>
+  <path class="st3" d="M7.1,3.6c0,.1,0,0,0,0,0-.6-.9-.9-1.3-1.1-1.3-.4-2.5,0-3.8-.3S0,1.2,0,0c.5.4.9.6,1.6.8,1.1.2,2.4,0,3.5,0s2.5,1.5,2,2.8Z"/>
+  <path class="st3" d="M7.9,5.9c-.1-.2-.3-.3-.5-.4-1.7-.9-5.3.4-6.4-1.5s-.2-.4,0-.4c.6,0,1.4,0,2,0,1.5,0,3.3-.3,4.4,1s.5.9.4,1.4Z"/>
+  <path class="st3" d="M4.4,7.5C2.3,7.3.8,5.4.3,3.5s-.1-.5,0-.7c0,0,.3.6.4.7.7,1.4,1.8,2.7,3.4,3.1s1.4.2,1.9-.1.4-.7,0-1.1c.5,0,1.8.1,1.9.8.2,1.1-1.3,1.5-2.1,1.5-.1,0-.2,0-.3,0-.2,0-.3,0-.6,0-.1,0-.2,0-.3,0Z"/>
+  <path class="st3" d="M30.5,3.6c-.3-1.2-2-1.6-2.8-.6-.9,1.1,0,2.5,1.3,2.5.2,0,.6,0,.7-.1,0,0,0,0,.2.1.2.1.5,0,.6-.3,0-.3,0-1.4,0-1.7ZM29.1,4.7c-1,.1-1.2-1.3-.2-1.5.9,0,1.1,1.3.2,1.5Z"/>
+  <path class="st3" d="M15.6,2.4c-2.3,0-2,3.6.3,3.1,1.8-.4,1.5-3.2-.3-3.1ZM16.3,4.3c-.3.8-1.6.4-1.4-.5.1-.5.8-.7,1.2-.3.2.2.3.5.2.8Z"/>
+  <path class="st3" d="M23.1,2.5c-1.9.3-1.7,3.3.4,3.2,2.1-.1,1.9-3.5-.4-3.2ZM22.9,4.6c-.5-.4-.3-1.3.4-1.3.3,0,.6.2.7.5.3.7-.5,1.3-1.1.9Z"/>
+  <path class="st3" d="M19,3.2c.7,0,.7.9,0,.9,0,.8.2,1.8-.6,2.3s-1,.1-.9-.4.7-.2.7-.5,0-1,0-1.4c-.7,0-.7-.9,0-.9,0-.6,0-1.3.6-1.6s1.1-.3,1,.4-.7.2-.7.5,0,.6,0,.8Z"/>
+  <path class="st3" d="M20.8,1.6c0,0,.1.3.1.4v2.6c.1.3.4.2.6.3.3.2.1.7-.2.7-.6,0-1.2-.4-1.2-.9,0-.9,0-1.9,0-2.9,0-.3.5-.4.7-.2Z"/>
+  <path class="st3" d="M25.7,2.9c.3-.3,1.2-.7,1.5-.3s.1.4,0,.6c-.3.2-.6,0-.9.4s0,1.2-.1,1.6-.8.4-.8,0,0-1.1,0-1.4.2-.7.4-1Z"/>
+  <path class="st3" d="M13.5,2.6c0,0,.1.2.1.3,0,.7,0,1.6,0,2.4,0,.5-.8.5-.9,0,0-.8,0-1.6,0-2.3s.4-.6.7-.3Z"/>
+  <path class="st3" d="M6.9,3.8c-.4-.2-.8-.3-1.2-.4,0-.2,0-.3,0-.5s-.2-.3-.2-.4c.6.1,1.8.5,1.5,1.3Z"/>
+  <path class="st3" d="M13.1,1.5c.7-.1.7,1,0,.8s-.5-.8,0-.8Z"/>
+  <circle class="st0" cx="30.9" cy="2.7" r=".4"/>
+  <text class="st2" transform="translate(19.1 7.9) scale(1 1)"><tspan x="0" y="0">FARMÁCIA</tspan></text>
+  <text class="st4" transform="translate(30.7 2.9)"><tspan x="0" y="0">R</tspan></text>
+</svg></div>
+      <div class="brand-text">
+        <h1>Registro de Erros</h1>
+        <p>Farmácia Bioflora — conferência</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="meus-erros.html" class="btn secondary">Meus erros</a>
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button onclick="logout()" class="btn secondary">Sair</button>
+    </div>
+  </header>
+
+  <div id="configBanner" class="config-banner">
+    ⚠️ Configure SUPABASE_URL e SUPABASE_ANON_KEY no início do código antes de usar.
+  </div>
+
+  <div class="toolbar">
+    <label>Data: <input type="date" id="dataAtual"></label>
+    <button class="btn secondary today-btn" onclick="irParaHoje()">Hoje</button>
+    <span class="hint">Clique numa célula para <strong>adicionar</strong> um erro · Shift+clique pra <strong>remover</strong> um · <kbd>Ctrl</kbd>+<kbd>Z</kbd> desfaz a última ação</span>
+  </div>
+
+  <div class="grid-wrap">
+    <table id="grid"></table>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">
+  <span id="toastMsg"></span>
+  <button onclick="undoLast()">DESFAZER</button>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+
+let supa = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+  document.getElementById('configBanner').classList.add('show');
+}
+requireRole(['chefia','laboratorio']).catch(()=>{});
+
+let atendentes = [];
+let tiposErro = [];
+let counts = {}; // counts[atendente][tipo] = numero
+let dataSelecionada = new Date().toISOString().slice(0,10);
+let actionStack = []; // pra Ctrl+Z: {type:'add'|'remove', atendente, tipo, id}
+
+document.getElementById('dataAtual').value = dataSelecionada;
+document.getElementById('dataAtual').addEventListener('change', (e)=>{
+  dataSelecionada = e.target.value;
+  loadCounts();
+});
+function irParaHoje(){
+  dataSelecionada = new Date().toISOString().slice(0,10);
+  document.getElementById('dataAtual').value = dataSelecionada;
+  loadCounts();
+}
+window.irParaHoje = irParaHoje;
+
+async function loadCatalogos(){
+  if(!supa) return;
+  const { data: at } = await supa.from('atendentes_erros').select('nome').order('nome');
+  atendentes = (at||[]).map(a=>a.nome);
+  const { data: tp } = await supa.from('tipos_erro').select('nome').order('nome');
+  tiposErro = (tp||[]).map(t=>t.nome);
+  buildGrid();
+  loadCounts();
+}
+
+function buildGrid(){
+  const table = document.getElementById('grid');
+  let thead = '<thead><tr><th class="corner">Atendente</th>' + tiposErro.map(t=>`<th>${t}</th>`).join('') + '</tr></thead>';
+  let tbody = '<tbody>' + atendentes.map(a => `
+    <tr>
+      <td class="name-cell">${a}</td>
+      ${tiposErro.map(t => `<td><button class="cell-btn" id="cell_${cellId(a,t)}" onclick="handleCellClick(event,'${esc(a)}','${esc(t)}')">0</button></td>`).join('')}
+    </tr>
+  `).join('') + '</tbody>';
+  table.innerHTML = thead + tbody;
+}
+
+function esc(s){ return s.replace(/'/g,"\\'"); }
+function cellId(a,t){ return btoa(unescape(encodeURIComponent(a+'||'+t))).replace(/[^a-zA-Z0-9]/g,''); }
+
+async function loadCounts(){
+  if(!supa) return;
+  const inicio = dataSelecionada + 'T00:00:00';
+  const fim = dataSelecionada + 'T23:59:59';
+  const { data, error } = await supa.from('erros_registrados')
+    .select('atendente,tipo_erro')
+    .gte('registrado_em', inicio).lte('registrado_em', fim);
+  if(error){ console.error(error); return; }
+
+  counts = {};
+  atendentes.forEach(a => { counts[a] = {}; tiposErro.forEach(t => counts[a][t] = 0); });
+  (data||[]).forEach(r => { if(counts[r.atendente]) counts[r.atendente][r.tipo_erro] = (counts[r.atendente][r.tipo_erro]||0) + 1; });
+
+  atendentes.forEach(a => tiposErro.forEach(t => updateCell(a,t)));
+}
+
+function updateCell(a,t){
+  const el = document.getElementById('cell_'+cellId(a,t));
+  if(!el) return;
+  const n = (counts[a] && counts[a][t]) || 0;
+  el.textContent = n;
+  el.classList.toggle('has-count', n>0);
+}
+
+async function handleCellClick(e, atendente, tipo){
+  if(e.shiftKey){
+    await removeOne(atendente, tipo, true);
+  } else {
+    await addOne(atendente, tipo, true);
+  }
+}
+window.handleCellClick = handleCellClick;
+
+async function addOne(atendente, tipo, pushStack){
+  const horaAgora = new Date().toTimeString().slice(0,8);
+  const timestamp = dataSelecionada + 'T' + horaAgora;
+  const { data, error } = await supa.from('erros_registrados')
+    .insert({ atendente, tipo_erro: tipo, registrado_em: timestamp })
+    .select().single();
+  if(error){ alert('Erro: '+error.message); return; }
+  counts[atendente][tipo] = (counts[atendente][tipo]||0) + 1;
+  updateCell(atendente, tipo);
+  if(pushStack){
+    actionStack.push({type:'add', atendente, tipo, id:data.id});
+    showToast(`+1 ${tipo} — ${atendente}`, true);
+  }
+}
+
+async function removeOne(atendente, tipo, pushStack){
+  if(!counts[atendente] || !counts[atendente][tipo]){ return; }
+  const inicio = dataSelecionada + 'T00:00:00';
+  const fim = dataSelecionada + 'T23:59:59';
+  const { data: rows, error: selErr } = await supa.from('erros_registrados')
+    .select('id').eq('atendente', atendente).eq('tipo_erro', tipo)
+    .gte('registrado_em', inicio).lte('registrado_em', fim)
+    .order('registrado_em', {ascending:false}).limit(1);
+  if(selErr || !rows || !rows.length) return;
+  const { error } = await supa.from('erros_registrados').delete().eq('id', rows[0].id);
+  if(error){ alert('Erro: '+error.message); return; }
+  counts[atendente][tipo] = Math.max(0, counts[atendente][tipo]-1);
+  updateCell(atendente, tipo);
+  if(pushStack){
+    actionStack.push({type:'remove', atendente, tipo});
+    showToast(`-1 ${tipo} — ${atendente}`, false);
+  }
+}
+
+async function undoLast(){
+  if(!actionStack.length) return;
+  const last = actionStack.pop();
+  if(last.type === 'add'){
+    await supa.from('erros_registrados').delete().eq('id', last.id);
+    counts[last.atendente][last.tipo] = Math.max(0, counts[last.atendente][last.tipo]-1);
+    updateCell(last.atendente, last.tipo);
+    hideToast();
+    showToast(`Desfeito: ${last.tipo} — ${last.atendente}`, false);
+  } else {
+    await addOne(last.atendente, last.tipo, false);
+    hideToast();
+    showToast(`Restaurado: ${last.tipo} — ${last.atendente}`, false);
+  }
+  setTimeout(hideToast, 2500);
+}
+window.undoLast = undoLast;
+
+document.addEventListener('keydown', (e) => {
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='z'){
+    e.preventDefault();
+    undoLast();
+  }
+});
+
+let toastTimer = null;
+function showToast(msg, withUndo){
+  clearTimeout(toastTimer);
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toast').querySelector('button').style.display = withUndo ? 'inline' : 'none';
+  document.getElementById('toast').classList.add('show');
+  toastTimer = setTimeout(hideToast, 3000);
+}
+function hideToast(){ document.getElementById('toast').classList.remove('show'); }
+
+loadCatalogos();
+</script>
+</body>
+</html>
