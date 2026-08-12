@@ -2,202 +2,424 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Administração — Hub Bioflora</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Chama Acesa</title>
 <style>
   :root{
-    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
-    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
-    --good:#3F7A57; --good-tint:#E8F3EC; --bad:#B4472F; --bad-tint:#FBEBE6;
-    --warn:#C9922B; --warn-tint:#FBF1E0;
+    --vinho:#3a0d1a; --dourado:#d9ab5f; --dourado-claro:#f2c98a;
+    --texto:#f5ece0; --erro:#e15c5c; --ok:#6fbf73;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
-  .wrap{max-width:1050px;margin:0 auto;padding:36px 28px 80px;}
-  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
-  .brand{display:flex;align-items:center;gap:12px;}
-  .brand-mark{height:34px;display:flex;align-items:center;}
-  .brand-mark svg{height:100%;width:auto;display:block;}
-  .brand-text h1{font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
-  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
-  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
-  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
-
-  .blocked{text-align:center;padding:80px 20px;}
-  .blocked .big{font-size:40px;margin-bottom:14px;}
-
-  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;}
-  .panel h2{font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 4px;}
-  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
-
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  thead th{text-align:left;font-size:10.5px;text-transform:uppercase;color:var(--gray);font-weight:600;padding:0 10px 10px;border-bottom:1px solid var(--ink);}
-  tbody td{padding:10px;border-bottom:1px solid var(--line);}
-  select{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:7px;}
-  .tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;text-transform:uppercase;white-space:nowrap;}
-  .tag.chefia{background:var(--burgundy-tint);color:var(--burgundy);}
-  .tag.rh{background:var(--good-tint);color:var(--good);}
-  .tag.gestao{background:#EFE7F5;color:#6E4A8C;}
-  .tag.laboratorio{background:var(--warn-tint);color:#8A6512;}
-  .tag.recepcao{background:#E9F0F6;color:#3E6B93;}
-  .tag.conferencia{background:var(--bad-tint);color:var(--bad);}
-  .tag.atendente{background:#E4F0EA;color:#2F5F42;}
-  .tag.sem_papel{background:#F1ECEA;color:var(--gray);}
-
-  .roles-legend{font-size:11.5px;color:var(--gray);margin-top:18px;line-height:1.7;}
+  body{
+    margin:0; font-family:'Segoe UI',system-ui,sans-serif; background:var(--vinho); color:var(--texto);
+    min-height:100vh; padding:24px;
+  }
+  .wrap{max-width:800px; margin:0 auto;}
+  h1{font-size:1.6rem; color:var(--dourado-claro); margin-bottom:4px;}
+  .sub{color:rgba(245,236,224,0.7); margin-bottom:24px; font-size:0.95rem;}
+  .login-box{
+    max-width:340px; margin:80px auto; background:rgba(255,255,255,0.05);
+    border:1px solid rgba(217,171,95,0.3); border-radius:14px; padding:28px; text-align:center;
+  }
+  .login-box input{
+    width:100%; padding:12px; margin:16px 0; border-radius:8px; border:1px solid rgba(217,171,95,0.4);
+    background:rgba(0,0,0,0.2); color:var(--texto); font-size:1rem;
+  }
+  .login-box button, .btn{
+    background:var(--dourado); color:#2a0a13; border:none; padding:12px 18px; border-radius:8px;
+    font-weight:600; cursor:pointer; font-size:0.95rem;
+  }
+  .login-box button:hover, .btn:hover{background:var(--dourado-claro);}
+  .erro{color:var(--erro); font-size:0.85rem; margin-top:8px; display:none;}
+  .stats{
+    display:flex; gap:16px; margin-bottom:24px; flex-wrap:wrap;
+  }
+  .stat-card{
+    background:rgba(255,255,255,0.05); border:1px solid rgba(217,171,95,0.25);
+    border-radius:12px; padding:16px 20px; flex:1; min-width:140px;
+  }
+  .stat-card .num{font-size:1.8rem; font-weight:700; color:var(--dourado-claro);}
+  .stat-card .label{font-size:0.8rem; color:rgba(245,236,224,0.7);}
+  .filtros{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+  .filtros button{
+    background:rgba(255,255,255,0.05); color:var(--texto); border:1px solid rgba(217,171,95,0.3);
+    padding:8px 14px; border-radius:999px; cursor:pointer; font-size:0.85rem;
+  }
+  .filtros button.ativo{background:var(--dourado); color:#2a0a13; font-weight:600;}
+  table{width:100%; border-collapse:collapse; background:rgba(255,255,255,0.04); border-radius:12px; overflow:hidden;}
+  th, td{padding:10px 12px; text-align:left; font-size:0.85rem; border-bottom:1px solid rgba(255,255,255,0.08);}
+  th{background:rgba(0,0,0,0.2); color:var(--dourado-claro); font-weight:600;}
+  .badge{padding:4px 10px; border-radius:999px; font-size:0.75rem; font-weight:600;}
+  .badge.pendente{background:rgba(217,171,95,0.2); color:var(--dourado-claro);}
+  .badge.confirmado{background:rgba(111,191,115,0.2); color:var(--ok);}
+  .badge.lista_espera{background:rgba(150,150,150,0.2); color:#ccc;}
+  .acao-btn{
+    background:var(--ok); color:#0a2a0d; border:none; padding:6px 12px; border-radius:6px;
+    cursor:pointer; font-size:0.8rem; font-weight:600;
+  }
+  .acao-btn:disabled{opacity:0.5; cursor:default;}
+  .excluir-btn{background:var(--erro); color:#fff; margin-left:6px;}
+  .excluir-btn:hover{background:#c94848;}
+  .refresh{margin-bottom:16px;}
+  .vazio{text-align:center; padding:40px; color:rgba(245,236,224,0.6);}
+  @media (max-width:640px){
+    table, thead, tbody, th, td, tr{display:block;}
+    thead{display:none;}
+    tr{margin-bottom:12px; border:1px solid rgba(217,171,95,0.25); border-radius:10px; padding:10px;}
+    td{border:none; padding:6px 4px;}
+    td:before{content:attr(data-label); font-weight:600; color:var(--dourado-claro); display:inline-block; width:110px;}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <div class="brand">
-      <div class="brand-mark"><svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 31.3 8.7">
-  <defs>
-    <style>
-      .st0 {
-        fill: none;
-        stroke: #8B1A3A;
-        stroke-miterlimit: 10;
-        stroke-width: 0px;
-      }
 
-      .st1 {
-        display: none;
-        opacity: .5;
-      }
+<div id="login-view" class="login-box">
+  <h1 style="font-size:1.3rem;">🔒 Admin Chama Acesa</h1>
+  <input type="password" id="senha-input" placeholder="Senha de acesso">
+  <button onclick="tentarLogin()">Entrar</button>
+  <div class="erro" id="erro-login">Senha incorreta.</div>
+</div>
 
-      .st2 {
-        font-family: Helvetica, Helvetica;
-        font-size: 1.7px;
-        letter-spacing: .3em;
-      }
+<div class="wrap" id="painel-view" style="display:none;">
+  <h1>🔥 Chama Acesa — Painel</h1>
+  <p class="sub">Confirme o pagamento assim que o comprovante chegar pelo WhatsApp.</p>
 
-      .st2, .st3, .st4 {
-        fill: #8B1A3A;
-      }
+  <div class="filtros" style="margin-bottom:22px;">
+    <button class="ativo" data-aba="inscricoes" onclick="mudarAba('inscricoes', this)">📋 Inscrições</button>
+    <button data-aba="estoque" onclick="mudarAba('estoque', this)">📦 Estoque</button>
+    <button data-aba="pedidos" onclick="mudarAba('pedidos', this)">🛍️ Pedidos</button>
+  </div>
 
-      .st4 {
-        font-family: ArialMT, Arial;
-        font-size: .5px;
-        letter-spacing: .3em;
-      }
-    </style>
-  </defs>
-  <image class="st1" width="1000" height="250" transform="translate(-1 -.4) scale(0)" xlink:href="Bioflora/logo-bioflora-vinho-e-cinza.png"/>
-  <path class="st3" d="M12.1,3.5s.2-.2.2-.3c.3-.8-.1-1.6-.9-1.7-.3,0-1.5,0-1.8,0-.2,0-.3.2-.4.4,0,1.1,0,2.3,0,3.3,0,.3.1.4.4.5.4,0,1.6,0,1.9,0,.7-.2,1-1,.8-1.6,0-.1-.2-.4-.2-.5ZM11.4,4.6s-.2.1-.2.1h-1.1v-.9h1.2s.1,0,.2.1c.2.2.2.6,0,.7ZM11.4,2.9s-.2.2-.2.2h-1.2v-.7s0,0,0,0h1.1s.2,0,.2.1c.2.1.2.3,0,.5Z"/>
-  <path class="st3" d="M7.1,3.6c0,.1,0,0,0,0,0-.6-.9-.9-1.3-1.1-1.3-.4-2.5,0-3.8-.3S0,1.2,0,0c.5.4.9.6,1.6.8,1.1.2,2.4,0,3.5,0s2.5,1.5,2,2.8Z"/>
-  <path class="st3" d="M7.9,5.9c-.1-.2-.3-.3-.5-.4-1.7-.9-5.3.4-6.4-1.5s-.2-.4,0-.4c.6,0,1.4,0,2,0,1.5,0,3.3-.3,4.4,1s.5.9.4,1.4Z"/>
-  <path class="st3" d="M4.4,7.5C2.3,7.3.8,5.4.3,3.5s-.1-.5,0-.7c0,0,.3.6.4.7.7,1.4,1.8,2.7,3.4,3.1s1.4.2,1.9-.1.4-.7,0-1.1c.5,0,1.8.1,1.9.8.2,1.1-1.3,1.5-2.1,1.5-.1,0-.2,0-.3,0-.2,0-.3,0-.6,0-.1,0-.2,0-.3,0Z"/>
-  <path class="st3" d="M30.5,3.6c-.3-1.2-2-1.6-2.8-.6-.9,1.1,0,2.5,1.3,2.5.2,0,.6,0,.7-.1,0,0,0,0,.2.1.2.1.5,0,.6-.3,0-.3,0-1.4,0-1.7ZM29.1,4.7c-1,.1-1.2-1.3-.2-1.5.9,0,1.1,1.3.2,1.5Z"/>
-  <path class="st3" d="M15.6,2.4c-2.3,0-2,3.6.3,3.1,1.8-.4,1.5-3.2-.3-3.1ZM16.3,4.3c-.3.8-1.6.4-1.4-.5.1-.5.8-.7,1.2-.3.2.2.3.5.2.8Z"/>
-  <path class="st3" d="M23.1,2.5c-1.9.3-1.7,3.3.4,3.2,2.1-.1,1.9-3.5-.4-3.2ZM22.9,4.6c-.5-.4-.3-1.3.4-1.3.3,0,.6.2.7.5.3.7-.5,1.3-1.1.9Z"/>
-  <path class="st3" d="M19,3.2c.7,0,.7.9,0,.9,0,.8.2,1.8-.6,2.3s-1,.1-.9-.4.7-.2.7-.5,0-1,0-1.4c-.7,0-.7-.9,0-.9,0-.6,0-1.3.6-1.6s1.1-.3,1,.4-.7.2-.7.5,0,.6,0,.8Z"/>
-  <path class="st3" d="M20.8,1.6c0,0,.1.3.1.4v2.6c.1.3.4.2.6.3.3.2.1.7-.2.7-.6,0-1.2-.4-1.2-.9,0-.9,0-1.9,0-2.9,0-.3.5-.4.7-.2Z"/>
-  <path class="st3" d="M25.7,2.9c.3-.3,1.2-.7,1.5-.3s.1.4,0,.6c-.3.2-.6,0-.9.4s0,1.2-.1,1.6-.8.4-.8,0,0-1.1,0-1.4.2-.7.4-1Z"/>
-  <path class="st3" d="M13.5,2.6c0,0,.1.2.1.3,0,.7,0,1.6,0,2.4,0,.5-.8.5-.9,0,0-.8,0-1.6,0-2.3s.4-.6.7-.3Z"/>
-  <path class="st3" d="M6.9,3.8c-.4-.2-.8-.3-1.2-.4,0-.2,0-.3,0-.5s-.2-.3-.2-.4c.6.1,1.8.5,1.5,1.3Z"/>
-  <path class="st3" d="M13.1,1.5c.7-.1.7,1,0,.8s-.5-.8,0-.8Z"/>
-  <circle class="st0" cx="30.9" cy="2.7" r=".4"/>
-  <text class="st2" transform="translate(19.1 7.9) scale(1 1)"><tspan x="0" y="0">FARMÁCIA</tspan></text>
-  <text class="st4" transform="translate(30.7 2.9)"><tspan x="0" y="0">R</tspan></text>
-</svg></div>
-      <div class="brand-text">
-        <h1>Administração</h1>
-        <p>Usuários e permissões — acesso restrito à chefia</p>
-      </div>
+  <!-- ================= ABA INSCRIÇÕES ================= -->
+  <div id="aba-inscricoes">
+    <div class="stats">
+      <div class="stat-card"><div class="num" id="stat-confirmadas">—</div><div class="label">Vagas confirmadas / 40</div></div>
+      <div class="stat-card"><div class="num" id="stat-pendentes">—</div><div class="label">Aguardando confirmação</div></div>
+      <div class="stat-card"><div class="num" id="stat-espera">—</div><div class="label">Lista de espera</div></div>
     </div>
-    <a href="index.html" class="btn secondary">← Voltar ao Hub</a> <button onclick="logout()" class="btn secondary" style="margin-left:6px">Sair</button>
-  </header>
 
-  <div id="content"></div>
+    <div class="refresh">
+      <button class="btn" onclick="carregarInscricoes()">🔄 Atualizar lista</button>
+      <button class="btn" onclick="exportarCSV()" style="margin-left:8px;">⬇️ Exportar CSV</button>
+    </div>
+
+    <div class="filtros">
+      <button class="ativo" data-filtro="todos" onclick="filtrar('todos', this)">Todos</button>
+      <button data-filtro="pendente" onclick="filtrar('pendente', this)">Pendentes</button>
+      <button data-filtro="confirmado" onclick="filtrar('confirmado', this)">Confirmados</button>
+      <button data-filtro="lista_espera" onclick="filtrar('lista_espera', this)">Lista de espera</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Nº</th><th>Nome</th><th>CPF</th><th>WhatsApp</th><th>E-mail</th><th>Status</th><th>Ação</th></tr>
+      </thead>
+      <tbody id="tabela-corpo"></tbody>
+    </table>
+    <div class="vazio" id="vazio-msg" style="display:none;">Nenhuma inscrição nesse filtro.</div>
+  </div>
+
+  <!-- ================= ABA ESTOQUE ================= -->
+  <div id="aba-estoque" style="display:none;">
+    <div class="refresh">
+      <button class="btn" onclick="carregarProdutos()">🔄 Atualizar estoque</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Produto</th><th>Variante</th><th>Preço (R$)</th><th>Estoque atual</th><th>Inicial</th><th>Ação</th></tr>
+      </thead>
+      <tbody id="tabela-estoque"></tbody>
+    </table>
+    <div class="vazio" id="vazio-estoque" style="display:none;">Nenhum produto carregado.</div>
+  </div>
+
+  <!-- ================= ABA PEDIDOS ================= -->
+  <div id="aba-pedidos" style="display:none;">
+    <div class="refresh">
+      <button class="btn" onclick="carregarPedidos()">🔄 Atualizar pedidos</button>
+      <button class="btn" onclick="exportarPedidosCSV()" style="margin-left:8px;">⬇️ Exportar CSV</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Vendedora</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Obs.</th><th>Entrega</th></tr>
+      </thead>
+      <tbody id="tabela-pedidos"></tbody>
+    </table>
+    <div class="vazio" id="vazio-pedidos" style="display:none;">Nenhum pedido registrado ainda.</div>
+  </div>
 </div>
 
 <script>
-const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
-const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const CONFIG = {
+    SUPABASE_URL: "https://gbbjpltqmbhlfluqhrmg.supabase.co",
+    SUPABASE_ANON_KEY: "sb_publishable_a_t-5SMQWML0AQ8muZv6Qg_jYYEIFeP",
+    SENHA_ADMIN: "Bioflora26"
+  };
 
-const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', conferencia:'Conferência', atendente:'Atendente', sem_papel:'Sem papel'};
+  let dadosAtuais = [];
+  let filtroAtual = 'todos';
 
-async function logout(){ await supa.auth.signOut(); window.location.href = 'login.html'; }
+  function tentarLogin(){
+    const val = document.getElementById('senha-input').value;
+    if(val === CONFIG.SENHA_ADMIN){
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('painel-view').style.display = 'block';
+      carregarInscricoes();
+    }else{
+      document.getElementById('erro-login').style.display = 'block';
+    }
+  }
+  document.getElementById('senha-input').addEventListener('keydown', e => {
+    if(e.key === 'Enter') tentarLogin();
+  });
 
-async function init(){
-  const { data: { session } } = await supa.auth.getSession();
-  if(!session){ window.location.href = 'login.html'; return; }
-
-  const { data: meuPerfil } = await supa.from('perfis').select('papel').eq('id', session.user.id).maybeSingle();
-  if(!meuPerfil || meuPerfil.papel !== 'chefia'){
-    document.getElementById('content').innerHTML = `
-      <div class="panel blocked">
-        <div class="big">🔒</div>
-        <p>Esta área é restrita à chefia.<br>Seu papel atual: <strong>${ROLE_LABELS[meuPerfil?.papel || 'sem_papel']}</strong></p>
-      </div>`;
-    return;
+  async function carregarInscricoes(){
+    try{
+      const resp = await fetch(
+        `${CONFIG.SUPABASE_URL}/rest/v1/chama_acesa_inscricoes?select=*&order=criado_em.asc`,
+        {
+          headers: {
+            'apikey': CONFIG.SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`
+          }
+        }
+      );
+      dadosAtuais = await resp.json();
+      atualizarStats();
+      renderizarTabela();
+    }catch(err){
+      console.error('Erro ao carregar inscrições:', err);
+      alert('Erro ao carregar inscrições. Veja o console.');
+    }
   }
 
-  const { data: perfis, error } = await supa.from('perfis').select('*').order('criado_em', {ascending:true});
-  if(error){ document.getElementById('content').innerHTML = `<div class="panel">Erro ao carregar: ${error.message}</div>`; return; }
+  function atualizarStats(){
+    const confirmadas = dadosAtuais.filter(d => d.status_pagamento === 'confirmado').length;
+    const pendentes = dadosAtuais.filter(d => d.status_pagamento === 'pendente').length;
+    const espera = dadosAtuais.filter(d => d.status_pagamento === 'lista_espera').length;
+    document.getElementById('stat-confirmadas').textContent = confirmadas;
+    document.getElementById('stat-pendentes').textContent = pendentes;
+    document.getElementById('stat-espera').textContent = espera;
+  }
 
-  const { data: atendentesList } = await supa.from('atendentes_erros').select('nome').order('nome');
-  const atendentes = (atendentesList||[]).map(a=>a.nome);
+  function filtrar(status, btn){
+    filtroAtual = status;
+    document.querySelectorAll('.filtros button').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    renderizarTabela();
+  }
 
-  document.getElementById('content').innerHTML = `
-    <div class="panel">
-      <h2>Usuários cadastrados</h2>
-      <p class="desc">Defina o papel de cada pessoa e, se ela participar da conferência, vincule ao nome dela na planilha de erros</p>
-      <table>
-        <thead><tr><th>Email</th><th>Papel atual</th><th>Alterar</th><th>Vincular a atendente (erros)</th></tr></thead>
-        <tbody id="tbody">
-          ${perfis.map(p => `
-            <tr>
-              <td>${p.nome_exibicao || '—'}</td>
-              <td><span class="tag ${p.papel}">${ROLE_LABELS[p.papel]}</span></td>
-              <td>
-                <select onchange="updatePapel('${p.id}', this.value)">
-                  ${Object.entries(ROLE_LABELS).map(([k,l]) => `<option value="${k}" ${k===p.papel?'selected':''}>${l}</option>`).join('')}
-                </select>
-              </td>
-              <td>
-                <select onchange="updateVinculo('${p.id}', this.value)">
-                  <option value="">— nenhum —</option>
-                  ${atendentes.map(a => `<option value="${a}" ${a===p.atendente_vinculado?'selected':''}>${a}</option>`).join('')}
-                </select>
-              </td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-      <div class="roles-legend">
-        <strong>Chefia</strong>: acessa tudo, inclusive administração ·
-        <strong>RH</strong>: só envio de planilhas do banco de horas ·
-        <strong>Gestão</strong>: só resultados do banco de horas ·
-        <strong>Laboratório</strong>: controle de produção (fórmulas/pesagens) ·
-        <strong>Recepção</strong>: kanban de rótulos ·
-        <strong>Conferência</strong>: rótulos, ordens de produção e a grade completa de erros ·
-        <strong>Atendente</strong>: rótulos, ordens de produção e o próprio desempenho em "Meus erros" ·
-        <strong>Sem papel</strong>: nenhum módulo até ser definido<br><br>
-        O vínculo com atendente é usado na tela "Meus erros" — cada pessoa vinculada só vê o próprio desempenho lá.
-      </div>
-    </div>`;
-}
+  function renderizarTabela(){
+    const corpo = document.getElementById('tabela-corpo');
+    const lista = filtroAtual === 'todos'
+      ? dadosAtuais
+      : dadosAtuais.filter(d => d.status_pagamento === filtroAtual);
 
-async function updatePapel(id, papel){
-  const { error } = await supa.from('perfis').update({papel}).eq('id', id);
-  if(error){ alert('Erro ao atualizar: ' + error.message); return; }
-  init();
-}
-window.updatePapel = updatePapel;
+    corpo.innerHTML = '';
+    document.getElementById('vazio-msg').style.display = lista.length ? 'none' : 'block';
 
-async function updateVinculo(id, atendente_vinculado){
-  const { error } = await supa.from('perfis').update({atendente_vinculado: atendente_vinculado || null}).eq('id', id);
-  if(error){ alert('Erro ao vincular: ' + error.message); return; }
-  init();
-}
-window.updateVinculo = updateVinculo;
+    lista.forEach(item => {
+      const tr = document.createElement('tr');
+      const statusLabel = item.status_pagamento === 'lista_espera' ? 'Lista de espera'
+        : item.status_pagamento === 'confirmado' ? 'Confirmado' : 'Pendente';
 
-init();
+      tr.innerHTML = `
+        <td data-label="Nº">${item.numero_inscricao ?? '—'}</td>
+        <td data-label="Nome">${escapeHtml(item.nome)}</td>
+        <td data-label="CPF">${escapeHtml(item.cpf)}</td>
+        <td data-label="WhatsApp">${escapeHtml(item.whatsapp)}</td>
+        <td data-label="E-mail">${escapeHtml(item.email)}</td>
+        <td data-label="Status"><span class="badge ${item.status_pagamento}">${statusLabel}</span></td>
+        <td data-label="Ação">
+          ${item.status_pagamento !== 'confirmado'
+            ? `<button class="acao-btn" onclick="confirmarPagamento('${item.id}')">Confirmar pagamento</button>`
+            : ''}
+          <button class="acao-btn excluir-btn" onclick="cancelarInscricao('${item.id}', '${escapeHtml(item.nome)}')">Cancelar / apagar</button>
+        </td>
+      `;
+      corpo.appendChild(tr);
+    });
+  }
+
+  async function confirmarPagamento(id){
+    try{
+      await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/chama_acesa_inscricoes?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': CONFIG.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ status_pagamento: 'confirmado' })
+      });
+      await carregarInscricoes();
+    }catch(err){
+      console.error('Erro ao confirmar pagamento:', err);
+      alert('Erro ao confirmar pagamento. Veja o console.');
+    }
+  }
+
+  async function cancelarInscricao(id, nome){
+    const confirmar = confirm(`Tem certeza que deseja apagar a inscrição de "${nome}"? Essa ação não pode ser desfeita.`);
+    if(!confirmar) return;
+
+    try{
+      await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/chama_acesa_inscricoes?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': CONFIG.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+          'Prefer': 'return=minimal'
+        }
+      });
+      await carregarInscricoes();
+    }catch(err){
+      console.error('Erro ao apagar inscrição:', err);
+      alert('Erro ao apagar inscrição. Veja o console.');
+    }
+  }
+
+  function exportarCSV(){
+    if(!dadosAtuais.length){
+      alert('Nenhum dado carregado ainda.');
+      return;
+    }
+    const colunas = ['numero_inscricao','nome','cpf','whatsapp','email','status_pagamento','criado_em'];
+    const cabecalho = ['Numero','Nome','CPF','WhatsApp','Email','Status','Criado em'];
+    const linhas = dadosAtuais.map(item =>
+      colunas.map(col => {
+        const valor = item[col] ?? '';
+        return `"${String(valor).replace(/"/g, '""')}"`;
+      }).join(';')
+    );
+    const csv = [cabecalho.join(';'), ...linhas].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chama-acesa-inscricoes-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ---------- ABAS ----------
+  function mudarAba(aba, btn){
+    document.querySelectorAll('#painel-view > .filtros button[data-aba]').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    ['inscricoes','estoque','pedidos'].forEach(a => {
+      document.getElementById('aba-' + a).style.display = (a === aba) ? 'block' : 'none';
+    });
+    if(aba === 'estoque') carregarProdutos();
+    if(aba === 'pedidos') carregarPedidos();
+  }
+
+  // ---------- ESTOQUE ----------
+  async function carregarProdutos(){
+    try{
+      const resp = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/chama_acesa_produtos?select=*&order=nome.asc`, {
+        headers: {
+          'apikey': CONFIG.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`
+        }
+      });
+      const produtos = await resp.json();
+      renderEstoque(produtos);
+    }catch(err){
+      console.error('Erro ao carregar produtos:', err);
+    }
+  }
+
+  function renderEstoque(produtos){
+    const corpo = document.getElementById('tabela-estoque');
+    document.getElementById('vazio-estoque').style.display = produtos.length ? 'none' : 'block';
+    corpo.innerHTML = produtos.map(p => `
+      <tr>
+        <td data-label="Produto">${p.cor_hex ? `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.cor_hex};margin-right:6px;"></span>` : ''}${escapeHtml(p.nome)}</td>
+        <td data-label="Variante">${escapeHtml(p.variante || '—')}</td>
+        <td data-label="Preço"><input type="number" step="0.01" value="${p.preco}" style="width:80px; background:rgba(0,0,0,.2); color:#f5ece0; border:1px solid rgba(217,171,95,.4); border-radius:6px; padding:4px 6px;" onchange="atualizarProduto('${p.id}','preco',this.value)"></td>
+        <td data-label="Estoque atual"><input type="number" value="${p.estoque_atual}" style="width:60px; background:rgba(0,0,0,.2); color:#f5ece0; border:1px solid rgba(217,171,95,.4); border-radius:6px; padding:4px 6px;" onchange="atualizarProduto('${p.id}','estoque_atual',this.value)"></td>
+        <td data-label="Inicial">${p.estoque_inicial}</td>
+        <td data-label="Ação"><button class="acao-btn" onclick="carregarProdutos()">Salvo automático</button></td>
+      </tr>
+    `).join('');
+  }
+
+  async function atualizarProduto(id, campo, valor){
+    try{
+      await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/chama_acesa_produtos?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': CONFIG.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ [campo]: parseFloat(valor) })
+      });
+    }catch(err){
+      console.error('Erro ao atualizar produto:', err);
+      alert('Erro ao salvar. Veja o console.');
+    }
+  }
+
+  // ---------- PEDIDOS ----------
+  let pedidosAtuais = [];
+  async function carregarPedidos(){
+    try{
+      const resp = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/chama_acesa_pedidos?select=*&order=criado_em.desc`, {
+        headers: {
+          'apikey': CONFIG.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`
+        }
+      });
+      pedidosAtuais = await resp.json();
+      renderPedidos();
+    }catch(err){
+      console.error('Erro ao carregar pedidos:', err);
+    }
+  }
+
+  function renderPedidos(){
+    const corpo = document.getElementById('tabela-pedidos');
+    document.getElementById('vazio-pedidos').style.display = pedidosAtuais.length ? 'none' : 'block';
+    corpo.innerHTML = pedidosAtuais.map(p => `
+      <tr>
+        <td data-label="Vendedora">${escapeHtml(p.vendedora || '—')}</td>
+        <td data-label="Cliente">${escapeHtml(p.nome_cliente)}</td>
+        <td data-label="Itens">${(p.itens || []).map(i => `${i.qtd}x ${escapeHtml(i.nome)}${i.variante ? ' ('+escapeHtml(i.variante)+')' : ''}`).join(', ')}</td>
+        <td data-label="Total">R$ ${Number(p.total).toFixed(2)}</td>
+        <td data-label="Obs.">${escapeHtml(p.observacao || '—')}</td>
+        <td data-label="Entrega">${p.quer_entrega ? '📦 ' + escapeHtml(p.endereco || '') : '—'}</td>
+      </tr>
+    `).join('');
+  }
+
+  function exportarPedidosCSV(){
+    if(!pedidosAtuais.length){ alert('Nenhum pedido carregado.'); return; }
+    const linhas = [['Vendedora','Cliente','Itens','Total','Observação','Entrega','Endereço','Criado em']];
+    pedidosAtuais.forEach(p => {
+      linhas.push([
+        p.vendedora || '', p.nome_cliente,
+        (p.itens || []).map(i => `${i.qtd}x ${i.nome}${i.variante ? ' ('+i.variante+')' : ''}`).join(' | '),
+        Number(p.total).toFixed(2), p.observacao || '', p.quer_entrega ? 'sim' : 'não', p.endereco || '', p.criado_em
+      ]);
+    });
+    const csv = linhas.map(l => l.map(v => `"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chama-acesa-pedidos-admin-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML;
+  }
 </script>
 </body>
 </html>
