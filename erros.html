@@ -57,8 +57,13 @@
   tbody td.name-cell{
     position:sticky;left:0;background:#fff;z-index:1;font-weight:600;text-align:left;padding:10px 14px;
     border-right:2.5px solid var(--ink);white-space:normal;font-size:14.5px;width:230px;min-width:230px;color:var(--ink);
-    line-height:1.35;
+    line-height:1.35;display:flex;align-items:center;justify-content:space-between;gap:8px;
   }
+  .del-row-btn{
+    flex-shrink:0;width:22px;height:22px;border-radius:6px;border:1px solid var(--line);background:#fff;
+    color:var(--gray);font-size:15px;line-height:1;cursor:pointer;font-family:'Maven Pro',sans-serif;
+  }
+  .del-row-btn:hover{background:var(--bad-tint);color:var(--bad);border-color:var(--bad);}
   tbody tr:nth-child(even) td:not(.name-cell){background:#FAF7F5;}
   tbody td.divider-col{border-left:2.5px solid var(--ink);}
   .cell-btn{
@@ -93,6 +98,12 @@
   .attention-list .rank{display:inline-block;width:20px;color:var(--gray);}
   .attention-list strong{color:var(--bad);}
   canvas{max-height:340px;}
+
+  .chart-type-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .chip-btn{font-family:'Maven Pro',sans-serif;font-size:12px;font-weight:600;padding:8px 14px;border-radius:20px;border:1.5px solid var(--line);background:#fff;cursor:pointer;color:var(--gray);}
+  .chip-btn.active{background:var(--burgundy);border-color:var(--burgundy);color:#fff;}
+  .chart-select{display:flex;gap:10px;align-items:center;margin-bottom:16px;font-size:13px;}
+  .chart-select select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 12px;border:1.5px solid var(--line);border-radius:7px;background:#fff;}
 
   /* Formulário de novo tipo de erro */
   .add-form{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
@@ -194,6 +205,12 @@
     <div class="kpi-row" id="dashKpis"></div>
     <h2>Erros mais frequentes (todos os atendentes)</h2>
     <p class="desc">Últimos 30 dias</p>
+    <div class="chart-type-row">
+      <button class="chip-btn active" data-tipo="barh" onclick="setChartTipo('barh')">Barras horizontais</button>
+      <button class="chip-btn" data-tipo="barv" onclick="setChartTipo('barv')">Barras verticais</button>
+      <button class="chip-btn" data-tipo="pizza" onclick="setChartTipo('pizza')">Pizza</button>
+      <button class="chip-btn" data-tipo="media" onclick="setChartTipo('media')">Média móvel (7 dias) — equipe</button>
+    </div>
     <canvas id="chartTopErros"></canvas>
   </div>
 
@@ -201,6 +218,20 @@
     <h2>Pontos de atenção</h2>
     <p class="desc">Combinação atendente + erro que mais se repete — vale conversar individualmente</p>
     <div class="attention-list" id="attentionList"></div>
+  </div>
+
+  <div class="section-title">Erros individuais</div>
+  <p class="section-sub">Veja o desempenho de um atendente específico sem sair desta página</p>
+  <div class="panel">
+    <div class="chart-select">
+      <span>Atendente:</span>
+      <select id="selectAtendenteIndividual"></select>
+    </div>
+    <div class="kpi-row" id="individualKpis"></div>
+    <h2>Tendência — média móvel de 7 dias</h2>
+    <canvas id="chartIndividualTendencia"></canvas>
+    <h2 style="margin-top:22px">O que mais está errando</h2>
+    <canvas id="chartIndividualRanking"></canvas>
   </div>
 
 </div>
@@ -222,11 +253,17 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY) {
 }
 requireRole(['chefia','conferencia']).catch(()=>{});
 
+function localDateStr(d){
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off*60000);
+  return local.toISOString().slice(0,10);
+}
+
 let atendentes = [];       // ordenado: principal primeiro, substituto no final
 let primeiroSubstitutoIdx = -1;
 let tiposErro = [];
 let counts = {};
-let dataSelecionada = new Date().toISOString().slice(0,10);
+let dataSelecionada = localDateStr(new Date());
 let actionStack = [];
 
 document.getElementById('dataAtual').value = dataSelecionada;
@@ -235,7 +272,7 @@ document.getElementById('dataAtual').addEventListener('change', (e)=>{
   loadCounts();
 });
 function irParaHoje(){
-  dataSelecionada = new Date().toISOString().slice(0,10);
+  dataSelecionada = localDateStr(new Date());
   document.getElementById('dataAtual').value = dataSelecionada;
   loadCounts();
 }
@@ -266,7 +303,7 @@ function buildGrid(){
     atendentes.map((a,i)=>`<th data-col="${i}" class="${i===primeiroSubstitutoIdx?'divider-col':''}">${a}</th>`).join('') + '</tr></thead>';
   let tbody = '<tbody>' + tiposErro.map(t => `
     <tr data-row-tipo="${esc(t)}">
-      <td class="name-cell">${t}</td>
+      <td class="name-cell"><span>${t}</span><button class="del-row-btn" title="Remover este tipo de erro da grade" onclick="deleteTipoErro('${esc(t)}')">×</button></td>
       ${atendentes.map((a,i) => `<td data-col="${i}" class="${i===primeiroSubstitutoIdx?'divider-col':''}"><button class="cell-btn" id="cell_${cellId(a,t)}"
           onclick="handleLeftClick(event,'${esc(a)}','${esc(t)}')"
           oncontextmenu="return handleRightClick(event,'${esc(a)}','${esc(t)}')"
@@ -395,8 +432,39 @@ async function addTipoErro(){
 }
 window.addTipoErro = addTipoErro;
 
+async function deleteTipoErro(tipo){
+  if(!confirm(`Remover "${tipo}" da grade? Os registros já lançados desse tipo continuam salvos e contando nos gráficos — só a linha some da tela de lançamento.`)) return;
+  const { error } = await supa.from('tipos_erro').delete().eq('nome', tipo);
+  if(error){ alert('Erro: '+error.message); return; }
+  await loadCatalogos();
+}
+window.deleteTipoErro = deleteTipoErro;
+
 // ---------- Dashboard geral ----------
 let chartTopErrosInstance = null;
+let dashboardDataCache = null;
+let chartTipoAtual = 'barh';
+
+function setChartTipo(tipo){
+  chartTipoAtual = tipo;
+  document.querySelectorAll('.chip-btn').forEach(b => b.classList.toggle('active', b.dataset.tipo===tipo));
+  renderTopErrosChart();
+}
+window.setChartTipo = setChartTipo;
+
+function localDayKey(dateStr){ return dateStr.slice(0,10); }
+function lastNDaysLocal(n){
+  const days = []; const hoje = new Date(localDateStr(new Date())+'T12:00:00');
+  for(let i=n-1;i>=0;i--){ const d=new Date(hoje); d.setDate(d.getDate()-i); days.push(localDateStr(d)); }
+  return days;
+}
+function movingAverage7(dailyCounts, days){
+  return days.map((_,i) => {
+    const windowDays = days.slice(Math.max(0,i-6), i+1);
+    const sum = windowDays.reduce((a,d) => a + (dailyCounts[d]||0), 0);
+    return sum / windowDays.length;
+  });
+}
 
 async function loadDashboard(){
   if(!supa) return;
@@ -404,6 +472,7 @@ async function loadDashboard(){
   const { data, error } = await supa.from('erros_registrados')
     .select('atendente,tipo_erro,registrado_em').gte('registrado_em', umMesAtras.toISOString());
   if(error){ console.error(error); return; }
+  dashboardDataCache = data;
 
   const total = data.length;
   const porTipo = {};
@@ -427,12 +496,103 @@ async function loadDashboard(){
     return `<div><span class="rank">${i+1}.</span> <strong>${atendente}</strong> — ${tipo} <span style="color:var(--gray)">(${n}x)</span></div>`;
   }).join('') : '<p class="desc">Sem dados suficientes ainda.</p>';
 
+  renderTopErrosChart();
+  await loadIndividual();
+}
+
+const CHART_PALETTE = ['#8B1A3A','#C9922B','#3E6B93','#3F7A57','#6E4A8C','#B4472F','#4A8C8C','#8C6E4A','#5E7A3F','#7A3F5E','#2F5F42','#7A5C15'];
+
+function renderTopErrosChart(){
+  if(!dashboardDataCache) return;
+  const data = dashboardDataCache;
+  const porTipo = {};
+  data.forEach(r => { porTipo[r.tipo_erro] = (porTipo[r.tipo_erro]||0)+1; });
+  const rankingTipo = Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
   const top12 = rankingTipo.slice(0,12);
+
   if(chartTopErrosInstance) chartTopErrosInstance.destroy();
-  chartTopErrosInstance = new Chart(document.getElementById('chartTopErros'), {
-    type: 'bar',
-    data: { labels: top12.map(t=>t[0]), datasets: [{ data: top12.map(t=>t[1]), backgroundColor: '#8B1A3A' }] },
-    options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
+  const ctx = document.getElementById('chartTopErros');
+
+  if(chartTipoAtual === 'media'){
+    const days = lastNDaysLocal(60);
+    const dailyCounts = {};
+    data.forEach(r => { const k = localDayKey(r.registrado_em); dailyCounts[k] = (dailyCounts[k]||0)+1; });
+    const ma = movingAverage7(dailyCounts, days);
+    chartTopErrosInstance = new Chart(ctx, {
+      type:'line',
+      data:{ labels: days.map(d=>d.slice(5)), datasets:[{ data: ma, borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.1)', tension:.3, fill:true, pointRadius:0 }] },
+      options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    });
+    return;
+  }
+
+  if(chartTipoAtual === 'pizza'){
+    chartTopErrosInstance = new Chart(ctx, {
+      type:'doughnut',
+      data:{ labels: top12.map(t=>t[0]), datasets:[{ data: top12.map(t=>t[1]), backgroundColor: CHART_PALETTE }] },
+      options:{ responsive:true, plugins:{legend:{position:'right', labels:{boxWidth:10,font:{size:10}}}} }
+    });
+    return;
+  }
+
+  const horizontal = chartTipoAtual === 'barh';
+  chartTopErrosInstance = new Chart(ctx, {
+    type:'bar',
+    data:{ labels: top12.map(t=>t[0]), datasets:[{ data: top12.map(t=>t[1]), backgroundColor:'#8B1A3A' }] },
+    options:{ indexAxis: horizontal?'y':'x', responsive:true, plugins:{legend:{display:false}}, scales:{ [horizontal?'x':'y']:{beginAtZero:true} } }
+  });
+}
+
+// ---------- Erros individuais (embutido, sem precisar do outro módulo) ----------
+let chartIndividualTendenciaInstance = null;
+let chartIndividualRankingInstance = null;
+
+async function loadIndividual(){
+  const sel = document.getElementById('selectAtendenteIndividual');
+  if(sel.options.length === 0){
+    sel.innerHTML = atendentes.map(a=>`<option value="${a}">${a}</option>`).join('');
+    sel.addEventListener('change', () => renderIndividual(sel.value));
+  }
+  if(atendentes.length) renderIndividual(sel.value || atendentes[0]);
+}
+
+async function renderIndividual(nome){
+  const { data, error } = await supa.from('erros_registrados').select('tipo_erro,registrado_em').eq('atendente', nome).order('registrado_em');
+  if(error){ console.error(error); return; }
+
+  const days60 = lastNDaysLocal(60);
+  const dailyCounts = {};
+  data.forEach(r => { const k = localDayKey(r.registrado_em); dailyCounts[k] = (dailyCounts[k]||0)+1; });
+  const ma = movingAverage7(dailyCounts, days60);
+
+  const umMesAtras = new Date(); umMesAtras.setDate(umMesAtras.getDate()-30);
+  const recentes = data.filter(d => new Date(d.registrado_em) >= umMesAtras);
+  const porTipo = {};
+  recentes.forEach(r => { porTipo[r.tipo_erro] = (porTipo[r.tipo_erro]||0)+1; });
+  const ranking = Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
+
+  const totalMes = recentes.length;
+  const mediaAtual = ma[ma.length-1] || 0;
+  const tipoMaisFrequente = ranking.length ? ranking[0][0] : '—';
+
+  document.getElementById('individualKpis').innerHTML = `
+    <div class="kpi"><div class="label">Erros no último mês</div><div class="value">${totalMes}</div></div>
+    <div class="kpi"><div class="label">Média móvel atual (7d)</div><div class="value">${mediaAtual.toFixed(1)}</div></div>
+    <div class="kpi"><div class="label">Erro mais frequente</div><div class="value" style="font-size:16px">${tipoMaisFrequente}</div></div>
+  `;
+
+  if(chartIndividualTendenciaInstance) chartIndividualTendenciaInstance.destroy();
+  chartIndividualTendenciaInstance = new Chart(document.getElementById('chartIndividualTendencia'), {
+    type:'line',
+    data:{ labels: days60.map(d=>d.slice(5)), datasets:[{ data:ma, borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.3, fill:true, pointRadius:0 }]},
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  });
+
+  if(chartIndividualRankingInstance) chartIndividualRankingInstance.destroy();
+  chartIndividualRankingInstance = new Chart(document.getElementById('chartIndividualRanking'), {
+    type:'bar',
+    data:{ labels: ranking.map(r=>r[0]), datasets:[{ data: ranking.map(r=>r[1]), backgroundColor:'#8B1A3A' }]},
+    options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
   });
 }
 
