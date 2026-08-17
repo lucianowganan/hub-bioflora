@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reaproveitamento — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.cdnfonts.com/css/cal-sans" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#111111; --paper:#FBF9F7; --line:#C9BFC1; --gray:#4A4245;
+    --good:#3F7A57; --good-tint:#E8F3EC;
+    --bad:#B4472F; --bad-tint:#FBEBE6;
+    --warn:#C9922B; --warn-tint:#FBF1E0;
+    --headfont: 'Cal Sans', 'Fraunces', serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1100px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{height:34px;display:flex;align-items:center;}
+  .brand-mark svg{height:100%;width:auto;display:block;}
+  .brand-text h1{font-family:var(--headfont);font-weight:600;font-size:24px;margin:0;letter-spacing:-0.01em;color:var(--ink);}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1.5px solid var(--line);}
+  .btn.small{padding:6px 12px;font-size:11.5px;}
+
+  .config-banner{background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;padding:14px 18px;font-size:13px;color:#7A5C15;margin-bottom:22px;display:none;}
+  .config-banner.show{display:block;}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:22px;}
+  .kpi{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .kpi .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:700;}
+  .kpi .value{font-family:var(--headfont);font-size:26px;margin-top:4px;font-weight:600;color:var(--ink);}
+
+  .panel{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .panel h2{font-family:var(--headfont);font-size:17px;font-weight:600;margin:0 0 4px;color:var(--ink);}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+
+  .form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;}
+  .form-grid.two{grid-template-columns:repeat(2,1fr);}
+  .form-grid label{font-size:11px;color:var(--gray);font-weight:700;display:block;margin-bottom:4px;}
+  .form-grid input, .form-grid select{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:7px;color:var(--ink);}
+
+  .ativos-box{border:1.5px dashed var(--line);border-radius:10px;padding:14px;margin-bottom:14px;}
+  .ativo-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .ativo-row select{flex:2;} .ativo-row input{flex:1;}
+  .ativo-row button{flex-shrink:0;}
+  .del-ativo-btn{background:#fff;border:1.5px solid var(--line);border-radius:6px;color:var(--bad);cursor:pointer;width:30px;height:30px;font-size:16px;}
+
+  .assinatura-preview{font-family:monospace;font-size:12.5px;background:#F3EEEC;border-radius:8px;padding:10px 12px;color:var(--gray);margin-bottom:14px;}
+
+  .add-inline{display:flex;gap:8px;margin-top:4px;}
+  .add-inline input{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:7px 10px;border:1.5px solid var(--line);border-radius:7px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);font-weight:700;padding:0 8px 10px;border-bottom:2px solid var(--ink);white-space:nowrap;}
+  tbody td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink);}
+  tbody tr:hover{background:var(--burgundy-tint);}
+  .assinatura-cell{font-family:monospace;font-size:11.5px;color:var(--gray);}
+  .badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;white-space:nowrap;}
+  .badge.ok{background:var(--good-tint);color:var(--good);}
+  .badge.soon{background:var(--warn-tint);color:#8A6512;}
+  .badge.late{background:var(--bad-tint);color:var(--bad);}
+  .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
+  .filter-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+  .filter-row select{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:6px 10px;border:1.5px solid var(--line);border-radius:7px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark"><svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 31.3 8.7">
+  <defs>
+    <style>
+      .st0 {
+        fill: none;
+        stroke: #8B1A3A;
+        stroke-miterlimit: 10;
+        stroke-width: 0px;
+      }
+
+      .st1 {
+        display: none;
+        opacity: .5;
+      }
+
+      .st2 {
+        font-family: Helvetica, Helvetica;
+        font-size: 1.7px;
+        letter-spacing: .3em;
+      }
+
+      .st2, .st3, .st4 {
+        fill: #8B1A3A;
+      }
+
+      .st4 {
+        font-family: ArialMT, Arial;
+        font-size: .5px;
+        letter-spacing: .3em;
+      }
+    </style>
+  </defs>
+  <image class="st1" width="1000" height="250" transform="translate(-1 -.4) scale(0)" xlink:href="Bioflora/logo-bioflora-vinho-e-cinza.png"/>
+  <path class="st3" d="M12.1,3.5s.2-.2.2-.3c.3-.8-.1-1.6-.9-1.7-.3,0-1.5,0-1.8,0-.2,0-.3.2-.4.4,0,1.1,0,2.3,0,3.3,0,.3.1.4.4.5.4,0,1.6,0,1.9,0,.7-.2,1-1,.8-1.6,0-.1-.2-.4-.2-.5ZM11.4,4.6s-.2.1-.2.1h-1.1v-.9h1.2s.1,0,.2.1c.2.2.2.6,0,.7ZM11.4,2.9s-.2.2-.2.2h-1.2v-.7s0,0,0,0h1.1s.2,0,.2.1c.2.1.2.3,0,.5Z"/>
+  <path class="st3" d="M7.1,3.6c0,.1,0,0,0,0,0-.6-.9-.9-1.3-1.1-1.3-.4-2.5,0-3.8-.3S0,1.2,0,0c.5.4.9.6,1.6.8,1.1.2,2.4,0,3.5,0s2.5,1.5,2,2.8Z"/>
+  <path class="st3" d="M7.9,5.9c-.1-.2-.3-.3-.5-.4-1.7-.9-5.3.4-6.4-1.5s-.2-.4,0-.4c.6,0,1.4,0,2,0,1.5,0,3.3-.3,4.4,1s.5.9.4,1.4Z"/>
+  <path class="st3" d="M4.4,7.5C2.3,7.3.8,5.4.3,3.5s-.1-.5,0-.7c0,0,.3.6.4.7.7,1.4,1.8,2.7,3.4,3.1s1.4.2,1.9-.1.4-.7,0-1.1c.5,0,1.8.1,1.9.8.2,1.1-1.3,1.5-2.1,1.5-.1,0-.2,0-.3,0-.2,0-.3,0-.6,0-.1,0-.2,0-.3,0Z"/>
+  <path class="st3" d="M30.5,3.6c-.3-1.2-2-1.6-2.8-.6-.9,1.1,0,2.5,1.3,2.5.2,0,.6,0,.7-.1,0,0,0,0,.2.1.2.1.5,0,.6-.3,0-.3,0-1.4,0-1.7ZM29.1,4.7c-1,.1-1.2-1.3-.2-1.5.9,0,1.1,1.3.2,1.5Z"/>
+  <path class="st3" d="M15.6,2.4c-2.3,0-2,3.6.3,3.1,1.8-.4,1.5-3.2-.3-3.1ZM16.3,4.3c-.3.8-1.6.4-1.4-.5.1-.5.8-.7,1.2-.3.2.2.3.5.2.8Z"/>
+  <path class="st3" d="M23.1,2.5c-1.9.3-1.7,3.3.4,3.2,2.1-.1,1.9-3.5-.4-3.2ZM22.9,4.6c-.5-.4-.3-1.3.4-1.3.3,0,.6.2.7.5.3.7-.5,1.3-1.1.9Z"/>
+  <path class="st3" d="M19,3.2c.7,0,.7.9,0,.9,0,.8.2,1.8-.6,2.3s-1,.1-.9-.4.7-.2.7-.5,0-1,0-1.4c-.7,0-.7-.9,0-.9,0-.6,0-1.3.6-1.6s1.1-.3,1,.4-.7.2-.7.5,0,.6,0,.8Z"/>
+  <path class="st3" d="M20.8,1.6c0,0,.1.3.1.4v2.6c.1.3.4.2.6.3.3.2.1.7-.2.7-.6,0-1.2-.4-1.2-.9,0-.9,0-1.9,0-2.9,0-.3.5-.4.7-.2Z"/>
+  <path class="st3" d="M25.7,2.9c.3-.3,1.2-.7,1.5-.3s.1.4,0,.6c-.3.2-.6,0-.9.4s0,1.2-.1,1.6-.8.4-.8,0,0-1.1,0-1.4.2-.7.4-1Z"/>
+  <path class="st3" d="M13.5,2.6c0,0,.1.2.1.3,0,.7,0,1.6,0,2.4,0,.5-.8.5-.9,0,0-.8,0-1.6,0-2.3s.4-.6.7-.3Z"/>
+  <path class="st3" d="M6.9,3.8c-.4-.2-.8-.3-1.2-.4,0-.2,0-.3,0-.5s-.2-.3-.2-.4c.6.1,1.8.5,1.5,1.3Z"/>
+  <path class="st3" d="M13.1,1.5c.7-.1.7,1,0,.8s-.5-.8,0-.8Z"/>
+  <circle class="st0" cx="30.9" cy="2.7" r=".4"/>
+  <text class="st2" transform="translate(19.1 7.9) scale(1 1)"><tspan x="0" y="0">FARMÁCIA</tspan></text>
+  <text class="st4" transform="translate(30.7 2.9)"><tspan x="0" y="0">R</tspan></text>
+</svg></div>
+      <div class="brand-text">
+        <h1>Reaproveitamento</h1>
+        <p>Farmácia Bioflora — manipulados não retirados</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button onclick="logout()" class="btn secondary">Sair</button>
+    </div>
+  </header>
+
+  <div id="configBanner" class="config-banner">
+    ⚠️ Configure SUPABASE_URL e SUPABASE_ANON_KEY no início do código antes de usar.
+  </div>
+
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="panel">
+    <h2>Registrar não retirado</h2>
+    <p class="desc">Cadastre no momento em que a requisição virar "não retirada" — os ativos são selecionados da lista, nunca digitados, pra garantir que a assinatura bata certinho entre fórmulas iguais</p>
+
+    <div class="form-grid">
+      <div><label>Requisição</label><input id="fRequisicao" placeholder="Nº da requisição" /></div>
+      <div><label>Forma farmacêutica</label><input id="fForma" placeholder="Cápsula, creme, etc" /></div>
+      <div><label>Quantidade</label><input id="fQuantidade" type="number" /></div>
+      <div><label>Data de manipulação</label><input id="fDataManip" type="date" /></div>
+    </div>
+    <div class="form-grid two">
+      <div><label>Validade</label><input id="fValidade" type="date" /></div>
+      <div><label>Motivo</label><input id="fMotivo" placeholder="Ex: cliente não retirou" /></div>
+    </div>
+
+    <label style="font-size:11px;color:var(--gray);font-weight:700;display:block;margin-bottom:8px;">Ativos e concentrações</label>
+    <div class="ativos-box" id="ativosBox"></div>
+    <button class="btn secondary small" onclick="addAtivoRow()">+ Adicionar ativo</button>
+    <div class="add-inline" style="margin-top:10px">
+      <input id="novoAtivoCodigo" placeholder="Código do ativo novo" style="max-width:140px" />
+      <input id="novoAtivoNome" placeholder="Nome do ativo novo" style="max-width:220px" />
+      <button class="btn secondary small" onclick="addAtivoCatalogo()">+ Cadastrar ativo no catálogo</button>
+    </div>
+
+    <div class="assinatura-preview" id="assinaturaPreview">Assinatura: —</div>
+
+    <button class="btn" onclick="salvarNaoRetirado()">Salvar não retirado</button>
+  </div>
+
+  <div class="panel">
+    <h2>Disponíveis para reaproveitamento</h2>
+    <p class="desc">Ordenado por validade — o que vence primeiro aparece primeiro</p>
+    <div class="filter-row">
+      <button class="btn secondary small" onclick="loadDisponiveis()">Atualizar lista</button>
+    </div>
+    <table>
+      <thead><tr>
+        <th>Requisição</th><th>Forma</th><th>Qtd</th><th>Manipulado em</th><th>Validade</th>
+        <th>Ativos</th><th>Situação</th><th>Ação</th>
+      </tr></thead>
+      <tbody id="disponiveisTbody"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Reaproveitados</h2>
+    <p class="desc">Histórico do que já foi usado em vez de manipular do zero</p>
+    <table>
+      <thead><tr><th>Requisição original</th><th>Ativos</th><th>Reaproveitado para</th><th>Data</th></tr></thead>
+      <tbody id="reaproveitadosTbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+
+let supa = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+  document.getElementById('configBanner').classList.add('show');
+}
+requireRole(['chefia','laboratorio','conferencia']).catch(()=>{});
+
+let ativosCatalogo = [];
+
+function localDateStr(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
+
+async function loadAtivosCatalogo(){
+  const { data } = await supa.from('ativos_cadastrados').select('id,codigo,nome').order('codigo');
+  ativosCatalogo = data || [];
+}
+
+// ---------- Linhas dinâmicas de ativo no formulário ----------
+function addAtivoRow(){
+  const box = document.getElementById('ativosBox');
+  const row = document.createElement('div');
+  row.className = 'ativo-row';
+  row.innerHTML = `
+    <select class="ativo-select" onchange="updateAssinaturaPreview()">
+      <option value="">Selecione o ativo...</option>
+      ${ativosCatalogo.map(a=>`<option value="${a.id}" data-codigo="${a.codigo}">${a.codigo} — ${a.nome}</option>`).join('')}
+    </select>
+    <input class="ativo-conc" placeholder="Concentração (ex: 500mg)" oninput="updateAssinaturaPreview()" />
+    <button class="del-ativo-btn" onclick="this.parentElement.remove(); updateAssinaturaPreview();">×</button>
+  `;
+  box.appendChild(row);
+}
+window.addAtivoRow = addAtivoRow;
+
+function updateAssinaturaPreview(){
+  const rows = [...document.querySelectorAll('.ativo-row')];
+  const partes = rows.map(r => {
+    const sel = r.querySelector('.ativo-select');
+    const conc = r.querySelector('.ativo-conc').value.trim();
+    const codigo = sel.selectedOptions[0]?.dataset.codigo;
+    if(!codigo || !conc) return null;
+    return `${codigo}:${conc}`;
+  }).filter(Boolean).sort();
+  const assinatura = partes.join('+');
+  document.getElementById('assinaturaPreview').textContent = 'Assinatura: ' + (assinatura || '—');
+  return assinatura;
+}
+window.updateAssinaturaPreview = updateAssinaturaPreview;
+
+async function addAtivoCatalogo(){
+  const codigo = document.getElementById('novoAtivoCodigo').value.trim();
+  const nome = document.getElementById('novoAtivoNome').value.trim();
+  if(!codigo || !nome){ alert('Preencha código e nome do ativo.'); return; }
+  const { error } = await supa.from('ativos_cadastrados').insert({codigo, nome});
+  if(error){ alert('Erro: '+error.message); return; }
+  document.getElementById('novoAtivoCodigo').value = '';
+  document.getElementById('novoAtivoNome').value = '';
+  await loadAtivosCatalogo();
+  // atualiza as opções dos selects já existentes na tela
+  document.querySelectorAll('.ativo-select').forEach(sel=>{
+    const atual = sel.value;
+    sel.innerHTML = `<option value="">Selecione o ativo...</option>` + ativosCatalogo.map(a=>`<option value="${a.id}" data-codigo="${a.codigo}">${a.codigo} — ${a.nome}</option>`).join('');
+    sel.value = atual;
+  });
+}
+window.addAtivoCatalogo = addAtivoCatalogo;
+
+// ---------- Salvar não retirado ----------
+async function salvarNaoRetirado(){
+  const requisicao = document.getElementById('fRequisicao').value.trim();
+  const forma = document.getElementById('fForma').value.trim();
+  const quantidade = document.getElementById('fQuantidade').value || null;
+  const dataManip = document.getElementById('fDataManip').value || null;
+  const validade = document.getElementById('fValidade').value || null;
+  const motivo = document.getElementById('fMotivo').value.trim();
+  const assinatura = updateAssinaturaPreview();
+
+  const ativoRows = [...document.querySelectorAll('.ativo-row')].map(r => {
+    const sel = r.querySelector('.ativo-select');
+    const conc = r.querySelector('.ativo-conc').value.trim();
+    return { ativo_id: sel.value, concentracao: conc };
+  }).filter(a => a.ativo_id && a.concentracao);
+
+  if(!requisicao){ alert('Informe a requisição.'); return; }
+  if(!ativoRows.length){ alert('Adicione pelo menos um ativo.'); return; }
+
+  const { data: inserted, error } = await supa.from('manipulados_nao_retirados').insert({
+    requisicao, forma_farmaceutica: forma, quantidade, data_manipulacao: dataManip,
+    validade, motivo, assinatura
+  }).select().single();
+  if(error){ alert('Erro ao salvar: '+error.message); return; }
+
+  const linhas = ativoRows.map(a => ({ manipulado_id: inserted.id, ativo_id: a.ativo_id, concentracao: a.concentracao }));
+  const { error: err2 } = await supa.from('manipulados_ativos').insert(linhas);
+  if(err2){ alert('Erro ao salvar ativos: '+err2.message); return; }
+
+  document.getElementById('fRequisicao').value = '';
+  document.getElementById('fForma').value = '';
+  document.getElementById('fQuantidade').value = '';
+  document.getElementById('fDataManip').value = '';
+  document.getElementById('fValidade').value = '';
+  document.getElementById('fMotivo').value = '';
+  document.getElementById('ativosBox').innerHTML = '';
+  updateAssinaturaPreview();
+
+  await loadDisponiveis();
+  await loadKpis();
+}
+window.salvarNaoRetirado = salvarNaoRetirado;
+
+// ---------- Listas ----------
+function situacaoValidade(validade){
+  if(!validade) return { cls:'ok', label:'Sem validade informada' };
+  const hoje = new Date(localDateStr(new Date()));
+  const dataVal = new Date(validade+'T00:00:00');
+  const diffDias = Math.round((dataVal - hoje) / 86400000);
+  if(diffDias < 0) return { cls:'late', label:'Vencido' };
+  if(diffDias <= 5) return { cls:'soon', label:`Vence em ${diffDias}d` };
+  return { cls:'ok', label:`Vence em ${diffDias}d` };
+}
+
+async function loadDisponiveis(){
+  const { data, error } = await supa.from('manipulados_nao_retirados')
+    .select('id,requisicao,forma_farmaceutica,quantidade,data_manipulacao,validade,assinatura,manipulados_ativos(concentracao,ativos_cadastrados(codigo,nome))')
+    .eq('status','disponivel')
+    .order('validade', {ascending:true, nullsFirst:false});
+  if(error){ console.error(error); return; }
+
+  document.getElementById('disponiveisTbody').innerHTML = (data && data.length) ? data.map(m => {
+    const sit = situacaoValidade(m.validade);
+    const ativosTxt = (m.manipulados_ativos||[]).map(a => `${a.ativos_cadastrados?.codigo}:${a.concentracao}`).join(', ');
+    return `<tr>
+      <td>${m.requisicao}</td>
+      <td>${m.forma_farmaceutica||'—'}</td>
+      <td>${m.quantidade||'—'}</td>
+      <td>${m.data_manipulacao||'—'}</td>
+      <td>${m.validade||'—'}</td>
+      <td class="assinatura-cell">${ativosTxt}</td>
+      <td><span class="badge ${sit.cls}">${sit.label}</span></td>
+      <td><button class="btn secondary small" onclick="marcarReaproveitado('${m.id}')">Marcar reaproveitado</button></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="8" class="empty-state">Nenhum item disponível no momento.</td></tr>`;
+}
+
+async function marcarReaproveitado(id){
+  const requisicaoDestino = prompt('Nº da requisição que está reaproveitando este manipulado:');
+  if(requisicaoDestino === null) return;
+  const { error } = await supa.from('manipulados_nao_retirados').update({
+    status: 'reaproveitado', reaproveitado_em: new Date().toISOString(), reaproveitado_para_requisicao: requisicaoDestino
+  }).eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  await loadDisponiveis();
+  await loadReaproveitados();
+  await loadKpis();
+}
+window.marcarReaproveitado = marcarReaproveitado;
+
+async function loadReaproveitados(){
+  const { data, error } = await supa.from('manipulados_nao_retirados')
+    .select('requisicao,reaproveitado_para_requisicao,reaproveitado_em,manipulados_ativos(concentracao,ativos_cadastrados(codigo))')
+    .eq('status','reaproveitado')
+    .order('reaproveitado_em', {ascending:false});
+  if(error){ console.error(error); return; }
+
+  document.getElementById('reaproveitadosTbody').innerHTML = (data && data.length) ? data.map(m => {
+    const ativosTxt = (m.manipulados_ativos||[]).map(a => `${a.ativos_cadastrados?.codigo}:${a.concentracao}`).join(', ');
+    return `<tr>
+      <td>${m.requisicao}</td>
+      <td class="assinatura-cell">${ativosTxt}</td>
+      <td>${m.reaproveitado_para_requisicao||'—'}</td>
+      <td>${m.reaproveitado_em ? new Date(m.reaproveitado_em).toLocaleDateString('pt-BR') : '—'}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="4" class="empty-state">Nenhum reaproveitamento registrado ainda.</td></tr>`;
+}
+
+async function loadKpis(){
+  const { data: disponiveis } = await supa.from('manipulados_nao_retirados').select('id').eq('status','disponivel');
+  const inicioMes = new Date(); inicioMes.setDate(1);
+  const { data: reaproveitadosMes } = await supa.from('manipulados_nao_retirados').select('id').eq('status','reaproveitado').gte('reaproveitado_em', inicioMes.toISOString());
+
+  document.getElementById('kpiRow').innerHTML = `
+    <div class="kpi"><div class="label">Disponíveis agora</div><div class="value">${(disponiveis||[]).length}</div></div>
+    <div class="kpi"><div class="label">Reaproveitados este mês</div><div class="value">${(reaproveitadosMes||[]).length}</div></div>
+  `;
+}
+
+async function init(){
+  await loadAtivosCatalogo();
+  addAtivoRow();
+  await loadKpis();
+  await loadDisponiveis();
+  await loadReaproveitados();
+}
+init();
+</script>
+</body>
+</html>
