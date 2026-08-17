@@ -18,44 +18,65 @@
     --info:#3E6B93; --info-tint:#E9F0F6;
     --warn:#C9922B; --warn-tint:#FBF1E0;
     --headfont: 'Cal Sans', 'Fraunces', serif;
+    --sidebar-w: 76px;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
-  .wrap{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
 
-  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
-  .brand-mark{height:32px;display:flex;align-items:center;}
-  .brand-mark svg{height:100%;width:auto;display:block;}
-  .top-actions{display:flex;gap:10px;align-items:center;}
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);background:var(--burgundy-dark);
+    display:flex;flex-direction:column;align-items:center;padding:20px 0;z-index:50;
+  }
+  .sidebar .mark{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;margin-bottom:28px;}
+  .sidebar .mark svg{width:22px;height:auto;display:block;}
+  .sidebar nav{display:flex;flex-direction:column;gap:8px;flex:1;}
+  .side-btn{
+    width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    color:rgba(255,255,255,.65);text-decoration:none;font-size:19px;cursor:pointer;border:none;background:transparent;
+    transition:.15s;position:relative;
+  }
+  .side-btn:hover{background:rgba(255,255,255,.1);color:#fff;}
+  .side-btn.active{background:#fff;color:var(--burgundy);}
+  .side-btn .tooltip{
+    position:absolute;left:56px;top:50%;transform:translateY(-50%);background:var(--ink);color:#fff;
+    font-size:11.5px;padding:5px 10px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:.12s;
+  }
+  .side-btn:hover .tooltip{opacity:1;}
+  .sidebar .bottom{display:flex;flex-direction:column;gap:8px;}
+
+  /* ---------- Main ---------- */
+  .main{margin-left:var(--sidebar-w);padding:28px 28px 80px;}
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
   .who{font-size:12.5px;color:var(--gray);}
-  .btn{font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:600;padding:8px 16px;border-radius:8px;border:1.5px solid var(--line);background:#fff;cursor:pointer;color:var(--ink);text-decoration:none;display:inline-block;}
-  .btn:hover{border-color:var(--burgundy);}
+
+  /* Quick stats row */
+  .quickstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+  .qs-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+  .qs-card .qs-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);font-weight:700;}
+  .qs-card .qs-value{font-family:var(--headfont);font-size:24px;font-weight:600;margin-top:4px;color:var(--ink);}
+  .qs-card.accent{background:var(--burgundy);color:#fff;}
+  .qs-card.accent .qs-label{color:rgba(255,255,255,.75);}
+  .qs-card.accent .qs-value{color:#fff;}
 
   /* Welcome hero */
   .hero{
     background:linear-gradient(135deg, var(--burgundy) 0%, var(--burgundy-dark) 100%);
-    border-radius:22px;padding:32px 34px;color:#fff;margin-bottom:22px;position:relative;overflow:hidden;
+    border-radius:22px;padding:28px 32px;color:#fff;margin-bottom:20px;position:relative;overflow:hidden;
   }
-  .hero::after{
-    content:'';position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;
-    background:rgba(255,255,255,.08);
-  }
+  .hero::after{content:'';position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.08);}
   .hero-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;position:relative;z-index:1;}
-  .hero h1{font-family:var(--headfont);font-size:30px;font-weight:600;margin:0;letter-spacing:-0.01em;}
+  .hero h1{font-family:var(--headfont);font-size:27px;font-weight:600;margin:0;letter-spacing:-0.01em;}
   .hero .sub{font-size:13px;opacity:.8;margin-top:4px;}
   .role-pill{background:rgba(255,255,255,.16);border-radius:20px;padding:6px 16px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
 
   /* Widget grid */
   .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-bottom:8px;}
-  .card{
-    background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;
-    grid-column:span 12;
-  }
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;grid-column:span 12;}
   @media (min-width:760px){
-    .card.w4{grid-column:span 4;}
-    .card.w6{grid-column:span 6;}
-    .card.w8{grid-column:span 8;}
-    .card.w12{grid-column:span 12;}
+    .card.w4{grid-column:span 4;} .card.w6{grid-column:span 6;} .card.w8{grid-column:span 8;} .card.w12{grid-column:span 12;}
   }
   .card h2{font-family:var(--headfont);font-size:15px;font-weight:600;margin:0 0 2px;color:var(--ink);}
   .card .card-sub{font-size:11.5px;color:var(--gray);margin:0 0 16px;}
@@ -66,29 +87,31 @@
   .stat-delta{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:20px;display:inline-block;margin-top:8px;}
   .stat-delta.good{background:var(--good-tint);color:var(--good);}
   .stat-delta.bad{background:var(--bad-tint);color:var(--bad);}
-  .stat-delta.neutral{background:#F1ECEA;color:var(--gray);}
 
   .mini-list{font-size:13px;}
   .mini-list-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);}
   .mini-list-row:last-child{border-bottom:none;}
   .mini-list-row .name{font-weight:600;}
-  .mini-list-row .val{font-variant-numeric:tabular-nums;color:var(--gray);}
   .badge{font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;text-transform:uppercase;}
   .badge.bad{background:var(--bad-tint);color:var(--bad);}
   .badge.warn{background:var(--warn-tint);color:#8A6512;}
   .badge.good{background:var(--good-tint);color:var(--good);}
   .badge.info{background:var(--info-tint);color:var(--info);}
 
-  canvas{max-height:180px;}
+  canvas{max-height:200px;}
   .empty-mini{font-size:12px;color:var(--gray);padding:14px 0;text-align:center;}
 
-  /* Access grid (módulos) */
+  /* Integrações (placeholder) */
+  .integ-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+  .integ-card{background:#fff;border:1.5px dashed var(--line);border-radius:16px;padding:20px;text-align:center;}
+  .integ-card .integ-icon{font-size:26px;margin-bottom:8px;}
+  .integ-card h3{font-family:var(--headfont);font-size:14px;margin:0 0 4px;color:var(--ink);}
+  .integ-card p{font-size:11.5px;color:var(--gray);margin:0 0 12px;line-height:1.4;}
+  .integ-soon{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);background:#F1ECEA;padding:5px 12px;border-radius:20px;display:inline-block;}
+
   .section-title{font-family:var(--headfont);font-size:17px;font-weight:600;margin:34px 0 14px;color:var(--ink);}
   .modules{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
-  .module-card{
-    background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;
-    text-decoration:none;color:var(--ink);display:block;transition:.15s;position:relative;overflow:hidden;
-  }
+  .module-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;text-decoration:none;color:var(--ink);display:block;transition:.15s;position:relative;overflow:hidden;}
   .module-card:hover{border-color:var(--burgundy);transform:translateY(-2px);}
   .module-card .stripe{position:absolute;top:0;left:0;right:0;height:4px;}
   .module-card .icon{font-size:24px;margin-bottom:10px;}
@@ -101,24 +124,20 @@
   .card-erros .stripe{background:#B4472F;}
   .card-meuserros .stripe{background:var(--good);}
 
-  .status-banner{
-    background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:12px;
-    padding:12px 16px;font-size:12.5px;color:#7A5C15;margin-top:24px;
-  }
+  .status-banner{background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:12px;padding:12px 16px;font-size:12.5px;color:#7A5C15;margin-top:24px;}
   .loading-msg{font-size:12px;color:var(--gray);padding:30px 0;text-align:center;}
   footer{margin-top:50px;text-align:center;font-size:11px;color:var(--gray);}
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <div class="topbar">
-    <div class="brand-mark"><svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 31.3 8.7">
+<div class="sidebar">
+  <div class="mark"><svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 31.3 8.7">
   <defs>
     <style>
       .st0 {
         fill: none;
-        stroke: #8B1A3A;
+        stroke: #fff;
         stroke-miterlimit: 10;
         stroke-width: 0px;
       }
@@ -135,7 +154,7 @@
       }
 
       .st2, .st3, .st4 {
-        fill: #8B1A3A;
+        fill: #fff;
       }
 
       .st4 {
@@ -163,73 +182,98 @@
   <text class="st2" transform="translate(19.1 7.9) scale(1 1)"><tspan x="0" y="0">FARMÁCIA</tspan></text>
   <text class="st4" transform="translate(30.7 2.9)"><tspan x="0" y="0">R</tspan></text>
 </svg></div>
-    <div class="top-actions">
+  <nav>
+    <a href="index.html" class="side-btn active">🏠<span class="tooltip">Início</span></a>
+    <button class="side-btn" onclick="scrollToId('widgetArea')">📊<span class="tooltip">Meu painel</span></button>
+    <button class="side-btn" onclick="scrollToId('modulesSection')">🧩<span class="tooltip">Módulos</span></button>
+    <a href="meus-erros.html" class="side-btn">📈<span class="tooltip">Meus erros</span></a>
+    <a href="admin.html" class="side-btn" id="sideAdminBtn" style="display:none">🔐<span class="tooltip">Administração</span></a>
+  </nav>
+  <div class="bottom">
+    <button class="side-btn" onclick="logout()" title="Sair">↩️<span class="tooltip">Sair</span></button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="wrap">
+
+    <div class="topbar">
       <span class="who" id="whoLabel"></span>
-      <button onclick="logout()" class="btn">Sair</button>
+      <span></span>
     </div>
-  </div>
 
-  <div class="hero">
-    <div class="hero-top">
-      <div>
-        <h1 id="heroGreeting">Bem-vindo(a)</h1>
-        <div class="sub" id="heroSub">Farmácia Bioflora — painel interno</div>
+    <div class="quickstats" id="quickStats"></div>
+
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <h1 id="heroGreeting">Bem-vindo(a)</h1>
+          <div class="sub" id="heroSub">Farmácia Bioflora — painel interno</div>
+        </div>
+        <div class="role-pill" id="rolePill"></div>
       </div>
-      <div class="role-pill" id="rolePill"></div>
     </div>
+
+    <div id="roleBanner" class="status-banner" style="display:none"></div>
+
+    <div id="widgetArea"></div>
+
+    <div class="section-title">Integrações</div>
+    <div class="integ-grid">
+      <div class="integ-card">
+        <div class="integ-icon">📅</div>
+        <h3>Google Calendar</h3>
+        <p>Ver e sincronizar a agenda da farmácia direto no Hub.</p>
+        <span class="integ-soon">Em breve</span>
+      </div>
+      <div class="integ-card">
+        <div class="integ-icon">🤝</div>
+        <h3>CRM</h3>
+        <p>Relacionamento e histórico de clientes/prescritores num só lugar.</p>
+        <span class="integ-soon">Em breve</span>
+      </div>
+      <div class="integ-card">
+        <div class="integ-icon">🗂️</div>
+        <h3>Quadro de Tarefas</h3>
+        <p>Quadro estilo Trello para tarefas específicas de cada setor.</p>
+        <span class="integ-soon">Em breve</span>
+      </div>
+    </div>
+
+    <div class="section-title" id="modulesSection">Acesso rápido</div>
+    <div class="modules" id="modules">
+      <a class="module-card card-horas" href="banco-de-horas.html" data-roles="chefia,rh,gestao">
+        <div class="stripe"></div><div class="icon">⏱️</div><h3>Banco de Horas</h3>
+        <p>Espelho de ponto, saldo, atrasos e faltas.</p>
+      </a>
+      <a class="module-card card-rotulos" href="rotulos.html" data-roles="chefia,recepcao,conferencia,atendente">
+        <div class="stripe"></div><div class="icon">🏷️</div><h3>Controle de Rótulos</h3>
+        <p>A comprar, pedido e chegou.</p>
+      </a>
+      <a class="module-card card-producao" href="producao.html" data-roles="chefia,laboratorio,conferencia,atendente">
+        <div class="stripe"></div><div class="icon">🧪</div><h3>Ordem de Produção</h3>
+        <p>Rastreabilidade completa até a liberação.</p>
+      </a>
+      <a class="module-card card-controle" href="controle-producao.html" data-roles="chefia,laboratorio">
+        <div class="stripe"></div><div class="icon">📋</div><h3>Controle de Produção</h3>
+        <p>Total diário de fórmulas e pesagens.</p>
+      </a>
+      <a class="module-card card-erros" href="erros.html" data-roles="chefia,conferencia">
+        <div class="stripe"></div><div class="icon">📝</div><h3>Registro de Erros</h3>
+        <p>Grade de lançamento da conferência.</p>
+      </a>
+      <a class="module-card card-meuserros" href="meus-erros.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
+        <div class="stripe"></div><div class="icon">📈</div><h3>Meus Erros</h3>
+        <p>Seu desempenho individual detalhado.</p>
+      </a>
+      <a class="module-card card-admin" href="admin.html" data-roles="chefia" style="display:none">
+        <div class="stripe" style="background:var(--ink)"></div><div class="icon">🔐</div><h3>Administração</h3>
+        <p>Usuários e permissões.</p>
+      </a>
+    </div>
+
+    <footer>Hub interno Bioflora · construído sob medida</footer>
   </div>
-
-  <div id="roleBanner" class="status-banner" style="display:none"></div>
-
-  <div id="widgetArea"></div>
-
-  <div class="section-title">Acesso rápido</div>
-  <div class="modules" id="modules">
-    <a class="module-card card-horas" href="banco-de-horas.html" data-roles="chefia,rh,gestao">
-      <div class="stripe"></div>
-      <div class="icon">⏱️</div>
-      <h3>Banco de Horas</h3>
-      <p>Espelho de ponto, saldo, atrasos e faltas.</p>
-    </a>
-    <a class="module-card card-rotulos" href="rotulos.html" data-roles="chefia,recepcao,conferencia,atendente">
-      <div class="stripe"></div>
-      <div class="icon">🏷️</div>
-      <h3>Controle de Rótulos</h3>
-      <p>A comprar, pedido e chegou.</p>
-    </a>
-    <a class="module-card card-producao" href="producao.html" data-roles="chefia,laboratorio,conferencia,atendente">
-      <div class="stripe"></div>
-      <div class="icon">🧪</div>
-      <h3>Ordem de Produção</h3>
-      <p>Rastreabilidade completa até a liberação.</p>
-    </a>
-    <a class="module-card card-controle" href="controle-producao.html" data-roles="chefia,laboratorio">
-      <div class="stripe"></div>
-      <div class="icon">📋</div>
-      <h3>Controle de Produção</h3>
-      <p>Total diário de fórmulas e pesagens.</p>
-    </a>
-    <a class="module-card card-erros" href="erros.html" data-roles="chefia,conferencia">
-      <div class="stripe"></div>
-      <div class="icon">📝</div>
-      <h3>Registro de Erros</h3>
-      <p>Grade de lançamento da conferência.</p>
-    </a>
-    <a class="module-card card-meuserros" href="meus-erros.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
-      <div class="stripe"></div>
-      <div class="icon">📈</div>
-      <h3>Meus Erros</h3>
-      <p>Seu desempenho individual detalhado.</p>
-    </a>
-    <a class="module-card card-admin" href="admin.html" data-roles="chefia" style="display:none">
-      <div class="stripe" style="background:var(--ink)"></div>
-      <div class="icon">🔐</div>
-      <h3>Administração</h3>
-      <p>Usuários e permissões.</p>
-    </a>
-  </div>
-
-  <footer>Hub interno Bioflora · construído sob medida</footer>
 </div>
 
 <script>
@@ -240,6 +284,8 @@ const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', conferencia:'Conferência', atendente:'Atendente', sem_papel:'Sem papel'};
 
 async function logout(){ await supa.auth.signOut(); window.location.href = 'login.html'; }
+function scrollToId(id){ document.getElementById(id)?.scrollIntoView({behavior:'smooth', block:'start'}); }
+window.scrollToId = scrollToId;
 
 function localDateStr(d){ const off = d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
 function lastNDaysLocal(n){ const days=[]; const hoje=new Date(localDateStr(new Date())+'T12:00:00'); for(let i=n-1;i>=0;i--){ const d=new Date(hoje); d.setDate(d.getDate()-i); days.push(localDateStr(d)); } return days; }
@@ -256,6 +302,7 @@ async function init(){
   document.getElementById('whoLabel').textContent = perfil?.nome_exibicao || session.user.email;
   document.getElementById('heroGreeting').textContent = `Bem-vindo(a), ${primeiroNome.charAt(0).toUpperCase()+primeiroNome.slice(1)}`;
   document.getElementById('rolePill').textContent = ROLE_LABELS[papel];
+  if(papel === 'chefia') document.getElementById('sideAdminBtn').style.display = 'flex';
 
   if(papel === 'sem_papel'){
     document.getElementById('roleBanner').style.display = 'block';
@@ -271,58 +318,77 @@ async function init(){
     el.style.display = roles.includes(papel) ? 'block' : 'none';
   });
 
+  await renderQuickStats(papel);
   await renderWidgets(papel, perfil);
 }
 
 // ============================================================
-// WIDGETS — cada card da home é uma função independente aqui.
-// Pra adicionar um novo no futuro: escreve uma função nova
-// (buscar dado + montar HTML) e chama ela dentro de renderWidgets,
-// dentro do "if" do(s) cargo(s) que devem vê-la.
+// QUICK STATS — fileira de números pequenos no topo (estilo "Quick Stats")
 // ============================================================
+async function renderQuickStats(papel){
+  const el = document.getElementById('quickStats');
+  const stats = [];
 
+  if(['chefia','recepcao','conferencia','atendente'].includes(papel)){
+    const { data } = await supa.from('rotulos_kanban').select('status');
+    stats.push({ label:'Rótulos a comprar', value:(data||[]).filter(r=>r.status==='a_comprar').length, accent:false });
+  }
+  if(['chefia','laboratorio','conferencia','atendente'].includes(papel)){
+    const { data } = await supa.from('ordens_producao').select('status');
+    stats.push({ label:'Ordens em andamento', value:(data||[]).filter(r=>r.status!=='liberado').length, accent:false });
+  }
+  if(papel === 'chefia' || papel === 'conferencia'){
+    const seteDias = new Date(); seteDias.setDate(seteDias.getDate()-7);
+    const { data } = await supa.from('erros_registrados').select('id').gte('registrado_em', seteDias.toISOString());
+    stats.push({ label:'Erros (7 dias)', value:(data||[]).length, accent:true });
+  }
+  if(['chefia','rh','gestao'].includes(papel)){
+    const { data: ultimo } = await supa.from('folhas_ponto').select('periodo_inicio').order('periodo_inicio',{ascending:false}).limit(1);
+    if(ultimo && ultimo.length){
+      const { data: folhas } = await supa.from('folhas_ponto').select('saldo_final_min').eq('periodo_inicio', ultimo[0].periodo_inicio);
+      stats.push({ label:'Saldo negativo', value:(folhas||[]).filter(f=>f.saldo_final_min<0).length, accent:false });
+    }
+  }
+
+  el.innerHTML = stats.map(s => `
+    <div class="qs-card ${s.accent?'accent':''}">
+      <div class="qs-label">${s.label}</div>
+      <div class="qs-value">${s.value}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// WIDGETS — cada card do painel principal é uma função independente.
+// Pra adicionar um novo no futuro: escreve uma função (buscar dado
+// + montar HTML) e chama ela dentro de renderWidgets, no "if" do(s)
+// cargo(s) que devem vê-la.
+// ============================================================
 async function renderWidgets(papel, perfil){
   const area = document.getElementById('widgetArea');
   area.innerHTML = '<div class="loading-msg">Carregando seu painel...</div>';
   const cards = [];
 
-  const podeVerErrosProprios = papel === 'atendente' || papel === 'conferencia' || papel === 'chefia' || perfil?.atendente_vinculado;
+  const podeVerErrosProprios = perfil?.atendente_vinculado;
   const podeVerErrosGeral = papel === 'conferencia' || papel === 'chefia';
   const podeVerRotulos = ['chefia','recepcao','conferencia','atendente'].includes(papel);
   const podeVerOrdens = ['chefia','laboratorio','conferencia','atendente'].includes(papel);
   const podeVerBancoHoras = ['chefia','rh','gestao'].includes(papel);
 
-  if(podeVerErrosProprios && perfil?.atendente_vinculado){
-    cards.push(await widgetMeusErros(perfil.atendente_vinculado));
-  }
-  if(podeVerErrosGeral){
-    cards.push(await widgetErrosEquipe());
-  }
-  if(podeVerRotulos){
-    cards.push(await widgetRotulos());
-  }
-  if(podeVerOrdens){
-    cards.push(await widgetOrdens());
-  }
-  if(podeVerBancoHoras){
-    cards.push(await widgetBancoHoras());
-  }
+  if(podeVerErrosProprios) cards.push(await widgetMeusErros(perfil.atendente_vinculado));
+  if(podeVerErrosGeral) cards.push(await widgetErrosEquipe());
+  if(podeVerRotulos) cards.push(await widgetRotulos());
+  if(podeVerOrdens) cards.push(await widgetOrdens());
+  if(podeVerBancoHoras) cards.push(await widgetBancoHoras());
 
   area.innerHTML = cards.length ? `<div class="grid">${cards.join('')}</div>` : '';
 
-  // Gráficos precisam ser desenhados depois do HTML existir no DOM
-  if(podeVerErrosProprios && perfil?.atendente_vinculado) drawMeusErrosChart(perfil.atendente_vinculado);
+  if(podeVerErrosProprios) drawMeusErrosChart(perfil.atendente_vinculado);
   if(podeVerErrosGeral) drawErrosEquipeChart();
 }
 
-// ---- Widget: Meus Erros (tendência) ----
 async function widgetMeusErros(nome){
-  return `
-    <div class="card w6">
-      <div class="card-head"><h2>Meus Erros</h2><span class="card-icon">📈</span></div>
-      <p class="card-sub">Tendência de 7 dias — ${nome}</p>
-      <canvas id="chartMeusErros"></canvas>
-    </div>`;
+  return `<div class="card w6"><div class="card-head"><h2>Meus Erros</h2><span class="card-icon">📈</span></div><p class="card-sub">Tendência de 7 dias — ${nome}</p><canvas id="chartMeusErros"></canvas></div>`;
 }
 async function drawMeusErrosChart(nome){
   const { data } = await supa.from('erros_registrados').select('registrado_em').eq('atendente', nome);
@@ -337,14 +403,8 @@ async function drawMeusErrosChart(nome){
   });
 }
 
-// ---- Widget: Erros da equipe (top 5) ----
 async function widgetErrosEquipe(){
-  return `
-    <div class="card w6">
-      <div class="card-head"><h2>Erros mais comuns</h2><span class="card-icon">⚠️</span></div>
-      <p class="card-sub">Equipe toda, últimos 30 dias</p>
-      <canvas id="chartErrosEquipe"></canvas>
-    </div>`;
+  return `<div class="card w6"><div class="card-head"><h2>Erros mais comuns</h2><span class="card-icon">⚠️</span></div><p class="card-sub">Equipe toda, últimos 30 dias</p><canvas id="chartErrosEquipe"></canvas></div>`;
 }
 async function drawErrosEquipeChart(){
   const umMes = new Date(); umMes.setDate(umMes.getDate()-30);
@@ -359,42 +419,31 @@ async function drawErrosEquipeChart(){
   });
 }
 
-// ---- Widget: Rótulos ----
 async function widgetRotulos(){
   const { data } = await supa.from('rotulos_kanban').select('status');
   const counts = { a_comprar:0, pedido:0, chegou:0 };
   (data||[]).forEach(r => { if(counts[r.status]!==undefined) counts[r.status]++; });
-  return `
-    <div class="card w4">
-      <div class="card-head"><h2>Rótulos</h2><span class="card-icon">🏷️</span></div>
-      <p class="card-sub">Situação atual</p>
-      <div class="mini-list">
-        <div class="mini-list-row"><span class="name">A comprar</span><span class="badge bad">${counts.a_comprar}</span></div>
-        <div class="mini-list-row"><span class="name">Pedido</span><span class="badge warn">${counts.pedido}</span></div>
-        <div class="mini-list-row"><span class="name">Chegou</span><span class="badge good">${counts.chegou}</span></div>
-      </div>
-    </div>`;
+  return `<div class="card w4"><div class="card-head"><h2>Rótulos</h2><span class="card-icon">🏷️</span></div><p class="card-sub">Situação atual</p>
+    <div class="mini-list">
+      <div class="mini-list-row"><span class="name">A comprar</span><span class="badge bad">${counts.a_comprar}</span></div>
+      <div class="mini-list-row"><span class="name">Pedido</span><span class="badge warn">${counts.pedido}</span></div>
+      <div class="mini-list-row"><span class="name">Chegou</span><span class="badge good">${counts.chegou}</span></div>
+    </div></div>`;
 }
 
-// ---- Widget: Ordens de produção ----
 async function widgetOrdens(){
   const { data } = await supa.from('ordens_producao').select('status');
   const counts = { em_falta:0, ordem_criada:0, em_manipulacao:0, liberado:0 };
   (data||[]).forEach(r => { if(counts[r.status]!==undefined) counts[r.status]++; });
-  return `
-    <div class="card w4">
-      <div class="card-head"><h2>Ordens de Produção</h2><span class="card-icon">🧪</span></div>
-      <p class="card-sub">Situação atual</p>
-      <div class="mini-list">
-        <div class="mini-list-row"><span class="name">Em falta</span><span class="badge bad">${counts.em_falta}</span></div>
-        <div class="mini-list-row"><span class="name">Ordem criada</span><span class="badge warn">${counts.ordem_criada}</span></div>
-        <div class="mini-list-row"><span class="name">Em manipulação</span><span class="badge info">${counts.em_manipulacao}</span></div>
-        <div class="mini-list-row"><span class="name">Liberado</span><span class="badge good">${counts.liberado}</span></div>
-      </div>
-    </div>`;
+  return `<div class="card w4"><div class="card-head"><h2>Ordens de Produção</h2><span class="card-icon">🧪</span></div><p class="card-sub">Situação atual</p>
+    <div class="mini-list">
+      <div class="mini-list-row"><span class="name">Em falta</span><span class="badge bad">${counts.em_falta}</span></div>
+      <div class="mini-list-row"><span class="name">Ordem criada</span><span class="badge warn">${counts.ordem_criada}</span></div>
+      <div class="mini-list-row"><span class="name">Em manipulação</span><span class="badge info">${counts.em_manipulacao}</span></div>
+      <div class="mini-list-row"><span class="name">Liberado</span><span class="badge good">${counts.liberado}</span></div>
+    </div></div>`;
 }
 
-// ---- Widget: Banco de horas ----
 async function widgetBancoHoras(){
   const { data: ultimoPeriodo } = await supa.from('folhas_ponto').select('periodo_inicio').order('periodo_inicio',{ascending:false}).limit(1);
   if(!ultimoPeriodo || !ultimoPeriodo.length){
@@ -404,13 +453,8 @@ async function widgetBancoHoras(){
   const { data: folhas } = await supa.from('folhas_ponto').select('saldo_final_min').eq('periodo_inicio', periodo);
   const negativos = (folhas||[]).filter(f=>f.saldo_final_min<0).length;
   const total = (folhas||[]).length;
-  return `
-    <div class="card w4">
-      <div class="card-head"><h2>Banco de Horas</h2><span class="card-icon">⏱️</span></div>
-      <p class="card-sub">Período ${periodo}</p>
-      <div class="stat-big">${negativos}</div>
-      <div class="stat-delta ${negativos>0?'bad':'good'}">de ${total} com saldo negativo</div>
-    </div>`;
+  return `<div class="card w4"><div class="card-head"><h2>Banco de Horas</h2><span class="card-icon">⏱️</span></div><p class="card-sub">Período ${periodo}</p>
+    <div class="stat-big">${negativos}</div><div class="stat-delta ${negativos>0?'bad':'good'}">de ${total} com saldo negativo</div></div>`;
 }
 
 init();
