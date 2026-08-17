@@ -160,20 +160,11 @@ async function conectarGoogle(){
 window.conectarGoogle = conectarGoogle;
 
 async function chamarFuncaoEventos(body){
-  const resp = await fetch(EVENTS_FUNCTION_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${sessionToken}`,
-      'apikey': SUPABASE_ANON_KEY,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
-  });
-  if(!resp.ok){
-    const text = await resp.text().catch(()=> '');
-    return { error: `falha_http_${resp.status}`, detail: text };
+  const { data, error } = await supa.functions.invoke('google-calendar-events', { body });
+  if(error){
+    return { error: 'falha_invoke', detail: error.message || String(error) };
   }
-  return resp.json();
+  return data;
 }
 
 function renderNaoConectado(){
