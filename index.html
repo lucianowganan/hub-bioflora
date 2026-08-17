@@ -221,12 +221,12 @@
 
     <div class="section-title">Integrações</div>
     <div class="integ-grid">
-      <div class="integ-card">
+      <a class="integ-card" href="calendario.html" style="text-decoration:none;color:inherit;border-style:solid;cursor:pointer;">
         <div class="integ-icon">📅</div>
         <h3>Google Calendar</h3>
-        <p>Ver e sincronizar a agenda da farmácia direto no Hub.</p>
-        <span class="integ-soon">Em breve</span>
-      </div>
+        <p>Ver e criar eventos do seu Google Calendar pessoal direto no Hub.</p>
+        <span class="integ-soon" style="background:var(--good-tint);color:var(--good);">Disponível →</span>
+      </a>
       <div class="integ-card">
         <div class="integ-icon">🤝</div>
         <h3>CRM</h3>
@@ -379,9 +379,11 @@ async function renderWidgets(papel, perfil){
   const podeVerRotulos = ['chefia','recepcao','conferencia','atendente'].includes(papel);
   const podeVerOrdens = ['chefia','laboratorio','conferencia','atendente'].includes(papel);
   const podeVerBancoHoras = ['chefia','rh','gestao'].includes(papel);
+  const podeVerReaproveitamento = ['chefia','laboratorio','conferencia','atendente'].includes(papel);
 
   if(podeVerErrosProprios) cards.push(await widgetMeusErros(perfil.atendente_vinculado));
   if(podeVerErrosGeral) cards.push(await widgetErrosEquipe());
+  if(podeVerReaproveitamento) cards.push(await widgetReaproveitamento());
   if(podeVerRotulos) cards.push(await widgetRotulos());
   if(podeVerOrdens) cards.push(await widgetOrdens());
   if(podeVerBancoHoras) cards.push(await widgetBancoHoras());
@@ -422,6 +424,39 @@ async function drawErrosEquipeChart(){
     data:{ labels: top5.map(t=>t[0]), datasets:[{ data: top5.map(t=>t[1]), backgroundColor:'#8B1A3A', borderRadius:6 }]},
     options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
   });
+}
+
+function situacaoValidadeHome(validade){
+  if(!validade) return { cls:'good', label:'Sem validade' };
+  const hoje = new Date(localDateStr(new Date()));
+  const dataVal = new Date(validade+'T00:00:00');
+  const diffDias = Math.round((dataVal - hoje) / 86400000);
+  if(diffDias < 0) return { cls:'bad', label:'Vencido' };
+  if(diffDias <= 5) return { cls:'warn', label:`Vence em ${diffDias}d` };
+  return { cls:'good', label:`Vence em ${diffDias}d` };
+}
+
+async function widgetReaproveitamento(){
+  const { data } = await supa.from('manipulados_nao_retirados')
+    .select('requisicao,forma_farmaceutica,validade,manipulados_ativos(concentracao,ativos_cadastrados(codigo))')
+    .eq('status','disponivel')
+    .order('validade', {ascending:true, nullsFirst:false})
+    .limit(6);
+
+  const linhas = (data && data.length) ? data.map(m => {
+    const sit = situacaoValidadeHome(m.validade);
+    const ativosTxt = (m.manipulados_ativos||[]).map(a => `${a.ativos_cadastrados?.codigo}:${a.concentracao}`).join(' + ');
+    return `<div class="mini-list-row">
+      <span class="name">${m.requisicao} <span style="font-weight:400;color:var(--gray)">— ${m.forma_farmaceutica||'—'} (${ativosTxt||'sem ativos'})</span></span>
+      <span class="badge ${sit.cls}">${sit.label}</span>
+    </div>`;
+  }).join('') : `<div class="empty-mini">Nenhum manipulado disponível pra reaproveitar agora.</div>`;
+
+  return `<div class="card w8">
+    <div class="card-head"><h2>Disponíveis para Reaproveitamento</h2><span class="card-icon">♻️</span></div>
+    <p class="card-sub">Manipulados não retirados prontos pra usar em vez de manipular de novo</p>
+    <div class="mini-list">${linhas}</div>
+  </div>`;
 }
 
 async function widgetRotulos(){
