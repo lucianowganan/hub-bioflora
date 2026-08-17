@@ -51,6 +51,26 @@
   .del-btn{font-family:'Maven Pro',sans-serif;font-size:11px;color:var(--bad);border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 9px;cursor:pointer;}
   .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
   .loading{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
+
+  .cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .cal-header h3{font-family:var(--headfont);font-size:16px;margin:0;text-transform:capitalize;}
+  .cal-nav{display:flex;gap:8px;}
+  .cal-nav button{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:6px 12px;border-radius:7px;border:1.5px solid var(--line);background:#fff;cursor:pointer;}
+  .cal-nav button:hover{border-color:var(--burgundy);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-weekday{text-align:center;font-size:10.5px;font-weight:700;color:var(--gray);text-transform:uppercase;padding:4px 0 8px;}
+  .cal-day{
+    aspect-ratio:1;border:1.5px solid var(--line);border-radius:8px;padding:6px;cursor:pointer;
+    display:flex;flex-direction:column;justify-content:space-between;transition:.1s;background:#fff;
+  }
+  .cal-day:hover{border-color:var(--burgundy);}
+  .cal-day.empty{visibility:hidden;pointer-events:none;}
+  .cal-day.today{border-color:var(--burgundy);border-width:2px;}
+  .cal-day.selected{background:var(--burgundy-tint);border-color:var(--burgundy);}
+  .cal-day-num{font-size:13px;font-weight:600;}
+  .cal-day-dots{display:flex;gap:2px;flex-wrap:wrap;}
+  .cal-day-dot{width:6px;height:6px;border-radius:50%;background:var(--burgundy);}
+  .day-events-panel{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);}
 </style>
 </head>
 <body>
@@ -185,6 +205,11 @@ function fmtEventTime(ev){
   return d.toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
 }
 
+let mesAtual = new Date();
+mesAtual.setDate(1);
+let diaSelecionado = null;
+let eventosDoMes = [];
+
 async function renderConectado(){
   document.getElementById('content').innerHTML = `
     <div class="panel">
@@ -198,28 +223,117 @@ async function renderConectado(){
       <button class="btn" onclick="criarEvento()">Criar evento</button>
     </div>
     <div class="panel">
-      <h2>Próximos eventos</h2>
-      <p class="desc">Próximos 30 dias</p>
-      <div id="eventosArea"><div class="loading">Carregando eventos...</div></div>
+      <div class="cal-header">
+        <h3 id="calMesLabel"></h3>
+        <div class="cal-nav">
+          <button onclick="mudarMes(-1)">← Anterior</button>
+          <button onclick="irParaMesAtual()">Hoje</button>
+          <button onclick="mudarMes(1)">Próximo →</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="calGrid"><div class="loading">Carregando calendário...</div></div>
+      <div class="day-events-panel" id="dayEventsPanel" style="display:none"></div>
     </div>`;
   await loadEventos();
 }
 
-async function loadEventos(){
-  const data = await chamarFuncaoEventos({ action: 'list' });
-  if(data.error === 'not_connected'){ renderNaoConectado(); return; }
-  if(data.error){ document.getElementById('eventosArea').innerHTML = `<div class="msg err">Erro: ${data.error}</div>`; return; }
+function mudarMes(delta){
+  mesAtual.setMonth(mesAtual.getMonth() + delta);
+  diaSelecionado = null;
+  loadEventos();
+}
+window.mudarMes = mudarMes;
 
-  const items = data.items || [];
-  document.getElementById('eventosArea').innerHTML = items.length ? items.map(ev => `
-    <div class="event-row">
-      <div>
-        <div class="event-title">${ev.summary || '(sem título)'}</div>
-        <div class="event-time">${fmtEventTime(ev)}</div>
+function irParaMesAtual(){
+  mesAtual = new Date();
+  mesAtual.setDate(1);
+  diaSelecionado = localDateStrCal(new Date());
+  loadEventos();
+}
+window.irParaMesAtual = irParaMesAtual;
+
+function localDateStrCal(d){
+  const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off*60000).toISOString().slice(0,10);
+}
+
+async function loadEventos(){
+  const inicioMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth(), 1);
+  const fimMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 1);
+
+  const data = await chamarFuncaoEventos({ action: 'list', timeMin: inicioMes.toISOString(), timeMax: fimMes.toISOString() });
+  if(data.error === 'not_connected'){ renderNaoConectado(); return; }
+  if(data.error){ document.getElementById('calGrid').innerHTML = `<div class="msg err">Erro: ${data.error}</div>`; return; }
+
+  eventosDoMes = data.items || [];
+  renderCalendarGrid();
+  if(diaSelecionado) renderDayPanel(diaSelecionado);
+}
+
+function eventDateKey(ev){
+  const raw = ev.start?.dateTime || ev.start?.date;
+  if(!raw) return null;
+  return raw.slice(0,10);
+}
+
+function renderCalendarGrid(){
+  const label = mesAtual.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  document.getElementById('calMesLabel').textContent = label;
+
+  const porDia = {};
+  eventosDoMes.forEach(ev => {
+    const key = eventDateKey(ev);
+    if(!key) return;
+    if(!porDia[key]) porDia[key] = [];
+    porDia[key].push(ev);
+  });
+
+  const ano = mesAtual.getFullYear(), mes = mesAtual.getMonth();
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes + 1, 0).getDate();
+  const hojeKey = localDateStrCal(new Date());
+
+  let html = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d => `<div class="cal-weekday">${d}</div>`).join('');
+  for(let i=0; i<primeiroDiaSemana; i++) html += `<div class="cal-day empty"></div>`;
+  for(let dia=1; dia<=totalDias; dia++){
+    const key = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const n = (porDia[key]||[]).length;
+    const classes = ['cal-day'];
+    if(key === hojeKey) classes.push('today');
+    if(key === diaSelecionado) classes.push('selected');
+    html += `<div class="${classes.join(' ')}" onclick="selecionarDia('${key}')">
+      <div class="cal-day-num">${dia}</div>
+      <div class="cal-day-dots">${Array.from({length:Math.min(n,4)}).map(()=>'<span class="cal-day-dot"></span>').join('')}</div>
+    </div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function selecionarDia(key){
+  diaSelecionado = diaSelecionado === key ? null : key;
+  renderCalendarGrid();
+  renderDayPanel(diaSelecionado);
+}
+window.selecionarDia = selecionarDia;
+
+function renderDayPanel(key){
+  const panel = document.getElementById('dayEventsPanel');
+  if(!key){ panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  const doDia = eventosDoMes.filter(ev => eventDateKey(ev) === key);
+  const dataFmt = new Date(key+'T12:00:00').toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'2-digit'});
+  panel.innerHTML = `
+    <h2 style="text-transform:capitalize">${dataFmt}</h2>
+    ${doDia.length ? doDia.map(ev => `
+      <div class="event-row">
+        <div>
+          <div class="event-title">${ev.summary || '(sem título)'}</div>
+          <div class="event-time">${fmtEventTime(ev)}</div>
+        </div>
+        <button class="del-btn" onclick="excluirEvento('${ev.id}')">Excluir</button>
       </div>
-      <button class="del-btn" onclick="excluirEvento('${ev.id}')">Excluir</button>
-    </div>
-  `).join('') : `<div class="empty-state">Nenhum evento nos próximos 30 dias.</div>`;
+    `).join('') : '<div class="empty-state">Nenhum evento neste dia.</div>'}
+  `;
 }
 
 async function criarEvento(){
@@ -235,7 +349,12 @@ async function criarEvento(){
   };
   const data = await chamarFuncaoEventos({ action: 'create', event });
   if(data.error){ alert('Erro ao criar: ' + JSON.stringify(data)); return; }
-  await renderConectado();
+  document.getElementById('fTitulo').value = '';
+  document.getElementById('fInicio').value = '';
+  document.getElementById('fFim').value = '';
+  mesAtual = new Date(new Date(inicio).getFullYear(), new Date(inicio).getMonth(), 1);
+  diaSelecionado = localDateStrCal(new Date(inicio));
+  await loadEventos();
 }
 window.criarEvento = criarEvento;
 
@@ -251,6 +370,7 @@ async function init(){
   if(!session) return;
   sessionToken = session.access_token;
   handleQueryParams();
+  diaSelecionado = localDateStrCal(new Date());
 
   const check = await chamarFuncaoEventos({ action: 'list' });
   if(check.error === 'not_connected'){
