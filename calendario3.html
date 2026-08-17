@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendário — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.cdnfonts.com/css/cal-sans" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#111111; --paper:#FBF9F7; --line:#C9BFC1; --gray:#4A4245;
+    --good:#3F7A57; --good-tint:#E8F3EC; --bad:#B4472F; --bad-tint:#FBEBE6;
+    --warn:#C9922B; --warn-tint:#FBF1E0;
+    --headfont: 'Cal Sans', 'Fraunces', serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:900px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{height:34px;display:flex;align-items:center;}
+  .brand-mark svg{height:100%;width:auto;display:block;}
+  .brand-text h1{font-family:var(--headfont);font-weight:600;font-size:24px;margin:0;color:var(--ink);}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1.5px solid var(--line);}
+
+  .panel{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .panel h2{font-family:var(--headfont);font-size:17px;font-weight:600;margin:0 0 4px;color:var(--ink);}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+
+  .connect-box{text-align:center;padding:40px 20px;}
+  .connect-box .icon{font-size:36px;margin-bottom:12px;}
+
+  .msg{font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:16px;}
+  .msg.ok{background:var(--good-tint);color:var(--good);}
+  .msg.err{background:var(--bad-tint);color:var(--bad);}
+
+  .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px;}
+  .form-grid label{font-size:11px;color:var(--gray);font-weight:700;display:block;margin-bottom:4px;}
+  .form-grid input{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:7px;}
+
+  .event-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);}
+  .event-row:last-child{border-bottom:none;}
+  .event-title{font-weight:600;}
+  .event-time{font-size:11.5px;color:var(--gray);}
+  .del-btn{font-family:'Maven Pro',sans-serif;font-size:11px;color:var(--bad);border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 9px;cursor:pointer;}
+  .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
+  .loading{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
+
+  .cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .cal-header h3{font-family:var(--headfont);font-size:16px;margin:0;text-transform:capitalize;}
+  .cal-nav{display:flex;gap:8px;}
+  .cal-nav button{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:6px 12px;border-radius:7px;border:1.5px solid var(--line);background:#fff;cursor:pointer;}
+  .cal-nav button:hover{border-color:var(--burgundy);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-weekday{text-align:center;font-size:10.5px;font-weight:700;color:var(--gray);text-transform:uppercase;padding:4px 0 8px;}
+  .cal-day{
+    aspect-ratio:1;border:1.5px solid var(--line);border-radius:8px;padding:6px;cursor:pointer;
+    display:flex;flex-direction:column;justify-content:space-between;transition:.1s;background:#fff;
+  }
+  .cal-day:hover{border-color:var(--burgundy);}
+  .cal-day.empty{visibility:hidden;pointer-events:none;}
+  .cal-day.today{border-color:var(--burgundy);border-width:2px;}
+  .cal-day.selected{background:var(--burgundy-tint);border-color:var(--burgundy);}
+  .cal-day-num{font-size:13px;font-weight:600;}
+  .cal-day-dots{display:flex;gap:2px;flex-wrap:wrap;}
+  .cal-day-dot{width:6px;height:6px;border-radius:50%;background:var(--burgundy);}
+  .day-events-panel{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark"><svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 31.3 8.7">
+  <defs>
+    <style>
+      .st0 {
+        fill: none;
+        stroke: #8B1A3A;
+        stroke-miterlimit: 10;
+        stroke-width: 0px;
+      }
+
+      .st1 {
+        display: none;
+        opacity: .5;
+      }
+
+      .st2 {
+        font-family: Helvetica, Helvetica;
+        font-size: 1.7px;
+        letter-spacing: .3em;
+      }
+
+      .st2, .st3, .st4 {
+        fill: #8B1A3A;
+      }
+
+      .st4 {
+        font-family: ArialMT, Arial;
+        font-size: .5px;
+        letter-spacing: .3em;
+      }
+    </style>
+  </defs>
+  <image class="st1" width="1000" height="250" transform="translate(-1 -.4) scale(0)" xlink:href="Bioflora/logo-bioflora-vinho-e-cinza.png"/>
+  <path class="st3" d="M12.1,3.5s.2-.2.2-.3c.3-.8-.1-1.6-.9-1.7-.3,0-1.5,0-1.8,0-.2,0-.3.2-.4.4,0,1.1,0,2.3,0,3.3,0,.3.1.4.4.5.4,0,1.6,0,1.9,0,.7-.2,1-1,.8-1.6,0-.1-.2-.4-.2-.5ZM11.4,4.6s-.2.1-.2.1h-1.1v-.9h1.2s.1,0,.2.1c.2.2.2.6,0,.7ZM11.4,2.9s-.2.2-.2.2h-1.2v-.7s0,0,0,0h1.1s.2,0,.2.1c.2.1.2.3,0,.5Z"/>
+  <path class="st3" d="M7.1,3.6c0,.1,0,0,0,0,0-.6-.9-.9-1.3-1.1-1.3-.4-2.5,0-3.8-.3S0,1.2,0,0c.5.4.9.6,1.6.8,1.1.2,2.4,0,3.5,0s2.5,1.5,2,2.8Z"/>
+  <path class="st3" d="M7.9,5.9c-.1-.2-.3-.3-.5-.4-1.7-.9-5.3.4-6.4-1.5s-.2-.4,0-.4c.6,0,1.4,0,2,0,1.5,0,3.3-.3,4.4,1s.5.9.4,1.4Z"/>
+  <path class="st3" d="M4.4,7.5C2.3,7.3.8,5.4.3,3.5s-.1-.5,0-.7c0,0,.3.6.4.7.7,1.4,1.8,2.7,3.4,3.1s1.4.2,1.9-.1.4-.7,0-1.1c.5,0,1.8.1,1.9.8.2,1.1-1.3,1.5-2.1,1.5-.1,0-.2,0-.3,0-.2,0-.3,0-.6,0-.1,0-.2,0-.3,0Z"/>
+  <path class="st3" d="M30.5,3.6c-.3-1.2-2-1.6-2.8-.6-.9,1.1,0,2.5,1.3,2.5.2,0,.6,0,.7-.1,0,0,0,0,.2.1.2.1.5,0,.6-.3,0-.3,0-1.4,0-1.7ZM29.1,4.7c-1,.1-1.2-1.3-.2-1.5.9,0,1.1,1.3.2,1.5Z"/>
+  <path class="st3" d="M15.6,2.4c-2.3,0-2,3.6.3,3.1,1.8-.4,1.5-3.2-.3-3.1ZM16.3,4.3c-.3.8-1.6.4-1.4-.5.1-.5.8-.7,1.2-.3.2.2.3.5.2.8Z"/>
+  <path class="st3" d="M23.1,2.5c-1.9.3-1.7,3.3.4,3.2,2.1-.1,1.9-3.5-.4-3.2ZM22.9,4.6c-.5-.4-.3-1.3.4-1.3.3,0,.6.2.7.5.3.7-.5,1.3-1.1.9Z"/>
+  <path class="st3" d="M19,3.2c.7,0,.7.9,0,.9,0,.8.2,1.8-.6,2.3s-1,.1-.9-.4.7-.2.7-.5,0-1,0-1.4c-.7,0-.7-.9,0-.9,0-.6,0-1.3.6-1.6s1.1-.3,1,.4-.7.2-.7.5,0,.6,0,.8Z"/>
+  <path class="st3" d="M20.8,1.6c0,0,.1.3.1.4v2.6c.1.3.4.2.6.3.3.2.1.7-.2.7-.6,0-1.2-.4-1.2-.9,0-.9,0-1.9,0-2.9,0-.3.5-.4.7-.2Z"/>
+  <path class="st3" d="M25.7,2.9c.3-.3,1.2-.7,1.5-.3s.1.4,0,.6c-.3.2-.6,0-.9.4s0,1.2-.1,1.6-.8.4-.8,0,0-1.1,0-1.4.2-.7.4-1Z"/>
+  <path class="st3" d="M13.5,2.6c0,0,.1.2.1.3,0,.7,0,1.6,0,2.4,0,.5-.8.5-.9,0,0-.8,0-1.6,0-2.3s.4-.6.7-.3Z"/>
+  <path class="st3" d="M6.9,3.8c-.4-.2-.8-.3-1.2-.4,0-.2,0-.3,0-.5s-.2-.3-.2-.4c.6.1,1.8.5,1.5,1.3Z"/>
+  <path class="st3" d="M13.1,1.5c.7-.1.7,1,0,.8s-.5-.8,0-.8Z"/>
+  <circle class="st0" cx="30.9" cy="2.7" r=".4"/>
+  <text class="st2" transform="translate(19.1 7.9) scale(1 1)"><tspan x="0" y="0">FARMÁCIA</tspan></text>
+  <text class="st4" transform="translate(30.7 2.9)"><tspan x="0" y="0">R</tspan></text>
+</svg></div>
+      <div class="brand-text">
+        <h1>Meu Calendário</h1>
+        <p>Google Calendar conectado ao Hub</p>
+      </div>
+    </div>
+    <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+  </header>
+
+  <div id="msgArea"></div>
+  <div id="content"><div class="loading">Carregando...</div></div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const GOOGLE_CLIENT_ID = '765557552334-tjiphb0dk27258j5jkqj8au5j2149enh.apps.googleusercontent.com';
+const REDIRECT_URI = 'https://gbbjpltqmbhlfluqhrmg.supabase.co/functions/v1/google-calendar-callback';
+const EVENTS_FUNCTION_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co/functions/v1/google-calendar-events';
+
+let sessionToken = null;
+
+// Trata retorno da autorização (?conectado=1 ou ?erro=...)
+function handleQueryParams(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('conectado')){
+    document.getElementById('msgArea').innerHTML = `<div class="msg ok">✓ Google Calendar conectado com sucesso!</div>`;
+  }
+  if(params.get('erro')){
+    document.getElementById('msgArea').innerHTML = `<div class="msg err">Erro ao conectar: ${params.get('erro')}. Tente novamente.</div>`;
+  }
+  if(params.toString()){
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+async function conectarGoogle(){
+  const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  authUrl.searchParams.set('client_id', GOOGLE_CLIENT_ID);
+  authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('scope', 'https://www.googleapis.com/auth/calendar');
+  authUrl.searchParams.set('access_type', 'offline');
+  authUrl.searchParams.set('prompt', 'consent');
+  authUrl.searchParams.set('state', sessionToken);
+  window.location.href = authUrl.toString();
+}
+window.conectarGoogle = conectarGoogle;
+
+async function chamarFuncaoEventos(body){
+  const { data, error } = await supa.functions.invoke('google-calendar-events', { body });
+  if(error){
+    return { error: 'falha_invoke', detail: error.message || String(error) };
+  }
+  return data;
+}
+
+function renderNaoConectado(){
+  document.getElementById('content').innerHTML = `
+    <div class="panel connect-box">
+      <div class="icon">📅</div>
+      <h2>Conecte seu Google Calendar</h2>
+      <p class="desc">Veja e crie eventos direto no Hub, sem precisar abrir o Google Calendar separado.</p>
+      <button class="btn" onclick="conectarGoogle()">Conectar Google Calendar</button>
+    </div>`;
+}
+
+function fmtEventTime(ev){
+  const start = ev.start?.dateTime || ev.start?.date;
+  if(!start) return '';
+  const d = new Date(start);
+  if(ev.start?.date && !ev.start?.dateTime) return d.toLocaleDateString('pt-BR') + ' (dia todo)';
+  return d.toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+}
+
+let mesAtual = new Date();
+mesAtual.setDate(1);
+let diaSelecionado = null;
+let eventosDoMes = [];
+
+async function renderConectado(){
+  document.getElementById('content').innerHTML = `
+    <div class="panel">
+      <h2>Novo evento</h2>
+      <p class="desc">Cria direto no seu Google Calendar</p>
+      <div class="form-grid">
+        <div style="grid-column:span 2"><label>Título</label><input id="fTitulo" placeholder="Nome do evento" /></div>
+        <div><label>Início</label><input id="fInicio" type="datetime-local" /></div>
+        <div><label>Fim</label><input id="fFim" type="datetime-local" /></div>
+      </div>
+      <button class="btn" onclick="criarEvento()">Criar evento</button>
+    </div>
+    <div class="panel">
+      <div class="cal-header">
+        <h3 id="calMesLabel"></h3>
+        <div class="cal-nav">
+          <button onclick="mudarMes(-1)">← Anterior</button>
+          <button onclick="irParaMesAtual()">Hoje</button>
+          <button onclick="mudarMes(1)">Próximo →</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="calGrid"><div class="loading">Carregando calendário...</div></div>
+      <div class="day-events-panel" id="dayEventsPanel" style="display:none"></div>
+    </div>`;
+  await loadEventos();
+}
+
+function mudarMes(delta){
+  mesAtual.setMonth(mesAtual.getMonth() + delta);
+  diaSelecionado = null;
+  loadEventos();
+}
+window.mudarMes = mudarMes;
+
+function irParaMesAtual(){
+  mesAtual = new Date();
+  mesAtual.setDate(1);
+  diaSelecionado = localDateStrCal(new Date());
+  loadEventos();
+}
+window.irParaMesAtual = irParaMesAtual;
+
+function localDateStrCal(d){
+  const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off*60000).toISOString().slice(0,10);
+}
+
+async function loadEventos(){
+  const inicioMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth(), 1);
+  const fimMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 1);
+
+  const data = await chamarFuncaoEventos({ action: 'list', timeMin: inicioMes.toISOString(), timeMax: fimMes.toISOString() });
+  if(data.error === 'not_connected'){ renderNaoConectado(); return; }
+  if(data.error){ document.getElementById('calGrid').innerHTML = `<div class="msg err">Erro: ${data.error}</div>`; return; }
+
+  eventosDoMes = data.items || [];
+  renderCalendarGrid();
+  if(diaSelecionado) renderDayPanel(diaSelecionado);
+}
+
+function eventDateKey(ev){
+  const raw = ev.start?.dateTime || ev.start?.date;
+  if(!raw) return null;
+  return raw.slice(0,10);
+}
+
+function renderCalendarGrid(){
+  const label = mesAtual.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  document.getElementById('calMesLabel').textContent = label;
+
+  const porDia = {};
+  eventosDoMes.forEach(ev => {
+    const key = eventDateKey(ev);
+    if(!key) return;
+    if(!porDia[key]) porDia[key] = [];
+    porDia[key].push(ev);
+  });
+
+  const ano = mesAtual.getFullYear(), mes = mesAtual.getMonth();
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes + 1, 0).getDate();
+  const hojeKey = localDateStrCal(new Date());
+
+  let html = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d => `<div class="cal-weekday">${d}</div>`).join('');
+  for(let i=0; i<primeiroDiaSemana; i++) html += `<div class="cal-day empty"></div>`;
+  for(let dia=1; dia<=totalDias; dia++){
+    const key = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const n = (porDia[key]||[]).length;
+    const classes = ['cal-day'];
+    if(key === hojeKey) classes.push('today');
+    if(key === diaSelecionado) classes.push('selected');
+    html += `<div class="${classes.join(' ')}" onclick="selecionarDia('${key}')">
+      <div class="cal-day-num">${dia}</div>
+      <div class="cal-day-dots">${Array.from({length:Math.min(n,4)}).map(()=>'<span class="cal-day-dot"></span>').join('')}</div>
+    </div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function selecionarDia(key){
+  diaSelecionado = diaSelecionado === key ? null : key;
+  renderCalendarGrid();
+  renderDayPanel(diaSelecionado);
+}
+window.selecionarDia = selecionarDia;
+
+function renderDayPanel(key){
+  const panel = document.getElementById('dayEventsPanel');
+  if(!key){ panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  const doDia = eventosDoMes.filter(ev => eventDateKey(ev) === key);
+  const dataFmt = new Date(key+'T12:00:00').toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'2-digit'});
+  panel.innerHTML = `
+    <h2 style="text-transform:capitalize">${dataFmt}</h2>
+    ${doDia.length ? doDia.map(ev => `
+      <div class="event-row">
+        <div>
+          <div class="event-title">${ev.summary || '(sem título)'}</div>
+          <div class="event-time">${fmtEventTime(ev)}</div>
+        </div>
+        <button class="del-btn" onclick="excluirEvento('${ev.id}')">Excluir</button>
+      </div>
+    `).join('') : '<div class="empty-state">Nenhum evento neste dia.</div>'}
+  `;
+}
+
+async function criarEvento(){
+  const titulo = document.getElementById('fTitulo').value.trim();
+  const inicio = document.getElementById('fInicio').value;
+  const fim = document.getElementById('fFim').value;
+  if(!titulo || !inicio || !fim){ alert('Preencha título, início e fim.'); return; }
+
+  const event = {
+    summary: titulo,
+    start: { dateTime: new Date(inicio).toISOString() },
+    end: { dateTime: new Date(fim).toISOString() },
+  };
+  const data = await chamarFuncaoEventos({ action: 'create', event });
+  if(data.error){ alert('Erro ao criar: ' + JSON.stringify(data)); return; }
+  document.getElementById('fTitulo').value = '';
+  document.getElementById('fInicio').value = '';
+  document.getElementById('fFim').value = '';
+  mesAtual = new Date(new Date(inicio).getFullYear(), new Date(inicio).getMonth(), 1);
+  diaSelecionado = localDateStrCal(new Date(inicio));
+  await loadEventos();
+}
+window.criarEvento = criarEvento;
+
+async function excluirEvento(id){
+  if(!confirm('Excluir este evento?')) return;
+  await chamarFuncaoEventos({ action: 'delete', eventId: id });
+  await loadEventos();
+}
+window.excluirEvento = excluirEvento;
+
+async function init(){
+  const { session } = (await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente'])) || {};
+  if(!session) return;
+  sessionToken = session.access_token;
+  handleQueryParams();
+  diaSelecionado = localDateStrCal(new Date());
+
+  const check = await chamarFuncaoEventos({ action: 'list' });
+
+  // DIAGNÓSTICO VISÍVEL — mostra exatamente o que a função devolveu
+  const diagBox = document.createElement('div');
+  diagBox.style.cssText = 'background:#000;color:#0f0;font-family:monospace;font-size:12px;padding:14px;border-radius:8px;margin-bottom:16px;white-space:pre-wrap;word-break:break-all;';
+  diagBox.textContent = 'DIAGNÓSTICO — resposta bruta da função:\n' + JSON.stringify(check, null, 2);
+  document.getElementById('content').before(diagBox);
+
+  if(check.error === 'not_connected'){
+    renderNaoConectado();
+  } else if(check.error){
+    document.getElementById('content').innerHTML = `<div class="panel"><div class="msg err">Erro ao falar com o servidor: ${check.error}${check.detail ? ' — '+check.detail : ''}</div></div>`;
+  } else {
+    await renderConectado();
+  }
+}
+init();
+</script>
+</body>
+</html>
