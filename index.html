@@ -5,72 +5,114 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hub Bioflora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.cdnfonts.com/css/cal-sans" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
   :root{
-    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
-    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --burgundy:#8B1A3A; --burgundy-dark:#5E1027; --burgundy-tint:#F7E9EE;
+    --ink:#161213; --paper:#F3EEEC; --line:#DDD3D0; --gray:#4A4245;
     --good:#3F7A57; --good-tint:#E8F3EC;
     --bad:#B4472F; --bad-tint:#FBEBE6;
     --info:#3E6B93; --info-tint:#E9F0F6;
     --warn:#C9922B; --warn-tint:#FBF1E0;
+    --headfont: 'Cal Sans', 'Fraunces', serif;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
-  .wrap{max-width:1100px;margin:0 auto;padding:60px 28px 80px;}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
 
-  .brand{display:flex;align-items:center;gap:14px;margin-bottom:8px;}
-  .brand-mark{height:42px;display:flex;align-items:center;flex-shrink:0;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
+  .brand-mark{height:32px;display:flex;align-items:center;}
   .brand-mark svg{height:100%;width:auto;display:block;}
-  .brand h1{font-family:'Fraunces',serif;font-weight:600;font-size:28px;margin:0;letter-spacing:-0.01em;}
-  .brand p{margin:2px 0 0;font-size:13.5px;color:var(--gray);}
+  .top-actions{display:flex;gap:10px;align-items:center;}
+  .who{font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:600;padding:8px 16px;border-radius:8px;border:1.5px solid var(--line);background:#fff;cursor:pointer;color:var(--ink);text-decoration:none;display:inline-block;}
+  .btn:hover{border-color:var(--burgundy);}
 
-  .modules{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:44px;}
+  /* Welcome hero */
+  .hero{
+    background:linear-gradient(135deg, var(--burgundy) 0%, var(--burgundy-dark) 100%);
+    border-radius:22px;padding:32px 34px;color:#fff;margin-bottom:22px;position:relative;overflow:hidden;
+  }
+  .hero::after{
+    content:'';position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;
+    background:rgba(255,255,255,.08);
+  }
+  .hero-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;position:relative;z-index:1;}
+  .hero h1{font-family:var(--headfont);font-size:30px;font-weight:600;margin:0;letter-spacing:-0.01em;}
+  .hero .sub{font-size:13px;opacity:.8;margin-top:4px;}
+  .role-pill{background:rgba(255,255,255,.16);border-radius:20px;padding:6px 16px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+
+  /* Widget grid */
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-bottom:8px;}
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;
+    grid-column:span 12;
+  }
+  @media (min-width:760px){
+    .card.w4{grid-column:span 4;}
+    .card.w6{grid-column:span 6;}
+    .card.w8{grid-column:span 8;}
+    .card.w12{grid-column:span 12;}
+  }
+  .card h2{font-family:var(--headfont);font-size:15px;font-weight:600;margin:0 0 2px;color:var(--ink);}
+  .card .card-sub{font-size:11.5px;color:var(--gray);margin:0 0 16px;}
+  .card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px;}
+  .card-icon{font-size:20px;}
+
+  .stat-big{font-family:var(--headfont);font-size:34px;font-weight:600;color:var(--ink);line-height:1;}
+  .stat-delta{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:20px;display:inline-block;margin-top:8px;}
+  .stat-delta.good{background:var(--good-tint);color:var(--good);}
+  .stat-delta.bad{background:var(--bad-tint);color:var(--bad);}
+  .stat-delta.neutral{background:#F1ECEA;color:var(--gray);}
+
+  .mini-list{font-size:13px;}
+  .mini-list-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);}
+  .mini-list-row:last-child{border-bottom:none;}
+  .mini-list-row .name{font-weight:600;}
+  .mini-list-row .val{font-variant-numeric:tabular-nums;color:var(--gray);}
+  .badge{font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;text-transform:uppercase;}
+  .badge.bad{background:var(--bad-tint);color:var(--bad);}
+  .badge.warn{background:var(--warn-tint);color:#8A6512;}
+  .badge.good{background:var(--good-tint);color:var(--good);}
+  .badge.info{background:var(--info-tint);color:var(--info);}
+
+  canvas{max-height:180px;}
+  .empty-mini{font-size:12px;color:var(--gray);padding:14px 0;text-align:center;}
+
+  /* Access grid (módulos) */
+  .section-title{font-family:var(--headfont);font-size:17px;font-weight:600;margin:34px 0 14px;color:var(--ink);}
+  .modules{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
   .module-card{
-    background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px;
+    background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;
     text-decoration:none;color:var(--ink);display:block;transition:.15s;position:relative;overflow:hidden;
   }
-  .module-card:hover{border-color:var(--burgundy);transform:translateY(-2px);box-shadow:0 8px 24px rgba(139,26,58,.08);}
+  .module-card:hover{border-color:var(--burgundy);transform:translateY(-2px);}
   .module-card .stripe{position:absolute;top:0;left:0;right:0;height:4px;}
-  .module-card .icon{font-size:30px;margin-bottom:14px;}
-  .module-card h2{font-family:'Fraunces',serif;font-size:18px;font-weight:600;margin:0 0 6px;}
-  .module-card p{font-size:12.8px;color:var(--gray);margin:0;line-height:1.5;}
-  .module-card .go{font-size:12px;font-weight:600;color:var(--burgundy);margin-top:16px;display:flex;align-items:center;gap:4px;}
-
+  .module-card .icon{font-size:24px;margin-bottom:10px;}
+  .module-card h3{font-family:var(--headfont);font-size:15px;font-weight:600;margin:0 0 4px;}
+  .module-card p{font-size:11.5px;color:var(--gray);margin:0;line-height:1.4;}
   .card-horas .stripe{background:var(--burgundy);}
   .card-rotulos .stripe{background:var(--warn);}
   .card-producao .stripe{background:var(--info);}
   .card-controle .stripe{background:#6E4A8C;}
   .card-erros .stripe{background:#B4472F;}
-  .card-meuserros .stripe{background:#3F7A57;}
+  .card-meuserros .stripe{background:var(--good);}
 
   .status-banner{
-    background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;
-    padding:12px 16px;font-size:12.5px;color:#7A5C15;margin-top:40px;
+    background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:12px;
+    padding:12px 16px;font-size:12.5px;color:#7A5C15;margin-top:24px;
   }
-
-  /* ---- Resumo (só chefia) ---- */
-  .resumo{margin-top:52px;}
-  .resumo-title{font-family:'Fraunces',serif;font-size:19px;font-weight:600;margin:0 0 4px;}
-  .resumo-sub{font-size:12.5px;color:var(--gray);margin:0 0 18px;}
-  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
-  .kpi-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
-  .kpi-card .label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:600;}
-  .kpi-card .value{font-family:'Fraunces',serif;font-size:28px;margin-top:6px;font-weight:600;}
-  .kpi-card .value.warn{color:var(--warn);}
-  .kpi-card .value.bad{color:var(--bad);}
-  .kpi-card .value.good{color:var(--good);}
-  .kpi-card .sub-list{font-size:11.5px;color:var(--gray);margin-top:8px;line-height:1.6;}
-  .kpi-card .sub-list strong{color:var(--ink);}
-  .kpi-loading{font-size:12px;color:var(--gray);}
-
-  footer{margin-top:50px;text-align:center;font-size:11.5px;color:var(--gray);}
+  .loading-msg{font-size:12px;color:var(--gray);padding:30px 0;text-align:center;}
+  footer{margin-top:50px;text-align:center;font-size:11px;color:var(--gray);}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="brand">
+  <div class="topbar">
     <div class="brand-mark"><svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 31.3 8.7">
   <defs>
     <style>
@@ -121,185 +163,254 @@
   <text class="st2" transform="translate(19.1 7.9) scale(1 1)"><tspan x="0" y="0">FARMÁCIA</tspan></text>
   <text class="st4" transform="translate(30.7 2.9)"><tspan x="0" y="0">R</tspan></text>
 </svg></div>
-    <div>
-      <h1>Hub Bioflora</h1>
-      <p>Painel interno — Farmácia Bioflora</p>
+    <div class="top-actions">
+      <span class="who" id="whoLabel"></span>
+      <button onclick="logout()" class="btn">Sair</button>
     </div>
   </div>
 
-  <div id="topActions" style="display:flex;justify-content:flex-end;gap:10px;margin-top:-10px;"></div>
+  <div class="hero">
+    <div class="hero-top">
+      <div>
+        <h1 id="heroGreeting">Bem-vindo(a)</h1>
+        <div class="sub" id="heroSub">Farmácia Bioflora — painel interno</div>
+      </div>
+      <div class="role-pill" id="rolePill"></div>
+    </div>
+  </div>
 
+  <div id="roleBanner" class="status-banner" style="display:none"></div>
+
+  <div id="widgetArea"></div>
+
+  <div class="section-title">Acesso rápido</div>
   <div class="modules" id="modules">
     <a class="module-card card-horas" href="banco-de-horas.html" data-roles="chefia,rh,gestao">
       <div class="stripe"></div>
       <div class="icon">⏱️</div>
-      <h2>Banco de Horas</h2>
-      <p>Upload do espelho de ponto mensal, cálculo automático de saldo, atrasos e faltas, com histórico entre meses.</p>
-      <div class="go">Abrir módulo →</div>
+      <h3>Banco de Horas</h3>
+      <p>Espelho de ponto, saldo, atrasos e faltas.</p>
     </a>
-
     <a class="module-card card-rotulos" href="rotulos.html" data-roles="chefia,recepcao,conferencia,atendente">
       <div class="stripe"></div>
       <div class="icon">🏷️</div>
-      <h2>Controle de Rótulos</h2>
-      <p>Quadro de acompanhamento: a comprar, pedido e chegou — visão rápida do estoque de rótulos.</p>
-      <div class="go">Abrir módulo →</div>
+      <h3>Controle de Rótulos</h3>
+      <p>A comprar, pedido e chegou.</p>
     </a>
-
     <a class="module-card card-producao" href="producao.html" data-roles="chefia,laboratorio,conferencia,atendente">
       <div class="stripe"></div>
       <div class="icon">🧪</div>
-      <h2>Ordem de Produção</h2>
-      <p>Rastreamento completo: solicitante, nº da ordem, responsável pela manipulação e liberação (CQ).</p>
-      <div class="go">Abrir módulo →</div>
+      <h3>Ordem de Produção</h3>
+      <p>Rastreabilidade completa até a liberação.</p>
     </a>
-
     <a class="module-card card-controle" href="controle-producao.html" data-roles="chefia,laboratorio">
       <div class="stripe"></div>
       <div class="icon">📋</div>
-      <h2>Controle de Produção</h2>
-      <p>Total diário por colaborador: fórmulas manipuladas e pesagens feitas.</p>
-      <div class="go">Abrir módulo →</div>
+      <h3>Controle de Produção</h3>
+      <p>Total diário de fórmulas e pesagens.</p>
     </a>
-
     <a class="module-card card-erros" href="erros.html" data-roles="chefia,conferencia">
       <div class="stripe"></div>
       <div class="icon">📝</div>
-      <h2>Registro de Erros</h2>
-      <p>Planilha de conferência: cada atendente numa linha, cada tipo de erro numa coluna — clique para lançar.</p>
-      <div class="go">Abrir módulo →</div>
+      <h3>Registro de Erros</h3>
+      <p>Grade de lançamento da conferência.</p>
     </a>
-
     <a class="module-card card-meuserros" href="meus-erros.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
       <div class="stripe"></div>
       <div class="icon">📈</div>
-      <h2>Meus Erros</h2>
-      <p>Acompanhamento individual — cada pessoa vê só o próprio desempenho de conferência.</p>
-      <div class="go">Abrir módulo →</div>
+      <h3>Meus Erros</h3>
+      <p>Seu desempenho individual detalhado.</p>
     </a>
-
     <a class="module-card card-admin" href="admin.html" data-roles="chefia" style="display:none">
       <div class="stripe" style="background:var(--ink)"></div>
       <div class="icon">🔐</div>
-      <h2>Administração</h2>
-      <p>Gerenciar usuários e permissões de acesso por setor.</p>
-      <div class="go">Abrir módulo →</div>
+      <h3>Administração</h3>
+      <p>Usuários e permissões.</p>
     </a>
-  </div>
-
-  <div class="status-banner" id="roleBanner" style="display:none"></div>
-
-  <div class="resumo" id="resumoArea" style="display:none">
-    <div class="resumo-title">Resumo geral</div>
-    <p class="resumo-sub">Visão rápida dos pontos de atenção em todos os módulos</p>
-    <div class="kpi-row" id="kpiRow"><div class="kpi-loading">Carregando resumo...</div></div>
   </div>
 
   <footer>Hub interno Bioflora · construído sob medida</footer>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', conferencia:'Conferência', atendente:'Atendente', sem_papel:'Sem papel'};
+
 async function logout(){ await supa.auth.signOut(); window.location.href = 'login.html'; }
+
+function localDateStr(d){ const off = d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
+function lastNDaysLocal(n){ const days=[]; const hoje=new Date(localDateStr(new Date())+'T12:00:00'); for(let i=n-1;i>=0;i--){ const d=new Date(hoje); d.setDate(d.getDate()-i); days.push(localDateStr(d)); } return days; }
+function movingAverage7(dailyCounts, days){ return days.map((_,i)=>{ const w=days.slice(Math.max(0,i-6),i+1); return w.reduce((a,d)=>a+(dailyCounts[d]||0),0)/w.length; }); }
 
 async function init(){
   const { data: { session } } = await supa.auth.getSession();
   if(!session){ window.location.href = 'login.html'; return; }
 
-  const { data: perfil } = await supa.from('perfis').select('papel,nome_exibicao').eq('id', session.user.id).maybeSingle();
+  const { data: perfil } = await supa.from('perfis').select('papel,nome_exibicao,atendente_vinculado').eq('id', session.user.id).maybeSingle();
   const papel = perfil ? perfil.papel : 'sem_papel';
+  const primeiroNome = (perfil?.nome_exibicao || session.user.email).split('@')[0].split('.')[0];
 
-  document.getElementById('topActions').innerHTML = `
-    <span style="font-size:12.5px;color:var(--gray);align-self:center;">${perfil?.nome_exibicao || session.user.email}</span>
-    <button onclick="logout()" style="font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:7px;border:1px solid var(--line);background:#fff;cursor:pointer;">Sair</button>
-  `;
+  document.getElementById('whoLabel').textContent = perfil?.nome_exibicao || session.user.email;
+  document.getElementById('heroGreeting').textContent = `Bem-vindo(a), ${primeiroNome.charAt(0).toUpperCase()+primeiroNome.slice(1)}`;
+  document.getElementById('rolePill').textContent = ROLE_LABELS[papel];
 
   if(papel === 'sem_papel'){
     document.getElementById('roleBanner').style.display = 'block';
     document.getElementById('roleBanner').textContent = 'ⓘ Sua conta ainda não tem um papel definido. Peça para a chefia liberar seu acesso na tela de Administração.';
     document.querySelectorAll('.module-card').forEach(el => el.style.display = 'none');
+    document.getElementById('heroSub').textContent = 'Aguardando liberação de acesso';
     return;
   }
+  document.getElementById('heroSub').textContent = 'Farmácia Bioflora — painel interno';
 
   document.querySelectorAll('.module-card').forEach(el => {
     const roles = el.dataset.roles.split(',');
     el.style.display = roles.includes(papel) ? 'block' : 'none';
   });
 
-  if(papel === 'chefia'){
-    document.getElementById('resumoArea').style.display = 'block';
-    loadResumo();
-  }
+  await renderWidgets(papel, perfil);
 }
 
-async function loadResumo(){
-  const kpis = [];
+// ============================================================
+// WIDGETS — cada card da home é uma função independente aqui.
+// Pra adicionar um novo no futuro: escreve uma função nova
+// (buscar dado + montar HTML) e chama ela dentro de renderWidgets,
+// dentro do "if" do(s) cargo(s) que devem vê-la.
+// ============================================================
 
-  // Rótulos parados há mais de 7 dias em "a_comprar"
-  try{
-    const seteDiasAtras = new Date(); seteDiasAtras.setDate(seteDiasAtras.getDate()-7);
-    const { data: rotulosParados } = await supa.from('rotulos_kanban')
-      .select('produto,criado_em').eq('status','a_comprar').lte('criado_em', seteDiasAtras.toISOString())
-      .order('criado_em', {ascending:true});
-    const lista = (rotulosParados||[]).slice(0,3).map(r=>r.produto).join(', ');
-    kpis.push({
-      label: 'Rótulos parados (+7 dias)', value: (rotulosParados||[]).length,
-      cls: (rotulosParados||[]).length>0 ? 'warn' : 'good',
-      sub: lista ? `Ex: ${lista}${(rotulosParados||[]).length>3?'...':''}` : 'Nada parado, ótimo sinal'
-    });
-  }catch(e){}
+async function renderWidgets(papel, perfil){
+  const area = document.getElementById('widgetArea');
+  area.innerHTML = '<div class="loading-msg">Carregando seu painel...</div>';
+  const cards = [];
 
-  // Ordens de produção não liberadas
-  try{
-    const { data: ordensAbertas } = await supa.from('ordens_producao').select('produto,status').neq('status','liberado');
-    kpis.push({
-      label: 'Ordens em andamento', value: (ordensAbertas||[]).length,
-      cls: (ordensAbertas||[]).length>5 ? 'warn' : '',
-      sub: 'Ainda não liberadas pelo CQ'
-    });
-  }catch(e){}
+  const podeVerErrosProprios = papel === 'atendente' || papel === 'conferencia' || papel === 'chefia' || perfil?.atendente_vinculado;
+  const podeVerErrosGeral = papel === 'conferencia' || papel === 'chefia';
+  const podeVerRotulos = ['chefia','recepcao','conferencia','atendente'].includes(papel);
+  const podeVerOrdens = ['chefia','laboratorio','conferencia','atendente'].includes(papel);
+  const podeVerBancoHoras = ['chefia','rh','gestao'].includes(papel);
 
-  // Erros nos últimos 7 dias — total e atendente com mais erros
-  try{
-    const seteDiasAtras = new Date(); seteDiasAtras.setDate(seteDiasAtras.getDate()-7);
-    const { data: errosRecentes } = await supa.from('erros_registrados')
-      .select('atendente').gte('registrado_em', seteDiasAtras.toISOString());
-    const porAtendente = {};
-    (errosRecentes||[]).forEach(e => { porAtendente[e.atendente] = (porAtendente[e.atendente]||0)+1; });
-    const ranking = Object.entries(porAtendente).sort((a,b)=>b[1]-a[1]);
-    kpis.push({
-      label: 'Erros na última semana', value: (errosRecentes||[]).length,
-      cls: (errosRecentes||[]).length>15 ? 'bad' : '',
-      sub: ranking.length ? `Mais erros: <strong>${ranking[0][0]}</strong> (${ranking[0][1]})` : 'Nenhum registrado'
-    });
-  }catch(e){}
+  if(podeVerErrosProprios && perfil?.atendente_vinculado){
+    cards.push(await widgetMeusErros(perfil.atendente_vinculado));
+  }
+  if(podeVerErrosGeral){
+    cards.push(await widgetErrosEquipe());
+  }
+  if(podeVerRotulos){
+    cards.push(await widgetRotulos());
+  }
+  if(podeVerOrdens){
+    cards.push(await widgetOrdens());
+  }
+  if(podeVerBancoHoras){
+    cards.push(await widgetBancoHoras());
+  }
 
-  // Banco de horas — saldo negativo no período mais recente
-  try{
-    const { data: ultimoPeriodo } = await supa.from('folhas_ponto').select('periodo_inicio').order('periodo_inicio',{ascending:false}).limit(1);
-    if(ultimoPeriodo && ultimoPeriodo.length){
-      const periodo = ultimoPeriodo[0].periodo_inicio;
-      const { data: folhas } = await supa.from('folhas_ponto').select('saldo_final_min, funcionarios(nome)').eq('periodo_inicio', periodo);
-      const negativos = (folhas||[]).filter(f=>f.saldo_final_min<0);
-      kpis.push({
-        label: 'Saldo negativo (banco de horas)', value: negativos.length,
-        cls: negativos.length>5 ? 'bad' : (negativos.length>0 ? 'warn' : 'good'),
-        sub: `Período ${periodo}`
-      });
-    }
-  }catch(e){}
+  area.innerHTML = cards.length ? `<div class="grid">${cards.join('')}</div>` : '';
 
-  document.getElementById('kpiRow').innerHTML = kpis.length ? kpis.map(k => `
-    <div class="kpi-card">
-      <div class="label">${k.label}</div>
-      <div class="value ${k.cls}">${k.value}</div>
-      <div class="sub-list">${k.sub}</div>
-    </div>
-  `).join('') : `<div class="kpi-loading">Ainda não há dados suficientes nos módulos para gerar o resumo.</div>`;
+  // Gráficos precisam ser desenhados depois do HTML existir no DOM
+  if(podeVerErrosProprios && perfil?.atendente_vinculado) drawMeusErrosChart(perfil.atendente_vinculado);
+  if(podeVerErrosGeral) drawErrosEquipeChart();
+}
+
+// ---- Widget: Meus Erros (tendência) ----
+async function widgetMeusErros(nome){
+  return `
+    <div class="card w6">
+      <div class="card-head"><h2>Meus Erros</h2><span class="card-icon">📈</span></div>
+      <p class="card-sub">Tendência de 7 dias — ${nome}</p>
+      <canvas id="chartMeusErros"></canvas>
+    </div>`;
+}
+async function drawMeusErrosChart(nome){
+  const { data } = await supa.from('erros_registrados').select('registrado_em').eq('atendente', nome);
+  const days = lastNDaysLocal(30);
+  const daily = {};
+  (data||[]).forEach(r => { const k = r.registrado_em.slice(0,10); daily[k] = (daily[k]||0)+1; });
+  const ma = movingAverage7(daily, days);
+  new Chart(document.getElementById('chartMeusErros'), {
+    type:'line',
+    data:{ labels: days.map(d=>d.slice(8)), datasets:[{ data: ma, borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.1)', tension:.3, fill:true, pointRadius:0 }]},
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  });
+}
+
+// ---- Widget: Erros da equipe (top 5) ----
+async function widgetErrosEquipe(){
+  return `
+    <div class="card w6">
+      <div class="card-head"><h2>Erros mais comuns</h2><span class="card-icon">⚠️</span></div>
+      <p class="card-sub">Equipe toda, últimos 30 dias</p>
+      <canvas id="chartErrosEquipe"></canvas>
+    </div>`;
+}
+async function drawErrosEquipeChart(){
+  const umMes = new Date(); umMes.setDate(umMes.getDate()-30);
+  const { data } = await supa.from('erros_registrados').select('tipo_erro').gte('registrado_em', umMes.toISOString());
+  const porTipo = {};
+  (data||[]).forEach(r => { porTipo[r.tipo_erro] = (porTipo[r.tipo_erro]||0)+1; });
+  const top5 = Object.entries(porTipo).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  new Chart(document.getElementById('chartErrosEquipe'), {
+    type:'bar',
+    data:{ labels: top5.map(t=>t[0]), datasets:[{ data: top5.map(t=>t[1]), backgroundColor:'#8B1A3A', borderRadius:6 }]},
+    options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
+  });
+}
+
+// ---- Widget: Rótulos ----
+async function widgetRotulos(){
+  const { data } = await supa.from('rotulos_kanban').select('status');
+  const counts = { a_comprar:0, pedido:0, chegou:0 };
+  (data||[]).forEach(r => { if(counts[r.status]!==undefined) counts[r.status]++; });
+  return `
+    <div class="card w4">
+      <div class="card-head"><h2>Rótulos</h2><span class="card-icon">🏷️</span></div>
+      <p class="card-sub">Situação atual</p>
+      <div class="mini-list">
+        <div class="mini-list-row"><span class="name">A comprar</span><span class="badge bad">${counts.a_comprar}</span></div>
+        <div class="mini-list-row"><span class="name">Pedido</span><span class="badge warn">${counts.pedido}</span></div>
+        <div class="mini-list-row"><span class="name">Chegou</span><span class="badge good">${counts.chegou}</span></div>
+      </div>
+    </div>`;
+}
+
+// ---- Widget: Ordens de produção ----
+async function widgetOrdens(){
+  const { data } = await supa.from('ordens_producao').select('status');
+  const counts = { em_falta:0, ordem_criada:0, em_manipulacao:0, liberado:0 };
+  (data||[]).forEach(r => { if(counts[r.status]!==undefined) counts[r.status]++; });
+  return `
+    <div class="card w4">
+      <div class="card-head"><h2>Ordens de Produção</h2><span class="card-icon">🧪</span></div>
+      <p class="card-sub">Situação atual</p>
+      <div class="mini-list">
+        <div class="mini-list-row"><span class="name">Em falta</span><span class="badge bad">${counts.em_falta}</span></div>
+        <div class="mini-list-row"><span class="name">Ordem criada</span><span class="badge warn">${counts.ordem_criada}</span></div>
+        <div class="mini-list-row"><span class="name">Em manipulação</span><span class="badge info">${counts.em_manipulacao}</span></div>
+        <div class="mini-list-row"><span class="name">Liberado</span><span class="badge good">${counts.liberado}</span></div>
+      </div>
+    </div>`;
+}
+
+// ---- Widget: Banco de horas ----
+async function widgetBancoHoras(){
+  const { data: ultimoPeriodo } = await supa.from('folhas_ponto').select('periodo_inicio').order('periodo_inicio',{ascending:false}).limit(1);
+  if(!ultimoPeriodo || !ultimoPeriodo.length){
+    return `<div class="card w4"><div class="card-head"><h2>Banco de Horas</h2><span class="card-icon">⏱️</span></div><div class="empty-mini">Nenhum período enviado ainda.</div></div>`;
+  }
+  const periodo = ultimoPeriodo[0].periodo_inicio;
+  const { data: folhas } = await supa.from('folhas_ponto').select('saldo_final_min').eq('periodo_inicio', periodo);
+  const negativos = (folhas||[]).filter(f=>f.saldo_final_min<0).length;
+  const total = (folhas||[]).length;
+  return `
+    <div class="card w4">
+      <div class="card-head"><h2>Banco de Horas</h2><span class="card-icon">⏱️</span></div>
+      <p class="card-sub">Período ${periodo}</p>
+      <div class="stat-big">${negativos}</div>
+      <div class="stat-delta ${negativos>0?'bad':'good'}">de ${total} com saldo negativo</div>
+    </div>`;
 }
 
 init();
