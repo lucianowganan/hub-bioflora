@@ -162,9 +162,17 @@ window.conectarGoogle = conectarGoogle;
 async function chamarFuncaoEventos(body){
   const resp = await fetch(EVENTS_FUNCTION_URL, {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${sessionToken}`, 'Content-Type': 'application/json' },
+    headers: {
+      'Authorization': `Bearer ${sessionToken}`,
+      'apikey': SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify(body)
   });
+  if(!resp.ok){
+    const text = await resp.text().catch(()=> '');
+    return { error: `falha_http_${resp.status}`, detail: text };
+  }
   return resp.json();
 }
 
@@ -256,6 +264,8 @@ async function init(){
   const check = await chamarFuncaoEventos({ action: 'list' });
   if(check.error === 'not_connected'){
     renderNaoConectado();
+  } else if(check.error){
+    document.getElementById('content').innerHTML = `<div class="panel"><div class="msg err">Erro ao falar com o servidor: ${check.error}${check.detail ? ' — '+check.detail : ''}</div></div>`;
   } else {
     await renderConectado();
   }
