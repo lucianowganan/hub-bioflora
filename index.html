@@ -109,6 +109,22 @@
   .integ-card p{font-size:11.5px;color:var(--gray);margin:0 0 12px;line-height:1.4;}
   .integ-soon{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);background:#F1ECEA;padding:5px 12px;border-radius:20px;display:inline-block;}
 
+  /* Mini calendário (prévia, clique leva pro módulo completo) */
+  .minical-link{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:8px;transition:.15s;}
+  .minical-link:hover{border-color:var(--burgundy);}
+  .minical-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .minical-head h3{font-family:var(--headfont);font-size:15px;margin:0;text-transform:capitalize;color:var(--ink);}
+  .minical-head span{font-size:11.5px;color:var(--burgundy);font-weight:700;}
+  .minical-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+  .minical-weekday{text-align:center;font-size:9.5px;font-weight:700;color:var(--gray);text-transform:uppercase;padding:2px 0 6px;}
+  .minical-day{min-height:52px;border:1px solid var(--line);border-radius:6px;padding:3px 4px;background:#fff;}
+  .minical-day.empty{visibility:hidden;}
+  .minical-day.today{border-color:var(--burgundy);border-width:1.5px;background:var(--burgundy-tint);}
+  .minical-day-num{font-size:10.5px;font-weight:700;color:var(--gray);}
+  .minical-day.today .minical-day-num{color:var(--burgundy);}
+  .minical-evt{font-size:9px;line-height:1.3;background:var(--burgundy);color:#fff;border-radius:3px;padding:1px 3px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .minical-evt-more{font-size:9px;color:var(--gray);margin-top:1px;}
+
   .section-title{font-family:var(--headfont);font-size:17px;font-weight:600;margin:34px 0 14px;color:var(--ink);}
   .modules{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
   .module-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;text-decoration:none;color:var(--ink);display:block;transition:.15s;position:relative;overflow:hidden;}
@@ -219,9 +235,12 @@
 
     <div id="widgetArea"></div>
 
+    <div class="section-title">Meu Calendário</div>
+    <a href="calendario3.html" class="minical-link" id="minicalArea"></a>
+
     <div class="section-title">Integrações</div>
     <div class="integ-grid">
-      <a class="integ-card" href="calendario.html" style="text-decoration:none;color:inherit;border-style:solid;cursor:pointer;">
+      <a class="integ-card" href="calendario3.html" style="text-decoration:none;color:inherit;border-style:solid;cursor:pointer;">
         <div class="integ-icon">📅</div>
         <h3>Google Calendar</h3>
         <p>Ver e criar eventos do seu Google Calendar pessoal direto no Hub.</p>
@@ -325,6 +344,67 @@ async function init(){
 
   await renderQuickStats(papel);
   await renderWidgets(papel, perfil);
+  await renderMiniCalendario();
+}
+
+// ============================================================
+// MINI CALENDÁRIO — prévia em grade do mês atual na home,
+// só leitura (clique no card inteiro leva pra calendario.html)
+// ============================================================
+async function renderMiniCalendario(){
+  const el = document.getElementById('minicalArea');
+  const hoje = new Date();
+  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
+
+  const { data, error } = await supa.functions.invoke('google-calendar-events', {
+    body: { action: 'list', timeMin: inicioMes.toISOString(), timeMax: fimMes.toISOString() }
+  });
+
+  const label = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+  if(error || !data || data.error === 'not_connected'){
+    el.innerHTML = `
+      <div class="minical-head"><h3>${label}</h3><span>Conectar →</span></div>
+      <p style="font-size:12px;color:var(--gray);margin:0;">Conecte seu Google Calendar pra ver seus eventos do mês aqui.</p>`;
+    return;
+  }
+  if(data.error){
+    el.innerHTML = `<div class="minical-head"><h3>${label}</h3><span>Abrir →</span></div>`;
+    return;
+  }
+
+  const eventos = data.items || [];
+  const porDia = {};
+  eventos.forEach(ev => {
+    const raw = ev.start?.dateTime || ev.start?.date;
+    if(!raw) return;
+    const key = raw.slice(0,10);
+    if(!porDia[key]) porDia[key] = [];
+    porDia[key].push(ev);
+  });
+
+  const ano = hoje.getFullYear(), mes = hoje.getMonth();
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes + 1, 0).getDate();
+  const hojeKey = localDateStr(hoje);
+
+  let grid = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d => `<div class="minical-weekday">${d}</div>`).join('');
+  for(let i=0; i<primeiroDiaSemana; i++) grid += `<div class="minical-day empty"></div>`;
+  for(let dia=1; dia<=totalDias; dia++){
+    const key = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const doDia = porDia[key] || [];
+    const visiveis = doDia.slice(0,2);
+    grid += `<div class="minical-day ${key===hojeKey?'today':''}">
+      <div class="minical-day-num">${dia}</div>
+      ${visiveis.map(ev => `<div class="minical-evt">${(ev.summary||'(sem título)').replace(/</g,'&lt;')}</div>`).join('')}
+      ${doDia.length > 2 ? `<div class="minical-evt-more">+${doDia.length - 2}</div>` : ''}
+    </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="minical-head"><h3>${label}</h3><span>Abrir calendário completo →</span></div>
+    <div class="minical-grid">${grid}</div>`;
 }
 
 // ============================================================
