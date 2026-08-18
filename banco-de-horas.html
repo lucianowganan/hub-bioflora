@@ -37,7 +37,7 @@
   .btn:disabled{background:#ccc;cursor:not-allowed;}
 
   .upload-panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:20px;}
-  .upload-panel h2{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:16px;font-weight:600;margin:0 0 6px;}
+  .upload-panel h2{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:16px;margin:0 0 6px;}
   .upload-panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
   .upload-zone{border:2px dashed var(--line);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:.15s;}
   .upload-zone:hover, .upload-zone.drag{border-color:var(--burgundy);background:var(--burgundy-tint);}
@@ -57,13 +57,13 @@
   .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
   .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
   .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);font-weight:600;}
-  .kpi .value{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:26px;margin-top:5px;font-weight:600;}
+  .kpi .value{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:26px;margin-top:5px;}
   .kpi .sub{font-size:12px;color:var(--gray);margin-top:3px;}
   .kpi.accent{background:var(--burgundy);color:#fff;}
   .kpi.accent .label,.kpi.accent .sub{color:rgba(255,255,255,.75);}
 
   .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
-  .panel h2{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel h2{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:16px;margin:0 0 4px;}
   .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
   .period-select{display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:14px;}
   .period-select select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;}
@@ -321,9 +321,17 @@ function showStatus(msg, type){
 
 processBtn.addEventListener('click', async () => {
   if(!currentWorkbook) return;
-  const inicio = document.getElementById('periodoInicio').value;
-  const fim = document.getElementById('periodoFim').value;
-  if(!inicio || !fim){ showStatus('Informe o período (início e fim) antes de salvar.', 'err'); return; }
+  const inicioInput = document.getElementById('periodoInicio').value;
+  const fimInput = document.getElementById('periodoFim').value;
+  if(!inicioInput || !fimInput){ showStatus('Informe o período (início e fim) antes de salvar.', 'err'); return; }
+
+  // Normaliza pro mês inteiro (dia 1 ao último dia), baseado na data de
+  // início informada. Isso é o que evita que um upload parcial (ex: só
+  // funcionários que entraram depois) vire um "período" separado do
+  // resto do mês — tudo do mesmo mês cai no mesmo balde.
+  const dataRef = new Date(inicioInput + 'T00:00:00');
+  const inicio = new Date(dataRef.getFullYear(), dataRef.getMonth(), 1).toISOString().slice(0,10);
+  const fim = new Date(dataRef.getFullYear(), dataRef.getMonth()+1, 0).toISOString().slice(0,10);
 
   processBtn.disabled = true;
   showStatus('Processando planilha...', 'info');
