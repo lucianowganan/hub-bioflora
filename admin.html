@@ -213,7 +213,19 @@ async function redefinirSenha(userId, nomeExibicao){
   const { data, error } = await supa.functions.invoke('admin-reset-password', {
     body: { userId, novaSenha }
   });
-  if(error || data?.error){ alert('Erro ao redefinir: ' + (data?.error || error.message)); return; }
+
+  if(error || data?.error){
+    let motivo = data?.error || error.message;
+    // O erro genérico do Supabase esconde o corpo real da resposta — vamos buscar
+    if(error?.context && typeof error.context.json === 'function'){
+      try{
+        const corpo = await error.context.json();
+        if(corpo?.error) motivo = corpo.error;
+      }catch(e){ /* corpo não era JSON, mantém a mensagem genérica */ }
+    }
+    alert('Erro ao redefinir: ' + motivo);
+    return;
+  }
   alert(`Senha redefinida para ${data.email}. Avise a pessoa com a nova senha por um canal seguro (WhatsApp, presencial etc).`);
 }
 window.redefinirSenha = redefinirSenha;
