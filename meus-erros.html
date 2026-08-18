@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Meus Erros — Hub Bioflora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.cdnfonts.com/css/cal-sans" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="auth-guard.js"></script>
@@ -22,13 +23,13 @@
   .brand{display:flex;align-items:center;gap:12px;}
   .brand-mark{height:34px;display:flex;align-items:center;}
   .brand-mark svg{height:100%;width:auto;display:block;}
-  .brand-text h1{font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text h1{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
   .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
   .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
   .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
 
   .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
-  .panel h2{font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel h2{font-family:'Cal Sans','Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 4px;}
   .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
   .chart-select{display:flex;gap:10px;align-items:center;margin-bottom:14px;font-size:13px;}
   .chart-select select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;}
@@ -37,7 +38,7 @@
   .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
   .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
   .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);font-weight:600;}
-  .kpi .value{font-family:'Fraunces',serif;font-size:26px;margin-top:5px;font-weight:600;}
+  .kpi .value{font-family:'Cal Sans','Fraunces',serif;font-size:26px;margin-top:5px;font-weight:600;}
 
   .empty-state{text-align:center;padding:60px 20px;color:var(--gray);}
   .empty-state .big{font-size:36px;margin-bottom:10px;}
@@ -120,6 +121,13 @@ const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let chartTendencia = null;
 let chartRanking = null;
+let chartComparacao = null;
+let chartMensal = null;
+let chartSemanaPizza = null;
+let chartSemanaBarra = null;
+
+const DIAS_SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const CORES_SEMANA = ['#8B1A3A','#B4472F','#C9922B','#3F7A57','#3E6B93','#6E6266','#5E1027'];
 
 function toDayKey(d){ return d.toISOString().slice(0,10); }
 function lastNDays(n){
@@ -183,10 +191,16 @@ async function loadDashboard(nome){
   const { data, error } = await supa.from('erros_registrados').select('tipo_erro,registrado_em').eq('atendente', nome).order('registrado_em');
   if(error){ console.error(error); return; }
 
+  const { data: equipeData, error: equipeError } = await supa.rpc('erros_equipe_diarios', { dias_atras: 60 });
+  if(equipeError) console.error(equipeError);
+  const equipeDiaria = {};
+  (equipeData||[]).forEach(r => { equipeDiaria[r.dia] = r.total; });
+
   const days60 = lastNDays(60);
   const dailyCounts = {};
   data.forEach(r => { const k = r.registrado_em.slice(0,10); dailyCounts[k] = (dailyCounts[k]||0)+1; });
   const ma = movingAverage7(dailyCounts, days60);
+  const maEquipe = movingAverage7(equipeDiaria, days60);
 
   const umMesAtras = new Date(); umMesAtras.setDate(umMesAtras.getDate()-30);
   const recentes = data.filter(d => new Date(d.registrado_em) >= umMesAtras);
@@ -197,6 +211,19 @@ async function loadDashboard(nome){
   const totalMes = recentes.length;
   const mediaAtual = ma[ma.length-1] || 0;
   const tipoMaisFrequente = ranking.length ? ranking[0][0] : '—';
+
+  // Evolução mensal total (todo o histórico do atendente)
+  const porMes = {};
+  data.forEach(r => { const k = r.registrado_em.slice(0,7); porMes[k] = (porMes[k]||0)+1; });
+  const mesesOrdenados = Object.keys(porMes).sort();
+  const mesesLabel = mesesOrdenados.map(m => {
+    const [ano, mes] = m.split('-');
+    return new Date(ano, mes-1, 1).toLocaleDateString('pt-BR', {month:'short', year:'2-digit'});
+  });
+
+  // Distribuição por dia da semana (todo o histórico do atendente)
+  const porDiaSemana = [0,0,0,0,0,0,0];
+  data.forEach(r => { const d = new Date(r.registrado_em); porDiaSemana[d.getDay()]++; });
 
   document.getElementById('dashArea').innerHTML = `
     <div class="kpi-row">
@@ -214,6 +241,24 @@ async function loadDashboard(nome){
       <p class="desc">Ranking por tipo de erro, últimos 30 dias</p>
       <canvas id="chartRanking"></canvas>
     </div>
+    <div class="panel">
+      <h2>Você vs. a equipe</h2>
+      <p class="desc">Média móvel de 7 dias — total da equipe é a soma de todos os atendentes, últimos 60 dias</p>
+      <canvas id="chartComparacao"></canvas>
+    </div>
+    <div class="panel">
+      <h2>Evolução mensal</h2>
+      <p class="desc">Total de erros registrados por mês, desde o início</p>
+      <canvas id="chartMensal"></canvas>
+    </div>
+    <div class="panel">
+      <h2>Distribuição por dia da semana</h2>
+      <p class="desc">Em quais dias os erros mais acontecem, todo o histórico</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center">
+        <canvas id="chartSemanaPizza"></canvas>
+        <canvas id="chartSemanaBarra"></canvas>
+      </div>
+    </div>
   `;
 
   if(chartTendencia) chartTendencia.destroy();
@@ -228,6 +273,37 @@ async function loadDashboard(nome){
     type:'bar',
     data:{ labels: ranking.map(r=>r[0]), datasets:[{ data: ranking.map(r=>r[1]), backgroundColor:'#8B1A3A' }]},
     options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
+  });
+
+  if(chartComparacao) chartComparacao.destroy();
+  chartComparacao = new Chart(document.getElementById('chartComparacao'), {
+    type:'line',
+    data:{ labels: days60.map(d=>d.slice(5)), datasets:[
+      { label:'Você', data:ma, borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.3, fill:true, pointRadius:0 },
+      { label:'Equipe (total)', data:maEquipe, borderColor:'#3E6B93', backgroundColor:'rgba(62,107,147,.06)', tension:.3, fill:true, pointRadius:0 }
+    ]},
+    options:{ responsive:true, plugins:{legend:{display:true, position:'bottom'}}, scales:{y:{beginAtZero:true}} }
+  });
+
+  if(chartMensal) chartMensal.destroy();
+  chartMensal = new Chart(document.getElementById('chartMensal'), {
+    type:'bar',
+    data:{ labels: mesesLabel, datasets:[{ data: mesesOrdenados.map(m=>porMes[m]), backgroundColor:'#8B1A3A' }]},
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  });
+
+  if(chartSemanaPizza) chartSemanaPizza.destroy();
+  chartSemanaPizza = new Chart(document.getElementById('chartSemanaPizza'), {
+    type:'pie',
+    data:{ labels: DIAS_SEMANA, datasets:[{ data: porDiaSemana, backgroundColor: CORES_SEMANA }]},
+    options:{ responsive:true, plugins:{legend:{display:true, position:'bottom', labels:{boxWidth:11, font:{size:10.5}}}} }
+  });
+
+  if(chartSemanaBarra) chartSemanaBarra.destroy();
+  chartSemanaBarra = new Chart(document.getElementById('chartSemanaBarra'), {
+    type:'bar',
+    data:{ labels: DIAS_SEMANA.map(d=>d.slice(0,3)), datasets:[{ data: porDiaSemana, backgroundColor: CORES_SEMANA }]},
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
   });
 }
 
