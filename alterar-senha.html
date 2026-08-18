@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alterar senha — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.cdnfonts.com/css/cal-sans" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --bad:#B4472F; --bad-tint:#FBEBE6; --good:#3F7A57; --good-tint:#E8F3EC;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;-webkit-font-smoothing:antialiased;}
+  .box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:40px;width:100%;max-width:380px;}
+  h1{font-family:'Cal Sans','Fraunces',serif;font-size:20px;margin:0 0 4px;}
+  p.sub{font-size:12.5px;color:var(--gray);margin:0 0 26px;}
+  label{font-size:11.5px;font-weight:600;color:var(--gray);display:block;margin-bottom:5px;}
+  input{width:100%;font-family:'Maven Pro',sans-serif;font-size:14px;padding:10px 13px;border:1px solid var(--line);border-radius:8px;margin-bottom:14px;}
+  .btn{width:100%;font-family:'Maven Pro',sans-serif;font-size:14px;font-weight:600;padding:11px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;margin-top:6px;}
+  .btn.secondary{background:#fff;color:var(--gray);border:1px solid var(--line);margin-top:8px;}
+  .msg{font-size:12.5px;padding:9px 12px;border-radius:8px;margin-bottom:14px;display:none;}
+  .msg.show{display:block;}
+  .msg.err{background:var(--bad-tint);color:var(--bad);}
+  .msg.ok{background:var(--good-tint);color:var(--good);}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>Alterar minha senha</h1>
+  <p class="sub" id="subLabel">Farmácia Bioflora — acesso interno</p>
+  <div class="msg" id="msg"></div>
+  <label>Senha atual</label>
+  <input id="senhaAtual" type="password" autocomplete="current-password" />
+  <label>Nova senha</label>
+  <input id="novaSenha" type="password" autocomplete="new-password" />
+  <label>Confirmar nova senha</label>
+  <input id="confirmaSenha" type="password" autocomplete="new-password" />
+  <button class="btn" id="btnSalvar">Salvar nova senha</button>
+  <a href="index.html"><button class="btn secondary">Voltar ao Hub</button></a>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function showMsg(text, type){
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg show ' + type;
+}
+
+let sessaoEmail = null;
+
+(async function init(){
+  const { data: { session } } = await supa.auth.getSession();
+  if(!session){ window.location.href = 'login.html'; return; }
+  sessaoEmail = session.user.email;
+  document.getElementById('subLabel').textContent = sessaoEmail;
+})();
+
+document.getElementById('btnSalvar').addEventListener('click', async ()=>{
+  const senhaAtual = document.getElementById('senhaAtual').value;
+  const nova = document.getElementById('novaSenha').value;
+  const confirma = document.getElementById('confirmaSenha').value;
+
+  if(!senhaAtual){ showMsg('Digite sua senha atual pra confirmar que é você.', 'err'); return; }
+  if(!nova || nova.length < 6){ showMsg('A nova senha precisa ter pelo menos 6 caracteres.', 'err'); return; }
+  if(nova !== confirma){ showMsg('As senhas novas não coincidem.', 'err'); return; }
+  if(nova === senhaAtual){ showMsg('A nova senha precisa ser diferente da atual.', 'err'); return; }
+
+  // Revalida a senha atual tentando logar de novo com ela
+  const { error: erroLogin } = await supa.auth.signInWithPassword({ email: sessaoEmail, password: senhaAtual });
+  if(erroLogin){ showMsg('Senha atual incorreta.', 'err'); return; }
+
+  const { error } = await supa.auth.updateUser({ password: nova });
+  if(error){ showMsg('Erro ao salvar: ' + error.message, 'err'); return; }
+  showMsg('Senha alterada! Redirecionando...', 'ok');
+  setTimeout(()=>{ window.location.href = 'index.html'; }, 1500);
+});
+</script>
+</body>
+</html>
