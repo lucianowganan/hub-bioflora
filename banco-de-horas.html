@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Banco de Horas — Hub Bioflora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.cdnfonts.com/css/cal-sans" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
@@ -24,7 +25,7 @@
   .brand{display:flex;align-items:center;gap:12px;}
   .brand-mark{height:34px;display:flex;align-items:center;}
   .brand-mark svg{height:100%;width:auto;display:block;}
-  .brand-text h1{font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text h1{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
   .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
 
   .config-banner{background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;padding:14px 18px;font-size:13px;color:#7A5C15;margin-bottom:22px;display:none;}
@@ -36,7 +37,7 @@
   .btn:disabled{background:#ccc;cursor:not-allowed;}
 
   .upload-panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:20px;}
-  .upload-panel h2{font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 6px;}
+  .upload-panel h2{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:16px;font-weight:600;margin:0 0 6px;}
   .upload-panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
   .upload-zone{border:2px dashed var(--line);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:.15s;}
   .upload-zone:hover, .upload-zone.drag{border-color:var(--burgundy);background:var(--burgundy-tint);}
@@ -56,13 +57,13 @@
   .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
   .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
   .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);font-weight:600;}
-  .kpi .value{font-family:'Fraunces',serif;font-size:26px;margin-top:5px;font-weight:600;}
+  .kpi .value{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:26px;margin-top:5px;font-weight:600;}
   .kpi .sub{font-size:12px;color:var(--gray);margin-top:3px;}
   .kpi.accent{background:var(--burgundy);color:#fff;}
   .kpi.accent .label,.kpi.accent .sub{color:rgba(255,255,255,.75);}
 
   .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
-  .panel h2{font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel h2{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:16px;font-weight:600;margin:0 0 4px;}
   .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
   .period-select{display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:14px;}
   .period-select select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;}
@@ -163,6 +164,8 @@
     ⚠️ Ainda não conectado ao banco de dados. Preencha <code>SUPABASE_URL</code> e <code>SUPABASE_ANON_KEY</code>
     no início do arquivo.
   </div>
+
+  <div id="prazoBanner" class="config-banner" style="background:var(--bad-tint);border-color:#E8C4B8;color:var(--bad)"></div>
 
   <div class="upload-panel" id="uploadPanel">
     <h2>Enviar folha de ponto do mês</h2>
@@ -370,8 +373,28 @@ processBtn.addEventListener('click', async () => {
   processBtn.disabled = false;
 });
 
+// Aviso de prazo: passou do dia 5 do mês e a folha do mês anterior
+// ainda não foi enviada.
+async function checkPrazo(){
+  const hoje = new Date();
+  const diaDoMes = hoje.getDate();
+  const periodoEsperado = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1).toISOString().slice(0,10);
+
+  const { data: ultimo } = await supa.from('folhas_ponto').select('periodo_inicio').order('periodo_inicio',{ascending:false}).limit(1);
+  const emAtraso = diaDoMes > 5 && (!ultimo || !ultimo.length || ultimo[0].periodo_inicio < periodoEsperado);
+
+  const banner = document.getElementById('prazoBanner');
+  if(emAtraso){
+    banner.textContent = `⚠️ A folha de ponto do mês passado ainda não foi enviada — o prazo (dia 5) já passou. Suba o xlsx abaixo assim que possível.`;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
 async function loadDashboard(){
   if(!supa) return;
+  await checkPrazo();
   const { data: folhas, error } = await supa
     .from('folhas_ponto')
     .select('*, funcionarios(nome, cargo, setor)')
@@ -402,6 +425,7 @@ function renderDashboard(periodosData){
   const negCount = active.filter(d=>d.saldo_final_min<0).length;
   const graveTotal = active.reduce((a,d)=>a+d.atrasos_grave,0);
   const worst = active.reduce((a,b)=> a.saldo_final_min < b.saldo_final_min ? a : b);
+  const best = active.reduce((a,b)=> a.saldo_final_min > b.saldo_final_min ? a : b);
   const avgMin = active.reduce((a,d)=>a+d.variacao_mes_min,0)/active.length;
 
   area.innerHTML = `
@@ -412,11 +436,13 @@ function renderDashboard(periodosData){
         <span style="color:var(--gray);font-size:12px">${periodosData.length} período(s) no histórico</span>
       </div>
     </div>
-    <div class="kpi-row">
+    <div class="kpi-row" style="grid-template-columns:repeat(6,1fr)">
       <div class="kpi accent"><div class="label">Funcionários</div><div class="value">${active.length}</div><div class="sub">com apontamento</div></div>
       <div class="kpi"><div class="label">Saldo médio no mês</div><div class="value" style="color:${avgMin>=0?'var(--good)':'var(--bad)'}">${fmtMin(Math.round(avgMin))}</div><div class="sub">por funcionário</div></div>
       <div class="kpi"><div class="label">Em saldo negativo</div><div class="value" style="color:var(--bad)">${negCount}</div><div class="sub">precisam de atenção</div></div>
       <div class="kpi"><div class="label">Atrasos graves</div><div class="value" style="color:var(--warn)">${graveTotal}</div><div class="sub">soma da equipe</div></div>
+      <div class="kpi" style="background:var(--bad-tint);border-color:#E8C4B8"><div class="label" style="color:var(--bad)">🔻 Maior devedor</div><div class="value" style="color:var(--bad);font-size:17px">${worst.nome.split(' ').slice(0,2).join(' ')}</div><div class="sub" style="color:var(--bad)">${fmtMin(worst.saldo_final_min)}</div></div>
+      <div class="kpi" style="background:var(--good-tint);border-color:#C7E0D0"><div class="label" style="color:var(--good)">🔺 Maior saldo</div><div class="value" style="color:var(--good);font-size:17px">${best.nome.split(' ').slice(0,2).join(' ')}</div><div class="sub" style="color:var(--good)">${fmtMin(best.saldo_final_min)}</div></div>
       <div class="kpi"><div class="label">Maior saldo devedor</div><div class="value" style="color:var(--bad);font-size:18px">${worst.nome.split(' ').slice(0,2).join(' ')}</div><div class="sub">${fmtMin(worst.saldo_final_min)}</div></div>
     </div>
     <div class="grid-2">

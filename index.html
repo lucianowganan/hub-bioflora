@@ -100,6 +100,7 @@
 
   canvas{max-height:200px;}
   .empty-mini{font-size:12px;color:var(--gray);padding:14px 0;text-align:center;}
+  .card-alert{font-size:11.5px;font-weight:600;background:var(--bad-tint);color:var(--bad);border-radius:8px;padding:8px 11px;margin:4px 0 8px;}
 
   /* Integrações (placeholder) */
   .integ-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
@@ -565,17 +566,51 @@ async function widgetOrdens(){
     </div></div>`;
 }
 
+function fmtMinIdx(m){
+  const sign = m<0?'-':'+';
+  const abs = Math.abs(m);
+  const h = Math.floor(abs/60), mm = abs%60;
+  return sign+String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+}
+
 async function widgetBancoHoras(){
   const { data: ultimoPeriodo } = await supa.from('folhas_ponto').select('periodo_inicio').order('periodo_inicio',{ascending:false}).limit(1);
+
+  // Aviso de prazo: se o mês corrente já passou do dia 5 e ninguém
+  // subiu a folha do mês anterior ainda, mostra alerta em vez do resumo.
+  const hoje = new Date();
+  const inicioMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const diaDoMes = hoje.getDate();
+  const periodoEsperado = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1).toISOString().slice(0,10);
+  const emAtraso = diaDoMes > 5 && (!ultimoPeriodo || !ultimoPeriodo.length || ultimoPeriodo[0].periodo_inicio < periodoEsperado);
+
   if(!ultimoPeriodo || !ultimoPeriodo.length){
-    return `<div class="card w4"><div class="card-head"><h2>Banco de Horas</h2><span class="card-icon">⏱️</span></div><div class="empty-mini">Nenhum período enviado ainda.</div></div>`;
+    return `<div class="card w4"><div class="card-head"><h2>Banco de Horas</h2><span class="card-icon">⏱️</span></div>
+      <div class="card-alert">⚠️ Nenhum período enviado ainda. Suba a planilha do mês em Banco de Horas.</div></div>`;
   }
+
   const periodo = ultimoPeriodo[0].periodo_inicio;
-  const { data: folhas } = await supa.from('folhas_ponto').select('saldo_final_min').eq('periodo_inicio', periodo);
-  const negativos = (folhas||[]).filter(f=>f.saldo_final_min<0).length;
-  const total = (folhas||[]).length;
-  return `<div class="card w4"><div class="card-head"><h2>Banco de Horas</h2><span class="card-icon">⏱️</span></div><p class="card-sub">Período ${periodo}</p>
-    <div class="stat-big">${negativos}</div><div class="stat-delta ${negativos>0?'bad':'good'}">de ${total} com saldo negativo</div></div>`;
+  const { data: folhas } = await supa.from('folhas_ponto').select('saldo_final_min, funcionarios(nome)').eq('periodo_inicio', periodo);
+  const lista = (folhas||[]).map(f => ({ nome: f.funcionarios?.nome || '—', saldo: f.saldo_final_min }));
+  const negativos = lista.filter(f=>f.saldo<0).length;
+  const total = lista.length;
+
+  let devedor = null, credor = null;
+  if(lista.length){
+    devedor = lista.reduce((a,b)=> a.saldo < b.saldo ? a : b);
+    credor = lista.reduce((a,b)=> a.saldo > b.saldo ? a : b);
+  }
+
+  return `<div class="card w4">
+    <div class="card-head"><h2>Banco de Horas</h2><span class="card-icon">⏱️</span></div>
+    <p class="card-sub">Período ${periodo}</p>
+    ${emAtraso ? `<div class="card-alert">⚠️ A planilha do mês passado ainda não foi enviada.</div>` : ''}
+    <div class="stat-big">${negativos}</div><div class="stat-delta ${negativos>0?'bad':'good'}">de ${total} com saldo negativo</div>
+    ${devedor ? `<div class="mini-list" style="margin-top:12px">
+      <div class="mini-list-row"><span class="name">🔻 Maior devedor: ${devedor.nome.split(' ').slice(0,2).join(' ')}</span><span class="badge bad">${fmtMinIdx(devedor.saldo)}</span></div>
+      <div class="mini-list-row"><span class="name">🔺 Maior saldo: ${credor.nome.split(' ').slice(0,2).join(' ')}</span><span class="badge good">${fmtMinIdx(credor.saldo)}</span></div>
+    </div>` : ''}
+  </div>`;
 }
 
 init();
