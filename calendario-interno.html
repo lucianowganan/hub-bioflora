@@ -90,6 +90,7 @@
       </div>
     </div>
     <div class="cal-grid" id="calGrid"></div>
+    <div id="diaSelecionadoPainel" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);"></div>
   </div>
 
   <div class="panel">
@@ -184,6 +185,7 @@ async function excluirEvento(id){
   if(!confirm('Excluir esse evento?')) return;
   const { error } = await supa.from('eventos_internos').delete().eq('id', id);
   if(error){ alert('Erro: ' + error.message); return; }
+  document.getElementById('diaSelecionadoPainel').style.display = 'none';
   await carregarEventos();
 }
 window.excluirEvento = excluirEvento;
@@ -201,11 +203,14 @@ async function carregarEventos(){
   renderLista(proximos || []);
 }
 
+let porDiaGlobal = {};
+
 function renderGrid(){
   document.getElementById('calMesLabel').textContent = mesAtual.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
 
   const porDia = {};
   eventosDoMes.forEach(ev => { (porDia[ev.data_inicio] ||= []).push(ev); });
+  porDiaGlobal = porDia;
 
   const ano = mesAtual.getFullYear(), mes = mesAtual.getMonth();
   const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
@@ -217,12 +222,37 @@ function renderGrid(){
   for(let dia=1; dia<=totalDias; dia++){
     const key = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
     const doDia = porDia[key] || [];
-    html += `<div class="cal-day ${key===hojeStr?'today':''}">
+    html += `<div class="cal-day ${key===hojeStr?'today':''}" onclick="mostrarDia('${key}')">
       <div class="cal-day-num">${dia}</div>
       ${doDia.map(ev => `<div class="cal-evt ${ev.tipo}" title="${ev.titulo}">${ev.titulo}</div>`).join('')}
     </div>`;
   }
   document.getElementById('calGrid').innerHTML = html;
+  document.getElementById('diaSelecionadoPainel').style.display = 'none';
+}
+
+function mostrarDia(key){
+  const doDia = porDiaGlobal[key] || [];
+  const painel = document.getElementById('diaSelecionadoPainel');
+  const dataFmt = new Date(key+'T00:00:00').toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
+
+  if(!doDia.length){
+    painel.innerHTML = `<p style="font-size:12.5px;color:var(--gray);margin:0;">${dataFmt} — nenhum evento.</p>`;
+  } else {
+    painel.innerHTML = `<p style="font-size:11.5px;color:var(--gray);text-transform:capitalize;margin:0 0 10px;">${dataFmt}</p>` +
+      doDia.map(ev => `
+        <div class="evento-row">
+          <div>
+            <span class="evento-tipo-badge ${ev.tipo}">${TIPO_LABELS[ev.tipo]}</span>
+            <strong style="margin-left:8px">${ev.titulo}</strong>
+            ${ev.descricao ? `<div style="font-size:11.5px;color:var(--gray);margin-top:4px;">${ev.descricao}</div>` : ''}
+          </div>
+          ${meuPapel==='chefia' ? `<button class="del-btn" onclick="excluirEvento('${ev.id}')">Excluir</button>` : ''}
+        </div>`).join('');
+  }
+  painel.style.display = 'block';
+}
+window.mostrarDia = mostrarDia;
 }
 
 function renderLista(eventos){
