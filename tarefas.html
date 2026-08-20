@@ -65,6 +65,10 @@
   .modal-actions{display:flex;gap:8px;margin-top:20px;}
   .modal-actions .btn{flex:1;text-align:center;}
   .move-row{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;}
+  .quadro-tab.add{background:transparent;border-style:dashed;color:var(--gray);}
+  .coluna.add-coluna{background:transparent;border:1.5px dashed var(--line);display:flex;align-items:center;justify-content:center;min-height:80px;}
+  .coluna.add-coluna button{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;color:var(--gray);background:transparent;border:none;cursor:pointer;}
+  .coluna.add-coluna button:hover{color:var(--burgundy);}
 </style>
 </head>
 <body>
@@ -139,9 +143,29 @@ async function carregarQuadros(){
 
   document.getElementById('quadroTabs').innerHTML = quadros.map(q => `
     <button class="quadro-tab ${q.id===quadroAtivoId?'active':''}" onclick="trocarQuadro('${q.id}')">${q.nome}</button>
-  `).join('');
+  `).join('') + `<button class="quadro-tab add" onclick="criarQuadro()">+ Novo quadro</button>`;
 
   await carregarBoard();
+}
+
+async function criarQuadro(){
+  const nome = prompt('Nome do novo quadro (ex: Marketing, Comercial, RH):');
+  if(!nome || !nome.trim()) return;
+  const colunasStr = prompt('Colunas do quadro, separadas por vírgula:', 'A fazer, Em andamento, Concluído');
+  if(!colunasStr) return;
+  const nomesColunas = colunasStr.split(',').map(c=>c.trim()).filter(Boolean);
+  if(!nomesColunas.length){ alert('Precisa de pelo menos uma coluna.'); return; }
+
+  const { data: { session } } = await supa.auth.getSession();
+  const { data: novoQuadro, error } = await supa.from('quadros').insert({ nome: nome.trim(), criado_por: session.user.id }).select().single();
+  if(error){ alert('Erro ao criar quadro: ' + error.message); return; }
+
+  const inserts = nomesColunas.map((nomeCol, i) => ({ quadro_id: novoQuadro.id, nome: nomeCol, ordem: i }));
+  const { error: colError } = await supa.from('colunas').insert(inserts);
+  if(colError){ alert('Erro ao criar colunas: ' + colError.message); return; }
+
+  quadroAtivoId = novoQuadro.id;
+  await carregarQuadros();
 }
 
 function trocarQuadro(id){
@@ -181,7 +205,17 @@ async function carregarBoard(){
         <button class="add-card-btn" onclick="abrirNovoCard('${col.id}')">+ Adicionar card</button>
       </div>`;
     }).join('')}
+    <div class="coluna add-coluna"><button onclick="criarColuna()">+ Nova coluna</button></div>
   </div>`;
+}
+
+async function criarColuna(){
+  const nome = prompt('Nome da nova coluna:');
+  if(!nome || !nome.trim()) return;
+  const proximaOrdem = colunasAtivas.length ? Math.max(...colunasAtivas.map(c=>c.ordem)) + 1 : 0;
+  const { error } = await supa.from('colunas').insert({ quadro_id: quadroAtivoId, nome: nome.trim(), ordem: proximaOrdem });
+  if(error){ alert('Erro ao criar coluna: ' + error.message); return; }
+  await carregarBoard();
 }
 
 function abrirNovoCard(colunaId){
