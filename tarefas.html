@@ -68,7 +68,11 @@
   .quadro-tab.add{background:transparent;border-style:dashed;color:var(--gray);}
   .coluna.add-coluna{background:transparent;border:1.5px dashed var(--line);display:flex;align-items:center;justify-content:center;min-height:80px;}
   .coluna.add-coluna button{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;color:var(--gray);background:transparent;border:none;cursor:pointer;}
-  .coluna.add-coluna button:hover{color:var(--burgundy);}
+  .coluna.add-coluna button:hover{color:var(--burgundy);}  .coluna-del{background:transparent;border:none;color:var(--gray);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:4px;}
+  .coluna-del:hover{color:var(--bad);background:var(--bad-tint);}
+  .quadro-actions{display:flex;justify-content:flex-end;margin:-10px 0 14px;}
+  .link-excluir{font-family:'Maven Pro',sans-serif;font-size:11.5px;color:var(--gray);background:none;border:none;cursor:pointer;text-decoration:underline;}
+  .link-excluir:hover{color:var(--bad);}
 </style>
 </head>
 <body>
@@ -86,6 +90,7 @@
   </header>
 
   <div class="quadro-tabs" id="quadroTabs"></div>
+  <div class="quadro-actions" id="quadroActions"></div>
   <div id="boardArea"></div>
 </div>
 
@@ -137,16 +142,45 @@ async function carregarQuadros(){
   quadros = data || [];
   if(!quadros.length){
     document.getElementById('boardArea').innerHTML = `<div class="empty-state"><div class="big">🗂️</div>Nenhum quadro criado ainda.</div>`;
+    document.getElementById('quadroTabs').innerHTML = `<button class="quadro-tab add" onclick="criarQuadro()">+ Novo quadro</button>`;
+    document.getElementById('quadroActions').innerHTML = '';
     return;
   }
-  if(!quadroAtivoId) quadroAtivoId = quadros[0].id;
+  if(!quadroAtivoId || !quadros.find(q=>q.id===quadroAtivoId)) quadroAtivoId = quadros[0].id;
 
   document.getElementById('quadroTabs').innerHTML = quadros.map(q => `
     <button class="quadro-tab ${q.id===quadroAtivoId?'active':''}" onclick="trocarQuadro('${q.id}')">${q.nome}</button>
   `).join('') + `<button class="quadro-tab add" onclick="criarQuadro()">+ Novo quadro</button>`;
 
+  const quadroAtivo = quadros.find(q=>q.id===quadroAtivoId);
+  document.getElementById('quadroActions').innerHTML = quadroAtivo
+    ? `<button class="link-excluir" onclick="excluirQuadro()">Excluir quadro "${quadroAtivo.nome}"</button>`
+    : '';
+
   await carregarBoard();
 }
+
+async function excluirQuadro(){
+  const quadroAtivo = quadros.find(q=>q.id===quadroAtivoId);
+  if(!quadroAtivo) return;
+  if(!confirm(`Excluir o quadro "${quadroAtivo.nome}" inteiro, com todas as colunas e cards dele? Não dá pra desfazer.`)) return;
+  const { error } = await supa.from('quadros').delete().eq('id', quadroAtivoId);
+  if(error){ alert('Erro ao excluir: ' + error.message); return; }
+  quadroAtivoId = null;
+  await carregarQuadros();
+}
+window.excluirQuadro = excluirQuadro;
+
+async function excluirColuna(colunaId, qtdCards){
+  const aviso = qtdCards > 0
+    ? `Essa coluna tem ${qtdCards} card(s). Excluir a coluna apaga os cards junto. Continuar?`
+    : 'Excluir essa coluna?';
+  if(!confirm(aviso)) return;
+  const { error } = await supa.from('colunas').delete().eq('id', colunaId);
+  if(error){ alert('Erro ao excluir: ' + error.message); return; }
+  await carregarBoard();
+}
+window.excluirColuna = excluirColuna;
 
 async function criarQuadro(){
   const nome = prompt('Nome do novo quadro (ex: Marketing, Comercial, RH):');
@@ -191,7 +225,7 @@ async function carregarBoard(){
       const doCards = cards.filter(c=>c.coluna_id===col.id);
       return `
       <div class="coluna">
-        <div class="coluna-head"><h3>${col.nome}</h3><span class="coluna-count">${doCards.length}</span></div>
+        <div class="coluna-head"><h3>${col.nome}</h3><div style="display:flex;align-items:center;gap:6px"><span class="coluna-count">${doCards.length}</span><button class="coluna-del" title="Excluir coluna" onclick="excluirColuna('${col.id}', ${doCards.length})">✕</button></div></div>
         ${doCards.map(c => `
           <div class="card-tarefa" onclick="abrirEdicao('${c.id}')">
             <div class="titulo">${c.titulo}</div>
@@ -295,5 +329,6 @@ async function excluirCard(){
 
 init();
 </script>
+<script src="acessibilidade.js"></script>
 </body>
 </html>
