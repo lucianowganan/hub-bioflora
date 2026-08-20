@@ -87,6 +87,18 @@
       html.a11y-contraste input, html.a11y-contraste select, html.a11y-contraste textarea{
         background:#111 !important; color:#fff !important; border-color:#555 !important;
       }
+      /* Elementos com fundo sólido vinho (agora amarelo) precisam de texto
+         preto por cima — branco fica ilegível no amarelo. */
+      html.a11y-contraste .btn:not(.secondary),
+      html.a11y-contraste .quadro-tab.active,
+      html.a11y-contraste .kpi.accent,
+      html.a11y-contraste .role-pill,
+      html.a11y-contraste .rolePill,
+      html.a11y-contraste .hero,
+      html.a11y-contraste .qs-card.accent,
+      html.a11y-contraste .btn-reset-senha[style*="background"] {
+        color:#000 !important;
+      }
     `;
     const style = document.createElement('style');
     style.textContent = css;
