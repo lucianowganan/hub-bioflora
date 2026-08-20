@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendário Interno — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.cdnfonts.com/css/cal-sans" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC; --bad:#B4472F; --bad-tint:#FBEBE6;
+    --warn:#C9922B; --warn-tint:#FBF1DD; --info:#3E6B93; --info-tint:#E7EFF5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1100px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand-text h1{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn.small{padding:6px 12px;font-size:12px;}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .panel h2{font-family:'Cal Sans','Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+
+  .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px;}
+  .form-grid label{font-size:11px;color:var(--gray);font-weight:700;display:block;margin-bottom:4px;}
+  .form-grid input,.form-grid textarea,.form-grid select{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 10px;border:1.5px solid var(--line);border-radius:7px;}
+  .form-grid textarea{resize:vertical;min-height:60px;font-family:inherit;}
+  .alvo-checks{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;padding:8px 0;}
+
+  .cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .cal-header h3{font-family:'Cal Sans','Fraunces',serif;font-size:16px;margin:0;text-transform:capitalize;}
+  .cal-nav button{font-family:'Maven Pro',sans-serif;font-size:12px;padding:6px 12px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;margin-left:6px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-weekday{text-align:center;font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;padding:4px 0 8px;}
+  .cal-day{min-height:74px;border:1px solid var(--line);border-radius:8px;padding:5px 6px;background:#fff;cursor:pointer;}
+  .cal-day.empty{visibility:hidden;}
+  .cal-day.today{border-color:var(--burgundy);border-width:1.5px;background:var(--burgundy-tint);}
+  .cal-day-num{font-size:11px;font-weight:700;color:var(--gray);}
+  .cal-day.today .cal-day-num{color:var(--burgundy);}
+  .cal-evt{font-size:9.5px;line-height:1.3;color:#fff;border-radius:3px;padding:1px 4px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cal-evt.treinamento{background:var(--info);}
+  .cal-evt.folga{background:var(--warn);color:#3D2E00;}
+  .cal-evt.descanso{background:var(--good);}
+  .cal-evt.outro{background:var(--burgundy);}
+
+  .lista-eventos{margin-top:4px;}
+  .evento-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);}
+  .evento-row:last-child{border-bottom:none;}
+  .evento-tipo-badge{font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:10px;color:#fff;}
+  .evento-tipo-badge.treinamento{background:var(--info);}
+  .evento-tipo-badge.folga{background:var(--warn);color:#3D2E00;}
+  .evento-tipo-badge.descanso{background:var(--good);}
+  .evento-tipo-badge.outro{background:var(--burgundy);}
+  .del-btn{font-family:'Maven Pro',sans-serif;font-size:11px;color:var(--bad);border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 9px;cursor:pointer;}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--gray);font-size:13px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand-text">
+      <h1>Calendário Interno</h1>
+      <p>Treinamentos, folgas e descansos — visível conforme cargo ou pessoa</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button class="btn" onclick="logout()">Sair</button>
+    </div>
+  </header>
+
+  <div id="formArea"></div>
+
+  <div class="panel">
+    <div class="cal-header">
+      <h3 id="calMesLabel"></h3>
+      <div class="cal-nav">
+        <button onclick="mudarMes(-1)">← Anterior</button>
+        <button onclick="irParaMesAtual()">Hoje</button>
+        <button onclick="mudarMes(1)">Próximo →</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Próximos eventos</h2>
+    <p class="desc">Ordenados por data, a partir de hoje</p>
+    <div class="lista-eventos" id="listaEventos"></div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', conferencia:'Conferência', atendente:'Atendente'};
+const TIPO_LABELS = {treinamento:'Treinamento', folga:'Folga', descanso:'Descanso', outro:'Outro'};
+
+let meuPapel = null;
+let mesAtual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let eventosDoMes = [];
+let todosPerfis = [];
+
+function localDateStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+async function init(){
+  const { papel } = await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente']);
+  meuPapel = papel;
+
+  if(meuPapel === 'chefia'){
+    const { data: perfis } = await supa.from('perfis').select('id,nome_exibicao,papel').order('nome_exibicao');
+    todosPerfis = perfis || [];
+    renderFormulario();
+  }
+
+  await carregarEventos();
+}
+
+function renderFormulario(){
+  document.getElementById('formArea').innerHTML = `
+    <div class="panel">
+      <h2>Novo evento</h2>
+      <p class="desc">Só a chefia cria eventos. Se não marcar nenhum cargo/pessoa, aparece pra todo mundo.</p>
+      <div class="form-grid">
+        <div style="grid-column:span 2"><label>Título</label><input id="fTitulo" placeholder="Ex: Treinamento de atendimento" /></div>
+        <div><label>Tipo</label><select id="fTipo">
+          <option value="treinamento">Treinamento</option>
+          <option value="folga">Folga</option>
+          <option value="descanso">Descanso</option>
+          <option value="outro" selected>Outro</option>
+        </select></div>
+        <div><label>Data</label><input id="fDataInicio" type="date" /></div>
+        <div style="grid-column:span 2"><label>Descrição (opcional)</label><textarea id="fDescricao" placeholder="Detalhes do evento..."></textarea></div>
+      </div>
+      <label style="font-size:11px;color:var(--gray);font-weight:700;display:block;margin-bottom:6px;">Visível para (cargos)</label>
+      <div class="alvo-checks">
+        ${Object.entries(ROLE_LABELS).map(([k,l]) => `<label><input type="checkbox" class="alvoPapel" value="${k}"> ${l}</label>`).join('')}
+      </div>
+      <label style="font-size:11px;color:var(--gray);font-weight:700;display:block;margin:10px 0 6px;">Visível para (pessoas específicas, opcional)</label>
+      <select id="fPessoas" multiple style="width:100%;font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:8px;border:1.5px solid var(--line);border-radius:7px;min-height:80px;">
+        ${todosPerfis.map(p => `<option value="${p.id}">${p.nome_exibicao || p.id} (${ROLE_LABELS[p.papel]||p.papel})</option>`).join('')}
+      </select>
+      <div style="margin-top:14px;"><button class="btn" onclick="criarEvento()">Criar evento</button></div>
+    </div>`;
+}
+
+async function criarEvento(){
+  const titulo = document.getElementById('fTitulo').value.trim();
+  const tipo = document.getElementById('fTipo').value;
+  const dataInicio = document.getElementById('fDataInicio').value;
+  const descricao = document.getElementById('fDescricao').value.trim();
+  const papeis_alvo = Array.from(document.querySelectorAll('.alvoPapel:checked')).map(cb=>cb.value);
+  const pessoas_alvo = Array.from(document.getElementById('fPessoas').selectedOptions).map(o=>o.value);
+
+  if(!titulo || !dataInicio){ alert('Preencha pelo menos título e data.'); return; }
+
+  const { data: { session } } = await supa.auth.getSession();
+  const { error } = await supa.from('eventos_internos').insert({
+    titulo, tipo, data_inicio: dataInicio, descricao,
+    papeis_alvo, pessoas_alvo, criado_por: session.user.id
+  });
+  if(error){ alert('Erro ao criar evento: ' + error.message); return; }
+
+  document.getElementById('fTitulo').value = '';
+  document.getElementById('fDescricao').value = '';
+  mesAtual = new Date(new Date(dataInicio).getFullYear(), new Date(dataInicio).getMonth(), 1);
+  await carregarEventos();
+}
+window.criarEvento = criarEvento;
+
+async function excluirEvento(id){
+  if(!confirm('Excluir esse evento?')) return;
+  const { error } = await supa.from('eventos_internos').delete().eq('id', id);
+  if(error){ alert('Erro: ' + error.message); return; }
+  await carregarEventos();
+}
+window.excluirEvento = excluirEvento;
+
+async function carregarEventos(){
+  const inicioMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth(), 1).toISOString().slice(0,10);
+  const fimMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth()+1, 0).toISOString().slice(0,10);
+
+  const { data } = await supa.from('eventos_internos').select('*').gte('data_inicio', inicioMes).lte('data_inicio', fimMes).order('data_inicio');
+  eventosDoMes = data || [];
+  renderGrid();
+
+  const hojeStr = localDateStr(new Date());
+  const { data: proximos } = await supa.from('eventos_internos').select('*').gte('data_inicio', hojeStr).order('data_inicio').limit(15);
+  renderLista(proximos || []);
+}
+
+function renderGrid(){
+  document.getElementById('calMesLabel').textContent = mesAtual.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+
+  const porDia = {};
+  eventosDoMes.forEach(ev => { (porDia[ev.data_inicio] ||= []).push(ev); });
+
+  const ano = mesAtual.getFullYear(), mes = mesAtual.getMonth();
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes+1, 0).getDate();
+  const hojeStr = localDateStr(new Date());
+
+  let html = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d=>`<div class="cal-weekday">${d}</div>`).join('');
+  for(let i=0;i<primeiroDiaSemana;i++) html += `<div class="cal-day empty"></div>`;
+  for(let dia=1; dia<=totalDias; dia++){
+    const key = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const doDia = porDia[key] || [];
+    html += `<div class="cal-day ${key===hojeStr?'today':''}">
+      <div class="cal-day-num">${dia}</div>
+      ${doDia.map(ev => `<div class="cal-evt ${ev.tipo}" title="${ev.titulo}">${ev.titulo}</div>`).join('')}
+    </div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function renderLista(eventos){
+  const el = document.getElementById('listaEventos');
+  if(!eventos.length){ el.innerHTML = '<div class="empty-state">Nenhum evento futuro visível pra você.</div>'; return; }
+  el.innerHTML = eventos.map(ev => `
+    <div class="evento-row">
+      <div>
+        <span class="evento-tipo-badge ${ev.tipo}">${TIPO_LABELS[ev.tipo]}</span>
+        <strong style="margin-left:8px">${ev.titulo}</strong>
+        <div style="font-size:11.5px;color:var(--gray);margin-top:4px;">${new Date(ev.data_inicio+'T00:00:00').toLocaleDateString('pt-BR')}${ev.descricao ? ' — '+ev.descricao : ''}</div>
+      </div>
+      ${meuPapel==='chefia' ? `<button class="del-btn" onclick="excluirEvento('${ev.id}')">Excluir</button>` : ''}
+    </div>`).join('');
+}
+
+function mudarMes(delta){
+  mesAtual = new Date(mesAtual.getFullYear(), mesAtual.getMonth()+delta, 1);
+  carregarEventos();
+}
+window.mudarMes = mudarMes;
+
+function irParaMesAtual(){
+  mesAtual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  carregarEventos();
+}
+window.irParaMesAtual = irParaMesAtual;
+
+init();
+</script>
+<script src="acessibilidade.js"></script>
+</body>
+</html>

@@ -142,6 +142,7 @@
   .card-meuserros .stripe{background:var(--good);}
   .card-reaproveitamento .stripe{background:#2F7A5F;}
   .card-tarefas .stripe{background:var(--good);}
+  .card-calendario-interno .stripe{background:var(--info);}
 
   .status-banner{background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:12px;padding:12px 16px;font-size:12.5px;color:#7A5C15;margin-top:24px;}
   .loading-msg{font-size:12px;color:var(--gray);padding:30px 0;text-align:center;}
@@ -238,12 +239,12 @@
 
     <div id="widgetArea"></div>
 
-    <div class="section-title">Meu Calendário</div>
-    <a href="calendario3.html" class="minical-link" id="minicalArea"></a>
+    <div class="section-title">Calendário Interno</div>
+    <a href="calendario-interno.html" class="minical-link" id="minicalArea"></a>
 
     <div class="section-title">Integrações</div>
     <div class="integ-grid">
-      <a class="integ-card" href="calendario3.html" style="text-decoration:none;color:inherit;border-style:solid;cursor:pointer;">
+      <a class="integ-card" href="calendario3.html" data-roles="chefia" style="text-decoration:none;color:inherit;border-style:solid;cursor:pointer;">
         <div class="integ-icon">📅</div>
         <h3>Google Calendar</h3>
         <p>Ver e criar eventos do seu Google Calendar pessoal direto no Hub.</p>
@@ -268,6 +269,10 @@
       <a class="module-card card-tarefas" href="tarefas.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
         <div class="stripe"></div><div class="icon">🗂️</div><h3>Quadro de Tarefas</h3>
         <p>Kanban de tarefas e sugestões/ideias.</p>
+      </a>
+      <a class="module-card card-calendario-interno" href="calendario-interno.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
+        <div class="stripe"></div><div class="icon">🗓️</div><h3>Calendário Interno</h3>
+        <p>Treinamentos, folgas e descansos da equipe.</p>
       </a>
       <a class="module-card card-horas" href="banco-de-horas.html" data-roles="chefia,rh,gestao">
         <div class="stripe"></div><div class="icon">⏱️</div><h3>Banco de Horas</h3>
@@ -349,9 +354,14 @@ async function init(){
     el.style.display = roles.includes(papel) ? 'block' : 'none';
   });
 
+  document.querySelectorAll('.integ-card[data-roles]').forEach(el => {
+    const roles = el.dataset.roles.split(',');
+    el.style.display = roles.includes(papel) ? 'flex' : 'none';
+  });
+
   await renderQuickStats(papel);
   await renderWidgets(papel, perfil);
-  await renderMiniCalendario();
+  await renderMiniCalendarioInterno();
   await checkAvisosPopup(papel, session.user.id);
 }
 
@@ -378,61 +388,61 @@ async function checkAvisosPopup(papel, userId){
 function mostrarPopupAviso(fila, indice, userId){
   if(indice >= fila.length) return;
   const aviso = fila[indice];
+  const ehEnquete = aviso.tipo === 'enquete' && aviso.opcoes_enquete && aviso.opcoes_enquete.length;
 
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(42,34,36,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:16px;padding:28px;max-width:420px;width:100%;">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--burgundy);margin-bottom:8px;">📢 Aviso</div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--burgundy);margin-bottom:8px;">${ehEnquete ? '🗳️ Enquete' : '📢 Aviso'}</div>
       <h2 style="font-family:var(--headfont);font-size:19px;margin:0 0 10px;">${aviso.titulo}</h2>
       <p style="font-size:13.5px;line-height:1.6;color:var(--ink);white-space:pre-wrap;margin:0 0 22px;">${aviso.mensagem.replace(/</g,'&lt;')}</p>
-      <button id="fecharAvisoBtn" style="width:100%;font-family:'Maven Pro',sans-serif;font-size:14px;font-weight:600;padding:11px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;">Entendi</button>
+      ${ehEnquete
+        ? `<div style="display:flex;flex-direction:column;gap:8px;">
+            ${aviso.opcoes_enquete.map(op => `<button class="opcaoEnqueteBtn" data-opcao="${op.replace(/"/g,'&quot;')}" style="width:100%;font-family:'Maven Pro',sans-serif;font-size:13.5px;font-weight:600;padding:10px;border-radius:8px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;text-align:left;">${op}</button>`).join('')}
+          </div>`
+        : `<button id="fecharAvisoBtn" style="width:100%;font-family:'Maven Pro',sans-serif;font-size:14px;font-weight:600;padding:11px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;">👍 Confirmar leitura</button>`
+      }
     </div>`;
   document.body.appendChild(overlay);
 
-  overlay.querySelector('#fecharAvisoBtn').addEventListener('click', async () => {
-    await supa.from('avisos_popup_visualizacoes').upsert({ aviso_id: aviso.id, usuario_id: userId });
+  async function avancar(){
     document.body.removeChild(overlay);
     mostrarPopupAviso(fila, indice+1, userId);
-  });
+  }
+
+  if(ehEnquete){
+    overlay.querySelectorAll('.opcaoEnqueteBtn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await supa.from('avisos_popup_votos').upsert({ aviso_id: aviso.id, usuario_id: userId, opcao: btn.dataset.opcao });
+        await supa.from('avisos_popup_visualizacoes').upsert({ aviso_id: aviso.id, usuario_id: userId });
+        avancar();
+      });
+    });
+  } else {
+    overlay.querySelector('#fecharAvisoBtn').addEventListener('click', async () => {
+      await supa.from('avisos_popup_visualizacoes').upsert({ aviso_id: aviso.id, usuario_id: userId });
+      avancar();
+    });
+  }
 }
 
 // ============================================================
-// MINI CALENDÁRIO — prévia em grade do mês atual na home,
-// só leitura (clique no card inteiro leva pra calendario.html)
+// MINI CALENDÁRIO INTERNO — prévia em grade do mês atual na home,
+// lê eventos_internos (a RLS já filtra por cargo/pessoa). Só leitura,
+// clique no card leva pra calendario-interno.html.
 // ============================================================
-async function renderMiniCalendario(){
+async function renderMiniCalendarioInterno(){
   const el = document.getElementById('minicalArea');
   const hoje = new Date();
-  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
-
-  const { data, error } = await supa.functions.invoke('google-calendar-events', {
-    body: { action: 'list', timeMin: inicioMes.toISOString(), timeMax: fimMes.toISOString() }
-  });
-
+  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0,10);
+  const fimMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().slice(0,10);
   const label = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
-  if(error || !data || data.error === 'not_connected'){
-    el.innerHTML = `
-      <div class="minical-head"><h3>${label}</h3><span>Conectar →</span></div>
-      <p style="font-size:12px;color:var(--gray);margin:0;">Conecte seu Google Calendar pra ver seus eventos do mês aqui.</p>`;
-    return;
-  }
-  if(data.error){
-    el.innerHTML = `<div class="minical-head"><h3>${label}</h3><span>Abrir →</span></div>`;
-    return;
-  }
+  const { data: eventos } = await supa.from('eventos_internos').select('*').gte('data_inicio', inicioMes).lte('data_inicio', fimMes);
 
-  const eventos = data.items || [];
   const porDia = {};
-  eventos.forEach(ev => {
-    const raw = ev.start?.dateTime || ev.start?.date;
-    if(!raw) return;
-    const key = raw.slice(0,10);
-    if(!porDia[key]) porDia[key] = [];
-    porDia[key].push(ev);
-  });
+  (eventos||[]).forEach(ev => { (porDia[ev.data_inicio] ||= []).push(ev); });
 
   const ano = hoje.getFullYear(), mes = hoje.getMonth();
   const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
@@ -447,7 +457,7 @@ async function renderMiniCalendario(){
     const visiveis = doDia.slice(0,2);
     grid += `<div class="minical-day ${key===hojeKey?'today':''}">
       <div class="minical-day-num">${dia}</div>
-      ${visiveis.map(ev => `<div class="minical-evt">${(ev.summary||'(sem título)').replace(/</g,'&lt;')}</div>`).join('')}
+      ${visiveis.map(ev => `<div class="minical-evt">${(ev.titulo||'(sem título)').replace(/</g,'&lt;')}</div>`).join('')}
       ${doDia.length > 2 ? `<div class="minical-evt-more">+${doDia.length - 2}</div>` : ''}
     </div>`;
   }
