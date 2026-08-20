@@ -149,7 +149,38 @@ async function init(){
   const { data: atendentesList } = await supa.from('atendentes_erros').select('nome').order('nome');
   const atendentes = (atendentesList||[]).map(a=>a.nome);
 
+  const { data: avisos } = await supa.from('avisos_popup').select('*').order('criado_em', {ascending:false});
+
   document.getElementById('content').innerHTML = `
+    <div class="panel">
+      <h2>Avisos em pop-up</h2>
+      <p class="desc">Cria um aviso que aparece na tela de quem tem o cargo escolhido assim que abrir o Hub</p>
+      <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:16px;">
+        <input id="avisoTitulo" placeholder="Título do aviso" style="font-family:'Maven Pro',sans-serif;font-size:13.5px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;">
+        <textarea id="avisoMensagem" placeholder="Mensagem completa..." style="font-family:'Maven Pro',sans-serif;font-size:13.5px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;min-height:70px;resize:vertical;"></textarea>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;">
+          <label><input type="checkbox" value="" id="avisoTodos" checked onchange="toggleAvisoTodos()"> Todo mundo</label>
+          ${Object.entries(ROLE_LABELS).filter(([k])=>k!=='sem_papel').map(([k,l]) => `<label><input type="checkbox" class="avisoPapel" value="${k}" disabled> ${l}</label>`).join('')}
+        </div>
+        <button class="btn-reset-senha" style="width:fit-content;background:var(--burgundy);color:#fff;border-color:var(--burgundy)" onclick="criarAviso()">Criar aviso</button>
+      </div>
+      ${(avisos||[]).length ? `<table>
+        <thead><tr><th>Título</th><th>Alvo</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          ${avisos.map(a => `
+            <tr>
+              <td><strong>${a.titulo}</strong><br><span style="color:var(--gray);font-size:12px">${a.mensagem}</span></td>
+              <td style="font-size:12px">${a.papeis_alvo.length ? a.papeis_alvo.map(p=>ROLE_LABELS[p]).join(', ') : 'Todo mundo'}</td>
+              <td><span class="tag ${a.ativo?'chefia':''}" style="background:${a.ativo?'var(--good-tint)':'#F1ECEA'};color:${a.ativo?'var(--good)':'var(--gray)'}">${a.ativo?'Ativo':'Desativado'}</span></td>
+              <td>
+                <button class="btn-reset-senha" onclick="toggleAvisoAtivo('${a.id}', ${!a.ativo})">${a.ativo?'Desativar':'Reativar'}</button>
+                <button class="btn-reset-senha" style="color:var(--bad)" onclick="excluirAviso('${a.id}')">Excluir</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>` : '<p style="color:var(--gray);font-size:12.5px">Nenhum aviso criado ainda.</p>'}
+    </div>
+
     <div class="panel">
       <h2>Usuários cadastrados</h2>
       <p class="desc">Defina o papel de cada pessoa e, se ela participar da conferência, vincule ao nome dela na planilha de erros</p>
@@ -229,6 +260,43 @@ async function redefinirSenha(userId, nomeExibicao){
   alert(`Senha redefinida para ${data.email}. Avise a pessoa com a nova senha por um canal seguro (WhatsApp, presencial etc).`);
 }
 window.redefinirSenha = redefinirSenha;
+
+function toggleAvisoTodos(){
+  const todos = document.getElementById('avisoTodos').checked;
+  document.querySelectorAll('.avisoPapel').forEach(cb => { cb.disabled = todos; if(todos) cb.checked = false; });
+}
+window.toggleAvisoTodos = toggleAvisoTodos;
+
+async function criarAviso(){
+  const titulo = document.getElementById('avisoTitulo').value.trim();
+  const mensagem = document.getElementById('avisoMensagem').value.trim();
+  if(!titulo || !mensagem){ alert('Preencha título e mensagem.'); return; }
+
+  const todos = document.getElementById('avisoTodos').checked;
+  const papeis_alvo = todos ? [] : Array.from(document.querySelectorAll('.avisoPapel:checked')).map(cb=>cb.value);
+  if(!todos && !papeis_alvo.length){ alert('Escolha "Todo mundo" ou pelo menos um cargo.'); return; }
+
+  const { data: { session } } = await supa.auth.getSession();
+  const { error } = await supa.from('avisos_popup').insert({ titulo, mensagem, papeis_alvo, criado_por: session.user.id });
+  if(error){ alert('Erro ao criar aviso: ' + error.message); return; }
+  init();
+}
+window.criarAviso = criarAviso;
+
+async function toggleAvisoAtivo(id, novoStatus){
+  const { error } = await supa.from('avisos_popup').update({ativo: novoStatus}).eq('id', id);
+  if(error){ alert('Erro: ' + error.message); return; }
+  init();
+}
+window.toggleAvisoAtivo = toggleAvisoAtivo;
+
+async function excluirAviso(id){
+  if(!confirm('Excluir esse aviso? Não dá pra desfazer.')) return;
+  const { error } = await supa.from('avisos_popup').delete().eq('id', id);
+  if(error){ alert('Erro: ' + error.message); return; }
+  init();
+}
+window.excluirAviso = excluirAviso;
 
 init();
 </script>

@@ -352,6 +352,49 @@ async function init(){
   await renderQuickStats(papel);
   await renderWidgets(papel, perfil);
   await renderMiniCalendario();
+  await checkAvisosPopup(papel, session.user.id);
+}
+
+// ============================================================
+// AVISOS EM POP-UP — chefia cria um aviso direcionado a um ou mais
+// cargos (ou todo mundo); aparece assim que a pessoa abre o Hub, uma
+// única vez (marca "visualizado" ao fechar).
+// ============================================================
+async function checkAvisosPopup(papel, userId){
+  const { data: avisos } = await supa.from('avisos_popup').select('*').eq('ativo', true).order('criado_em', {ascending:false});
+  if(!avisos || !avisos.length) return;
+
+  const paraMim = avisos.filter(a => !a.papeis_alvo.length || a.papeis_alvo.includes(papel));
+  if(!paraMim.length) return;
+
+  const { data: vistos } = await supa.from('avisos_popup_visualizacoes').select('aviso_id').eq('usuario_id', userId);
+  const idsVistos = new Set((vistos||[]).map(v=>v.aviso_id));
+  const naoVistos = paraMim.filter(a => !idsVistos.has(a.id));
+  if(!naoVistos.length) return;
+
+  mostrarPopupAviso(naoVistos, 0, userId);
+}
+
+function mostrarPopupAviso(fila, indice, userId){
+  if(indice >= fila.length) return;
+  const aviso = fila[indice];
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(42,34,36,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:28px;max-width:420px;width:100%;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--burgundy);margin-bottom:8px;">📢 Aviso</div>
+      <h2 style="font-family:var(--headfont);font-size:19px;margin:0 0 10px;">${aviso.titulo}</h2>
+      <p style="font-size:13.5px;line-height:1.6;color:var(--ink);white-space:pre-wrap;margin:0 0 22px;">${aviso.mensagem.replace(/</g,'&lt;')}</p>
+      <button id="fecharAvisoBtn" style="width:100%;font-family:'Maven Pro',sans-serif;font-size:14px;font-weight:600;padding:11px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;">Entendi</button>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#fecharAvisoBtn').addEventListener('click', async () => {
+    await supa.from('avisos_popup_visualizacoes').upsert({ aviso_id: aviso.id, usuario_id: userId });
+    document.body.removeChild(overlay);
+    mostrarPopupAviso(fila, indice+1, userId);
+  });
 }
 
 // ============================================================
