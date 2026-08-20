@@ -141,6 +141,7 @@
   .card-erros .stripe{background:#B4472F;}
   .card-meuserros .stripe{background:var(--good);}
   .card-reaproveitamento .stripe{background:#2F7A5F;}
+  .card-tarefas .stripe{background:var(--good);}
 
   .status-banner{background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:12px;padding:12px 16px;font-size:12.5px;color:#7A5C15;margin-top:24px;}
   .loading-msg{font-size:12px;color:var(--gray);padding:30px 0;text-align:center;}
@@ -254,16 +255,20 @@
         <p>Relacionamento e histórico de clientes/prescritores num só lugar.</p>
         <span class="integ-soon">Em breve</span>
       </div>
-      <div class="integ-card">
+      <a class="integ-card" href="tarefas.html" style="text-decoration:none;color:inherit;border-style:solid;cursor:pointer;">
         <div class="integ-icon">🗂️</div>
         <h3>Quadro de Tarefas</h3>
-        <p>Quadro estilo Trello para tarefas específicas de cada setor.</p>
-        <span class="integ-soon">Em breve</span>
-      </div>
+        <p>Estilo Trello — tarefas do dia a dia e sugestões/ideias da equipe.</p>
+        <span class="integ-soon" style="background:var(--good-tint);color:var(--good);">Disponível →</span>
+      </a>
     </div>
 
     <div class="section-title" id="modulesSection">Acesso rápido</div>
     <div class="modules" id="modules">
+      <a class="module-card card-tarefas" href="tarefas.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
+        <div class="stripe"></div><div class="icon">🗂️</div><h3>Quadro de Tarefas</h3>
+        <p>Kanban de tarefas e sugestões/ideias.</p>
+      </a>
       <a class="module-card card-horas" href="banco-de-horas.html" data-roles="chefia,rh,gestao">
         <div class="stripe"></div><div class="icon">⏱️</div><h3>Banco de Horas</h3>
         <p>Espelho de ponto, saldo, atrasos e faltas.</p>
