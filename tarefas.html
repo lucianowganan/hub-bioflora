@@ -149,7 +149,7 @@ async function carregarQuadros(){
   if(!quadroAtivoId || !quadros.find(q=>q.id===quadroAtivoId)) quadroAtivoId = quadros[0].id;
 
   document.getElementById('quadroTabs').innerHTML = quadros.map(q => `
-    <button class="quadro-tab ${q.id===quadroAtivoId?'active':''}" onclick="trocarQuadro('${q.id}')">${q.nome}</button>
+    <button class="quadro-tab ${q.id===quadroAtivoId?'active':''}" onclick="trocarQuadro('${q.id}')">${q.privado?'🔒 ':''}${q.nome}</button>
   `).join('') + `<button class="quadro-tab add" onclick="criarQuadro()">+ Novo quadro</button>`;
 
   const quadroAtivo = quadros.find(q=>q.id===quadroAtivoId);
@@ -185,13 +185,14 @@ window.excluirColuna = excluirColuna;
 async function criarQuadro(){
   const nome = prompt('Nome do novo quadro (ex: Marketing, Comercial, RH):');
   if(!nome || !nome.trim()) return;
+  const particular = confirm('Esse quadro é PARTICULAR (só você vai ver)?\n\nOK = particular, só seu\nCancelar = compartilhado, todo mundo vê');
   const colunasStr = prompt('Colunas do quadro, separadas por vírgula:', 'A fazer, Em andamento, Concluído');
   if(!colunasStr) return;
   const nomesColunas = colunasStr.split(',').map(c=>c.trim()).filter(Boolean);
   if(!nomesColunas.length){ alert('Precisa de pelo menos uma coluna.'); return; }
 
   const { data: { session } } = await supa.auth.getSession();
-  const { data: novoQuadro, error } = await supa.from('quadros').insert({ nome: nome.trim(), criado_por: session.user.id }).select().single();
+  const { data: novoQuadro, error } = await supa.from('quadros').insert({ nome: nome.trim(), privado: particular, criado_por: session.user.id }).select().single();
   if(error){ alert('Erro ao criar quadro: ' + error.message); return; }
 
   const inserts = nomesColunas.map((nomeCol, i) => ({ quadro_id: novoQuadro.id, nome: nomeCol, ordem: i }));
@@ -206,6 +207,8 @@ function trocarQuadro(id){
   quadroAtivoId = id;
   carregarQuadros();
 }
+
+const PESO_PRIORIDADE = { alta: 0, media: 1, baixa: 2 };
 
 async function carregarBoard(){
   const { data: colunas } = await supa.from('colunas').select('*').eq('quadro_id', quadroAtivoId).order('ordem');
@@ -222,7 +225,10 @@ async function carregarBoard(){
   const area = document.getElementById('boardArea');
   area.innerHTML = `<div class="board">
     ${colunasAtivas.map(col => {
-      const doCards = cards.filter(c=>c.coluna_id===col.id);
+      // Prioridade alta primeiro, depois média, depois baixa. Dentro da
+      // mesma prioridade, mantém a ordem de criação (sort é estável).
+      const doCards = cards.filter(c=>c.coluna_id===col.id)
+        .sort((a,b) => (PESO_PRIORIDADE[a.prioridade]??1) - (PESO_PRIORIDADE[b.prioridade]??1));
       return `
       <div class="coluna">
         <div class="coluna-head"><h3>${col.nome}</h3><div style="display:flex;align-items:center;gap:6px"><span class="coluna-count">${doCards.length}</span><button class="coluna-del" title="Excluir coluna" onclick="excluirColuna('${col.id}', ${doCards.length})">✕</button></div></div>
