@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Meus Erros — Hub Bioflora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.cdnfonts.com/css/cal-sans" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="auth-guard.js"></script>
@@ -23,13 +22,13 @@
   .brand{display:flex;align-items:center;gap:12px;}
   .brand-mark{height:34px;display:flex;align-items:center;}
   .brand-mark svg{height:100%;width:auto;display:block;}
-  .brand-text h1{font-family:'Cal Sans','Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text h1{font-family:'Space Grotesk','Maven Pro',sans-serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
   .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
   .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
   .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
 
   .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
-  .panel h2{font-family:'Cal Sans','Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel h2{font-family:'Space Grotesk','Maven Pro',sans-serif;font-size:16px;font-weight:600;margin:0 0 4px;}
   .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
   .chart-select{display:flex;gap:10px;align-items:center;margin-bottom:14px;font-size:13px;}
   .chart-select select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;}
@@ -38,7 +37,7 @@
   .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
   .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
   .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);font-weight:600;}
-  .kpi .value{font-family:'Cal Sans','Fraunces',serif;font-size:26px;margin-top:5px;font-weight:600;}
+  .kpi .value{font-family:'Space Grotesk','Maven Pro',sans-serif;font-size:26px;margin-top:5px;font-weight:600;}
 
   .empty-state{text-align:center;padding:60px 20px;color:var(--gray);}
   .empty-state .big{font-size:36px;margin-bottom:10px;}
@@ -310,5 +309,6 @@ async function loadDashboard(nome){
 init();
 </script>
 <script src="acessibilidade.js"></script>
+<script src="hub-sidebar.js"></script>
 </body>
 </html>

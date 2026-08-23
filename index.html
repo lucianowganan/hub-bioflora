@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hub Bioflora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.cdnfonts.com/css/cal-sans" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
@@ -17,7 +16,7 @@
     --bad:#B4472F; --bad-tint:#FBEBE6;
     --info:#3E6B93; --info-tint:#E9F0F6;
     --warn:#C9922B; --warn-tint:#FBF1E0;
-    --headfont: 'Cal Sans', 'Fraunces', serif;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
     --sidebar-w: 76px;
   }
   *{box-sizing:border-box;}
@@ -26,15 +25,16 @@
   /* ---------- Sidebar ---------- */
   .sidebar{
     position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);background:var(--burgundy-dark);
-    display:flex;flex-direction:column;align-items:center;padding:20px 0;z-index:50;
+    display:flex;flex-direction:column;align-items:center;padding:20px 0;z-index:50;overflow-y:auto;
   }
-  .sidebar .mark{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;margin-bottom:28px;}
+  .sidebar::-webkit-scrollbar{width:0;}
+  .sidebar .mark{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;margin-bottom:20px;flex-shrink:0;}
   .sidebar .mark svg{width:22px;height:auto;display:block;}
-  .sidebar nav{display:flex;flex-direction:column;gap:8px;flex:1;}
+  .sidebar nav{display:flex;flex-direction:column;gap:5px;flex:1;}
   .side-btn{
     width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
-    color:rgba(255,255,255,.65);text-decoration:none;font-size:19px;cursor:pointer;border:none;background:transparent;
-    transition:.15s;position:relative;
+    color:rgba(255,255,255,.65);text-decoration:none;font-size:18px;cursor:pointer;border:none;background:transparent;
+    transition:.15s;position:relative;flex-shrink:0;
   }
   .side-btn:hover{background:rgba(255,255,255,.1);color:#fff;}
   .side-btn.active{background:#fff;color:var(--burgundy);}
@@ -43,7 +43,7 @@
     font-size:11.5px;padding:5px 10px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:.12s;
   }
   .side-btn:hover .tooltip{opacity:1;}
-  .sidebar .bottom{display:flex;flex-direction:column;gap:8px;}
+  .sidebar .bottom{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
 
   /* ---------- Main ---------- */
   .main{margin-left:var(--sidebar-w);padding:28px 28px 80px;}
@@ -103,12 +103,12 @@
   .card-alert{font-size:11.5px;font-weight:600;background:var(--bad-tint);color:var(--bad);border-radius:8px;padding:8px 11px;margin:4px 0 8px;}
 
   /* Integrações (placeholder) */
-  .integ-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
-  .integ-card{background:#fff;border:1.5px dashed var(--line);border-radius:16px;padding:20px;text-align:center;}
-  .integ-card .integ-icon{font-size:26px;margin-bottom:8px;}
-  .integ-card h3{font-family:var(--headfont);font-size:14px;margin:0 0 4px;color:var(--ink);}
-  .integ-card p{font-size:11.5px;color:var(--gray);margin:0 0 12px;line-height:1.4;}
-  .integ-soon{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);background:#F1ECEA;padding:5px 12px;border-radius:20px;display:inline-block;}
+  .integ-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;align-items:stretch;}
+  .integ-card{background:#fff;border:1.5px dashed var(--line);border-radius:16px;padding:20px;text-align:center;display:flex;flex-direction:column;align-items:center;}
+  .integ-card .integ-icon{font-size:26px;margin-bottom:8px;flex-shrink:0;}
+  .integ-card h3{font-family:var(--headfont);font-size:14px;margin:0 0 4px;color:var(--ink);flex-shrink:0;}
+  .integ-card p{font-size:11.5px;color:var(--gray);margin:0 0 12px;line-height:1.4;flex:1;}
+  .integ-soon{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);background:#F1ECEA;padding:5px 12px;border-radius:20px;display:inline-block;flex-shrink:0;align-self:center;width:fit-content;}
 
   /* Mini calendário (prévia, clique leva pro módulo completo) */
   .minical-link{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:8px;transition:.15s;}
@@ -204,9 +204,16 @@
 </svg></div>
   <nav>
     <a href="index.html" class="side-btn active">🏠<span class="tooltip">Início</span></a>
-    <button class="side-btn" onclick="scrollToId('widgetArea')">📊<span class="tooltip">Meu painel</span></button>
-    <button class="side-btn" onclick="scrollToId('modulesSection')">🧩<span class="tooltip">Módulos</span></button>
-    <a href="meus-erros.html" class="side-btn">📈<span class="tooltip">Meus erros</span></a>
+    <a href="tarefas.html" class="side-btn">🗂️<span class="tooltip">Quadro de Tarefas</span></a>
+    <a href="calendario-interno.html" class="side-btn">🗓️<span class="tooltip">Calendário Interno</span></a>
+    <a href="banco-de-horas.html" class="side-btn" id="sideHorasBtn" style="display:none">⏱️<span class="tooltip">Banco de Horas</span></a>
+    <a href="rotulos.html" class="side-btn" id="sideRotulosBtn" style="display:none">🏷️<span class="tooltip">Controle de Rótulos</span></a>
+    <a href="producao.html" class="side-btn" id="sideProducaoBtn" style="display:none">🧪<span class="tooltip">Ordem de Produção</span></a>
+    <a href="controle-producao.html" class="side-btn" id="sideControleBtn" style="display:none">📋<span class="tooltip">Controle de Produção</span></a>
+    <a href="reaproveitamento.html" class="side-btn" id="sideReaproveitamentoBtn" style="display:none">♻️<span class="tooltip">Reaproveitamento</span></a>
+    <a href="erros.html" class="side-btn" id="sideErrosBtn" style="display:none">✍️<span class="tooltip">Registro de Erros</span></a>
+    <a href="meus-erros.html" class="side-btn">📈<span class="tooltip">Meus Erros</span></a>
+    <a href="calendario3.html" class="side-btn" id="sideGCalBtn" style="display:none">📅<span class="tooltip">Google Calendar</span></a>
     <a href="admin.html" class="side-btn" id="sideAdminBtn" style="display:none">🔐<span class="tooltip">Administração</span></a>
   </nav>
   <div class="bottom">
@@ -247,7 +254,7 @@
       <a class="integ-card" href="calendario3.html" data-roles="chefia" style="text-decoration:none;color:inherit;border-style:solid;cursor:pointer;">
         <div class="integ-icon">📅</div>
         <h3>Google Calendar</h3>
-        <p>Ver e criar eventos do seu Google Calendar pessoal direto no Hub.</p>
+        <p>Sua agenda pessoal do Google, direto no Hub.</p>
         <span class="integ-soon" style="background:var(--good-tint);color:var(--good);">Disponível →</span>
       </a>
       <div class="integ-card">
@@ -339,6 +346,13 @@ async function init(){
   document.getElementById('heroGreeting').textContent = `Bem-vindo(a), ${primeiroNome.charAt(0).toUpperCase()+primeiroNome.slice(1)}`;
   document.getElementById('rolePill').textContent = ROLE_LABELS[papel];
   if(papel === 'chefia') document.getElementById('sideAdminBtn').style.display = 'flex';
+  if(['chefia','rh','gestao'].includes(papel)) document.getElementById('sideHorasBtn').style.display = 'flex';
+  if(['chefia','recepcao','conferencia','atendente'].includes(papel)) document.getElementById('sideRotulosBtn').style.display = 'flex';
+  if(['chefia','laboratorio','conferencia','atendente'].includes(papel)) document.getElementById('sideProducaoBtn').style.display = 'flex';
+  if(['chefia','laboratorio'].includes(papel)) document.getElementById('sideControleBtn').style.display = 'flex';
+  if(['chefia','laboratorio','conferencia'].includes(papel)) document.getElementById('sideReaproveitamentoBtn').style.display = 'flex';
+  if(['chefia','conferencia'].includes(papel)) document.getElementById('sideErrosBtn').style.display = 'flex';
+  if(papel === 'chefia') document.getElementById('sideGCalBtn').style.display = 'flex';
 
   if(papel === 'sem_papel'){
     document.getElementById('roleBanner').style.display = 'block';
@@ -356,7 +370,7 @@ async function init(){
 
   document.querySelectorAll('.integ-card[data-roles]').forEach(el => {
     const roles = el.dataset.roles.split(',');
-    el.style.display = roles.includes(papel) ? 'flex' : 'none';
+    el.style.display = roles.includes(papel) ? 'block' : 'none';
   });
 
   await renderQuickStats(papel);
