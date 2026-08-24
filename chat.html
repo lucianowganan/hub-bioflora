@@ -39,12 +39,22 @@
   .novo-grupo-btn:hover{border-color:var(--burgundy);color:var(--burgundy);}
 
   .dm-lista{padding:0 2px;}
-  .dm-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:12.5px;color:var(--gray);}
+  .dm-item{display:flex;align-items:center;gap:9px;padding:8px 8px;border-radius:8px;cursor:pointer;}
   .dm-item:hover{background:var(--paper);}
-  .dm-item.active{background:var(--burgundy);color:#fff;font-weight:600;}
-  .dm-avatar{width:22px;height:22px;border-radius:50%;background:var(--burgundy-tint);color:var(--burgundy);display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;flex-shrink:0;}
+  .dm-item.active{background:var(--burgundy);color:#fff;}
+  .dm-avatar{width:34px;height:34px;border-radius:50%;background:var(--burgundy-tint);color:var(--burgundy);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;flex-shrink:0;}
   .dm-item.active .dm-avatar{background:rgba(255,255,255,.25);color:#fff;}
-  .dm-tag{font-size:9px;opacity:.65;margin-left:auto;}
+  .dm-info{flex:1;min-width:0;}
+  .dm-info-top{display:flex;justify-content:space-between;align-items:baseline;gap:6px;}
+  .dm-nome{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .dm-item.active .dm-nome{color:#fff;}
+  .dm-hora{font-size:10px;color:var(--gray);flex-shrink:0;}
+  .dm-item.active .dm-hora{color:rgba(255,255,255,.75);}
+  .dm-info-bottom{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:1px;}
+  .dm-preview{font-size:11px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .dm-item.active .dm-preview{color:rgba(255,255,255,.85);}
+  .dm-badge{background:var(--burgundy);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 6px;flex-shrink:0;}
+  .dm-item.active .dm-badge{background:#fff;color:var(--burgundy);}
 
   .canais-foot{padding:12px 14px;border-top:1px solid var(--line);}
   .canais-foot a{font-size:12px;color:var(--gray);text-decoration:none;}
@@ -100,6 +110,14 @@
   .modal-actions .btn{flex:1;text-align:center;font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;}
   .modal-actions .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
   .modal-actions .btn.danger{background:var(--bad);}
+
+  .busca-pessoa-input{width:100%;font-family:'Maven Pro',sans-serif;font-size:13.5px;padding:10px 13px;border:1px solid var(--line);border-radius:8px;margin-bottom:10px;}
+  .lista-pessoas-busca{max-height:320px;overflow-y:auto;}
+  .pessoa-busca-item{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;cursor:pointer;}
+  .pessoa-busca-item:hover{background:var(--paper);}
+  .pessoa-busca-item .dm-avatar{width:32px;height:32px;font-size:11px;}
+  .pessoa-busca-nome{font-size:13px;font-weight:600;color:var(--ink);}
+  .pessoa-busca-tag{font-size:10.5px;color:var(--gray);margin-left:auto;}
 </style>
 </head>
 <body>
@@ -184,6 +202,18 @@
   </div>
 </div>
 
+<!-- Modal: Nova conversa -->
+<div class="modal-overlay" id="modalNovaConversaOverlay">
+  <div class="modal" style="max-width:380px">
+    <h2>Nova conversa</h2>
+    <input class="busca-pessoa-input" id="buscaPessoaInput" placeholder="Buscar por nome..." oninput="filtrarPessoasBusca()">
+    <div class="lista-pessoas-busca" id="listaPessoasBusca"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModalNovaConversa()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
@@ -194,6 +224,7 @@ const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'La
 let meuUserId = null;
 let meuPapel = null;
 let perfisTodos = [];
+let conversasDm = []; // [{ userId, ultimaMsg, ultimoHorario, naoLidas }]
 let nomesPorId = {};
 let papelPorId = {};
 
@@ -227,7 +258,25 @@ async function carregarTudo(){
   grupos = g || [];
   const { data: c } = await supa.from('canais_chat').select('*').order('criado_em');
   canais = c || [];
+  await carregarConversasDm();
   renderSidebar();
+}
+
+async function carregarConversasDm(){
+  const { data } = await supa.from('dm_mensagens').select('*')
+    .or(`remetente_id.eq.${meuUserId},destinatario_id.eq.${meuUserId}`)
+    .order('criado_em', { ascending: false });
+
+  const porPessoa = {};
+  (data||[]).forEach(m => {
+    const outraPessoa = m.remetente_id === meuUserId ? m.destinatario_id : m.remetente_id;
+    if(!porPessoa[outraPessoa]){
+      porPessoa[outraPessoa] = { userId: outraPessoa, ultimaMsg: m, naoLidas: 0 };
+    }
+    if(m.destinatario_id === meuUserId && !m.lida) porPessoa[outraPessoa].naoLidas++;
+  });
+
+  conversasDm = Object.values(porPessoa);
 }
 
 function renderSidebar(){
@@ -255,15 +304,9 @@ function renderSidebar(){
 
   html += `
     <div class="grupo-bloco">
-      <div class="grupo-titulo"><span>Mensagens diretas</span></div>
+      <div class="grupo-titulo"><span>Mensagens diretas</span><span class="add-canal-link" onclick="abrirModalNovaConversa()" title="Nova conversa">+</span></div>
       <div class="dm-lista">
-        ${perfisTodos.map(p => `
-          <div class="dm-item ${modoAtual==='dm'&&alvoAtivoId===p.id?'active':''}" onclick="abrirDm('${p.id}')">
-            <span class="dm-avatar">${iniciais(p.nome_exibicao)}</span>
-            <span>${p.nome_exibicao}</span>
-            <span class="dm-tag">${ROLE_LABELS[p.papel]||''}</span>
-          </div>
-        `).join('')}
+        ${conversasDm.length ? conversasDm.map(dmItemHtml).join('') : '<p style="font-size:11px;color:var(--gray);padding:4px 10px;">Nenhuma conversa ainda. Clique no + pra começar uma.</p>'}
       </div>
     </div>`;
 
@@ -276,6 +319,26 @@ function canalItemHtml(c){
     <div class="canal-item ${ativo?'active':''}" onclick="abrirCanal('${c.id}')">
       <span class="hash">#</span> ${c.nome}
       ${c.privado ? '<span class="lock">🔒</span>' : ''}
+    </div>`;
+}
+
+function dmItemHtml(conv){
+  const p = perfisTodos.find(x=>x.id===conv.userId);
+  const nome = nomesPorId[conv.userId] || 'Alguém';
+  const ativo = modoAtual==='dm' && alvoAtivoId===conv.userId;
+  const m = conv.ultimaMsg;
+  const souEuQueMandei = m.remetente_id === meuUserId;
+  let prevText = m.conteudo ? m.conteudo : (m.anexo_tipo === 'imagem' ? '🖼️ Imagem' : m.anexo_tipo === 'video' ? '🎥 Vídeo' : m.anexo_tipo === 'audio' ? '🎵 Áudio' : m.anexo_tipo === 'pdf' ? '📄 PDF' : '');
+  if(souEuQueMandei) prevText = 'Você: ' + prevText;
+  const hora = new Date(m.criado_em).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+
+  return `
+    <div class="dm-item ${ativo?'active':''}" onclick="abrirDm('${conv.userId}')">
+      <span class="dm-avatar">${iniciais(nome)}</span>
+      <div class="dm-info">
+        <div class="dm-info-top"><span class="dm-nome">${nome}</span><span class="dm-hora">${hora}</span></div>
+        <div class="dm-info-bottom"><span class="dm-preview">${prevText.replace(/</g,'&lt;')}</span>${conv.naoLidas>0 ? `<span class="dm-badge">${conv.naoLidas}</span>` : ''}</div>
+      </div>
     </div>`;
 }
 
@@ -464,6 +527,46 @@ async function abrirDm(userId){
 }
 window.abrirDm = abrirDm;
 
+// ============================================================
+// MODAL: NOVA CONVERSA (busca de pessoa pra começar uma DM)
+// ============================================================
+function abrirModalNovaConversa(){
+  document.getElementById('buscaPessoaInput').value = '';
+  renderListaPessoasBusca(perfisTodos);
+  document.getElementById('modalNovaConversaOverlay').classList.add('show');
+  setTimeout(() => document.getElementById('buscaPessoaInput').focus(), 50);
+}
+window.abrirModalNovaConversa = abrirModalNovaConversa;
+
+function fecharModalNovaConversa(){
+  document.getElementById('modalNovaConversaOverlay').classList.remove('show');
+}
+window.fecharModalNovaConversa = fecharModalNovaConversa;
+
+function renderListaPessoasBusca(lista){
+  document.getElementById('listaPessoasBusca').innerHTML = lista.length
+    ? lista.map(p => `
+        <div class="pessoa-busca-item" onclick="selecionarPessoaNovaConversa('${p.id}')">
+          <span class="dm-avatar">${iniciais(p.nome_exibicao)}</span>
+          <span class="pessoa-busca-nome">${p.nome_exibicao}</span>
+          <span class="pessoa-busca-tag">${ROLE_LABELS[p.papel]||''}</span>
+        </div>`).join('')
+    : '<p style="font-size:12px;color:var(--gray);padding:10px;">Ninguém encontrado.</p>';
+}
+
+function filtrarPessoasBusca(){
+  const termo = document.getElementById('buscaPessoaInput').value.trim().toLowerCase();
+  const filtrado = perfisTodos.filter(p => (p.nome_exibicao||'').toLowerCase().includes(termo));
+  renderListaPessoasBusca(filtrado);
+}
+window.filtrarPessoasBusca = filtrarPessoasBusca;
+
+async function selecionarPessoaNovaConversa(userId){
+  fecharModalNovaConversa();
+  await abrirDm(userId);
+}
+window.selecionarPessoaNovaConversa = selecionarPessoaNovaConversa;
+
 async function carregarMensagensCanal(){
   const { data } = await supa.from('mensagens_chat').select('*').eq('canal_id', alvoAtivoId).order('criado_em');
   await carregarReacoesPara((data||[]).map(m=>m.id), 'canal');
@@ -489,15 +592,25 @@ async function carregarMensagensDm(){
   const area = document.getElementById('mensagensArea');
   area.innerHTML = (data||[]).map(m => renderMensagem({...m, autor_id: m.remetente_id}, 'dm')).join('') || '<div class="empty-state">Nenhuma mensagem ainda. Manda a primeira!</div>';
   area.scrollTop = area.scrollHeight;
+
+  // Marca como lidas as mensagens que essa pessoa me mandou
+  const naoLidasIds = (data||[]).filter(m => m.destinatario_id===meuUserId && !m.lida).map(m=>m.id);
+  if(naoLidasIds.length){
+    await supa.from('dm_mensagens').update({ lida: true }).in('id', naoLidasIds);
+    await carregarConversasDm();
+    renderSidebar();
+  }
 }
 
 function assinarTempoRealDm(){
   if(subscricaoAtual) supa.removeChannel(subscricaoAtual);
   subscricaoAtual = supa.channel('chat-dm-'+[meuUserId,alvoAtivoId].sort().join('-'))
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dm_mensagens' }, (payload) => {
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dm_mensagens' }, async (payload) => {
       const m = payload.new;
       const ehDessaConversa = (m.remetente_id===meuUserId && m.destinatario_id===alvoAtivoId) || (m.remetente_id===alvoAtivoId && m.destinatario_id===meuUserId);
       if(ehDessaConversa) inserirMensagemNaTela({...m, autor_id: m.remetente_id}, 'dm');
+      await carregarConversasDm();
+      renderSidebar();
     })
     .subscribe();
 }
@@ -636,6 +749,8 @@ async function enviarMensagem(){
     const { error } = await supa.from('dm_mensagens').insert({ remetente_id: meuUserId, destinatario_id: alvoAtivoId, conteudo: conteudo||null, anexo_url, anexo_tipo });
     if(error){ alert('Erro ao enviar: ' + error.message); return; }
     await carregarMensagensDm();
+    await carregarConversasDm();
+    renderSidebar();
   }
 }
 window.enviarMensagem = enviarMensagem;
