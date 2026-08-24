@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kanban de Rótulos — Hub Bioflora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 <style>
@@ -23,7 +23,7 @@
   .brand{display:flex;align-items:center;gap:12px;}
   .brand-mark{height:34px;display:flex;align-items:center;}
   .brand-mark svg{height:100%;width:auto;display:block;}
-  .brand-text h1{font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text h1{font-family:'Space Grotesk','Maven Pro',sans-serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
   .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
   .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;}
   .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
@@ -34,7 +34,7 @@
   .board{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start;}
   .column{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;min-height:200px;}
   .column-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--ink);}
-  .column-head h2{font-family:'Fraunces',serif;font-size:15px;font-weight:600;margin:0;}
+  .column-head h2{font-family:'Space Grotesk','Maven Pro',sans-serif;font-size:15px;font-weight:600;margin:0;}
   .column-count{font-size:11.5px;color:var(--gray);background:#F1ECEA;padding:2px 9px;border-radius:12px;}
   .column[data-status="a_comprar"] .column-head{border-color:var(--bad);}
   .column[data-status="pedido"] .column-head{border-color:var(--warn);}
@@ -52,7 +52,7 @@
 
   .add-form{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:20px;display:none;}
   .add-form.show{display:block;}
-  .add-form h2{font-family:'Fraunces',serif;font-size:16px;margin:0 0 14px;}
+  .add-form h2{font-family:'Space Grotesk','Maven Pro',sans-serif;font-size:16px;margin:0 0 14px;}
   .form-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
   .form-row input, .form-row select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:7px;}
   .form-row input.produto{flex:2;min-width:200px;}
@@ -175,7 +175,7 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY) {
 } else {
   document.getElementById('configBanner').classList.add('show');
 }
-requireRole(['chefia','recepcao']).catch(()=>{});
+requireRole(['chefia','recepcao','conferencia','atendente']).catch(()=>{});
 
 
 const STATUS_LABELS = {a_comprar:'A comprar', pedido:'Pedido', chegou:'Chegou'};

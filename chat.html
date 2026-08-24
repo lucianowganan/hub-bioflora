@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat Interno — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-dark:#5E1027; --burgundy-tint:#F7E9EE;
+    --ink:#161213; --paper:#F3EEEC; --line:#DDD3D0; --gray:#4A4245;
+    --good:#3F7A57; --good-tint:#E8F3EC; --bad:#B4472F; --bad-tint:#FBEBE6;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .chat-shell{display:flex;height:100vh;}
+
+  .canais-col{width:220px;flex-shrink:0;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;}
+  .canais-head{padding:20px 18px 14px;border-bottom:1px solid var(--line);}
+  .canais-head h1{font-family:var(--headfont);font-size:16px;margin:0;font-weight:600;}
+  .canais-head p{font-size:11px;color:var(--gray);margin:2px 0 0;}
+  .canais-lista{flex:1;overflow-y:auto;padding:12px 10px;}
+  .canal-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--gray);margin-bottom:2px;}
+  .canal-item:hover{background:var(--paper);}
+  .canal-item.active{background:var(--burgundy);color:#fff;font-weight:600;}
+  .canal-item .hash{opacity:.6;}
+  .novo-canal-btn{margin:6px 10px 10px;font-family:'Maven Pro',sans-serif;font-size:12px;font-weight:600;color:var(--gray);background:transparent;border:1.5px dashed var(--line);border-radius:8px;padding:8px;cursor:pointer;}
+  .novo-canal-btn:hover{border-color:var(--burgundy);color:var(--burgundy);}
+  .canais-foot{padding:12px 14px;border-top:1px solid var(--line);display:flex;gap:8px;}
+  .canais-foot a{font-size:12px;color:var(--gray);text-decoration:none;}
+  .canais-foot a:hover{color:var(--burgundy);}
+
+  .chat-main{flex:1;display:flex;flex-direction:column;min-width:0;}
+  .chat-header{padding:16px 22px;border-bottom:1px solid var(--line);background:#fff;display:flex;justify-content:space-between;align-items:center;}
+  .chat-header h2{font-family:var(--headfont);font-size:15px;margin:0;}
+  .chat-header p{font-size:11.5px;color:var(--gray);margin:2px 0 0;}
+  .del-canal-link{font-size:11px;color:var(--bad);background:none;border:none;cursor:pointer;text-decoration:underline;}
+
+  .mensagens-area{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px;}
+  .msg-row{display:flex;gap:10px;max-width:640px;}
+  .msg-avatar{width:32px;height:32px;border-radius:50%;background:var(--burgundy-tint);color:var(--burgundy);display:flex;align-items:center;justify-content:center;font-family:var(--headfont);font-weight:600;font-size:13px;flex-shrink:0;}
+  .msg-body .msg-meta{font-size:11.5px;color:var(--gray);margin-bottom:3px;}
+  .msg-body .msg-meta strong{color:var(--ink);font-weight:700;}
+  .msg-body .msg-texto{font-size:13.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid var(--line);border-radius:0 10px 10px 10px;padding:9px 13px;}
+  .msg-row.mine .msg-texto{background:var(--burgundy-tint);border-color:#EAD2DA;}
+  .msg-del{font-size:10.5px;color:var(--gray);background:none;border:none;cursor:pointer;margin-left:8px;text-decoration:underline;opacity:.6;}
+  .msg-del:hover{opacity:1;color:var(--bad);}
+
+  .input-area{padding:16px 22px;border-top:1px solid var(--line);background:#fff;display:flex;gap:10px;}
+  .input-area textarea{flex:1;font-family:'Maven Pro',sans-serif;font-size:13.5px;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;resize:none;min-height:44px;max-height:120px;}
+  .input-area button{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:0 22px;border-radius:10px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;}
+  .empty-state{text-align:center;color:var(--gray);font-size:13px;margin:auto;}
+</style>
+</head>
+<body>
+
+<div class="chat-shell">
+  <div class="canais-col">
+    <div class="canais-head">
+      <h1>💬 Chat Interno</h1>
+      <p>Farmácia Bioflora</p>
+    </div>
+    <div class="canais-lista" id="canaisLista"></div>
+    <button class="novo-canal-btn" onclick="criarCanal()">+ Novo canal</button>
+    <div class="canais-foot">
+      <a href="index.html">← Voltar ao Hub</a>
+    </div>
+  </div>
+
+  <div class="chat-main">
+    <div class="chat-header">
+      <div>
+        <h2 id="canalNome">Selecione um canal</h2>
+        <p id="canalDesc"></p>
+      </div>
+      <button class="del-canal-link" id="delCanalBtn" style="display:none" onclick="excluirCanal()">Excluir canal</button>
+    </div>
+    <div class="mensagens-area" id="mensagensArea">
+      <div class="empty-state">Escolha um canal pra começar.</div>
+    </div>
+    <div class="input-area" id="inputArea" style="display:none">
+      <textarea id="msgInput" placeholder="Escreva uma mensagem..." rows="1"></textarea>
+      <button onclick="enviarMensagem()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let meuUserId = null;
+let meuPapel = null;
+let nomesPorId = {};
+let canalAtivoId = null;
+let canaisCache = [];
+let subscricaoAtual = null;
+
+async function init(){
+  const { session, papel } = await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente']);
+  meuUserId = session.user.id;
+  meuPapel = papel;
+
+  const { data: perfis } = await supa.from('perfis').select('id,nome_exibicao');
+  (perfis||[]).forEach(p => { nomesPorId[p.id] = p.nome_exibicao || 'Alguém'; });
+
+  await carregarCanais();
+}
+
+async function carregarCanais(){
+  const { data } = await supa.from('canais_chat').select('*').order('criado_em');
+  canaisCache = data || [];
+
+  document.getElementById('canaisLista').innerHTML = canaisCache.map(c => `
+    <div class="canal-item ${c.id===canalAtivoId?'active':''}" onclick="abrirCanal('${c.id}')">
+      <span class="hash">#</span> ${c.nome}
+    </div>
+  `).join('') || '<p style="font-size:12px;color:var(--gray);padding:8px;">Nenhum canal ainda.</p>';
+
+  if(!canalAtivoId && canaisCache.length) await abrirCanal(canaisCache[0].id);
+}
+
+async function criarCanal(){
+  const nome = prompt('Nome do canal (ex: marketing, avisos, geral):');
+  if(!nome || !nome.trim()) return;
+  const descricao = prompt('Descrição curta (opcional):') || '';
+
+  const { data: novo, error } = await supa.from('canais_chat').insert({ nome: nome.trim().toLowerCase().replace(/\s+/g,'-'), descricao, criado_por: meuUserId }).select().single();
+  if(error){ alert('Erro ao criar canal: ' + error.message); return; }
+  canalAtivoId = novo.id;
+  await carregarCanais();
+}
+window.criarCanal = criarCanal;
+
+async function excluirCanal(){
+  const canal = canaisCache.find(c=>c.id===canalAtivoId);
+  if(!canal) return;
+  if(!confirm(`Excluir o canal #${canal.nome} e todas as mensagens dele? Não dá pra desfazer.`)) return;
+  const { error } = await supa.from('canais_chat').delete().eq('id', canalAtivoId);
+  if(error){ alert('Erro ao excluir: ' + error.message); return; }
+  canalAtivoId = null;
+  document.getElementById('inputArea').style.display = 'none';
+  document.getElementById('delCanalBtn').style.display = 'none';
+  document.getElementById('canalNome').textContent = 'Selecione um canal';
+  document.getElementById('canalDesc').textContent = '';
+  document.getElementById('mensagensArea').innerHTML = '<div class="empty-state">Escolha um canal pra começar.</div>';
+  await carregarCanais();
+}
+window.excluirCanal = excluirCanal;
+
+async function abrirCanal(canalId){
+  canalAtivoId = canalId;
+  const canal = canaisCache.find(c=>c.id===canalId);
+  document.getElementById('canalNome').textContent = '#' + (canal?.nome || '');
+  document.getElementById('canalDesc').textContent = canal?.descricao || '';
+  document.getElementById('delCanalBtn').style.display = 'inline-block';
+  document.getElementById('inputArea').style.display = 'flex';
+
+  document.querySelectorAll('.canal-item').forEach((el,i) => el.classList.toggle('active', canaisCache[i]?.id===canalId));
+
+  await carregarMensagens();
+  assinarTempoReal();
+}
+window.abrirCanal = abrirCanal;
+
+async function carregarMensagens(){
+  const { data } = await supa.from('mensagens_chat').select('*').eq('canal_id', canalAtivoId).order('criado_em');
+  const area = document.getElementById('mensagensArea');
+  area.innerHTML = (data||[]).map(renderMensagem).join('') || '<div class="empty-state">Nenhuma mensagem ainda. Manda a primeira!</div>';
+  area.scrollTop = area.scrollHeight;
+}
+
+function iniciais(nome){
+  return (nome||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase();
+}
+
+function renderMensagem(m){
+  const nome = nomesPorId[m.autor_id] || 'Alguém';
+  const hora = new Date(m.criado_em).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+  const minha = m.autor_id === meuUserId;
+  return `
+    <div class="msg-row ${minha?'mine':''}" id="msg_${m.id}">
+      <div class="msg-avatar">${iniciais(nome)}</div>
+      <div class="msg-body">
+        <div class="msg-meta"><strong>${nome}</strong> · ${hora}${(minha||meuPapel==='chefia') ? `<button class="msg-del" onclick="excluirMensagem('${m.id}')">excluir</button>` : ''}</div>
+        <div class="msg-texto">${(m.conteudo||'').replace(/</g,'&lt;')}</div>
+      </div>
+    </div>`;
+}
+
+async function enviarMensagem(){
+  const input = document.getElementById('msgInput');
+  const conteudo = input.value.trim();
+  if(!conteudo || !canalAtivoId) return;
+  input.value = '';
+  const { error } = await supa.from('mensagens_chat').insert({ canal_id: canalAtivoId, autor_id: meuUserId, conteudo });
+  if(error){ alert('Erro ao enviar: ' + error.message); }
+}
+window.enviarMensagem = enviarMensagem;
+
+document.getElementById('msgInput').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); enviarMensagem(); }
+});
+
+async function excluirMensagem(id){
+  if(!confirm('Excluir essa mensagem?')) return;
+  const { error } = await supa.from('mensagens_chat').delete().eq('id', id);
+  if(error){ alert('Erro: ' + error.message); return; }
+  document.getElementById('msg_'+id)?.remove();
+}
+window.excluirMensagem = excluirMensagem;
+
+function assinarTempoReal(){
+  if(subscricaoAtual) supa.removeChannel(subscricaoAtual);
+  subscricaoAtual = supa.channel('chat-'+canalAtivoId)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensagens_chat', filter: `canal_id=eq.${canalAtivoId}` }, (payload) => {
+      if(document.getElementById('msg_'+payload.new.id)) return; // já renderizada (mensagem própria)
+      const area = document.getElementById('mensagensArea');
+      const vazio = area.querySelector('.empty-state');
+      if(vazio) vazio.remove();
+      area.insertAdjacentHTML('beforeend', renderMensagem(payload.new));
+      area.scrollTop = area.scrollHeight;
+    })
+    .subscribe();
+}
+
+init();
+</script>
+<script src="acessibilidade.js"></script>
+<script src="hub-sidebar.js"></script>
+</body>
+</html>
