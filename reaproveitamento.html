@@ -209,7 +209,7 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY) {
 } else {
   document.getElementById('configBanner').classList.add('show');
 }
-requireRole(['chefia','laboratorio','conferencia']).catch(()=>{});
+requireRole(['chefia','conferencia']).catch(()=>{});
 
 let ativosCatalogo = [];
 

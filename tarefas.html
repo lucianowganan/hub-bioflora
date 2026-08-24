@@ -180,7 +180,7 @@ let cardsAtivos = [];
 let cardEmEdicaoId = null;
 
 async function init(){
-  const { session, papel } = await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente']);
+  const { session, papel } = await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente','cpd']);
   meuUserId = session.user.id;
   meuPapel = papel;
   await carregarQuadros();

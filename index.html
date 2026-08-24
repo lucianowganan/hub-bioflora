@@ -275,11 +275,11 @@
 
     <div class="section-title" id="modulesSection">Acesso rápido</div>
     <div class="modules" id="modules">
-      <a class="module-card card-tarefas" href="tarefas.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
+      <a class="module-card card-tarefas" href="tarefas.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente,cpd">
         <div class="stripe"></div><div class="icon">🗂️</div><h3>Quadro de Tarefas</h3>
         <p>Kanban de tarefas e sugestões/ideias.</p>
       </a>
-      <a class="module-card card-calendario-interno" href="calendario-interno.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
+      <a class="module-card card-calendario-interno" href="calendario-interno.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente,cpd">
         <div class="stripe"></div><div class="icon">🗓️</div><h3>Calendário Interno</h3>
         <p>Treinamentos, folgas e descansos da equipe.</p>
       </a>
@@ -299,7 +299,7 @@
         <div class="stripe"></div><div class="icon">📋</div><h3>Controle de Produção</h3>
         <p>Total diário de fórmulas e pesagens.</p>
       </a>
-      <a class="module-card card-reaproveitamento" href="reaproveitamento.html" data-roles="chefia,laboratorio,conferencia">
+      <a class="module-card card-reaproveitamento" href="reaproveitamento.html" data-roles="chefia,conferencia">
         <div class="stripe"></div><div class="icon">♻️</div><h3>Reaproveitamento</h3>
         <p>Manipulados não retirados disponíveis para reuso.</p>
       </a>
@@ -311,7 +311,7 @@
         <div class="stripe"></div><div class="icon">📈</div><h3>Meus Erros</h3>
         <p>Seu desempenho individual detalhado.</p>
       </a>
-      <a class="module-card card-chat" href="chat.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
+      <a class="module-card card-chat" href="chat.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente,cpd">
         <div class="stripe"></div><div class="icon">💬</div><h3>Chat Interno</h3>
         <p>Canais de conversa da equipe, em tempo real.</p>
       </a>
@@ -330,7 +330,7 @@ const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', conferencia:'Conferência', atendente:'Atendente', sem_papel:'Sem papel'};
+const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', conferencia:'Conferência', atendente:'Atendente', cpd:'CPD', sem_papel:'Sem papel'};
 
 async function logout(){ await supa.auth.signOut(); window.location.href = 'login.html'; }
 function scrollToId(id){ document.getElementById(id)?.scrollIntoView({behavior:'smooth', block:'start'}); }

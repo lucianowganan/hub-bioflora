@@ -17,7 +17,7 @@
     { href: 'rotulos.html', icon: '🏷️', label: 'Controle de Rótulos', roles: ['chefia','recepcao','conferencia','atendente'] },
     { href: 'producao.html', icon: '🧪', label: 'Ordem de Produção', roles: ['chefia','laboratorio','conferencia','atendente'] },
     { href: 'controle-producao.html', icon: '📋', label: 'Controle de Produção', roles: ['chefia','laboratorio'] },
-    { href: 'reaproveitamento.html', icon: '♻️', label: 'Reaproveitamento', roles: ['chefia','laboratorio','conferencia'] },
+    { href: 'reaproveitamento.html', icon: '♻️', label: 'Reaproveitamento', roles: ['chefia','conferencia'] },
     { href: 'erros.html', icon: '✍️', label: 'Registro de Erros', roles: ['chefia','conferencia'] },
     { href: 'meus-erros.html', icon: '📈', label: 'Meus Erros', roles: null },
     { href: 'chat.html', icon: '💬', label: 'Chat Interno', roles: null },

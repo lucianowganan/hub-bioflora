@@ -118,7 +118,10 @@
         <h2 id="canalNome">Selecione uma conversa</h2>
         <p id="canalDesc"></p>
       </div>
-      <button class="del-canal-link" id="delCanalBtn" style="display:none" onclick="excluirCanal()">Excluir canal</button>
+      <div style="display:flex;gap:14px;align-items:center;">
+        <button class="del-canal-link" id="editCanalBtn" style="display:none;color:var(--burgundy)" onclick="abrirEdicaoCanal()">Editar canal</button>
+        <button class="del-canal-link" id="delCanalBtn" style="display:none" onclick="excluirCanal()">Excluir canal</button>
+      </div>
     </div>
     <div class="mensagens-area" id="mensagensArea">
       <div class="empty-state">Escolha um canal ou uma pessoa pra começar.</div>
@@ -149,7 +152,7 @@
 <!-- Modal: Novo canal -->
 <div class="modal-overlay" id="modalCanalOverlay">
   <div class="modal">
-    <h2>Novo canal</h2>
+    <h2 id="modalCanalTitulo">Novo canal</h2>
     <label>Nome</label>
     <input id="canalNomeInput" placeholder="Ex: duvidas, geral, wanessa" />
     <label>Descrição (opcional)</label>
@@ -162,7 +165,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn secondary" onclick="fecharModalCanal()">Cancelar</button>
-      <button class="btn" onclick="confirmarNovoCanal()">Criar canal</button>
+      <button class="btn" id="btnConfirmarCanal" onclick="confirmarNovoCanal()">Criar canal</button>
     </div>
   </div>
 </div>
@@ -184,7 +187,7 @@ const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', conferencia:'Conferência', atendente:'Atendente'};
+const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', conferencia:'Conferência', atendente:'Atendente', cpd:'CPD'};
 
 let meuUserId = null;
 let meuPapel = null;
@@ -202,7 +205,7 @@ let subscricaoAtual = null;
 let arquivoSelecionado = null;
 
 async function init(){
-  const { session, papel } = await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente']);
+  const { session, papel } = await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente','cpd']);
   meuUserId = session.user.id;
   meuPapel = papel;
 
@@ -325,12 +328,16 @@ async function confirmarNovoGrupo(){
 window.confirmarNovoGrupo = confirmarNovoGrupo;
 
 // ============================================================
-// MODAL: NOVO CANAL
+// MODAL: NOVO CANAL / EDITAR CANAL
 // ============================================================
 let grupoAlvoNovoCanal = null;
+let canalEmEdicaoId = null;
 
 function abrirModalCanal(grupoId){
+  canalEmEdicaoId = null;
   grupoAlvoNovoCanal = grupoId;
+  document.getElementById('modalCanalTitulo').textContent = 'Novo canal';
+  document.getElementById('btnConfirmarCanal').textContent = 'Criar canal';
   document.getElementById('canalNomeInput').value = '';
   document.getElementById('canalDescInput').value = '';
   document.querySelector('input[name="canalVis"][value="publico"]').checked = true;
@@ -342,8 +349,27 @@ function abrirModalCanal(grupoId){
 }
 window.criarCanal = abrirModalCanal; // mantém o nome usado no onclick já existente na sidebar
 
+function abrirEdicaoCanal(){
+  const canal = canais.find(c=>c.id===alvoAtivoId);
+  if(!canal) return;
+  canalEmEdicaoId = canal.id;
+  grupoAlvoNovoCanal = canal.grupo_id;
+  document.getElementById('modalCanalTitulo').textContent = 'Editar canal';
+  document.getElementById('btnConfirmarCanal').textContent = 'Salvar alterações';
+  document.getElementById('canalNomeInput').value = canal.nome;
+  document.getElementById('canalDescInput').value = canal.descricao || '';
+  document.querySelector(`input[name="canalVis"][value="${canal.privado ? 'restrito' : 'publico'}"]`).checked = true;
+  document.getElementById('cargosCanalGrid').innerHTML = Object.entries(ROLE_LABELS).map(([k,l]) => `
+    <label class="cargo-check"><input type="checkbox" class="cargoCheck" value="${k}" ${(canal.papeis_permitidos||[]).includes(k)?'checked':''}> ${l}</label>
+  `).join('');
+  toggleCargosCanal();
+  document.getElementById('modalCanalOverlay').classList.add('show');
+}
+window.abrirEdicaoCanal = abrirEdicaoCanal;
+
 function fecharModalCanal(){
   document.getElementById('modalCanalOverlay').classList.remove('show');
+  canalEmEdicaoId = null;
 }
 window.fecharModalCanal = fecharModalCanal;
 
@@ -367,13 +393,20 @@ async function confirmarNovoCanal(){
     privado = true;
   }
 
-  const { error } = await supa.from('canais_chat').insert({
-    nome: nome.toLowerCase().replace(/\s+/g,'-'), descricao,
-    grupo_id: grupoAlvoNovoCanal, privado, papeis_permitidos, criado_por: meuUserId
-  });
-  if(error){ alert('Erro ao criar canal: ' + error.message); return; }
+  const dadosCanal = { nome: nome.toLowerCase().replace(/\s+/g,'-'), descricao, grupo_id: grupoAlvoNovoCanal, privado, papeis_permitidos };
+
+  if(canalEmEdicaoId){
+    const { error } = await supa.from('canais_chat').update(dadosCanal).eq('id', canalEmEdicaoId);
+    if(error){ alert('Erro ao salvar: ' + error.message); return; }
+  } else {
+    const { error } = await supa.from('canais_chat').insert({ ...dadosCanal, criado_por: meuUserId });
+    if(error){ alert('Erro ao criar canal: ' + error.message); return; }
+  }
+
+  const idParaReabrir = canalEmEdicaoId;
   fecharModalCanal();
   await carregarTudo();
+  if(idParaReabrir) await abrirCanal(idParaReabrir);
 }
 window.confirmarNovoCanal = confirmarNovoCanal;
 
@@ -394,6 +427,7 @@ function fecharConversa(){
   modoAtual = null; alvoAtivoId = null;
   document.getElementById('inputArea').style.display = 'none';
   document.getElementById('delCanalBtn').style.display = 'none';
+  document.getElementById('editCanalBtn').style.display = 'none';
   document.getElementById('canalNome').textContent = 'Selecione uma conversa';
   document.getElementById('canalDesc').textContent = '';
   document.getElementById('mensagensArea').innerHTML = '<div class="empty-state">Escolha um canal ou uma pessoa pra começar.</div>';
@@ -406,6 +440,7 @@ async function abrirCanal(canalId){
   document.getElementById('canalNome').textContent = '#' + (canal?.nome || '');
   document.getElementById('canalDesc').textContent = canal?.descricao || (canal?.privado ? 'Canal restrito' : '');
   document.getElementById('delCanalBtn').style.display = 'inline-block';
+  document.getElementById('editCanalBtn').style.display = (meuPapel==='chefia' || canal?.criado_por===meuUserId) ? 'inline-block' : 'none';
   document.getElementById('inputArea').style.display = 'flex';
   renderSidebar();
   await carregarMensagensCanal();
@@ -419,6 +454,7 @@ async function abrirDm(userId){
   document.getElementById('canalNome').textContent = nomesPorId[userId] || 'Conversa';
   document.getElementById('canalDesc').textContent = ROLE_LABELS[papelPorId[userId]] || '';
   document.getElementById('delCanalBtn').style.display = 'none';
+  document.getElementById('editCanalBtn').style.display = 'none';
   document.getElementById('inputArea').style.display = 'flex';
   renderSidebar();
   await carregarMensagensDm();
