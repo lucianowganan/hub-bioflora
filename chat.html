@@ -79,6 +79,25 @@
   .empty-state{text-align:center;color:var(--gray);font-size:13px;margin:auto;}
   .anexo-preview{font-size:11.5px;color:var(--gray);padding:0 22px 8px;}
   .anexo-preview button{background:none;border:none;color:var(--bad);cursor:pointer;text-decoration:underline;font-size:11px;margin-left:6px;}
+
+  /* Modais internos (substituem prompt/confirm do navegador) */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(22,18,19,.5);z-index:300;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:16px;padding:26px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto;}
+  .modal h2{font-family:var(--headfont);font-weight:600;font-size:17px;margin:0 0 16px;}
+  .modal label{font-size:11px;font-weight:700;color:var(--gray);display:block;margin:12px 0 5px;text-transform:uppercase;letter-spacing:.03em;}
+  .modal label:first-of-type{margin-top:0;}
+  .modal input[type="text"], .modal input:not([type]), .modal textarea{width:100%;font-family:'Maven Pro',sans-serif;font-size:13.5px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;}
+  .modal textarea{resize:vertical;min-height:60px;font-family:inherit;}
+  .radio-row{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink);font-weight:400;padding:5px 0;}
+  .radio-row input{width:auto !important;}
+  .cargo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
+  .cargo-check{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);}
+  .cargo-check input{width:auto !important;}
+  .modal-actions{display:flex;gap:8px;margin-top:22px;}
+  .modal-actions .btn{flex:1;text-align:center;font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;}
+  .modal-actions .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .modal-actions .btn.danger{background:var(--bad);}
 </style>
 </head>
 <body>
@@ -110,6 +129,52 @@
       <input type="file" id="anexoInput" accept="image/*,video/*" style="display:none" onchange="anexoSelecionado(this)">
       <textarea id="msgInput" placeholder="Escreva uma mensagem..." rows="1"></textarea>
       <button class="enviar" onclick="enviarMensagem()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Novo grupo -->
+<div class="modal-overlay" id="modalGrupoOverlay">
+  <div class="modal" style="max-width:360px">
+    <h2>Novo grupo</h2>
+    <label>Nome</label>
+    <input id="grupoNomeInput" placeholder="Ex: Atendimento, Laboratório" />
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModalGrupo()">Cancelar</button>
+      <button class="btn" onclick="confirmarNovoGrupo()">Criar grupo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Novo canal -->
+<div class="modal-overlay" id="modalCanalOverlay">
+  <div class="modal">
+    <h2>Novo canal</h2>
+    <label>Nome</label>
+    <input id="canalNomeInput" placeholder="Ex: duvidas, geral, wanessa" />
+    <label>Descrição (opcional)</label>
+    <textarea id="canalDescInput" placeholder="Do que se trata esse canal..."></textarea>
+    <label>Visibilidade</label>
+    <div class="radio-row"><input type="radio" name="canalVis" value="publico" checked onchange="toggleCargosCanal()"> Público — todo mundo vê</div>
+    <div class="radio-row"><input type="radio" name="canalVis" value="restrito" onchange="toggleCargosCanal()"> Restrito a alguns cargos</div>
+    <div id="cargosCanalArea" style="display:none">
+      <div class="cargo-grid" id="cargosCanalGrid"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModalCanal()">Cancelar</button>
+      <button class="btn" onclick="confirmarNovoCanal()">Criar canal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: confirmação genérica -->
+<div class="modal-overlay" id="modalConfirmOverlay">
+  <div class="modal" style="max-width:380px">
+    <h2 id="confirmTitulo">Confirmar</h2>
+    <p id="confirmTexto" style="font-size:13.5px;color:var(--gray);margin:0 0 20px;line-height:1.5;"></p>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModalConfirm()">Cancelar</button>
+      <button class="btn danger" id="confirmBtnAcao">Excluir</button>
     </div>
   </div>
 </div>
@@ -213,49 +278,115 @@ function iniciais(nome){
   return (nome||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase();
 }
 
-async function criarGrupo(){
-  const nome = prompt('Nome do grupo (ex: Atendimento, Laboratório):');
-  if(!nome || !nome.trim()) return;
-  const { error } = await supa.from('grupos_chat').insert({ nome: nome.trim(), ordem: grupos.length, criado_por: meuUserId });
+// ============================================================
+// MODAL DE CONFIRMAÇÃO GENÉRICO (substitui confirm() nativo)
+// ============================================================
+let acaoConfirmPendente = null;
+
+function pedirConfirmacao(titulo, texto, aoConfirmar){
+  document.getElementById('confirmTitulo').textContent = titulo;
+  document.getElementById('confirmTexto').textContent = texto;
+  acaoConfirmPendente = aoConfirmar;
+  document.getElementById('modalConfirmOverlay').classList.add('show');
+}
+document.getElementById('confirmBtnAcao').addEventListener('click', async () => {
+  const acao = acaoConfirmPendente;
+  fecharModalConfirm();
+  if(acao) await acao();
+});
+function fecharModalConfirm(){
+  document.getElementById('modalConfirmOverlay').classList.remove('show');
+  acaoConfirmPendente = null;
+}
+window.fecharModalConfirm = fecharModalConfirm;
+
+// ============================================================
+// MODAL: NOVO GRUPO
+// ============================================================
+function abrirModalGrupo(){
+  document.getElementById('grupoNomeInput').value = '';
+  document.getElementById('modalGrupoOverlay').classList.add('show');
+}
+window.criarGrupo = abrirModalGrupo; // mantém o nome usado no onclick já existente na sidebar
+
+function fecharModalGrupo(){
+  document.getElementById('modalGrupoOverlay').classList.remove('show');
+}
+window.fecharModalGrupo = fecharModalGrupo;
+
+async function confirmarNovoGrupo(){
+  const nome = document.getElementById('grupoNomeInput').value.trim();
+  if(!nome){ alert('Digite um nome pro grupo.'); return; }
+  const { error } = await supa.from('grupos_chat').insert({ nome, ordem: grupos.length, criado_por: meuUserId });
   if(error){ alert('Erro ao criar grupo: ' + error.message); return; }
+  fecharModalGrupo();
   await carregarTudo();
 }
-window.criarGrupo = criarGrupo;
+window.confirmarNovoGrupo = confirmarNovoGrupo;
 
-async function criarCanal(grupoId){
-  const nome = prompt('Nome do canal (ex: duvidas, wanessa, geral):');
-  if(!nome || !nome.trim()) return;
-  const descricao = prompt('Descrição curta (opcional):') || '';
-  const restrito = confirm('Esse canal é RESTRITO a alguns cargos?\n\nOK = sim, vou escolher os cargos\nCancelar = não, todo mundo vê');
+// ============================================================
+// MODAL: NOVO CANAL
+// ============================================================
+let grupoAlvoNovoCanal = null;
+
+function abrirModalCanal(grupoId){
+  grupoAlvoNovoCanal = grupoId;
+  document.getElementById('canalNomeInput').value = '';
+  document.getElementById('canalDescInput').value = '';
+  document.querySelector('input[name="canalVis"][value="publico"]').checked = true;
+  document.getElementById('cargosCanalGrid').innerHTML = Object.entries(ROLE_LABELS).map(([k,l]) => `
+    <label class="cargo-check"><input type="checkbox" class="cargoCheck" value="${k}"> ${l}</label>
+  `).join('');
+  toggleCargosCanal();
+  document.getElementById('modalCanalOverlay').classList.add('show');
+}
+window.criarCanal = abrirModalCanal; // mantém o nome usado no onclick já existente na sidebar
+
+function fecharModalCanal(){
+  document.getElementById('modalCanalOverlay').classList.remove('show');
+}
+window.fecharModalCanal = fecharModalCanal;
+
+function toggleCargosCanal(){
+  const restrito = document.querySelector('input[name="canalVis"]:checked').value === 'restrito';
+  document.getElementById('cargosCanalArea').style.display = restrito ? 'block' : 'none';
+}
+window.toggleCargosCanal = toggleCargosCanal;
+
+async function confirmarNovoCanal(){
+  const nome = document.getElementById('canalNomeInput').value.trim();
+  if(!nome){ alert('Digite um nome pro canal.'); return; }
+  const descricao = document.getElementById('canalDescInput').value.trim();
+  const restrito = document.querySelector('input[name="canalVis"]:checked').value === 'restrito';
 
   let papeis_permitidos = [];
   let privado = false;
   if(restrito){
-    const labelsDisponiveis = Object.entries(ROLE_LABELS).map(([k,l]) => `${k} (${l})`).join(', ');
-    const escolha = prompt(`Digite os cargos separados por vírgula, exatamente como aparecem antes do parênteses:\n${labelsDisponiveis}`, '');
-    papeis_permitidos = (escolha||'').split(',').map(s=>s.trim()).filter(s => Object.keys(ROLE_LABELS).includes(s));
-    if(!papeis_permitidos.length){ alert('Nenhum cargo válido reconhecido — canal criado como público.'); }
-    else privado = true;
+    papeis_permitidos = Array.from(document.querySelectorAll('.cargoCheck:checked')).map(cb=>cb.value);
+    if(!papeis_permitidos.length){ alert('Marque pelo menos um cargo, ou escolha "Público".'); return; }
+    privado = true;
   }
 
   const { error } = await supa.from('canais_chat').insert({
-    nome: nome.trim().toLowerCase().replace(/\s+/g,'-'), descricao,
-    grupo_id: grupoId, privado, papeis_permitidos, criado_por: meuUserId
+    nome: nome.toLowerCase().replace(/\s+/g,'-'), descricao,
+    grupo_id: grupoAlvoNovoCanal, privado, papeis_permitidos, criado_por: meuUserId
   });
   if(error){ alert('Erro ao criar canal: ' + error.message); return; }
+  fecharModalCanal();
   await carregarTudo();
 }
-window.criarCanal = criarCanal;
+window.confirmarNovoCanal = confirmarNovoCanal;
 
 async function excluirCanal(){
   if(modoAtual !== 'canal') return;
   const canal = canais.find(c=>c.id===alvoAtivoId);
   if(!canal) return;
-  if(!confirm(`Excluir o canal #${canal.nome} e todas as mensagens dele? Não dá pra desfazer.`)) return;
-  const { error } = await supa.from('canais_chat').delete().eq('id', alvoAtivoId);
-  if(error){ alert('Erro ao excluir: ' + error.message); return; }
-  fecharConversa();
-  await carregarTudo();
+  pedirConfirmacao(`Excluir #${canal.nome}?`, 'Todas as mensagens desse canal também serão apagadas. Não dá pra desfazer.', async () => {
+    const { error } = await supa.from('canais_chat').delete().eq('id', alvoAtivoId);
+    if(error){ alert('Erro ao excluir: ' + error.message); return; }
+    fecharConversa();
+    await carregarTudo();
+  });
 }
 window.excluirCanal = excluirCanal;
 
@@ -449,11 +580,12 @@ async function enviarMensagem(){
 window.enviarMensagem = enviarMensagem;
 
 async function excluirMensagem(id, tipo){
-  if(!confirm('Excluir essa mensagem?')) return;
-  const tabela = tipo === 'canal' ? 'mensagens_chat' : 'dm_mensagens';
-  const { error } = await supa.from(tabela).delete().eq('id', id);
-  if(error){ alert('Erro: ' + error.message); return; }
-  document.getElementById('msg_'+id)?.remove();
+  pedirConfirmacao('Excluir mensagem?', 'Não dá pra desfazer.', async () => {
+    const tabela = tipo === 'canal' ? 'mensagens_chat' : 'dm_mensagens';
+    const { error } = await supa.from(tabela).delete().eq('id', id);
+    if(error){ alert('Erro: ' + error.message); return; }
+    document.getElementById('msg_'+id)?.remove();
+  });
 }
 window.excluirMensagem = excluirMensagem;
 

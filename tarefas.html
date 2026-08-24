@@ -119,19 +119,70 @@
   </div>
 </div>
 
+<!-- Modal: Novo quadro -->
+<div class="modal-overlay" id="modalQuadroOverlay">
+  <div class="modal">
+    <h2>Novo quadro</h2>
+    <label>Nome</label>
+    <input id="qNome" placeholder="Ex: Marketing, Comercial, RH" />
+    <label>Tipo</label>
+    <div style="display:flex;gap:16px;font-size:13px;padding:6px 0 4px;">
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="radio" name="qTipo" value="compartilhado" checked style="width:auto"> Compartilhado — todo mundo vê</label>
+    </div>
+    <div style="display:flex;gap:16px;font-size:13px;">
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="radio" name="qTipo" value="particular" style="width:auto"> Particular — só eu vejo</label>
+    </div>
+    <label style="margin-top:14px">Colunas iniciais</label>
+    <input id="qColunas" placeholder="Separadas por vírgula" value="A fazer, Em andamento, Concluído" />
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModalQuadro()">Cancelar</button>
+      <button class="btn" onclick="confirmarNovoQuadro()">Criar quadro</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nova coluna -->
+<div class="modal-overlay" id="modalColunaOverlay">
+  <div class="modal">
+    <h2>Nova coluna</h2>
+    <label>Nome</label>
+    <input id="colNomeInput" placeholder="Ex: Aguardando aprovação" />
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModalColuna()">Cancelar</button>
+      <button class="btn" onclick="confirmarNovaColuna()">Criar coluna</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: confirmação genérica (exclusões) -->
+<div class="modal-overlay" id="modalConfirmOverlay">
+  <div class="modal" style="max-width:380px">
+    <h2 id="confirmTitulo">Confirmar</h2>
+    <p id="confirmTexto" style="font-size:13.5px;color:var(--gray);margin:0 0 20px;line-height:1.5;"></p>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModalConfirm()">Cancelar</button>
+      <button class="btn" id="confirmBtnAcao" style="background:var(--bad)">Excluir</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let quadros = [];
+let meuUserId = null;
+let meuPapel = null;
 let quadroAtivoId = null;
 let colunasAtivas = [];
 let cardsAtivos = [];
 let cardEmEdicaoId = null;
 
 async function init(){
-  await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente']);
+  const { session, papel } = await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente']);
+  meuUserId = session.user.id;
+  meuPapel = papel;
   await carregarQuadros();
 }
 
@@ -141,7 +192,7 @@ async function carregarQuadros(){
   quadros = data || [];
   if(!quadros.length){
     document.getElementById('boardArea').innerHTML = `<div class="empty-state"><div class="big">🗂️</div>Nenhum quadro criado ainda.</div>`;
-    document.getElementById('quadroTabs').innerHTML = `<button class="quadro-tab add" onclick="criarQuadro()">+ Novo quadro</button>`;
+    document.getElementById('quadroTabs').innerHTML = `<button class="quadro-tab add" onclick="abrirModalQuadro()">+ Novo quadro</button>`;
     document.getElementById('quadroActions').innerHTML = '';
     return;
   }
@@ -149,58 +200,104 @@ async function carregarQuadros(){
 
   document.getElementById('quadroTabs').innerHTML = quadros.map(q => `
     <button class="quadro-tab ${q.id===quadroAtivoId?'active':''}" onclick="trocarQuadro('${q.id}')">${q.privado?'🔒 ':''}${q.nome}</button>
-  `).join('') + `<button class="quadro-tab add" onclick="criarQuadro()">+ Novo quadro</button>`;
+  `).join('') + `<button class="quadro-tab add" onclick="abrirModalQuadro()">+ Novo quadro</button>`;
 
   const quadroAtivo = quadros.find(q=>q.id===quadroAtivoId);
-  document.getElementById('quadroActions').innerHTML = quadroAtivo
+  const podeExcluirQuadro = quadroAtivo && (meuPapel === 'chefia' || (quadroAtivo.privado && quadroAtivo.criado_por === meuUserId));
+  document.getElementById('quadroActions').innerHTML = podeExcluirQuadro
     ? `<button class="link-excluir" onclick="excluirQuadro()">Excluir quadro "${quadroAtivo.nome}"</button>`
     : '';
 
   await carregarBoard();
 }
 
+// ============================================================
+// MODAL DE CONFIRMAÇÃO GENÉRICO (substitui confirm() nativo)
+// ============================================================
+let acaoConfirmPendente = null;
+
+function pedirConfirmacao(titulo, texto, aoConfirmar){
+  document.getElementById('confirmTitulo').textContent = titulo;
+  document.getElementById('confirmTexto').textContent = texto;
+  acaoConfirmPendente = aoConfirmar;
+  document.getElementById('modalConfirmOverlay').classList.add('show');
+}
+document.getElementById('confirmBtnAcao').addEventListener('click', async () => {
+  const acao = acaoConfirmPendente;
+  fecharModalConfirm();
+  if(acao) await acao();
+});
+function fecharModalConfirm(){
+  document.getElementById('modalConfirmOverlay').classList.remove('show');
+  acaoConfirmPendente = null;
+}
+window.fecharModalConfirm = fecharModalConfirm;
+
 async function excluirQuadro(){
   const quadroAtivo = quadros.find(q=>q.id===quadroAtivoId);
   if(!quadroAtivo) return;
-  if(!confirm(`Excluir o quadro "${quadroAtivo.nome}" inteiro, com todas as colunas e cards dele? Não dá pra desfazer.`)) return;
-  const { error } = await supa.from('quadros').delete().eq('id', quadroAtivoId);
-  if(error){ alert('Erro ao excluir: ' + error.message); return; }
-  quadroAtivoId = null;
-  await carregarQuadros();
+  pedirConfirmacao(
+    `Excluir "${quadroAtivo.nome}"?`,
+    `Isso apaga o quadro inteiro, com todas as colunas e cards dele. Não dá pra desfazer.`,
+    async () => {
+      const { error } = await supa.from('quadros').delete().eq('id', quadroAtivoId);
+      if(error){ alert('Erro ao excluir: ' + error.message); return; }
+      quadroAtivoId = null;
+      await carregarQuadros();
+    }
+  );
 }
 window.excluirQuadro = excluirQuadro;
 
 async function excluirColuna(colunaId, qtdCards){
-  const aviso = qtdCards > 0
-    ? `Essa coluna tem ${qtdCards} card(s). Excluir a coluna apaga os cards junto. Continuar?`
-    : 'Excluir essa coluna?';
-  if(!confirm(aviso)) return;
-  const { error } = await supa.from('colunas').delete().eq('id', colunaId);
-  if(error){ alert('Erro ao excluir: ' + error.message); return; }
-  await carregarBoard();
+  const texto = qtdCards > 0
+    ? `Essa coluna tem ${qtdCards} card(s). Excluir a coluna apaga os cards junto. Não dá pra desfazer.`
+    : 'Não dá pra desfazer.';
+  pedirConfirmacao('Excluir esta coluna?', texto, async () => {
+    const { error } = await supa.from('colunas').delete().eq('id', colunaId);
+    if(error){ alert('Erro ao excluir: ' + error.message); return; }
+    await carregarBoard();
+  });
 }
 window.excluirColuna = excluirColuna;
 
-async function criarQuadro(){
-  const nome = prompt('Nome do novo quadro (ex: Marketing, Comercial, RH):');
-  if(!nome || !nome.trim()) return;
-  const particular = confirm('Esse quadro é PARTICULAR (só você vai ver)?\n\nOK = particular, só seu\nCancelar = compartilhado, todo mundo vê');
-  const colunasStr = prompt('Colunas do quadro, separadas por vírgula:', 'A fazer, Em andamento, Concluído');
-  if(!colunasStr) return;
-  const nomesColunas = colunasStr.split(',').map(c=>c.trim()).filter(Boolean);
+// ============================================================
+// MODAL: NOVO QUADRO
+// ============================================================
+let grupoAlvoNovoCanal = null; // reservado (não usado aqui, mantém padrão)
+
+function abrirModalQuadro(){
+  document.getElementById('qNome').value = '';
+  document.getElementById('qColunas').value = 'A fazer, Em andamento, Concluído';
+  document.querySelector('input[name="qTipo"][value="compartilhado"]').checked = true;
+  document.getElementById('modalQuadroOverlay').classList.add('show');
+}
+window.abrirModalQuadro = abrirModalQuadro;
+
+function fecharModalQuadro(){
+  document.getElementById('modalQuadroOverlay').classList.remove('show');
+}
+window.fecharModalQuadro = fecharModalQuadro;
+
+async function confirmarNovoQuadro(){
+  const nome = document.getElementById('qNome').value.trim();
+  if(!nome){ alert('Digite um nome pro quadro.'); return; }
+  const particular = document.querySelector('input[name="qTipo"]:checked').value === 'particular';
+  const nomesColunas = document.getElementById('qColunas').value.split(',').map(c=>c.trim()).filter(Boolean);
   if(!nomesColunas.length){ alert('Precisa de pelo menos uma coluna.'); return; }
 
-  const { data: { session } } = await supa.auth.getSession();
-  const { data: novoQuadro, error } = await supa.from('quadros').insert({ nome: nome.trim(), privado: particular, criado_por: session.user.id }).select().single();
+  const { data: novoQuadro, error } = await supa.from('quadros').insert({ nome, privado: particular, criado_por: meuUserId }).select().single();
   if(error){ alert('Erro ao criar quadro: ' + error.message); return; }
 
   const inserts = nomesColunas.map((nomeCol, i) => ({ quadro_id: novoQuadro.id, nome: nomeCol, ordem: i }));
   const { error: colError } = await supa.from('colunas').insert(inserts);
   if(colError){ alert('Erro ao criar colunas: ' + colError.message); return; }
 
+  fecharModalQuadro();
   quadroAtivoId = novoQuadro.id;
   await carregarQuadros();
 }
+window.confirmarNovoQuadro = confirmarNovoQuadro;
 
 function trocarQuadro(id){
   quadroAtivoId = id;
@@ -244,18 +341,31 @@ async function carregarBoard(){
         <button class="add-card-btn" onclick="abrirNovoCard('${col.id}')">+ Adicionar card</button>
       </div>`;
     }).join('')}
-    <div class="coluna add-coluna"><button onclick="criarColuna()">+ Nova coluna</button></div>
+    <div class="coluna add-coluna"><button onclick="abrirModalColuna()">+ Nova coluna</button></div>
   </div>`;
 }
 
-async function criarColuna(){
-  const nome = prompt('Nome da nova coluna:');
-  if(!nome || !nome.trim()) return;
+function abrirModalColuna(){
+  document.getElementById('colNomeInput').value = '';
+  document.getElementById('modalColunaOverlay').classList.add('show');
+}
+window.abrirModalColuna = abrirModalColuna;
+
+function fecharModalColuna(){
+  document.getElementById('modalColunaOverlay').classList.remove('show');
+}
+window.fecharModalColuna = fecharModalColuna;
+
+async function confirmarNovaColuna(){
+  const nome = document.getElementById('colNomeInput').value.trim();
+  if(!nome){ alert('Digite um nome pra coluna.'); return; }
   const proximaOrdem = colunasAtivas.length ? Math.max(...colunasAtivas.map(c=>c.ordem)) + 1 : 0;
-  const { error } = await supa.from('colunas').insert({ quadro_id: quadroAtivoId, nome: nome.trim(), ordem: proximaOrdem });
+  const { error } = await supa.from('colunas').insert({ quadro_id: quadroAtivoId, nome, ordem: proximaOrdem });
   if(error){ alert('Erro ao criar coluna: ' + error.message); return; }
+  fecharModalColuna();
   await carregarBoard();
 }
+window.confirmarNovaColuna = confirmarNovaColuna;
 
 function abrirNovoCard(colunaId){
   cardEmEdicaoId = null;
