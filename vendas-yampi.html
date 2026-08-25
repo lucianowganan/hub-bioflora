@@ -198,6 +198,17 @@ async function carregarDados(){
     return dia >= dataInicio && dia <= dataFim;
   });
   const totalReal = null; // não confiável até validar o formato certo de filtro server-side
+
+  // DIAGNÓSTICO TEMPORÁRIO — mostra a estrutura real de um pedido,
+  // pra eu conseguir ajustar os campos certos sem ficar adivinhando.
+  if(pedidosNoPeriodo.length){
+    console.log('PEDIDO EXEMPLO (estrutura completa):', pedidosNoPeriodo[0]);
+    const diag = document.createElement('div');
+    diag.style.cssText = 'background:#111;color:#7CFC7C;font-family:monospace;font-size:11px;padding:14px;border-radius:8px;margin-bottom:16px;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;';
+    diag.textContent = 'DIAGNÓSTICO — estrutura de um pedido real (temporário, tira depois):\n' + JSON.stringify(pedidosNoPeriodo[0], null, 2);
+    document.getElementById('conteudo').before(diag);
+  }
+
   await renderPainel(pedidosNoPeriodo, totalReal, pedidos.length);
 }
 
