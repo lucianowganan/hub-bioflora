@@ -21,6 +21,7 @@
     { href: 'erros.html', icon: '✍️', label: 'Registro de Erros', roles: ['chefia','conferencia'] },
     { href: 'meus-erros.html', icon: '📈', label: 'Meus Erros', roles: null },
     { href: 'chat.html', icon: '💬', label: 'Chat Interno', roles: null },
+    { href: 'vendas-yampi.html', icon: '📊', label: 'Vendas (Yampi)', roles: ['chefia','gestao'] },
     { href: 'calendario3.html', icon: '📅', label: 'Google Calendar', roles: ['chefia'] },
     { href: 'admin.html', icon: '🔐', label: 'Administração', roles: ['chefia'] },
   ];

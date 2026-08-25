@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vendas (Yampi) — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="auth-guard.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC; --bad:#B4472F; --bad-tint:#FBEBE6;
+    --warn:#C9922B; --warn-tint:#FBF1DD; --info:#3E6B93; --info-tint:#E9F0F6;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand-text h1{font-family:var(--headfont);font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+
+  .periodo-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;padding:12px 16px;background:#fff;border:1px solid var(--line);border-radius:10px;flex-wrap:wrap;}
+  .periodo-toolbar label{font-size:12px;color:var(--gray);font-weight:600;}
+  .periodo-toolbar input, .periodo-toolbar select{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;}
+  .periodo-toolbar button{margin-left:auto;}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;}
+  .kpi .label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);}
+  .kpi .value{font-family:var(--headfont);font-size:24px;margin-top:6px;font-weight:600;}
+  .kpi .sub{font-size:11px;color:var(--gray);margin-top:2px;}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .panel h2{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  thead th{text-align:left;font-size:10.5px;text-transform:uppercase;color:var(--gray);font-weight:700;padding:0 8px 8px;border-bottom:2px solid var(--ink);}
+  tbody td{padding:9px 8px;border-bottom:1px solid var(--line);}
+  .status-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;white-space:nowrap;}
+  .status-badge.pago{background:var(--good-tint);color:var(--good);}
+  .status-badge.pendente{background:var(--warn-tint);color:#8A6512;}
+  .status-badge.cancelado{background:var(--bad-tint);color:var(--bad);}
+  .status-badge.outro{background:#F1ECEA;color:var(--gray);}
+
+  .empty-state, .loading{text-align:center;padding:40px 20px;color:var(--gray);font-size:13px;}
+  .config-banner{background:var(--bad-tint);color:var(--bad);border-radius:10px;padding:12px 16px;font-size:12.5px;margin-bottom:16px;display:none;}
+  .config-banner.show{display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand-text">
+      <h1>Vendas (Yampi)</h1>
+      <p>Relatório de pedidos e faturamento, direto da loja</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button class="btn" onclick="logout()">Sair</button>
+    </div>
+  </header>
+
+  <div class="config-banner" id="erroBanner"></div>
+
+  <div class="periodo-toolbar">
+    <label>De</label>
+    <input type="date" id="dataInicio">
+    <label>até</label>
+    <input type="date" id="dataFim">
+    <button class="btn" onclick="carregarDados()">Atualizar</button>
+  </div>
+
+  <div id="conteudo"><div class="loading">Carregando dados da Yampi...</div></div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let graficoVendas = null;
+
+async function init(){
+  await requireRole(['chefia','gestao']);
+
+  const hoje = new Date();
+  const trintaDiasAtras = new Date(); trintaDiasAtras.setDate(hoje.getDate()-30);
+  document.getElementById('dataFim').value = hoje.toISOString().slice(0,10);
+  document.getElementById('dataInicio').value = trintaDiasAtras.toISOString().slice(0,10);
+
+  await carregarDados();
+}
+
+async function chamarYampi(endpoint, params){
+  const { data, error } = await supa.functions.invoke('yampi-proxy', { body: { endpoint, params } });
+  if(error || data?.error){
+    let motivo = data?.error || error.message;
+    if(error?.context && typeof error.context.json === 'function'){
+      try{ const corpo = await error.context.json(); if(corpo?.error) motivo = corpo.error; }catch(e){}
+    }
+    throw new Error(motivo);
+  }
+  return data;
+}
+
+function mostrarErro(msg){
+  const banner = document.getElementById('erroBanner');
+  banner.textContent = '⚠️ ' + msg;
+  banner.classList.add('show');
+}
+
+const STATUS_MAP = {
+  paid: 'pago', authorized: 'pago', delivered: 'pago',
+  waiting_payment: 'pendente', in_analysis: 'pendente', processing: 'pendente',
+  refunded: 'cancelado', canceled: 'cancelado', chargeback: 'cancelado',
+};
+function statusClasse(status){ return STATUS_MAP[status] || 'outro'; }
+
+async function carregarDados(){
+  document.getElementById('erroBanner').classList.remove('show');
+  document.getElementById('conteudo').innerHTML = '<div class="loading">Carregando dados da Yampi...</div>';
+
+  const dataInicio = document.getElementById('dataInicio').value;
+  const dataFim = document.getElementById('dataFim').value;
+
+  let resultado;
+  try{
+    resultado = await chamarYampi('orders', {
+      'skip': '0', 'limit': '100',
+      'created_at[gte]': dataInicio, 'created_at[lte]': dataFim + ' 23:59:59',
+    });
+  }catch(e){
+    mostrarErro('Erro ao buscar pedidos: ' + e.message + ' — confira se as credenciais da Yampi foram configuradas nos Secrets da Edge Function (YAMPI_ALIAS, YAMPI_USER_TOKEN, YAMPI_USER_SECRET_KEY).');
+    document.getElementById('conteudo').innerHTML = '';
+    return;
+  }
+
+  const pedidos = resultado?.data || [];
+  renderPainel(pedidos);
+}
+
+function renderPainel(pedidos){
+  const totalPedidos = pedidos.length;
+  const pedidosPagos = pedidos.filter(p => statusClasse(p.status) === 'pago');
+  const faturamento = pedidosPagos.reduce((soma,p) => soma + (Number(p.value_total)||0), 0);
+  const ticketMedio = pedidosPagos.length ? faturamento / pedidosPagos.length : 0;
+  const taxaConversaoStatus = totalPedidos ? (pedidosPagos.length/totalPedidos*100) : 0;
+
+  const porDia = {};
+  pedidosPagos.forEach(p => {
+    const dia = (p.created_at || '').slice(0,10);
+    if(!dia) return;
+    porDia[dia] = (porDia[dia]||0) + Number(p.value_total||0);
+  });
+  const diasOrdenados = Object.keys(porDia).sort();
+
+  document.getElementById('conteudo').innerHTML = `
+    <div class="kpi-row">
+      <div class="kpi"><div class="label">Faturamento (pagos)</div><div class="value">R$ ${faturamento.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="sub">no período selecionado</div></div>
+      <div class="kpi"><div class="label">Pedidos</div><div class="value">${totalPedidos}</div><div class="sub">${pedidosPagos.length} pagos</div></div>
+      <div class="kpi"><div class="label">Ticket médio</div><div class="value">R$ ${ticketMedio.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="sub">por pedido pago</div></div>
+      <div class="kpi"><div class="label">Taxa de conversão</div><div class="value">${taxaConversaoStatus.toFixed(0)}%</div><div class="sub">pedidos que viraram pagamento</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Faturamento por dia</h2>
+      <p class="desc">Soma de pedidos pagos, por data</p>
+      <canvas id="chartVendas" height="90"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>Pedidos recentes</h2>
+      <p class="desc">Últimos ${Math.min(totalPedidos,100)} pedidos do período</p>
+      ${totalPedidos ? `<table>
+        <thead><tr><th>Número</th><th>Data</th><th>Status</th><th>Valor</th></tr></thead>
+        <tbody>
+          ${pedidos.slice(0,50).map(p => `
+            <tr>
+              <td><strong>#${p.number||p.id}</strong></td>
+              <td>${p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '—'}</td>
+              <td><span class="status-badge ${statusClasse(p.status)}">${p.status||'—'}</span></td>
+              <td>R$ ${Number(p.value_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>` : '<div class="empty-state">Nenhum pedido nesse período.</div>'}
+    </div>
+  `;
+
+  if(graficoVendas) graficoVendas.destroy();
+  if(diasOrdenados.length){
+    graficoVendas = new Chart(document.getElementById('chartVendas'), {
+      type: 'bar',
+      data: {
+        labels: diasOrdenados.map(d => new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})),
+        datasets: [{ data: diasOrdenados.map(d=>porDia[d]), backgroundColor: '#8B1A3A' }]
+      },
+      options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    });
+  }
+}
+
+init();
+</script>
+<script src="acessibilidade.js"></script>
+<script src="hub-sidebar.js"></script>
+</body>
+</html>
