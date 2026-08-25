@@ -149,8 +149,8 @@ async function carregarTabelaStatus(){
 }
 function extrairStatus(pedido){
   if(!pedido) return '';
+  if(pedido.status?.data) return pedido.status.data.alias || pedido.status.data.name || '';
   if(typeof pedido.status === 'string') return pedido.status;
-  if(pedido.status && typeof pedido.status === 'object') return pedido.status.alias || pedido.status.name || '';
   if(pedido.status_id != null) return statusPorId[pedido.status_id] || ('status #'+pedido.status_id);
   return '';
 }
@@ -198,17 +198,6 @@ async function carregarDados(){
     return dia >= dataInicio && dia <= dataFim;
   });
   const totalReal = null; // não confiável até validar o formato certo de filtro server-side
-
-  // DIAGNÓSTICO TEMPORÁRIO — mostra a estrutura real de um pedido,
-  // pra eu conseguir ajustar os campos certos sem ficar adivinhando.
-  if(pedidosNoPeriodo.length){
-    console.log('PEDIDO EXEMPLO (estrutura completa):', pedidosNoPeriodo[0]);
-    const diag = document.createElement('div');
-    diag.style.cssText = 'background:#111;color:#7CFC7C;font-family:monospace;font-size:11px;padding:14px;border-radius:8px;margin-bottom:16px;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;';
-    diag.textContent = 'DIAGNÓSTICO — estrutura de um pedido real (temporário, tira depois):\n' + JSON.stringify(pedidosNoPeriodo[0], null, 2);
-    document.getElementById('conteudo').before(diag);
-  }
-
   await renderPainel(pedidosNoPeriodo, totalReal, pedidos.length);
 }
 
@@ -234,32 +223,27 @@ async function renderPainel(pedidos, totalReal, totalBuscado){
   // Produtos mais vendidos (a partir dos itens já incluídos em cada pedido)
   const porProduto = {};
   pedidosPagos.forEach(p => {
-    const itens = p.items?.data || p.items || [];
+    const itens = p.items?.data || [];
     itens.forEach(item => {
-      const nome = item.product?.name || item.sku?.product?.name || item.name || item.sku || 'Produto sem nome';
+      const nome = item.sku?.data?.title || item.item_sku || 'Produto sem nome';
       const qtd = Number(item.quantity || 1);
       if(!porProduto[nome]) porProduto[nome] = { qtd: 0, valor: 0 };
       porProduto[nome].qtd += qtd;
-      porProduto[nome].valor += qtd * Number(item.price || item.value || 0);
+      porProduto[nome].valor += qtd * Number(item.price || 0);
     });
   });
   const rankingProdutos = Object.entries(porProduto).sort((a,b) => b[1].qtd - a[1].qtd).slice(0,10);
 
-  // Cupons mais usados (conta por promocode_id nos pedidos do período)
-  const porCupomId = {};
+  // Cupons mais usados — o código do cupom já vem junto no próprio
+  // pedido (promocode.data.code), não precisa de nenhuma chamada extra
+  const porCupom = {};
   pedidos.forEach(p => {
     if(!p.promocode_id) return;
-    porCupomId[p.promocode_id] = (porCupomId[p.promocode_id]||0) + 1;
+    const nomeCupom = p.promocode?.data?.code || ('Cupom #'+p.promocode_id);
+    if(!porCupom[nomeCupom]) porCupom[nomeCupom] = 0;
+    porCupom[nomeCupom]++;
   });
-  const topCuponsIds = Object.entries(porCupomId).sort((a,b)=>b[1]-a[1]).slice(0,8);
-
-  const nomesCupons = {};
-  await Promise.all(topCuponsIds.map(async ([id]) => {
-    try{
-      const resp = await chamarYampi('coupons/'+id, {});
-      nomesCupons[id] = resp?.data?.code || resp?.data?.title || ('Cupom #'+id);
-    }catch(e){ nomesCupons[id] = 'Cupom #'+id; }
-  }));
+  const topCupons = Object.entries(porCupom).sort((a,b)=>b[1]-a[1]).slice(0,8);
 
   document.getElementById('conteudo').innerHTML = `
     ${avisoLimite}
@@ -296,12 +280,12 @@ async function renderPainel(pedidos, totalReal, totalBuscado){
       <div class="panel">
         <h2>Cupons mais usados</h2>
         <p class="desc">Contagem de pedidos, todos os status do período</p>
-        ${topCuponsIds.length ? `<table>
+        ${topCupons.length ? `<table>
           <thead><tr><th>Cupom</th><th>Usos</th></tr></thead>
           <tbody>
-            ${topCuponsIds.map(([id, usos]) => `
+            ${topCupons.map(([nome, usos]) => `
               <tr>
-                <td>${nomesCupons[id]}</td>
+                <td>${nome}</td>
                 <td>${usos}</td>
               </tr>`).join('')}
           </tbody>
