@@ -124,22 +124,34 @@ const STATUS_MAP = {
   waiting_payment: 'pendente', in_analysis: 'pendente', processing: 'pendente',
   refunded: 'cancelado', canceled: 'cancelado', chargeback: 'cancelado',
 };
-function statusClasse(status){ return STATUS_MAP[extrairStatus(status)] || 'outro'; }
+function statusClasse(statusTexto){ return STATUS_MAP[statusTexto] || 'outro'; }
 
 // A Yampi devolve alguns campos como objeto em vez de texto puro —
 // datas costumam vir como {date, timezone_type, timezone} (padrão do
-// Laravel/PHP) e status como {id, alias, name, description}. Essas
-// funções aceitam os dois formatos (texto puro OU objeto).
+// Laravel/PHP), e o pedido só traz status_id (número) — o texto do
+// status vem de uma tabela separada (checkout/statuses) que buscamos
+// uma vez e usamos como dicionário.
 function extrairData(campo){
   if(!campo) return null;
   if(typeof campo === 'string') return campo;
   if(typeof campo === 'object') return campo.date || campo.value || null;
   return null;
 }
-function extrairStatus(campo){
-  if(!campo) return '';
-  if(typeof campo === 'string') return campo;
-  if(typeof campo === 'object') return campo.alias || campo.name || campo.status || '';
+
+let statusPorId = {};
+async function carregarTabelaStatus(){
+  if(Object.keys(statusPorId).length) return; // já carregado
+  try{
+    const resp = await chamarYampi('checkout/statuses', {});
+    const lista = resp?.data || [];
+    lista.forEach(s => { statusPorId[s.id] = s.alias || s.name || s.status || ''; });
+  }catch(e){ console.error('Não consegui carregar a tabela de status:', e); }
+}
+function extrairStatus(pedido){
+  if(!pedido) return '';
+  if(typeof pedido.status === 'string') return pedido.status;
+  if(pedido.status && typeof pedido.status === 'object') return pedido.status.alias || pedido.status.name || '';
+  if(pedido.status_id != null) return statusPorId[pedido.status_id] || ('status #'+pedido.status_id);
   return '';
 }
 
@@ -150,29 +162,51 @@ async function carregarDados(){
   const dataInicio = document.getElementById('dataInicio').value;
   const dataFim = document.getElementById('dataFim').value;
 
-  let resultado;
+  await carregarTabelaStatus();
+
+  // Busca por página (mais recentes primeiro) e para assim que os
+  // pedidos já ficarem mais velhos que a data de início escolhida —
+  // o filtro de data é feito aqui no navegador com o valor real de
+  // created_at, pra não depender de adivinhar o formato exato que a
+  // API espera nos parâmetros de busca.
+  let pedidos = [];
+  let pagina = 1;
+  const LIMITE_PAGINAS = 6; // até 600 pedidos — suficiente pra períodos de alguns meses
   try{
-    resultado = await chamarYampi('orders', {
-      'skip': '0', 'limit': '100',
-      'created_at[gte]': dataInicio, 'created_at[lte]': dataFim + ' 23:59:59',
-    });
+    while(pagina <= LIMITE_PAGINAS){
+      const resultado = await chamarYampi('orders', { page: String(pagina), limit: '100', include: 'status' });
+      const lote = resultado?.data || [];
+      if(!lote.length) break;
+      pedidos = pedidos.concat(lote);
+
+      const maisAntigoDoLote = lote[lote.length-1];
+      const dataMaisAntiga = extrairData(maisAntigoDoLote?.created_at);
+      if(dataMaisAntiga && dataMaisAntiga.slice(0,10) < dataInicio) break; // já passou do período
+      if(lote.length < 100) break; // acabaram os pedidos
+      pagina++;
+    }
   }catch(e){
     mostrarErro('Erro ao buscar pedidos: ' + e.message + ' — confira se as credenciais da Yampi foram configuradas nos Secrets da Edge Function (YAMPI_ALIAS, YAMPI_USER_TOKEN, YAMPI_USER_SECRET_KEY).');
     document.getElementById('conteudo').innerHTML = '';
     return;
   }
 
-  const pedidos = resultado?.data || [];
-  const totalReal = resultado?.meta?.pagination?.total ?? null;
-  renderPainel(pedidos, totalReal);
+  const pedidosNoPeriodo = pedidos.filter(p => {
+    const d = extrairData(p.created_at);
+    if(!d) return false;
+    const dia = d.slice(0,10);
+    return dia >= dataInicio && dia <= dataFim;
+  });
+  const totalReal = null; // não confiável até validar o formato certo de filtro server-side
+  renderPainel(pedidosNoPeriodo, totalReal, pedidos.length);
 }
 
-function renderPainel(pedidos, totalReal){
+function renderPainel(pedidos, totalReal, totalBuscado){
   const totalPedidos = pedidos.length;
-  const avisoLimite = totalReal && totalReal > pedidos.length
-    ? `<div style="font-size:11.5px;color:#8A6512;background:var(--warn-tint);padding:8px 12px;border-radius:8px;margin-bottom:14px;">⚠️ Esse período tem ${totalReal} pedidos no total, mas por enquanto só busco os ${pedidos.length} mais recentes — todos os números abaixo (faturamento, ticket médio etc) são calculados só sobre esses ${pedidos.length}. Estreite o período pra números exatos, ou me avisa que eu adiciono busca com paginação completa.</div>`
+  const avisoLimite = totalBuscado >= 600
+    ? `<div style="font-size:11.5px;color:#8A6512;background:var(--warn-tint);padding:8px 12px;border-radius:8px;margin-bottom:14px;">⚠️ Busquei até 600 pedidos mais recentes e alguns ainda são mais novos que o início do período — pode haver pedidos mais antigos não contados. Estreite o período pra garantir números exatos.</div>`
     : '';
-  const pedidosPagos = pedidos.filter(p => statusClasse(p.status) === 'pago');
+  const pedidosPagos = pedidos.filter(p => statusClasse(extrairStatus(p)) === 'pago');
   const faturamento = pedidosPagos.reduce((soma,p) => soma + (Number(p.value_total)||0), 0);
   const ticketMedio = pedidosPagos.length ? faturamento / pedidosPagos.length : 0;
   const taxaConversaoStatus = totalPedidos ? (pedidosPagos.length/totalPedidos*100) : 0;
@@ -209,12 +243,12 @@ function renderPainel(pedidos, totalReal){
         <tbody>
           ${pedidos.slice(0,50).map(p => {
             const dataStr = extrairData(p.created_at);
-            const statusTexto = extrairStatus(p.status);
+            const statusTexto = extrairStatus(p);
             return `
             <tr>
               <td><strong>#${p.number||p.id}</strong></td>
               <td>${dataStr ? new Date(dataStr.replace(' ','T')).toLocaleDateString('pt-BR') : '—'}</td>
-              <td><span class="status-badge ${statusClasse(p.status)}">${statusTexto||'—'}</span></td>
+              <td><span class="status-badge ${statusClasse(statusTexto)}">${statusTexto||'—'}</span></td>
               <td>R$ ${Number(p.value_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
             </tr>`;
           }).join('')}
