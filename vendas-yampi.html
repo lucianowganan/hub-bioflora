@@ -174,7 +174,7 @@ async function carregarDados(){
   const LIMITE_PAGINAS = 6; // até 600 pedidos — suficiente pra períodos de alguns meses
   try{
     while(pagina <= LIMITE_PAGINAS){
-      const resultado = await chamarYampi('orders', { page: String(pagina), limit: '100', include: 'status' });
+      const resultado = await chamarYampi('orders', { page: String(pagina), limit: '100', include: 'status,items' });
       const lote = resultado?.data || [];
       if(!lote.length) break;
       pedidos = pedidos.concat(lote);
@@ -198,10 +198,10 @@ async function carregarDados(){
     return dia >= dataInicio && dia <= dataFim;
   });
   const totalReal = null; // não confiável até validar o formato certo de filtro server-side
-  renderPainel(pedidosNoPeriodo, totalReal, pedidos.length);
+  await renderPainel(pedidosNoPeriodo, totalReal, pedidos.length);
 }
 
-function renderPainel(pedidos, totalReal, totalBuscado){
+async function renderPainel(pedidos, totalReal, totalBuscado){
   const totalPedidos = pedidos.length;
   const avisoLimite = totalBuscado >= 600
     ? `<div style="font-size:11.5px;color:#8A6512;background:var(--warn-tint);padding:8px 12px;border-radius:8px;margin-bottom:14px;">⚠️ Busquei até 600 pedidos mais recentes e alguns ainda são mais novos que o início do período — pode haver pedidos mais antigos não contados. Estreite o período pra garantir números exatos.</div>`
@@ -220,6 +220,36 @@ function renderPainel(pedidos, totalReal, totalBuscado){
   });
   const diasOrdenados = Object.keys(porDia).sort();
 
+  // Produtos mais vendidos (a partir dos itens já incluídos em cada pedido)
+  const porProduto = {};
+  pedidosPagos.forEach(p => {
+    const itens = p.items?.data || p.items || [];
+    itens.forEach(item => {
+      const nome = item.product?.name || item.sku?.product?.name || item.name || item.sku || 'Produto sem nome';
+      const qtd = Number(item.quantity || 1);
+      if(!porProduto[nome]) porProduto[nome] = { qtd: 0, valor: 0 };
+      porProduto[nome].qtd += qtd;
+      porProduto[nome].valor += qtd * Number(item.price || item.value || 0);
+    });
+  });
+  const rankingProdutos = Object.entries(porProduto).sort((a,b) => b[1].qtd - a[1].qtd).slice(0,10);
+
+  // Cupons mais usados (conta por promocode_id nos pedidos do período)
+  const porCupomId = {};
+  pedidos.forEach(p => {
+    if(!p.promocode_id) return;
+    porCupomId[p.promocode_id] = (porCupomId[p.promocode_id]||0) + 1;
+  });
+  const topCuponsIds = Object.entries(porCupomId).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  const nomesCupons = {};
+  await Promise.all(topCuponsIds.map(async ([id]) => {
+    try{
+      const resp = await chamarYampi('coupons/'+id, {});
+      nomesCupons[id] = resp?.data?.code || resp?.data?.title || ('Cupom #'+id);
+    }catch(e){ nomesCupons[id] = 'Cupom #'+id; }
+  }));
+
   document.getElementById('conteudo').innerHTML = `
     ${avisoLimite}
     <div class="kpi-row">
@@ -233,6 +263,39 @@ function renderPainel(pedidos, totalReal, totalBuscado){
       <h2>Faturamento por dia</h2>
       <p class="desc">Soma de pedidos pagos, por data</p>
       <canvas id="chartVendas" height="90"></canvas>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="panel">
+        <h2>Produtos mais vendidos</h2>
+        <p class="desc">Por quantidade, pedidos pagos do período</p>
+        ${rankingProdutos.length ? `<table>
+          <thead><tr><th>Produto</th><th>Qtd</th><th>Faturamento</th></tr></thead>
+          <tbody>
+            ${rankingProdutos.map(([nome, info]) => `
+              <tr>
+                <td>${nome}</td>
+                <td>${info.qtd}</td>
+                <td>R$ ${info.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>` : '<div class="empty-state">Sem dados de produtos nesse período.</div>'}
+      </div>
+
+      <div class="panel">
+        <h2>Cupons mais usados</h2>
+        <p class="desc">Contagem de pedidos, todos os status do período</p>
+        ${topCuponsIds.length ? `<table>
+          <thead><tr><th>Cupom</th><th>Usos</th></tr></thead>
+          <tbody>
+            ${topCuponsIds.map(([id, usos]) => `
+              <tr>
+                <td>${nomesCupons[id]}</td>
+                <td>${usos}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>` : '<div class="empty-state">Nenhum cupom usado nesse período.</div>'}
+      </div>
     </div>
 
     <div class="panel">
