@@ -124,7 +124,24 @@ const STATUS_MAP = {
   waiting_payment: 'pendente', in_analysis: 'pendente', processing: 'pendente',
   refunded: 'cancelado', canceled: 'cancelado', chargeback: 'cancelado',
 };
-function statusClasse(status){ return STATUS_MAP[status] || 'outro'; }
+function statusClasse(status){ return STATUS_MAP[extrairStatus(status)] || 'outro'; }
+
+// A Yampi devolve alguns campos como objeto em vez de texto puro —
+// datas costumam vir como {date, timezone_type, timezone} (padrão do
+// Laravel/PHP) e status como {id, alias, name, description}. Essas
+// funções aceitam os dois formatos (texto puro OU objeto).
+function extrairData(campo){
+  if(!campo) return null;
+  if(typeof campo === 'string') return campo;
+  if(typeof campo === 'object') return campo.date || campo.value || null;
+  return null;
+}
+function extrairStatus(campo){
+  if(!campo) return '';
+  if(typeof campo === 'string') return campo;
+  if(typeof campo === 'object') return campo.alias || campo.name || campo.status || '';
+  return '';
+}
 
 async function carregarDados(){
   document.getElementById('erroBanner').classList.remove('show');
@@ -146,11 +163,15 @@ async function carregarDados(){
   }
 
   const pedidos = resultado?.data || [];
-  renderPainel(pedidos);
+  const totalReal = resultado?.meta?.pagination?.total ?? null;
+  renderPainel(pedidos, totalReal);
 }
 
-function renderPainel(pedidos){
+function renderPainel(pedidos, totalReal){
   const totalPedidos = pedidos.length;
+  const avisoLimite = totalReal && totalReal > pedidos.length
+    ? `<div style="font-size:11.5px;color:#8A6512;background:var(--warn-tint);padding:8px 12px;border-radius:8px;margin-bottom:14px;">⚠️ Esse período tem ${totalReal} pedidos no total, mas por enquanto só busco os ${pedidos.length} mais recentes — todos os números abaixo (faturamento, ticket médio etc) são calculados só sobre esses ${pedidos.length}. Estreite o período pra números exatos, ou me avisa que eu adiciono busca com paginação completa.</div>`
+    : '';
   const pedidosPagos = pedidos.filter(p => statusClasse(p.status) === 'pago');
   const faturamento = pedidosPagos.reduce((soma,p) => soma + (Number(p.value_total)||0), 0);
   const ticketMedio = pedidosPagos.length ? faturamento / pedidosPagos.length : 0;
@@ -158,13 +179,15 @@ function renderPainel(pedidos){
 
   const porDia = {};
   pedidosPagos.forEach(p => {
-    const dia = (p.created_at || '').slice(0,10);
+    const dataStr = extrairData(p.created_at);
+    const dia = dataStr ? dataStr.slice(0,10) : null;
     if(!dia) return;
     porDia[dia] = (porDia[dia]||0) + Number(p.value_total||0);
   });
   const diasOrdenados = Object.keys(porDia).sort();
 
   document.getElementById('conteudo').innerHTML = `
+    ${avisoLimite}
     <div class="kpi-row">
       <div class="kpi"><div class="label">Faturamento (pagos)</div><div class="value">R$ ${faturamento.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="sub">no período selecionado</div></div>
       <div class="kpi"><div class="label">Pedidos</div><div class="value">${totalPedidos}</div><div class="sub">${pedidosPagos.length} pagos</div></div>
@@ -184,13 +207,17 @@ function renderPainel(pedidos){
       ${totalPedidos ? `<table>
         <thead><tr><th>Número</th><th>Data</th><th>Status</th><th>Valor</th></tr></thead>
         <tbody>
-          ${pedidos.slice(0,50).map(p => `
+          ${pedidos.slice(0,50).map(p => {
+            const dataStr = extrairData(p.created_at);
+            const statusTexto = extrairStatus(p.status);
+            return `
             <tr>
               <td><strong>#${p.number||p.id}</strong></td>
-              <td>${p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '—'}</td>
-              <td><span class="status-badge ${statusClasse(p.status)}">${p.status||'—'}</span></td>
+              <td>${dataStr ? new Date(dataStr.replace(' ','T')).toLocaleDateString('pt-BR') : '—'}</td>
+              <td><span class="status-badge ${statusClasse(p.status)}">${statusTexto||'—'}</span></td>
               <td>R$ ${Number(p.value_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-            </tr>`).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>` : '<div class="empty-state">Nenhum pedido nesse período.</div>'}
     </div>
