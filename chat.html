@@ -74,6 +74,13 @@
   .msg-hora-hover{font-size:9.5px;color:var(--gray);opacity:0;transition:opacity .12s;}
   .msg-row.agrupada:hover .msg-hora-hover{opacity:1;}
   .msg-reacoes .msg-del{margin-left:4px;}
+
+  .digitando-indicador{padding:2px 24px 0;font-size:11.5px;color:var(--gray);font-style:italic;display:flex;align-items:center;gap:6px;}
+  .digitando-dots{display:inline-flex;gap:2px;}
+  .digitando-dots span{width:4px;height:4px;border-radius:50%;background:var(--gray);animation:digitandoPulso 1.1s infinite ease-in-out;}
+  .digitando-dots span:nth-child(2){animation-delay:.15s;}
+  .digitando-dots span:nth-child(3){animation-delay:.3s;}
+  @keyframes digitandoPulso{ 0%,60%,100%{opacity:.25;transform:translateY(0);} 30%{opacity:1;transform:translateY(-2px);} }
   .msg-avatar{width:32px;height:32px;border-radius:50%;background:var(--burgundy-tint);color:var(--burgundy);display:flex;align-items:center;justify-content:center;font-family:var(--headfont);font-weight:600;font-size:13px;flex-shrink:0;}
   .msg-body .msg-meta{font-size:11.5px;color:var(--gray);margin-bottom:3px;}
   .msg-body .msg-meta strong{color:var(--ink);font-weight:700;}
@@ -152,6 +159,7 @@
     <div class="mensagens-area" id="mensagensArea">
       <div class="empty-state">Escolha um canal ou uma pessoa pra começar.</div>
     </div>
+    <div class="digitando-indicador" id="digitandoIndicador" style="display:none"></div>
     <div class="anexo-preview" id="anexoPreview" style="display:none"></div>
     <div class="input-area" id="inputArea" style="display:none">
       <button class="anexo-btn" onclick="document.getElementById('anexoInput').click()" title="Anexar imagem ou vídeo">📎</button>
@@ -255,6 +263,7 @@ async function init(){
   document.getElementById('msgInput').addEventListener('keydown', (e) => {
     if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); enviarMensagem(); }
   });
+  document.getElementById('msgInput').addEventListener('input', () => avisarQueEstouDigitando());
 
   if('Notification' in window && Notification.permission === 'default'){
     Notification.requestPermission();
@@ -288,15 +297,42 @@ function notificarMensagemNova(m, tipo){
     || (tipo==='dm' && modoAtual==='dm' && alvoAtivoId===m.autor_id);
   const abaVisivel = document.visibilityState === 'visible' && document.hasFocus();
 
-  tocarSom();
-
   if(!abaVisivel || !conversaAberta){
+    tocarSom();
     if('Notification' in window && Notification.permission === 'granted'){
       const texto = m.conteudo || (m.anexo_tipo === 'imagem' ? '🖼️ Enviou uma imagem' : m.anexo_tipo === 'video' ? '🎥 Enviou um vídeo' : m.anexo_tipo === 'audio' ? '🎵 Enviou um áudio' : m.anexo_tipo === 'pdf' ? '📄 Enviou um PDF' : 'Nova mensagem');
       const notif = new Notification(nome + ' — Chat Interno', { body: texto, icon: undefined, tag: 'hub-chat-'+(m.canal_id||m.autor_id) });
       notif.onclick = () => { window.focus(); notif.close(); };
     }
   }
+}
+
+// ============================================================
+// "FULANO ESTÁ DIGITANDO..." — via Realtime Broadcast, não grava
+// nada no banco, só transmite ao vivo pra quem está na mesma conversa
+// ============================================================
+let ultimoEnvioDigitando = 0;
+let timeoutEsconderDigitando = null;
+
+function avisarQueEstouDigitando(){
+  if(!modoAtual || !subscricaoAtual) return;
+  const agora = Date.now();
+  if(agora - ultimoEnvioDigitando < 2000) return; // throttle: no máx. 1x a cada 2s
+  ultimoEnvioDigitando = agora;
+  subscricaoAtual.send({
+    type: 'broadcast',
+    event: 'digitando',
+    payload: { userId: meuUserId, nome: nomesPorId[meuUserId] || 'Alguém' }
+  });
+}
+
+function mostrarDigitando(nome){
+  const el = document.getElementById('digitandoIndicador');
+  el.innerHTML = `${nome} está digitando <span class="digitando-dots"><span></span><span></span><span></span></span>`;
+  el.style.display = 'flex';
+
+  clearTimeout(timeoutEsconderDigitando);
+  timeoutEsconderDigitando = setTimeout(() => { el.style.display = 'none'; }, 3000);
 }
 
 async function carregarTudo(){
@@ -545,6 +581,7 @@ function fecharConversa(){
 }
 
 async function abrirCanal(canalId){
+  document.getElementById('digitandoIndicador').style.display = 'none';
   modoAtual = 'canal';
   alvoAtivoId = canalId;
   const canal = canais.find(c=>c.id===canalId);
@@ -560,6 +597,7 @@ async function abrirCanal(canalId){
 window.abrirCanal = abrirCanal;
 
 async function abrirDm(userId){
+  document.getElementById('digitandoIndicador').style.display = 'none';
   modoAtual = 'dm';
   alvoAtivoId = userId;
   document.getElementById('canalNome').textContent = nomesPorId[userId] || 'Conversa';
@@ -659,6 +697,9 @@ function assinarTempoRealCanal(){
       inserirMensagemNaTela(payload.new, 'canal');
       if(payload.new.autor_id !== meuUserId) notificarMensagemNova(payload.new, 'canal');
     })
+    .on('broadcast', { event: 'digitando' }, (payload) => {
+      if(payload.payload.userId !== meuUserId) mostrarDigitando(payload.payload.nome);
+    })
     .subscribe();
 }
 
@@ -693,6 +734,9 @@ function assinarTempoRealDm(){
       }
       await carregarConversasDm();
       renderSidebar();
+    })
+    .on('broadcast', { event: 'digitando' }, (payload) => {
+      if(payload.payload.userId !== meuUserId) mostrarDigitando(payload.payload.nome);
     })
     .subscribe();
 }
