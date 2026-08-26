@@ -67,7 +67,13 @@
   .del-canal-link{font-size:11px;color:var(--bad);background:none;border:none;cursor:pointer;text-decoration:underline;}
 
   .mensagens-area{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px;}
-  .msg-row{display:flex;gap:10px;max-width:640px;}
+  .msg-row{display:flex;gap:10px;max-width:640px;animation:msgEntrar .22s ease-out;}
+  .msg-row.agrupada{margin-top:-9px;}
+  @keyframes msgEntrar{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+  .msg-avatar-spacer{width:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .msg-hora-hover{font-size:9.5px;color:var(--gray);opacity:0;transition:opacity .12s;}
+  .msg-row.agrupada:hover .msg-hora-hover{opacity:1;}
+  .msg-reacoes .msg-del{margin-left:4px;}
   .msg-avatar{width:32px;height:32px;border-radius:50%;background:var(--burgundy-tint);color:var(--burgundy);display:flex;align-items:center;justify-content:center;font-family:var(--headfont);font-weight:600;font-size:13px;flex-shrink:0;}
   .msg-body .msg-meta{font-size:11.5px;color:var(--gray);margin-bottom:3px;}
   .msg-body .msg-meta strong{color:var(--ink);font-weight:700;}
@@ -250,7 +256,47 @@ async function init(){
     if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); enviarMensagem(); }
   });
 
+  if('Notification' in window && Notification.permission === 'default'){
+    Notification.requestPermission();
+  }
+
   await carregarTudo();
+}
+
+// ============================================================
+// NOTIFICAÇÃO E SOM PRA MENSAGEM NOVA
+// ============================================================
+function tocarSom(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(740, ctx.currentTime);
+    osc.frequency.setValueAtTime(920, ctx.currentTime + 0.09);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  }catch(e){ /* navegador sem suporte a Web Audio, ignora */ }
+}
+
+function notificarMensagemNova(m, tipo){
+  const nome = nomesPorId[m.autor_id] || 'Alguém';
+  const conversaAberta = (tipo==='canal' && modoAtual==='canal' && alvoAtivoId===m.canal_id)
+    || (tipo==='dm' && modoAtual==='dm' && alvoAtivoId===m.autor_id);
+  const abaVisivel = document.visibilityState === 'visible' && document.hasFocus();
+
+  tocarSom();
+
+  if(!abaVisivel || !conversaAberta){
+    if('Notification' in window && Notification.permission === 'granted'){
+      const texto = m.conteudo || (m.anexo_tipo === 'imagem' ? '🖼️ Enviou uma imagem' : m.anexo_tipo === 'video' ? '🎥 Enviou um vídeo' : m.anexo_tipo === 'audio' ? '🎵 Enviou um áudio' : m.anexo_tipo === 'pdf' ? '📄 Enviou um PDF' : 'Nova mensagem');
+      const notif = new Notification(nome + ' — Chat Interno', { body: texto, icon: undefined, tag: 'hub-chat-'+(m.canal_id||m.autor_id) });
+      notif.onclick = () => { window.focus(); notif.close(); };
+    }
+  }
 }
 
 async function carregarTudo(){
@@ -567,11 +613,42 @@ async function selecionarPessoaNovaConversa(userId){
 }
 window.selecionarPessoaNovaConversa = selecionarPessoaNovaConversa;
 
+let ultimoAutorRenderizado = null;
+let ultimoHorarioRenderizado = null;
+const JANELA_AGRUPAMENTO_MS = 5 * 60 * 1000; // 5 minutos
+
+function resetAgrupamento(){
+  ultimoAutorRenderizado = null;
+  ultimoHorarioRenderizado = null;
+}
+
+function deveAgrupar(m){
+  if(ultimoAutorRenderizado !== m.autor_id) return false;
+  if(!ultimoHorarioRenderizado) return false;
+  return (new Date(m.criado_em) - ultimoHorarioRenderizado) < JANELA_AGRUPAMENTO_MS;
+}
+
+function marcarComoRenderizada(m){
+  ultimoAutorRenderizado = m.autor_id;
+  ultimoHorarioRenderizado = new Date(m.criado_em);
+}
+
+function renderListaMensagens(lista, tipo){
+  resetAgrupamento();
+  const partes = [];
+  lista.forEach(m => {
+    const agrupada = deveAgrupar(m);
+    partes.push(renderMensagem(m, tipo, agrupada));
+    marcarComoRenderizada(m);
+  });
+  return partes.join('');
+}
+
 async function carregarMensagensCanal(){
   const { data } = await supa.from('mensagens_chat').select('*').eq('canal_id', alvoAtivoId).order('criado_em');
   await carregarReacoesPara((data||[]).map(m=>m.id), 'canal');
   const area = document.getElementById('mensagensArea');
-  area.innerHTML = (data||[]).map(m => renderMensagem(m, 'canal')).join('') || '<div class="empty-state">Nenhuma mensagem ainda. Manda a primeira!</div>';
+  area.innerHTML = (data||[]).length ? renderListaMensagens(data, 'canal') : '<div class="empty-state">Nenhuma mensagem ainda. Manda a primeira!</div>';
   area.scrollTop = area.scrollHeight;
 }
 
@@ -580,6 +657,7 @@ function assinarTempoRealCanal(){
   subscricaoAtual = supa.channel('chat-canal-'+alvoAtivoId)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensagens_chat', filter: `canal_id=eq.${alvoAtivoId}` }, (payload) => {
       inserirMensagemNaTela(payload.new, 'canal');
+      if(payload.new.autor_id !== meuUserId) notificarMensagemNova(payload.new, 'canal');
     })
     .subscribe();
 }
@@ -590,7 +668,8 @@ async function carregarMensagensDm(){
     .order('criado_em');
   await carregarReacoesPara((data||[]).map(m=>m.id), 'dm');
   const area = document.getElementById('mensagensArea');
-  area.innerHTML = (data||[]).map(m => renderMensagem({...m, autor_id: m.remetente_id}, 'dm')).join('') || '<div class="empty-state">Nenhuma mensagem ainda. Manda a primeira!</div>';
+  const comAutor = (data||[]).map(m => ({...m, autor_id: m.remetente_id}));
+  area.innerHTML = comAutor.length ? renderListaMensagens(comAutor, 'dm') : '<div class="empty-state">Nenhuma mensagem ainda. Manda a primeira!</div>';
   area.scrollTop = area.scrollHeight;
 
   // Marca como lidas as mensagens que essa pessoa me mandou
@@ -608,7 +687,10 @@ function assinarTempoRealDm(){
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dm_mensagens' }, async (payload) => {
       const m = payload.new;
       const ehDessaConversa = (m.remetente_id===meuUserId && m.destinatario_id===alvoAtivoId) || (m.remetente_id===alvoAtivoId && m.destinatario_id===meuUserId);
-      if(ehDessaConversa) inserirMensagemNaTela({...m, autor_id: m.remetente_id}, 'dm');
+      if(ehDessaConversa){
+        inserirMensagemNaTela({...m, autor_id: m.remetente_id}, 'dm');
+        if(m.remetente_id !== meuUserId) notificarMensagemNova({...m, autor_id: m.remetente_id}, 'dm');
+      }
       await carregarConversasDm();
       renderSidebar();
     })
@@ -620,11 +702,13 @@ function inserirMensagemNaTela(m, tipo){
   const area = document.getElementById('mensagensArea');
   const vazio = area.querySelector('.empty-state');
   if(vazio) vazio.remove();
-  area.insertAdjacentHTML('beforeend', renderMensagem(m, tipo));
+  const agrupada = deveAgrupar(m);
+  area.insertAdjacentHTML('beforeend', renderMensagem(m, tipo, agrupada));
+  marcarComoRenderizada(m);
   area.scrollTop = area.scrollHeight;
 }
 
-function renderMensagem(m, tipo){
+function renderMensagem(m, tipo, agrupada){
   const nome = nomesPorId[m.autor_id] || 'Alguém';
   const hora = new Date(m.criado_em).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
   const minha = m.autor_id === meuUserId;
@@ -645,17 +729,19 @@ function renderMensagem(m, tipo){
   const checkCount = reacoesMsg.filter(r=>r.reacao==='check').length;
   const xCount = reacoesMsg.filter(r=>r.reacao==='x').length;
   const minhaReacao = reacoesMsg.find(r=>r.usuario_id===meuUserId)?.reacao;
+  const botaoExcluir = (minha||meuPapel==='chefia') ? `<button class="msg-del" onclick="excluirMensagem('${m.id}','${tipo}')">excluir</button>` : '';
 
   return `
-    <div class="msg-row ${minha?'mine':''}" id="msg_${m.id}">
-      <div class="msg-avatar">${iniciais(nome)}</div>
+    <div class="msg-row ${minha?'mine':''} ${agrupada?'agrupada':''}" id="msg_${m.id}">
+      ${agrupada ? `<div class="msg-avatar-spacer"><span class="msg-hora-hover">${hora}</span></div>` : `<div class="msg-avatar">${iniciais(nome)}</div>`}
       <div class="msg-body">
-        <div class="msg-meta"><strong>${nome}</strong> · ${hora}${(minha||meuPapel==='chefia') ? `<button class="msg-del" onclick="excluirMensagem('${m.id}','${tipo}')">excluir</button>` : ''}</div>
+        ${agrupada ? '' : `<div class="msg-meta"><strong>${nome}</strong> · ${hora}${botaoExcluir}</div>`}
         ${m.conteudo ? `<div class="msg-texto">${(m.conteudo||'').replace(/</g,'&lt;')}</div>` : ''}
         ${anexoHtml}
         <div class="msg-reacoes">
           <button class="reacao-btn ${minhaReacao==='check'?'on':''}" onclick="reagir('${m.id}','${tipo}','check')">✅ ${checkCount||''}</button>
           <button class="reacao-btn ${minhaReacao==='x'?'on':''}" onclick="reagir('${m.id}','${tipo}','x')">❌ ${xCount||''}</button>
+          ${agrupada ? botaoExcluir : ''}
         </div>
       </div>
     </div>`;
@@ -768,6 +854,12 @@ window.excluirMensagem = excluirMensagem;
 init();
 </script>
 <script src="acessibilidade.js"></script>
+<style>
+  /* Nessa página o canto inferior direito já tem o botão "Enviar" —
+     sobe o botão de acessibilidade pra não bater em cima dele. */
+  .a11y-fab{ bottom: 90px !important; }
+  .a11y-panel{ bottom: 150px !important; }
+</style>
 <script src="hub-sidebar.js"></script>
 </body>
 </html>
