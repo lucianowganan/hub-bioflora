@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ordem de Produção — Hub Bioflora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
 <style>
   :root{
     --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
@@ -15,43 +16,48 @@
     --bad:#B4472F; --bad-tint:#FBEBE6;
     --warn:#C9922B; --warn-tint:#FBF1E0;
     --info:#3E6B93; --info-tint:#E9F0F6;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
   .wrap{max-width:1360px;margin:0 auto;padding:36px 28px 80px;}
   header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
-  .brand{display:flex;align-items:center;gap:12px;}
-  .brand-mark{height:34px;display:flex;align-items:center;}
-  .brand-mark svg{height:100%;width:auto;display:block;}
-  .brand-text h1{font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text h1{font-family:var(--headfont);font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
   .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
-  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
   .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
   .btn.small{padding:6px 12px;font-size:11.5px;}
 
-  .config-banner{background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;padding:14px 18px;font-size:13px;color:#7A5C15;margin-bottom:22px;display:none;}
-  .config-banner.show{display:block;}
-
-  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px;}
   .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px;cursor:pointer;transition:.15s;}
   .kpi:hover{border-color:var(--burgundy);}
   .kpi.active{border-color:var(--burgundy);background:var(--burgundy-tint);}
   .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);font-weight:600;}
-  .kpi .value{font-family:'Fraunces',serif;font-size:26px;margin-top:4px;font-weight:600;}
-  .kpi[data-status="em_falta"] .value{color:var(--bad);}
+  .kpi .value{font-family:var(--headfont);font-size:26px;margin-top:4px;font-weight:600;}
+  .kpi[data-status="no_lab"] .value{color:var(--info);}
   .kpi[data-status="ordem_criada"] .value{color:var(--warn);}
   .kpi[data-status="em_manipulacao"] .value{color:var(--info);}
   .kpi[data-status="liberado"] .value{color:var(--good);}
+  .kpi[data-status="atraso"] .value{color:var(--bad);}
 
   .add-form{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:20px;display:none;}
   .add-form.show{display:block;}
-  .add-form h2{font-family:'Fraunces',serif;font-size:16px;margin:0 0 14px;}
+  .add-form h2{font-family:var(--headfont);font-size:16px;margin:0 0 14px;}
   .form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
   .form-grid label{font-size:11px;color:var(--gray);font-weight:600;display:block;margin-bottom:4px;}
   .form-grid input, .form-grid select{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;}
 
+  .ordens-lista{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px;}
+  .ordens-lista-titulo{font-size:11px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;}
+  .ordem-row-form{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:end;}
+  .ordem-row-form label{font-size:10.5px;color:var(--gray);display:block;margin-bottom:3px;}
+  .ordem-row-form input{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;}
+  .ordem-row-form button{font-family:'Maven Pro',sans-serif;font-size:11px;color:var(--bad);background:none;border:1px solid var(--bad-tint);border-radius:7px;padding:8px 10px;cursor:pointer;}
+  .add-ordem-row-btn{font-family:'Maven Pro',sans-serif;font-size:12px;font-weight:600;color:var(--gray);background:transparent;border:1.5px dashed var(--line);border-radius:8px;padding:8px;cursor:pointer;width:100%;}
+  .add-ordem-row-btn:hover{border-color:var(--burgundy);color:var(--burgundy);}
+
   .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;}
-  .panel h2{font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel h2{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 4px;}
   .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
 
   table{width:100%;border-collapse:collapse;font-size:12.5px;}
@@ -61,13 +67,16 @@
   .produto{font-weight:600;}
   .ordem-num{font-variant-numeric:tabular-nums;color:var(--gray);font-size:11.5px;}
   .tag{display:inline-block;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;text-transform:uppercase;white-space:nowrap;}
-  .tag.em_falta{background:var(--bad-tint);color:var(--bad);}
   .tag.ordem_criada{background:var(--warn-tint);color:#8A6512;}
   .tag.em_manipulacao{background:var(--info-tint);color:var(--info);}
   .tag.liberado{background:var(--good-tint);color:var(--good);}
   .prio.alta, .prio.urgente{color:var(--bad);font-weight:600;}
-  .prio.normal{color:var(--gray);}
+  .prio.media{color:var(--gray);}
   .prio.baixa{color:var(--gray);}
+  .prazo-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;}
+  .prazo-tag.no-prazo{background:var(--good-tint);color:var(--good);}
+  .prazo-tag.proximo{background:var(--warn-tint);color:#8A6512;}
+  .prazo-tag.atrasado{background:var(--bad-tint);color:var(--bad);}
   .trace{font-size:11px;color:var(--gray);line-height:1.6;}
   .trace strong{color:var(--ink);}
   .empty-state{text-align:center;padding:40px 20px;color:var(--gray);}
@@ -77,101 +86,62 @@
   .row-actions button.primary{color:var(--burgundy);border-color:var(--burgundy-tint);}
   .row-actions button.del{color:var(--bad);}
 
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:50;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
   .modal-overlay.show{display:flex;}
-  .modal{background:#fff;border-radius:14px;padding:24px;max-width:480px;width:92%;max-height:85vh;overflow:auto;}
-  .modal h3{font-family:'Fraunces',serif;margin:0 0 14px;}
+  .modal{background:#fff;border-radius:14px;padding:24px;max-width:480px;width:100%;max-height:85vh;overflow:auto;}
+  .modal h3{font-family:var(--headfont);margin:0 0 14px;}
   .modal .form-grid{grid-template-columns:1fr 1fr;}
   .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+  .radio-row{display:flex;align-items:center;gap:7px;font-size:13px;padding:5px 0;}
+  .radio-row input{width:auto !important;}
+
+  .prazo-popup-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);gap:10px;}
+  .prazo-popup-item:last-child{border-bottom:none;}
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <header class="top">
-    <div class="brand">
-      <div class="brand-mark"><svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 31.3 8.7">
-  <defs>
-    <style>
-      .st0 {
-        fill: none;
-        stroke: #8B1A3A;
-        stroke-miterlimit: 10;
-        stroke-width: 0px;
-      }
-
-      .st1 {
-        display: none;
-        opacity: .5;
-      }
-
-      .st2 {
-        font-family: Helvetica, Helvetica;
-        font-size: 1.7px;
-        letter-spacing: .3em;
-      }
-
-      .st2, .st3, .st4 {
-        fill: #8B1A3A;
-      }
-
-      .st4 {
-        font-family: ArialMT, Arial;
-        font-size: .5px;
-        letter-spacing: .3em;
-      }
-    </style>
-  </defs>
-  <image class="st1" width="1000" height="250" transform="translate(-1 -.4) scale(0)" xlink:href="Bioflora/logo-bioflora-vinho-e-cinza.png"/>
-  <path class="st3" d="M12.1,3.5s.2-.2.2-.3c.3-.8-.1-1.6-.9-1.7-.3,0-1.5,0-1.8,0-.2,0-.3.2-.4.4,0,1.1,0,2.3,0,3.3,0,.3.1.4.4.5.4,0,1.6,0,1.9,0,.7-.2,1-1,.8-1.6,0-.1-.2-.4-.2-.5ZM11.4,4.6s-.2.1-.2.1h-1.1v-.9h1.2s.1,0,.2.1c.2.2.2.6,0,.7ZM11.4,2.9s-.2.2-.2.2h-1.2v-.7s0,0,0,0h1.1s.2,0,.2.1c.2.1.2.3,0,.5Z"/>
-  <path class="st3" d="M7.1,3.6c0,.1,0,0,0,0,0-.6-.9-.9-1.3-1.1-1.3-.4-2.5,0-3.8-.3S0,1.2,0,0c.5.4.9.6,1.6.8,1.1.2,2.4,0,3.5,0s2.5,1.5,2,2.8Z"/>
-  <path class="st3" d="M7.9,5.9c-.1-.2-.3-.3-.5-.4-1.7-.9-5.3.4-6.4-1.5s-.2-.4,0-.4c.6,0,1.4,0,2,0,1.5,0,3.3-.3,4.4,1s.5.9.4,1.4Z"/>
-  <path class="st3" d="M4.4,7.5C2.3,7.3.8,5.4.3,3.5s-.1-.5,0-.7c0,0,.3.6.4.7.7,1.4,1.8,2.7,3.4,3.1s1.4.2,1.9-.1.4-.7,0-1.1c.5,0,1.8.1,1.9.8.2,1.1-1.3,1.5-2.1,1.5-.1,0-.2,0-.3,0-.2,0-.3,0-.6,0-.1,0-.2,0-.3,0Z"/>
-  <path class="st3" d="M30.5,3.6c-.3-1.2-2-1.6-2.8-.6-.9,1.1,0,2.5,1.3,2.5.2,0,.6,0,.7-.1,0,0,0,0,.2.1.2.1.5,0,.6-.3,0-.3,0-1.4,0-1.7ZM29.1,4.7c-1,.1-1.2-1.3-.2-1.5.9,0,1.1,1.3.2,1.5Z"/>
-  <path class="st3" d="M15.6,2.4c-2.3,0-2,3.6.3,3.1,1.8-.4,1.5-3.2-.3-3.1ZM16.3,4.3c-.3.8-1.6.4-1.4-.5.1-.5.8-.7,1.2-.3.2.2.3.5.2.8Z"/>
-  <path class="st3" d="M23.1,2.5c-1.9.3-1.7,3.3.4,3.2,2.1-.1,1.9-3.5-.4-3.2ZM22.9,4.6c-.5-.4-.3-1.3.4-1.3.3,0,.6.2.7.5.3.7-.5,1.3-1.1.9Z"/>
-  <path class="st3" d="M19,3.2c.7,0,.7.9,0,.9,0,.8.2,1.8-.6,2.3s-1,.1-.9-.4.7-.2.7-.5,0-1,0-1.4c-.7,0-.7-.9,0-.9,0-.6,0-1.3.6-1.6s1.1-.3,1,.4-.7.2-.7.5,0,.6,0,.8Z"/>
-  <path class="st3" d="M20.8,1.6c0,0,.1.3.1.4v2.6c.1.3.4.2.6.3.3.2.1.7-.2.7-.6,0-1.2-.4-1.2-.9,0-.9,0-1.9,0-2.9,0-.3.5-.4.7-.2Z"/>
-  <path class="st3" d="M25.7,2.9c.3-.3,1.2-.7,1.5-.3s.1.4,0,.6c-.3.2-.6,0-.9.4s0,1.2-.1,1.6-.8.4-.8,0,0-1.1,0-1.4.2-.7.4-1Z"/>
-  <path class="st3" d="M13.5,2.6c0,0,.1.2.1.3,0,.7,0,1.6,0,2.4,0,.5-.8.5-.9,0,0-.8,0-1.6,0-2.3s.4-.6.7-.3Z"/>
-  <path class="st3" d="M6.9,3.8c-.4-.2-.8-.3-1.2-.4,0-.2,0-.3,0-.5s-.2-.3-.2-.4c.6.1,1.8.5,1.5,1.3Z"/>
-  <path class="st3" d="M13.1,1.5c.7-.1.7,1,0,.8s-.5-.8,0-.8Z"/>
-  <circle class="st0" cx="30.9" cy="2.7" r=".4"/>
-  <text class="st2" transform="translate(19.1 7.9) scale(1 1)"><tspan x="0" y="0">FARMÁCIA</tspan></text>
-  <text class="st4" transform="translate(30.7 2.9)"><tspan x="0" y="0">R</tspan></text>
-</svg></div>
-      <div class="brand-text">
-        <h1>Ordem de Produção</h1>
-        <p>Farmácia Bioflora — Hub interno · rastreabilidade completa</p>
-      </div>
+    <div class="brand-text">
+      <h1>Ordem de Produção</h1>
+      <p>Farmácia Bioflora — rastreabilidade completa até a liberação</p>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
-      <a href="index.html" class="btn secondary" style="text-decoration:none">← Voltar ao Hub</a> <button onclick="logout()" class="btn secondary" style="margin-left:6px">Sair</button>
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button onclick="logout()" class="btn secondary">Sair</button>
       <button class="btn" id="toggleForm">+ Nova ordem</button>
     </div>
   </header>
 
-  <div id="configBanner" class="config-banner">
-    ⚠️ Configure SUPABASE_URL e SUPABASE_ANON_KEY no início do código antes de usar.
-  </div>
-
   <div class="add-form" id="addForm">
-    <h2>Registrar novo item</h2>
+    <h2>Registrar nova ordem</h2>
     <div class="form-grid">
-      <div><label>Produto*</label><input id="fProduto" placeholder="Nome do produto" /></div>
-      <div><label>Quantidade</label><input id="fQtd" type="number" /></div>
+      <div style="grid-column:span 2">
+        <label>Produto*</label>
+        <input id="fProduto" placeholder="Nome do produto" list="produtosExistentes" />
+        <datalist id="produtosExistentes"></datalist>
+      </div>
       <div><label>Solicitado por</label><input id="fSolicitante" placeholder="Nome" /></div>
       <div><label>Prioridade</label><select id="fPrioridade">
-        <option value="normal">Normal</option><option value="baixa">Baixa</option>
+        <option value="media" selected>Média</option><option value="baixa">Baixa</option>
         <option value="alta">Alta</option><option value="urgente">Urgente</option>
       </select></div>
     </div>
     <div class="form-grid">
       <div style="grid-column:span 4"><label>Observação (opcional)</label><input id="fObs" placeholder="Ex: aguardando insumo X" /></div>
     </div>
+
+    <div class="ordens-lista">
+      <div class="ordens-lista-titulo">Números de ordem</div>
+      <p class="desc" style="margin:-4px 0 10px">Precisa de mais potes do que cabe numa placa de encapsulação só? Adiciona quantos números de ordem forem necessários — todos entram vinculados a esse mesmo produto.</p>
+      <div id="ordensRowsArea"></div>
+      <button class="add-ordem-row-btn" onclick="adicionarLinhaOrdem()">+ Adicionar outro número de ordem</button>
+    </div>
+
     <div class="modal-actions">
       <button class="btn secondary" id="cancelForm">Cancelar</button>
-      <button class="btn" id="saveCard">Salvar (entra como "Em falta")</button>
+      <button class="btn" id="saveCard">Salvar ordem(ns)</button>
     </div>
   </div>
 
@@ -179,11 +149,11 @@
 
   <div class="panel">
     <h2>Ordens em acompanhamento</h2>
-    <p class="desc">Clique numa linha para avançar a etapa, registrar responsável ou ver o histórico completo</p>
+    <p class="desc">Clique numa linha pra avançar a etapa, registrar responsável ou ver o histórico completo</p>
     <table>
       <thead><tr>
         <th>Produto</th><th>Nº ordem</th><th>Qtd</th><th>Prioridade</th>
-        <th>Status</th><th>Rastreabilidade</th><th>Ações</th>
+        <th>Prazo</th><th>Status</th><th>Rastreabilidade</th><th>Ações</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -191,7 +161,6 @@
 
 </div>
 
-<!-- Modal de avanço de etapa -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <h3 id="modalTitle">Atualizar ordem</h3>
@@ -203,57 +172,176 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="dupOverlay">
+  <div class="modal" style="max-width:420px">
+    <h3>⚠️ Já existe uma ordem desse produto</h3>
+    <p id="dupTexto" style="font-size:13.5px;color:var(--ink);line-height:1.6;"></p>
+    <div class="modal-actions">
+      <button class="btn secondary" id="dupCancelar">Cancelar</button>
+      <button class="btn" id="dupContinuar" style="background:var(--warn)">Criar mesmo assim</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="prazoPopupOverlay">
+  <div class="modal" style="max-width:520px">
+    <h3>⏱️ Prazos das ordens em andamento</h3>
+    <p style="font-size:12.5px;color:var(--gray);margin:-6px 0 14px;">Contados a partir do dia em que cada ordem foi criada. Dá uma olhada nas mais urgentes.</p>
+    <div id="prazoPopupLista"></div>
+    <div class="modal-actions">
+      <button class="btn" id="prazoPopupFechar">Entendi</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let supa = null;
-if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-  supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-} else {
-  document.getElementById('configBanner').classList.add('show');
-}
-
-const STATUS_LABELS = {em_falta:'Em falta', ordem_criada:'Ordem criada', em_manipulacao:'Em manipulação', liberado:'Liberado'};
-const STATUS_ORDER = ['em_falta','ordem_criada','em_manipulacao','liberado'];
+const STATUS_LABELS = {ordem_criada:'Ordem criada', em_manipulacao:'Em manipulação', liberado:'Liberado'};
+const STATUS_ORDER = ['ordem_criada','em_manipulacao','liberado'];
+const PRIO_LABELS = {baixa:'Baixa', media:'Média', alta:'Alta', urgente:'Urgente'};
 let currentFilter = null;
 let allOrdens = [];
+let prazosPorPrioridade = { urgente:3, alta:5, media:7, baixa:10 };
+let contadorLinhasOrdem = 0;
 
-document.getElementById('toggleForm').addEventListener('click', ()=> document.getElementById('addForm').classList.toggle('show'));
-document.getElementById('cancelForm').addEventListener('click', ()=> document.getElementById('addForm').classList.remove('show'));
+async function init(){
+  await requireRole(['chefia','laboratorio','conferencia','atendente']);
+  await carregarPrazos();
+  document.getElementById('toggleForm').addEventListener('click', ()=>{
+    document.getElementById('addForm').classList.toggle('show');
+    if(document.getElementById('addForm').classList.contains('show') && !document.getElementById('ordensRowsArea').children.length){
+      adicionarLinhaOrdem();
+    }
+  });
+  document.getElementById('cancelForm').addEventListener('click', ()=> document.getElementById('addForm').classList.remove('show'));
+  await loadBoard();
+  await mostrarPopupPrazoSeNecessario();
+}
+
+async function carregarPrazos(){
+  const { data } = await supa.from('prazos_producao').select('*');
+  if(data && data.length){
+    prazosPorPrioridade = {};
+    data.forEach(p => { prazosPorPrioridade[p.prioridade] = p.dias_prazo; });
+  }
+}
+
+function adicionarLinhaOrdem(){
+  contadorLinhasOrdem++;
+  const id = 'ordemRow_' + contadorLinhasOrdem;
+  const div = document.createElement('div');
+  div.className = 'ordem-row-form';
+  div.id = id;
+  div.innerHTML = `
+    <div><label>Nº da ordem</label><input class="numOrdemInput" placeholder="ex: 88749" /></div>
+    <div><label>Quantidade (potes)</label><input class="qtdOrdemInput" type="number" min="1" /></div>
+    <button onclick="document.getElementById('${id}').remove()">Remover</button>
+  `;
+  document.getElementById('ordensRowsArea').appendChild(div);
+}
+window.adicionarLinhaOrdem = adicionarLinhaOrdem;
+
+async function atualizarListaProdutos(){
+  const produtos = [...new Set(allOrdens.map(o=>o.produto))].sort();
+  document.getElementById('produtosExistentes').innerHTML = produtos.map(p=>`<option value="${p}">`).join('');
+}
 
 document.getElementById('saveCard').addEventListener('click', async ()=>{
   const produto = document.getElementById('fProduto').value.trim();
   if(!produto){ alert('Informe o nome do produto.'); return; }
-  if(!supa){ alert('Supabase não configurado.'); return; }
-  const { error } = await supa.from('ordens_producao').insert({
-    produto,
-    quantidade: document.getElementById('fQtd').value || null,
-    solicitado_por: document.getElementById('fSolicitante').value.trim() || null,
-    prioridade: document.getElementById('fPrioridade').value,
-    observacoes: document.getElementById('fObs').value.trim() || null
-  });
-  if(error){ alert('Erro ao salvar: '+error.message); return; }
-  ['fProduto','fQtd','fSolicitante','fObs'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('addForm').classList.remove('show');
-  loadBoard();
+
+  const linhas = Array.from(document.querySelectorAll('.ordem-row-form')).map(row => ({
+    numero_ordem: row.querySelector('.numOrdemInput').value.trim(),
+    quantidade: row.querySelector('.qtdOrdemInput').value || null
+  })).filter(l => l.numero_ordem);
+
+  if(!linhas.length){ alert('Preencha pelo menos um número de ordem.'); return; }
+
+  const jaExiste = allOrdens.find(o => o.produto.trim().toLowerCase() === produto.toLowerCase() && (o.status==='ordem_criada' || o.status==='em_manipulacao'));
+  if(jaExiste){
+    const confirmou = await pedirConfirmacaoDuplicidade(jaExiste);
+    if(!confirmou) return;
+  }
+
+  await salvarOrdens(produto, linhas);
 });
 
+function pedirConfirmacaoDuplicidade(ordemExistente){
+  return new Promise((resolve) => {
+    document.getElementById('dupTexto').textContent =
+      `Já tem uma ordem do produto "${ordemExistente.produto}" em andamento no laboratório (nº ${ordemExistente.numero_ordem || '—'}, status "${STATUS_LABELS[ordemExistente.status]}"). Quer criar essa nova ordem mesmo assim?`;
+    document.getElementById('dupOverlay').classList.add('show');
+
+    const limpar = () => {
+      document.getElementById('dupOverlay').classList.remove('show');
+      btnCancelar.removeEventListener('click', aoCancelar);
+      btnContinuar.removeEventListener('click', aoContinuar);
+    };
+    const btnCancelar = document.getElementById('dupCancelar');
+    const btnContinuar = document.getElementById('dupContinuar');
+    const aoCancelar = () => { limpar(); resolve(false); };
+    const aoContinuar = () => { limpar(); resolve(true); };
+    btnCancelar.addEventListener('click', aoCancelar);
+    btnContinuar.addEventListener('click', aoContinuar);
+  });
+}
+
+async function salvarOrdens(produto, linhas){
+  const prioridade = document.getElementById('fPrioridade').value;
+  const solicitado_por = document.getElementById('fSolicitante').value.trim() || null;
+  const observacoes = document.getElementById('fObs').value.trim() || null;
+  const hoje = new Date().toISOString().slice(0,10);
+
+  const inserts = linhas.map(l => ({
+    produto, prioridade, solicitado_por, observacoes,
+    numero_ordem: l.numero_ordem, quantidade: l.quantidade,
+    data_ordem_criada: hoje
+  }));
+
+  const { error } = await supa.from('ordens_producao').insert(inserts);
+  if(error){ alert('Erro ao salvar: '+error.message); return; }
+
+  ['fProduto','fSolicitante','fObs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ordensRowsArea').innerHTML = '';
+  document.getElementById('addForm').classList.remove('show');
+  loadBoard();
+}
+
 function fmtDate(d){ if(!d) return '—'; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('pt-BR'); }
+
+function calcPrazo(o){
+  if(o.status === 'liberado' || !o.data_ordem_criada) return null;
+  const dias = prazosPorPrioridade[o.prioridade] ?? 7;
+  const criada = new Date(o.data_ordem_criada+'T00:00:00');
+  const limite = new Date(criada); limite.setDate(limite.getDate() + dias);
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const diasRestantes = Math.round((limite - hoje) / (1000*60*60*24));
+  return { limite, diasRestantes };
+}
+
+function prazoTagHtml(o){
+  const p = calcPrazo(o);
+  if(!p) return '';
+  if(p.diasRestantes < 0) return `<span class="prazo-tag atrasado">${Math.abs(p.diasRestantes)}d atrasado</span>`;
+  if(p.diasRestantes <= 1) return `<span class="prazo-tag proximo">vence hoje/amanhã</span>`;
+  return `<span class="prazo-tag no-prazo">${p.diasRestantes}d restantes</span>`;
+}
 
 function traceHtml(o){
   let lines = [];
   if(o.solicitado_por) lines.push(`<strong>Solicitado por:</strong> ${o.solicitado_por}`);
   if(o.data_ordem_criada) lines.push(`<strong>Ordem criada:</strong> ${fmtDate(o.data_ordem_criada)}`);
   if(o.data_entrada_lab) lines.push(`<strong>Entrada no lab:</strong> ${fmtDate(o.data_entrada_lab)}${o.responsavel_manipulacao ? ' — manipulado por '+o.responsavel_manipulacao : ''}`);
-  if(o.data_liberacao) lines.push(`<strong>Liberado (CQ):</strong> ${fmtDate(o.data_liberacao)}${o.responsavel_liberacao ? ' — por '+o.responsavel_liberacao : ''}`);
+  if(o.data_liberacao) lines.push(`<strong>Liberado (CQ):</strong> ${fmtDate(o.data_liberacao)}${o.responsavel_liberacao ? ' — por '+o.responsavel_liberacao : ''}${o.liberacao_parcial ? ` <em>(parcial: ${o.quantidade_liberada||'?'} potes — ${o.motivo_liberacao_parcial||'sem motivo informado'})</em>` : ''}`);
   if(o.observacoes) lines.push(`<em>${o.observacoes}</em>`);
   return lines.length ? lines.join('<br>') : '—';
 }
 
 function renderRow(o){
   const nextActions = {
-    em_falta: `<button class="primary" onclick="openModal('${o.id}','ordem_criada')">Gerar ordem</button>`,
     ordem_criada: `<button class="primary" onclick="openModal('${o.id}','em_manipulacao')">Registrar entrada no lab</button>`,
     em_manipulacao: `<button class="primary" onclick="openModal('${o.id}','liberado')">Registrar liberação (CQ)</button>`,
     liberado: ''
@@ -262,7 +350,8 @@ function renderRow(o){
     <td class="produto">${o.produto}</td>
     <td class="ordem-num">${o.numero_ordem || '—'}</td>
     <td>${o.quantidade || '—'}</td>
-    <td class="prio ${o.prioridade}">${o.prioridade}</td>
+    <td class="prio ${o.prioridade}">${PRIO_LABELS[o.prioridade]||o.prioridade}</td>
+    <td>${prazoTagHtml(o)}</td>
     <td><span class="tag ${o.status}">${STATUS_LABELS[o.status]}</span></td>
     <td class="trace">${traceHtml(o)}</td>
     <td><div class="row-actions">${nextActions[o.status]}<button class="del" onclick="deleteOrdem('${o.id}')">Remover</button></div></td>
@@ -277,7 +366,6 @@ async function deleteOrdem(id){
 }
 window.deleteOrdem = deleteOrdem;
 
-// ---------- Modal para avançar etapa ----------
 const modalOverlay = document.getElementById('modalOverlay');
 const modalBody = document.getElementById('modalBody');
 let modalContext = null;
@@ -288,13 +376,7 @@ function openModal(id, targetStatus){
   document.getElementById('modalTitle').textContent = o.produto + ' — ' + STATUS_LABELS[targetStatus];
 
   let fields = '';
-  if(targetStatus === 'ordem_criada'){
-    fields = `
-      <div class="form-grid">
-        <div><label>Nº da ordem</label><input id="mNumeroOrdem" placeholder="ex: 88749" /></div>
-        <div><label>Data da criação</label><input id="mDataOrdem" type="date" value="${new Date().toISOString().slice(0,10)}" /></div>
-      </div>`;
-  } else if(targetStatus === 'em_manipulacao'){
+  if(targetStatus === 'em_manipulacao'){
     fields = `
       <div class="form-grid">
         <div><label>Data de entrada no lab</label><input id="mDataEntrada" type="date" value="${new Date().toISOString().slice(0,10)}" /></div>
@@ -305,6 +387,15 @@ function openModal(id, targetStatus){
       <div class="form-grid">
         <div><label>Data de liberação</label><input id="mDataLiberacao" type="date" value="${new Date().toISOString().slice(0,10)}" /></div>
         <div><label>Responsável (CQ)</label><input id="mRespLiberacao" placeholder="Nome" /></div>
+      </div>
+      <label style="font-size:11px;color:var(--gray);font-weight:600;display:block;margin:10px 0 4px;">Tipo de liberação</label>
+      <div class="radio-row"><input type="radio" name="mTipoLiberacao" value="total" checked onchange="toggleLiberacaoParcial()"> Total — saiu tudo que essa ordem previa</div>
+      <div class="radio-row"><input type="radio" name="mTipoLiberacao" value="parcial" onchange="toggleLiberacaoParcial()"> Parcial — só uma parte saiu</div>
+      <div id="camposParcial" style="display:none;margin-top:8px;">
+        <div class="form-grid">
+          <div><label>Quantidade liberada (potes)</label><input id="mQtdLiberada" type="number" min="1" value="${o.quantidade||''}" /></div>
+          <div style="grid-column:span 2"><label>Motivo da liberação parcial</label><input id="mMotivoParcial" placeholder="Ex: faltou insumo pro restante" /></div>
+        </div>
       </div>`;
   }
   modalBody.innerHTML = fields;
@@ -312,19 +403,28 @@ function openModal(id, targetStatus){
 }
 window.openModal = openModal;
 
+function toggleLiberacaoParcial(){
+  const parcial = document.querySelector('input[name="mTipoLiberacao"]:checked').value === 'parcial';
+  document.getElementById('camposParcial').style.display = parcial ? 'block' : 'none';
+}
+window.toggleLiberacaoParcial = toggleLiberacaoParcial;
+
 document.getElementById('modalCancel').addEventListener('click', ()=> modalOverlay.classList.remove('show'));
 document.getElementById('modalSave').addEventListener('click', async ()=>{
   const {id, targetStatus} = modalContext;
   let update = {};
-  if(targetStatus === 'ordem_criada'){
-    update.numero_ordem = document.getElementById('mNumeroOrdem').value.trim() || null;
-    update.data_ordem_criada = document.getElementById('mDataOrdem').value || null;
-  } else if(targetStatus === 'em_manipulacao'){
+  if(targetStatus === 'em_manipulacao'){
     update.data_entrada_lab = document.getElementById('mDataEntrada').value || null;
     update.responsavel_manipulacao = document.getElementById('mRespManip').value.trim() || null;
   } else if(targetStatus === 'liberado'){
     update.data_liberacao = document.getElementById('mDataLiberacao').value || null;
     update.responsavel_liberacao = document.getElementById('mRespLiberacao').value.trim() || null;
+    const parcial = document.querySelector('input[name="mTipoLiberacao"]:checked').value === 'parcial';
+    update.liberacao_parcial = parcial;
+    if(parcial){
+      update.quantidade_liberada = document.getElementById('mQtdLiberada').value || null;
+      update.motivo_liberacao_parcial = document.getElementById('mMotivoParcial').value.trim() || null;
+    }
   }
   const { error } = await supa.from('ordens_producao').update(update).eq('id', id);
   if(error){ alert('Erro: '+error.message); return; }
@@ -332,14 +432,24 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
   loadBoard();
 });
 
-// ---------- KPIs / filtro ----------
 function renderKpis(){
-  const counts = {em_falta:0, ordem_criada:0, em_manipulacao:0, liberado:0};
+  const abertas = allOrdens.filter(o => o.status !== 'liberado');
+  const atrasadas = abertas.filter(o => { const p = calcPrazo(o); return p && p.diasRestantes < 0; });
+  const counts = {ordem_criada:0, em_manipulacao:0, liberado:0};
   allOrdens.forEach(o=> counts[o.status]++);
-  document.getElementById('kpis').innerHTML = STATUS_ORDER.map(s=>`
-    <div class="kpi ${currentFilter===s?'active':''}" data-status="${s}" onclick="setFilter('${s}')">
-      <div class="label">${STATUS_LABELS[s]}</div>
-      <div class="value">${counts[s]}</div>
+
+  const cards = [
+    { status:'no_lab', label:'No laboratório (total)', value: abertas.length },
+    { status:'ordem_criada', label:STATUS_LABELS.ordem_criada, value: counts.ordem_criada },
+    { status:'em_manipulacao', label:STATUS_LABELS.em_manipulacao, value: counts.em_manipulacao },
+    { status:'liberado', label:'Já saiu (liberado)', value: counts.liberado },
+    { status:'atraso', label:'Em atraso', value: atrasadas.length },
+  ];
+
+  document.getElementById('kpis').innerHTML = cards.map(c => `
+    <div class="kpi ${currentFilter===c.status?'active':''}" data-status="${c.status}" onclick="setFilter('${c.status}')">
+      <div class="label">${c.label}</div>
+      <div class="value">${c.value}</div>
     </div>`).join('');
 }
 function setFilter(status){
@@ -350,21 +460,57 @@ function setFilter(status){
 window.setFilter = setFilter;
 
 function renderTable(){
-  const rows = currentFilter ? allOrdens.filter(o=>o.status===currentFilter) : allOrdens;
+  let rows = allOrdens;
+  if(currentFilter === 'no_lab') rows = allOrdens.filter(o=>o.status!=='liberado');
+  else if(currentFilter === 'atraso') rows = allOrdens.filter(o=>{ const p=calcPrazo(o); return p && p.diasRestantes<0; });
+  else if(currentFilter) rows = allOrdens.filter(o=>o.status===currentFilter);
+
   document.getElementById('tbody').innerHTML = rows.length
     ? rows.map(renderRow).join('')
-    : `<tr><td colspan="7" class="empty-state">Nenhuma ordem ${currentFilter ? 'nesta etapa' : 'registrada ainda'}.</td></tr>`;
+    : `<tr><td colspan="8" class="empty-state">Nenhuma ordem ${currentFilter ? 'nesse filtro' : 'registrada ainda'}.</td></tr>`;
 }
 
 async function loadBoard(){
-  if(!supa) return;
   const { data, error } = await supa.from('ordens_producao').select('*').order('criado_em', {ascending:false});
   if(error){ console.error(error); return; }
-  allOrdens = data;
+  allOrdens = data || [];
   renderKpis();
   renderTable();
+  await atualizarListaProdutos();
 }
-loadBoard();
+
+async function mostrarPopupPrazoSeNecessario(){
+  const hojeStr = new Date().toISOString().slice(0,10);
+  const chave = 'producao_prazo_popup_' + hojeStr;
+  if(localStorage.getItem(chave)) return;
+
+  const abertas = allOrdens.filter(o => o.status !== 'liberado');
+  if(!abertas.length) return;
+
+  const comPrazo = abertas.map(o => ({ ordem: o, prazo: calcPrazo(o) })).filter(x => x.prazo);
+  comPrazo.sort((a,b) => a.prazo.diasRestantes - b.prazo.diasRestantes);
+
+  document.getElementById('prazoPopupLista').innerHTML = comPrazo.map(({ordem, prazo}) => `
+    <div class="prazo-popup-item">
+      <div>
+        <strong>${ordem.produto}</strong> <span style="color:var(--gray);font-size:11.5px">(nº ${ordem.numero_ordem||'—'})</span><br>
+        <span style="font-size:11px;color:var(--gray)">Prioridade ${PRIO_LABELS[ordem.prioridade]} · criada em ${fmtDate(ordem.data_ordem_criada)}</span>
+      </div>
+      ${prazo.diasRestantes < 0
+        ? `<span class="prazo-tag atrasado">${Math.abs(prazo.diasRestantes)}d atrasado</span>`
+        : prazo.diasRestantes <= 1
+        ? `<span class="prazo-tag proximo">vence hoje/amanhã</span>`
+        : `<span class="prazo-tag no-prazo">${prazo.diasRestantes}d restantes</span>`}
+    </div>`).join('');
+
+  document.getElementById('prazoPopupOverlay').classList.add('show');
+  document.getElementById('prazoPopupFechar').onclick = () => {
+    document.getElementById('prazoPopupOverlay').classList.remove('show');
+    localStorage.setItem(chave, '1');
+  };
+}
+
+init();
 </script>
 <script src="acessibilidade.js"></script>
 <script src="hub-sidebar.js"></script>
