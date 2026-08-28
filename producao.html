@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="auth-guard.js"></script>
 <style>
   :root{
@@ -28,17 +29,29 @@
   .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
   .btn.small{padding:6px 12px;font-size:11.5px;}
 
-  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px;}
-  .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px;cursor:pointer;transition:.15s;}
-  .kpi:hover{border-color:var(--burgundy);}
-  .kpi.active{border-color:var(--burgundy);background:var(--burgundy-tint);}
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px;}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;}
+  .kpi:hover{border-color:var(--burgundy);transform:translateY(-1px);}
+  .kpi.active{border-color:var(--burgundy);}
+  .kpi .icon{font-size:20px;margin-bottom:10px;display:block;}
   .kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);font-weight:600;}
-  .kpi .value{font-family:var(--headfont);font-size:26px;margin-top:4px;font-weight:600;}
+  .kpi .value{font-family:var(--headfont);font-size:30px;margin-top:6px;font-weight:600;}
+  .kpi[data-status="no_lab"]{background:var(--info-tint);}
   .kpi[data-status="no_lab"] .value{color:var(--info);}
-  .kpi[data-status="ordem_criada"] .value{color:var(--warn);}
+  .kpi[data-status="ordem_criada"]{background:var(--warn-tint);}
+  .kpi[data-status="ordem_criada"] .value{color:#8A6512;}
+  .kpi[data-status="em_manipulacao"]{background:#fff;}
   .kpi[data-status="em_manipulacao"] .value{color:var(--info);}
+  .kpi[data-status="liberado"]{background:var(--good-tint);}
   .kpi[data-status="liberado"] .value{color:var(--good);}
+  .kpi[data-status="atraso"]{background:var(--bad-tint);}
   .kpi[data-status="atraso"] .value{color:var(--bad);}
+  .kpi.active::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--burgundy);}
+
+  .graficos-row{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-bottom:20px;}
+  .grafico-panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;}
+  .grafico-panel h3{font-family:var(--headfont);font-size:14px;font-weight:600;margin:0 0 2px;}
+  .grafico-panel p{font-size:11.5px;color:var(--gray);margin:0 0 14px;}
 
   .add-form{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:20px;display:none;}
   .add-form.show{display:block;}
@@ -70,6 +83,7 @@
   .tag.ordem_criada{background:var(--warn-tint);color:#8A6512;}
   .tag.em_manipulacao{background:var(--info-tint);color:var(--info);}
   .tag.liberado{background:var(--good-tint);color:var(--good);}
+  .tag-parcial{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;white-space:nowrap;background:var(--warn-tint);color:#8A6512;margin-top:4px;}
   .prio.alta, .prio.urgente{color:var(--bad);font-weight:600;}
   .prio.media{color:var(--gray);}
   .prio.baixa{color:var(--gray);}
@@ -110,7 +124,6 @@
     <div style="display:flex;gap:10px;align-items:center">
       <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
       <button onclick="logout()" class="btn secondary">Sair</button>
-      <button class="btn secondary" id="btnTeste" title="Simula ordens de exemplo (atrasada, parcial etc) só na tela — não grava nada no banco">🧪 Simular exemplos</button>
       <button class="btn" id="toggleForm">+ Nova ordem</button>
     </div>
   </header>
@@ -147,6 +160,19 @@
   </div>
 
   <div class="kpi-row" id="kpis"></div>
+
+  <div class="graficos-row">
+    <div class="grafico-panel">
+      <h3>Ordens criadas x liberadas por semana</h3>
+      <p>Últimas 8 semanas</p>
+      <canvas id="chartSemanal" height="110"></canvas>
+    </div>
+    <div class="grafico-panel">
+      <h3>Por prioridade</h3>
+      <p>Ordens em aberto (não liberadas ainda)</p>
+      <canvas id="chartPrioridade" height="110"></canvas>
+    </div>
+  </div>
 
   <div class="panel">
     <h2>Ordens em acompanhamento</h2>
@@ -336,7 +362,9 @@ function traceHtml(o){
   if(o.solicitado_por) lines.push(`<strong>Solicitado por:</strong> ${o.solicitado_por}`);
   if(o.data_ordem_criada) lines.push(`<strong>Ordem criada:</strong> ${fmtDate(o.data_ordem_criada)}`);
   if(o.data_entrada_lab) lines.push(`<strong>Entrada no lab:</strong> ${fmtDate(o.data_entrada_lab)}${o.responsavel_manipulacao ? ' — manipulado por '+o.responsavel_manipulacao : ''}`);
-  if(o.data_liberacao) lines.push(`<strong>Liberado (CQ):</strong> ${fmtDate(o.data_liberacao)}${o.responsavel_liberacao ? ' — por '+o.responsavel_liberacao : ''}${o.liberacao_parcial ? ` <em>(parcial: ${o.quantidade_liberada||'?'} potes — ${o.motivo_liberacao_parcial||'sem motivo informado'})</em>` : ''}`);
+  if(o.data_liberacao) lines.push(`<strong>Liberado (CQ):</strong> ${fmtDate(o.data_liberacao)}${o.responsavel_liberacao ? ' — por '+o.responsavel_liberacao : ''}`);
+  if(o.liberacao_parcial && o.status === 'liberado') lines.push(`<em>Liberação parcial: ${o.quantidade_liberada||'?'} potes — ${o.motivo_liberacao_parcial||'sem motivo informado'}</em>`);
+  if(o.liberacao_parcial && o.status !== 'liberado') lines.push(`<em>Restante de uma liberação parcial — o resto dessa ordem já saiu</em>`);
   if(o.observacoes) lines.push(`<em>${o.observacoes}</em>`);
   return lines.length ? lines.join('<br>') : '—';
 }
@@ -353,7 +381,7 @@ function renderRow(o){
     <td>${o.quantidade || '—'}</td>
     <td class="prio ${o.prioridade}">${PRIO_LABELS[o.prioridade]||o.prioridade}</td>
     <td>${prazoTagHtml(o)}</td>
-    <td><span class="tag ${o.status}">${STATUS_LABELS[o.status]}</span></td>
+    <td><span class="tag ${o.status}">${STATUS_LABELS[o.status]}</span>${o.liberacao_parcial ? '<br><span class="tag-parcial">Liberação parcial</span>' : ''}</td>
     <td class="trace">${traceHtml(o)}</td>
     <td><div class="row-actions">${nextActions[o.status]}<button class="del" onclick="deleteOrdem('${o.id}')">Remover</button></div></td>
   </tr>`;
@@ -399,7 +427,7 @@ function openModal(id, targetStatus){
       <div class="radio-row"><input type="radio" name="mTipoLiberacao" value="parcial" onchange="toggleLiberacaoParcial()"> Parcial — só uma parte saiu</div>
       <div id="camposParcial" style="display:none;margin-top:8px;">
         <div class="form-grid">
-          <div><label>Quantidade liberada (potes)</label><input id="mQtdLiberada" type="number" min="1" value="${o.quantidade||''}" /></div>
+          <div><label>Quantidade liberada (potes) — total da ordem: ${o.quantidade||'?'}</label><input id="mQtdLiberada" type="number" min="1" max="${o.quantidade||''}" placeholder="Ex: metade, ou o que já saiu" /></div>
           <div style="grid-column:span 2"><label>Motivo da liberação parcial</label><input id="mMotivoParcial" placeholder="Ex: faltou insumo pro restante" /></div>
         </div>
       </div>`;
@@ -418,31 +446,75 @@ window.toggleLiberacaoParcial = toggleLiberacaoParcial;
 document.getElementById('modalCancel').addEventListener('click', ()=> modalOverlay.classList.remove('show'));
 document.getElementById('modalSave').addEventListener('click', async ()=>{
   const {id, targetStatus} = modalContext;
-  let update = {};
+
   if(targetStatus === 'em_manipulacao'){
-    update.data_entrada_lab = document.getElementById('mDataEntrada').value || null;
-    update.responsavel_manipulacao = document.getElementById('mRespManip').value.trim() || null;
-  } else if(targetStatus === 'liberado'){
-    update.data_liberacao = document.getElementById('mDataLiberacao').value || null;
-    update.responsavel_liberacao = document.getElementById('mRespLiberacao').value.trim() || null;
-    const parcial = document.querySelector('input[name="mTipoLiberacao"]:checked').value === 'parcial';
-    update.liberacao_parcial = parcial;
-    if(parcial){
-      update.quantidade_liberada = document.getElementById('mQtdLiberada').value || null;
-      update.motivo_liberacao_parcial = document.getElementById('mMotivoParcial').value.trim() || null;
-    }
-  }
-  if(String(id).startsWith('teste-')){
-    const ordem = allOrdens.find(o=>o.id===id);
-    Object.assign(ordem, update, {status: targetStatus});
+    const update = {
+      data_entrada_lab: document.getElementById('mDataEntrada').value || null,
+      responsavel_manipulacao: document.getElementById('mRespManip').value.trim() || null
+    };
+    const { error } = await supa.from('ordens_producao').update(update).eq('id', id);
+    if(error){ alert('Erro: '+error.message); return; }
     modalOverlay.classList.remove('show');
-    renderKpis(); renderTable();
+    loadBoard();
     return;
   }
-  const { error } = await supa.from('ordens_producao').update(update).eq('id', id);
-  if(error){ alert('Erro: '+error.message); return; }
-  modalOverlay.classList.remove('show');
-  loadBoard();
+
+  if(targetStatus === 'liberado'){
+    const data_liberacao = document.getElementById('mDataLiberacao').value || null;
+    const responsavel_liberacao = document.getElementById('mRespLiberacao').value.trim() || null;
+    const parcial = document.querySelector('input[name="mTipoLiberacao"]:checked').value === 'parcial';
+
+    if(!parcial){
+      const { error } = await supa.from('ordens_producao').update({ data_liberacao, responsavel_liberacao, liberacao_parcial: false }).eq('id', id);
+      if(error){ alert('Erro: '+error.message); return; }
+      modalOverlay.classList.remove('show');
+      loadBoard();
+      return;
+    }
+
+    // Liberação PARCIAL: a ordem original vira "liberado" só com a
+    // quantidade que realmente saiu, e o restante vira uma ordem NOVA
+    // que continua "em manipulação" — as duas ficam marcadas como
+    // liberação parcial, ligadas uma à outra pra rastreabilidade.
+    const ordemOriginal = allOrdens.find(o=>o.id===id);
+    const qtdLiberada = Number(document.getElementById('mQtdLiberada').value) || 0;
+    const motivo = document.getElementById('mMotivoParcial').value.trim() || null;
+    const qtdTotal = Number(ordemOriginal.quantidade) || 0;
+    const qtdRestante = Math.max(qtdTotal - qtdLiberada, 0);
+
+    if(qtdLiberada <= 0){ alert('Informe a quantidade liberada.'); return; }
+
+    // 1. A ordem original passa a representar só a parte liberada
+    const { error: erroUpdate } = await supa.from('ordens_producao').update({
+      data_liberacao, responsavel_liberacao,
+      liberacao_parcial: true, quantidade_liberada: qtdLiberada, motivo_liberacao_parcial: motivo,
+      quantidade: qtdLiberada
+    }).eq('id', id);
+    if(erroUpdate){ alert('Erro: '+erroUpdate.message); return; }
+
+    // 2. Se sobrou quantidade, cria uma ordem nova pro restante,
+    //    continuando em manipulação (mesmo produto e nº de ordem)
+    if(qtdRestante > 0){
+      const { error: erroInsert } = await supa.from('ordens_producao').insert({
+        produto: ordemOriginal.produto,
+        numero_ordem: ordemOriginal.numero_ordem,
+        quantidade: qtdRestante,
+        prioridade: ordemOriginal.prioridade,
+        solicitado_por: ordemOriginal.solicitado_por,
+        observacoes: ordemOriginal.observacoes,
+        data_ordem_criada: ordemOriginal.data_ordem_criada,
+        data_entrada_lab: ordemOriginal.data_entrada_lab,
+        responsavel_manipulacao: ordemOriginal.responsavel_manipulacao,
+        status: 'em_manipulacao',
+        liberacao_parcial: true,
+        ordem_origem_id: id
+      });
+      if(erroInsert){ alert('A parte liberada foi salva, mas deu erro ao criar a ordem do restante: '+erroInsert.message); }
+    }
+
+    modalOverlay.classList.remove('show');
+    loadBoard();
+  }
 });
 
 function renderKpis(){
@@ -452,19 +524,78 @@ function renderKpis(){
   allOrdens.forEach(o=> counts[o.status]++);
 
   const cards = [
-    { status:'no_lab', label:'No laboratório (total)', value: abertas.length },
-    { status:'ordem_criada', label:STATUS_LABELS.ordem_criada, value: counts.ordem_criada },
-    { status:'em_manipulacao', label:STATUS_LABELS.em_manipulacao, value: counts.em_manipulacao },
-    { status:'liberado', label:'Já saiu (liberado)', value: counts.liberado },
-    { status:'atraso', label:'Em atraso', value: atrasadas.length },
+    { status:'no_lab', icon:'🧪', label:'No laboratório (total)', value: abertas.length },
+    { status:'ordem_criada', icon:'📋', label:STATUS_LABELS.ordem_criada, value: counts.ordem_criada },
+    { status:'em_manipulacao', icon:'⚗️', label:STATUS_LABELS.em_manipulacao, value: counts.em_manipulacao },
+    { status:'liberado', icon:'✅', label:'Já saiu (liberado)', value: counts.liberado },
+    { status:'atraso', icon:'⏰', label:'Em atraso', value: atrasadas.length },
   ];
 
   document.getElementById('kpis').innerHTML = cards.map(c => `
     <div class="kpi ${currentFilter===c.status?'active':''}" data-status="${c.status}" onclick="setFilter('${c.status}')">
+      <span class="icon">${c.icon}</span>
       <div class="label">${c.label}</div>
       <div class="value">${c.value}</div>
     </div>`).join('');
+  renderGraficos();
 }
+let chartSemanal = null;
+let chartPrioridade = null;
+
+function renderGraficos(){
+  // Ordens criadas x liberadas por semana, últimas 8 semanas
+  const semanas = [];
+  const hoje = new Date();
+  for(let i=7; i>=0; i--){
+    const inicioSemana = new Date(hoje);
+    inicioSemana.setDate(hoje.getDate() - hoje.getDay() - (i*7));
+    inicioSemana.setHours(0,0,0,0);
+    const fimSemana = new Date(inicioSemana);
+    fimSemana.setDate(inicioSemana.getDate() + 6);
+    semanas.push({ inicio: inicioSemana, fim: fimSemana, criadas: 0, liberadas: 0 });
+  }
+  allOrdens.forEach(o => {
+    if(o.data_ordem_criada){
+      const d = new Date(o.data_ordem_criada+'T00:00:00');
+      const s = semanas.find(sw => d >= sw.inicio && d <= sw.fim);
+      if(s) s.criadas++;
+    }
+    if(o.data_liberacao){
+      const d = new Date(o.data_liberacao+'T00:00:00');
+      const s = semanas.find(sw => d >= sw.inicio && d <= sw.fim);
+      if(s) s.liberadas++;
+    }
+  });
+
+  if(chartSemanal) chartSemanal.destroy();
+  chartSemanal = new Chart(document.getElementById('chartSemanal'), {
+    type: 'bar',
+    data: {
+      labels: semanas.map(s => s.inicio.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})),
+      datasets: [
+        { label:'Criadas', data: semanas.map(s=>s.criadas), backgroundColor:'#C9922B' },
+        { label:'Liberadas', data: semanas.map(s=>s.liberadas), backgroundColor:'#3F7A57' }
+      ]
+    },
+    options: { responsive:true, plugins:{legend:{display:true, position:'bottom'}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1}}} }
+  });
+
+  // Por prioridade, só ordens ainda abertas
+  const abertas = allOrdens.filter(o => o.status !== 'liberado');
+  const porPrioridade = { urgente:0, alta:0, media:0, baixa:0 };
+  abertas.forEach(o => { if(porPrioridade[o.prioridade] != null) porPrioridade[o.prioridade]++; });
+
+  if(chartPrioridade) chartPrioridade.destroy();
+  chartPrioridade = new Chart(document.getElementById('chartPrioridade'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Urgente','Alta','Média','Baixa'],
+      datasets: [{ data: [porPrioridade.urgente, porPrioridade.alta, porPrioridade.media, porPrioridade.baixa], backgroundColor:['#B4472F','#C9922B','#3E6B93','#6E6266'] }]
+    },
+    options: { responsive:true, plugins:{legend:{display:true, position:'bottom', labels:{boxWidth:11, font:{size:10.5}}}} }
+  });
+}
+
 function setFilter(status){
   currentFilter = currentFilter === status ? null : status;
   renderKpis();
@@ -522,67 +653,6 @@ async function mostrarPopupPrazoSeNecessario(){
     localStorage.setItem(chave, '1');
   };
 }
-
-// ============================================================
-// SIMULAÇÃO DE EXEMPLOS — só em memória, no navegador. Nunca grava
-// nada no Supabase. Serve pra ver como ficam os avisos de atraso,
-// liberação parcial etc sem precisar criar ordem de verdade.
-// ============================================================
-let exemplosAtivos = false;
-
-function diasAtras(n){
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0,10);
-}
-
-function gerarOrdensDeExemplo(){
-  return [
-    {
-      id: 'teste-1', produto: '[EXEMPLO] Blend 6mg', numero_ordem: '99001', quantidade: 20,
-      prioridade: 'urgente', solicitado_por: 'Teste', observacoes: 'Ordem de exemplo — atrasada',
-      status: 'ordem_criada', data_ordem_criada: diasAtras(6), data_entrada_lab: null, responsavel_manipulacao: null,
-      data_liberacao: null, responsavel_liberacao: null, liberacao_parcial: false, quantidade_liberada: null, motivo_liberacao_parcial: null
-    },
-    {
-      id: 'teste-2', produto: '[EXEMPLO] Colágeno Verisol', numero_ordem: '99002', quantidade: 40,
-      prioridade: 'alta', solicitado_por: 'Teste', observacoes: 'Ordem de exemplo — perto do prazo',
-      status: 'em_manipulacao', data_ordem_criada: diasAtras(4), data_entrada_lab: diasAtras(1), responsavel_manipulacao: 'Laboratório Teste',
-      data_liberacao: null, responsavel_liberacao: null, liberacao_parcial: false, quantidade_liberada: null, motivo_liberacao_parcial: null
-    },
-    {
-      id: 'teste-3', produto: '[EXEMPLO] Magnésio Dimalato', numero_ordem: '99003', quantidade: 30,
-      prioridade: 'media', solicitado_por: 'Teste', observacoes: 'Ordem de exemplo — liberação parcial',
-      status: 'liberado', data_ordem_criada: diasAtras(5), data_entrada_lab: diasAtras(3), responsavel_manipulacao: 'Laboratório Teste',
-      data_liberacao: diasAtras(1), responsavel_liberacao: 'CQ Teste', liberacao_parcial: true, quantidade_liberada: 18, motivo_liberacao_parcial: 'Faltou insumo pro restante (exemplo)'
-    },
-    {
-      id: 'teste-4', produto: '[EXEMPLO] Passiflora 300mg', numero_ordem: '99004', quantidade: 15,
-      prioridade: 'baixa', solicitado_por: 'Teste', observacoes: 'Ordem de exemplo — dentro do prazo',
-      status: 'ordem_criada', data_ordem_criada: diasAtras(2), data_entrada_lab: null, responsavel_manipulacao: null,
-      data_liberacao: null, responsavel_liberacao: null, liberacao_parcial: false, quantidade_liberada: null, motivo_liberacao_parcial: null
-    }
-  ];
-}
-
-document.getElementById('btnTeste').addEventListener('click', async ()=>{
-  if(!exemplosAtivos){
-    allOrdens = [...gerarOrdensDeExemplo(), ...allOrdens];
-    exemplosAtivos = true;
-    document.getElementById('btnTeste').textContent = '🧪 Remover exemplos';
-    renderKpis();
-    renderTable();
-    // Força o pop-up de prazo aparecer de novo, ignorando o "já vi hoje"
-    localStorage.removeItem('producao_prazo_popup_' + new Date().toISOString().slice(0,10));
-    await mostrarPopupPrazoSeNecessario();
-  } else {
-    allOrdens = allOrdens.filter(o => !String(o.id).startsWith('teste-'));
-    exemplosAtivos = false;
-    document.getElementById('btnTeste').textContent = '🧪 Simular exemplos';
-    renderKpis();
-    renderTable();
-  }
-});
 
 init();
 </script>
