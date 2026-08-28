@@ -110,6 +110,7 @@
     <div style="display:flex;gap:10px;align-items:center">
       <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
       <button onclick="logout()" class="btn secondary">Sair</button>
+      <button class="btn secondary" id="btnTeste" title="Simula ordens de exemplo (atrasada, parcial etc) só na tela — não grava nada no banco">🧪 Simular exemplos</button>
       <button class="btn" id="toggleForm">+ Nova ordem</button>
     </div>
   </header>
@@ -360,6 +361,11 @@ function renderRow(o){
 
 async function deleteOrdem(id){
   if(!confirm('Remover esta ordem?')) return;
+  if(String(id).startsWith('teste-')){
+    allOrdens = allOrdens.filter(o => o.id !== id);
+    renderKpis(); renderTable();
+    return;
+  }
   const { error } = await supa.from('ordens_producao').delete().eq('id', id);
   if(error){ alert('Erro: '+error.message); return; }
   loadBoard();
@@ -425,6 +431,13 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
       update.quantidade_liberada = document.getElementById('mQtdLiberada').value || null;
       update.motivo_liberacao_parcial = document.getElementById('mMotivoParcial').value.trim() || null;
     }
+  }
+  if(String(id).startsWith('teste-')){
+    const ordem = allOrdens.find(o=>o.id===id);
+    Object.assign(ordem, update, {status: targetStatus});
+    modalOverlay.classList.remove('show');
+    renderKpis(); renderTable();
+    return;
   }
   const { error } = await supa.from('ordens_producao').update(update).eq('id', id);
   if(error){ alert('Erro: '+error.message); return; }
@@ -509,6 +522,67 @@ async function mostrarPopupPrazoSeNecessario(){
     localStorage.setItem(chave, '1');
   };
 }
+
+// ============================================================
+// SIMULAÇÃO DE EXEMPLOS — só em memória, no navegador. Nunca grava
+// nada no Supabase. Serve pra ver como ficam os avisos de atraso,
+// liberação parcial etc sem precisar criar ordem de verdade.
+// ============================================================
+let exemplosAtivos = false;
+
+function diasAtras(n){
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0,10);
+}
+
+function gerarOrdensDeExemplo(){
+  return [
+    {
+      id: 'teste-1', produto: '[EXEMPLO] Blend 6mg', numero_ordem: '99001', quantidade: 20,
+      prioridade: 'urgente', solicitado_por: 'Teste', observacoes: 'Ordem de exemplo — atrasada',
+      status: 'ordem_criada', data_ordem_criada: diasAtras(6), data_entrada_lab: null, responsavel_manipulacao: null,
+      data_liberacao: null, responsavel_liberacao: null, liberacao_parcial: false, quantidade_liberada: null, motivo_liberacao_parcial: null
+    },
+    {
+      id: 'teste-2', produto: '[EXEMPLO] Colágeno Verisol', numero_ordem: '99002', quantidade: 40,
+      prioridade: 'alta', solicitado_por: 'Teste', observacoes: 'Ordem de exemplo — perto do prazo',
+      status: 'em_manipulacao', data_ordem_criada: diasAtras(4), data_entrada_lab: diasAtras(1), responsavel_manipulacao: 'Laboratório Teste',
+      data_liberacao: null, responsavel_liberacao: null, liberacao_parcial: false, quantidade_liberada: null, motivo_liberacao_parcial: null
+    },
+    {
+      id: 'teste-3', produto: '[EXEMPLO] Magnésio Dimalato', numero_ordem: '99003', quantidade: 30,
+      prioridade: 'media', solicitado_por: 'Teste', observacoes: 'Ordem de exemplo — liberação parcial',
+      status: 'liberado', data_ordem_criada: diasAtras(5), data_entrada_lab: diasAtras(3), responsavel_manipulacao: 'Laboratório Teste',
+      data_liberacao: diasAtras(1), responsavel_liberacao: 'CQ Teste', liberacao_parcial: true, quantidade_liberada: 18, motivo_liberacao_parcial: 'Faltou insumo pro restante (exemplo)'
+    },
+    {
+      id: 'teste-4', produto: '[EXEMPLO] Passiflora 300mg', numero_ordem: '99004', quantidade: 15,
+      prioridade: 'baixa', solicitado_por: 'Teste', observacoes: 'Ordem de exemplo — dentro do prazo',
+      status: 'ordem_criada', data_ordem_criada: diasAtras(2), data_entrada_lab: null, responsavel_manipulacao: null,
+      data_liberacao: null, responsavel_liberacao: null, liberacao_parcial: false, quantidade_liberada: null, motivo_liberacao_parcial: null
+    }
+  ];
+}
+
+document.getElementById('btnTeste').addEventListener('click', async ()=>{
+  if(!exemplosAtivos){
+    allOrdens = [...gerarOrdensDeExemplo(), ...allOrdens];
+    exemplosAtivos = true;
+    document.getElementById('btnTeste').textContent = '🧪 Remover exemplos';
+    renderKpis();
+    renderTable();
+    // Força o pop-up de prazo aparecer de novo, ignorando o "já vi hoje"
+    localStorage.removeItem('producao_prazo_popup_' + new Date().toISOString().slice(0,10));
+    await mostrarPopupPrazoSeNecessario();
+  } else {
+    allOrdens = allOrdens.filter(o => !String(o.id).startsWith('teste-'));
+    exemplosAtivos = false;
+    document.getElementById('btnTeste').textContent = '🧪 Simular exemplos';
+    renderKpis();
+    renderTable();
+  }
+});
 
 init();
 </script>
