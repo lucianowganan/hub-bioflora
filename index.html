@@ -208,7 +208,7 @@
     <a href="index.html" class="side-btn active">🏠<span class="tooltip">Início</span></a>
     <a href="tarefas.html" class="side-btn">🗂️<span class="tooltip">Quadro de Tarefas</span></a>
     <a href="calendario-interno.html" class="side-btn">🗓️<span class="tooltip">Calendário Interno</span></a>
-    <a href="banco-de-horas.html" class="side-btn" id="sideHorasBtn" style="display:none">⏱️<span class="tooltip">Banco de Horas</span></a>
+    <a href="rh.html" class="side-btn" id="sideRHBtn" style="display:none">🗂️<span class="tooltip">Central de RH</span></a>
     <a href="rotulos.html" class="side-btn" id="sideRotulosBtn" style="display:none">🏷️<span class="tooltip">Controle de Rótulos</span></a>
     <a href="producao.html" class="side-btn" id="sideProducaoBtn" style="display:none">🧪<span class="tooltip">Ordem de Produção</span></a>
     <a href="controle-producao.html" class="side-btn" id="sideControleBtn" style="display:none">📋<span class="tooltip">Controle de Produção</span></a>
@@ -284,13 +284,9 @@
         <div class="stripe"></div><div class="icon">🗓️</div><h3>Calendário Interno</h3>
         <p>Treinamentos, folgas e descansos da equipe.</p>
       </a>
-      <a class="module-card card-rh" href="rh.html" data-roles="chefia,rh">
+      <a class="module-card card-rh" href="rh.html" data-roles="chefia,rh,gestao">
         <div class="stripe" style="background:#8B1A3A"></div><div class="icon">🗂️</div><h3>Central de RH</h3>
         <p>Colaboradores, ponto, férias, avaliações e relatórios — tudo num só lugar.</p>
-      </a>
-      <a class="module-card card-horas" href="banco-de-horas.html" data-roles="chefia,rh,gestao">
-        <div class="stripe"></div><div class="icon">⏱️</div><h3>Banco de Horas</h3>
-        <p>Espelho de ponto, saldo, atrasos e faltas.</p>
       </a>
       <a class="module-card card-rotulos" href="rotulos.html" data-roles="chefia,recepcao,conferencia,atendente">
         <div class="stripe"></div><div class="icon">🏷️</div><h3>Controle de Rótulos</h3>
@@ -365,7 +361,7 @@ async function init(){
   document.getElementById('heroGreeting').textContent = `Bem-vindo(a), ${primeiroNome.charAt(0).toUpperCase()+primeiroNome.slice(1)}`;
   document.getElementById('rolePill').textContent = ROLE_LABELS[papel];
   if(papel === 'chefia') document.getElementById('sideAdminBtn').style.display = 'flex';
-  if(['chefia','rh','gestao'].includes(papel)) document.getElementById('sideHorasBtn').style.display = 'flex';
+  if(['chefia','rh','gestao'].includes(papel)) document.getElementById('sideRHBtn').style.display = 'flex';
   if(['chefia','recepcao','conferencia','atendente'].includes(papel)) document.getElementById('sideRotulosBtn').style.display = 'flex';
   if(['chefia','laboratorio','conferencia','atendente'].includes(papel)) document.getElementById('sideProducaoBtn').style.display = 'flex';
   if(['chefia','laboratorio'].includes(papel)) document.getElementById('sideControleBtn').style.display = 'flex';
