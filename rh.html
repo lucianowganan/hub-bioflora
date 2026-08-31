@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Central de RH — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-dark:#5E1027; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC; --bad:#B4472F; --bad-tint:#FBEBE6;
+    --warn:#C9922B; --warn-tint:#FBF1E0; --info:#3E6B93; --info-tint:#E9F0F6;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .shell{display:flex;min-height:100vh;}
+
+  .rh-nav{width:230px;flex-shrink:0;background:#fff;border-right:1px solid var(--line);padding:24px 16px;}
+  .rh-nav-brand{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 2px;}
+  .rh-nav-brand span{color:var(--burgundy);}
+  .rh-nav-sub{font-size:11px;color:var(--gray);margin:0 0 22px;}
+  .rh-nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;cursor:pointer;font-size:13.5px;color:var(--gray);margin-bottom:2px;}
+  .rh-nav-item:hover{background:var(--paper);}
+  .rh-nav-item.active{background:var(--burgundy);color:#fff;font-weight:600;}
+  .rh-nav-group{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);margin:18px 0 6px 12px;}
+  .rh-nav-foot{margin-top:24px;}
+  .rh-nav-foot a{font-size:12px;color:var(--gray);text-decoration:none;}
+  .rh-nav-foot a:hover{color:var(--burgundy);}
+
+  .rh-main{flex:1;padding:32px 36px 60px;max-width:1300px;}
+
+  .hero{background:linear-gradient(135deg,var(--burgundy),var(--burgundy-dark));border-radius:20px;padding:36px 40px;color:#fff;margin-bottom:22px;position:relative;overflow:hidden;}
+  .hero h1{font-family:var(--headfont);font-size:38px;font-weight:600;margin:0 0 8px;letter-spacing:-0.01em;}
+  .hero p{font-size:14px;color:rgba(255,255,255,.85);margin:0 0 22px;max-width:440px;}
+  .hero-stats{display:flex;gap:36px;}
+  .hero-stats .n{font-family:var(--headfont);font-size:32px;font-weight:600;}
+  .hero-stats .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.75);margin-top:2px;}
+
+  .toolbar-row{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap;}
+  .search-box{flex:1;min-width:220px;max-width:340px;position:relative;}
+  .search-box input{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:10px 14px 10px 36px;border:1px solid var(--line);border-radius:10px;background:#fff;}
+  .search-box .ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray);font-size:13px;}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 18px;border-radius:9px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn.dark{background:var(--ink);color:#fff;}
+
+  .colab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+  .colab-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;}
+  .colab-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+  .colab-avatar{width:48px;height:48px;border-radius:50%;background:var(--burgundy-tint);color:var(--burgundy);display:flex;align-items:center;justify-content:center;font-family:var(--headfont);font-weight:600;font-size:16px;}
+  .colab-status{font-size:10px;font-weight:700;text-transform:uppercase;padding:4px 10px;border-radius:20px;}
+  .colab-status.ativo{background:var(--good-tint);color:var(--good);}
+  .colab-status.ferias{background:var(--info-tint);color:var(--info);}
+  .colab-status.afastado{background:var(--warn-tint);color:#8A6512;}
+  .colab-status.desligado{background:#F1ECEA;color:var(--gray);}
+  .colab-nome{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0;}
+  .colab-cargo{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);margin:2px 0 12px;}
+  .colab-detail{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink);margin-bottom:6px;}
+  .colab-detail .ico{color:var(--gray);width:14px;flex-shrink:0;}
+  .colab-card-actions{display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);}
+  .colab-card-actions button{flex:1;font-family:'Maven Pro',sans-serif;font-size:11.5px;font-weight:600;padding:7px;border-radius:7px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--gray);}
+  .colab-card-actions button.edit{color:var(--burgundy);}
+  .colab-card-actions button.del{color:var(--bad);}
+
+  .empty-state{text-align:center;padding:60px 20px;color:var(--gray);grid-column:1/-1;}
+  .placeholder-tab{text-align:center;padding:100px 20px;color:var(--gray);}
+  .placeholder-tab .big{font-size:40px;margin-bottom:14px;}
+  .placeholder-tab h2{font-family:var(--headfont);color:var(--ink);font-size:19px;margin:0 0 8px;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:16px;padding:26px;max-width:480px;width:100%;max-height:88vh;overflow:auto;}
+  .modal h3{font-family:var(--headfont);margin:0 0 16px;font-size:17px;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .form-grid label{font-size:11px;color:var(--gray);font-weight:600;display:block;margin-bottom:4px;}
+  .form-grid input, .form-grid select, .form-grid textarea{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:7px;}
+  .form-grid textarea{resize:vertical;min-height:60px;font-family:inherit;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <nav class="rh-nav">
+    <h1 class="rh-nav-brand">Central de <span>RH</span></h1>
+    <p class="rh-nav-sub">Farmácia Bioflora</p>
+
+    <div class="rh-nav-item" data-tab="dashboard" onclick="trocarAba('dashboard')">🏠 Dashboard</div>
+
+    <div class="rh-nav-group">Cadastro</div>
+    <div class="rh-nav-item" data-tab="colaboradores" onclick="trocarAba('colaboradores')">👥 Colaboradores</div>
+
+    <div class="rh-nav-group">Operacional</div>
+    <div class="rh-nav-item" data-tab="ponto" onclick="trocarAba('ponto')">⏱️ Ponto</div>
+    <div class="rh-nav-item" data-tab="ferias" onclick="trocarAba('ferias')">📅 Férias</div>
+
+    <div class="rh-nav-group">Histórico</div>
+    <div class="rh-nav-item" data-tab="avaliacoes" onclick="trocarAba('avaliacoes')">📊 Avaliações</div>
+    <div class="rh-nav-item" data-tab="relatorios" onclick="trocarAba('relatorios')">📈 Relatórios</div>
+
+    <div class="rh-nav-foot">
+      <a href="index.html">← Voltar ao Hub</a>
+    </div>
+  </nav>
+
+  <main class="rh-main" id="rhMain"></main>
+</div>
+
+<div class="modal-overlay" id="modalColab">
+  <div class="modal">
+    <h3 id="modalColabTitulo">Novo colaborador</h3>
+    <div class="form-grid">
+      <div style="grid-column:span 2"><label>Nome completo*</label><input id="cNome" placeholder="Nome completo" /></div>
+      <div><label>Cargo</label><input id="cCargo" placeholder="Ex: Atendente" /></div>
+      <div><label>Departamento</label><input id="cDepartamento" placeholder="Ex: Recepção" /></div>
+      <div><label>E-mail</label><input id="cEmail" type="email" placeholder="email@exemplo.com" /></div>
+      <div><label>Telefone</label><input id="cTelefone" placeholder="(35) 99999-9999" /></div>
+      <div><label>Status</label><select id="cStatus">
+        <option value="ativo" selected>Ativo</option>
+        <option value="ferias">Férias</option>
+        <option value="afastado">Afastado</option>
+        <option value="desligado">Desligado</option>
+      </select></div>
+      <div><label>Data de admissão</label><input id="cAdmissao" type="date" /></div>
+      <div style="grid-column:span 2"><label>Observações</label><textarea id="cObs" placeholder="Anotações internas..."></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModalColab()">Cancelar</button>
+      <button class="btn" onclick="salvarColaborador()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const STATUS_LABELS = {ativo:'Ativo', ferias:'Férias', afastado:'Afastado', desligado:'Desligado'};
+let todosColaboradores = [];
+let abaAtiva = 'colaboradores';
+let colabEmEdicaoId = null;
+
+async function init(){
+  await requireRole(['chefia','rh']);
+  await carregarColaboradores();
+  trocarAba('colaboradores');
+}
+
+function trocarAba(aba){
+  abaAtiva = aba;
+  document.querySelectorAll('.rh-nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab===aba));
+
+  if(aba === 'colaboradores') renderColaboradores();
+  else if(aba === 'ponto') renderPlaceholderPonto();
+  else if(aba === 'dashboard') renderPlaceholder('🏠', 'Dashboard geral', 'Visão consolidada de todos os módulos de RH — vem em seguida.');
+  else if(aba === 'ferias') renderPlaceholder('📅', 'Férias & Ausências', 'Central de solicitação e aprovação de férias, com calendário completo — próxima peça a ser construída.');
+  else if(aba === 'avaliacoes') renderPlaceholder('📊', 'Avaliações', 'Avaliações de desempenho, ocorrências, advertências e RNC — em construção.');
+  else if(aba === 'relatorios') renderPlaceholder('📈', 'Relatórios & Insights', 'Custo de folha, performance por departamento e distribuição salarial — em construção.');
+}
+window.trocarAba = trocarAba;
+
+function renderPlaceholder(icon, titulo, desc){
+  document.getElementById('rhMain').innerHTML = `
+    <div class="placeholder-tab">
+      <div class="big">${icon}</div>
+      <h2>${titulo}</h2>
+      <p>${desc}</p>
+    </div>`;
+}
+
+function renderPlaceholderPonto(){
+  document.getElementById('rhMain').innerHTML = `
+    <div class="placeholder-tab">
+      <div class="big">⏱️</div>
+      <h2>Ponto</h2>
+      <p>O módulo de Banco de Horas já existe e continua funcionando — em breve ele passa a viver aqui dentro, sem precisar trocar de tela.</p>
+      <a href="banco-de-horas.html" class="btn" style="margin-top:16px;display:inline-block;">Abrir Banco de Horas →</a>
+    </div>`;
+}
+
+function iniciais(nome){
+  return (nome||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase();
+}
+
+async function carregarColaboradores(){
+  const { data, error } = await supa.from('colaboradores').select('*').order('nome_completo');
+  if(error){ console.error(error); return; }
+  todosColaboradores = data || [];
+}
+
+function renderColaboradores(termoBusca){
+  const ativos = todosColaboradores.filter(c => c.status === 'ativo').length;
+  const departamentos = new Set(todosColaboradores.map(c=>c.departamento).filter(Boolean)).size;
+
+  document.getElementById('rhMain').innerHTML = `
+    <div class="hero">
+      <h1>Talentos &<br>Cultura</h1>
+      <p>Gerencie os colaboradores da sua organização com eficiência e estilo.</p>
+      <div class="hero-stats">
+        <div><div class="n">${ativos}</div><div class="l">Ativos</div></div>
+        <div><div class="n">${departamentos}</div><div class="l">Departamentos</div></div>
+        <div><div class="n">${todosColaboradores.length}</div><div class="l">Total</div></div>
+      </div>
+    </div>
+
+    <div class="toolbar-row">
+      <div class="search-box"><span class="ico">🔍</span><input id="buscaColab" placeholder="Buscar colaborador..." oninput="filtrarColaboradores(this.value)"></div>
+      <button class="btn dark" onclick="abrirModalColab()">+ Adicionar colaborador</button>
+    </div>
+
+    <div class="colab-grid" id="colabGrid"></div>
+  `;
+  renderGridColaboradores(termoBusca ? filtrar(termoBusca) : todosColaboradores);
+}
+
+function filtrar(termo){
+  const t = termo.trim().toLowerCase();
+  if(!t) return todosColaboradores;
+  return todosColaboradores.filter(c =>
+    (c.nome_completo||'').toLowerCase().includes(t) ||
+    (c.cargo||'').toLowerCase().includes(t) ||
+    (c.departamento||'').toLowerCase().includes(t)
+  );
+}
+function filtrarColaboradores(termo){ renderGridColaboradores(filtrar(termo)); }
+window.filtrarColaboradores = filtrarColaboradores;
+
+function renderGridColaboradores(lista){
+  document.getElementById('colabGrid').innerHTML = lista.length ? lista.map(c => `
+    <div class="colab-card">
+      <div class="colab-card-top">
+        <div class="colab-avatar">${iniciais(c.nome_completo)}</div>
+        <span class="colab-status ${c.status}">${STATUS_LABELS[c.status]}</span>
+      </div>
+      <h3 class="colab-nome">${c.nome_completo}</h3>
+      <p class="colab-cargo">${c.cargo || 'Cargo não informado'}</p>
+      ${c.email ? `<div class="colab-detail"><span class="ico">✉️</span>${c.email}</div>` : ''}
+      ${c.telefone ? `<div class="colab-detail"><span class="ico">📞</span>${c.telefone}</div>` : ''}
+      ${c.departamento ? `<div class="colab-detail"><span class="ico">📍</span>${c.departamento}</div>` : ''}
+      <div class="colab-card-actions">
+        <button class="edit" onclick="abrirModalColab('${c.id}')">Editar</button>
+        <button class="del" onclick="excluirColaborador('${c.id}')">Excluir</button>
+      </div>
+    </div>
+  `).join('') : '<div class="empty-state">Nenhum colaborador ainda. Clique em "+ Adicionar colaborador" pra começar.</div>';
+}
+
+function abrirModalColab(id){
+  colabEmEdicaoId = id || null;
+  const c = id ? todosColaboradores.find(x=>x.id===id) : null;
+  document.getElementById('modalColabTitulo').textContent = c ? 'Editar colaborador' : 'Novo colaborador';
+  document.getElementById('cNome').value = c?.nome_completo || '';
+  document.getElementById('cCargo').value = c?.cargo || '';
+  document.getElementById('cDepartamento').value = c?.departamento || '';
+  document.getElementById('cEmail').value = c?.email || '';
+  document.getElementById('cTelefone').value = c?.telefone || '';
+  document.getElementById('cStatus').value = c?.status || 'ativo';
+  document.getElementById('cAdmissao').value = c?.data_admissao || '';
+  document.getElementById('cObs').value = c?.observacoes || '';
+  document.getElementById('modalColab').classList.add('show');
+}
+window.abrirModalColab = abrirModalColab;
+
+function fecharModalColab(){
+  document.getElementById('modalColab').classList.remove('show');
+  colabEmEdicaoId = null;
+}
+window.fecharModalColab = fecharModalColab;
+
+async function salvarColaborador(){
+  const nome_completo = document.getElementById('cNome').value.trim();
+  if(!nome_completo){ alert('Digite o nome completo.'); return; }
+
+  const dados = {
+    nome_completo,
+    cargo: document.getElementById('cCargo').value.trim() || null,
+    departamento: document.getElementById('cDepartamento').value.trim() || null,
+    email: document.getElementById('cEmail').value.trim() || null,
+    telefone: document.getElementById('cTelefone').value.trim() || null,
+    status: document.getElementById('cStatus').value,
+    data_admissao: document.getElementById('cAdmissao').value || null,
+    observacoes: document.getElementById('cObs').value.trim() || null,
+  };
+
+  if(colabEmEdicaoId){
+    const { error } = await supa.from('colaboradores').update(dados).eq('id', colabEmEdicaoId);
+    if(error){ alert('Erro ao salvar: '+error.message); return; }
+  } else {
+    const { data: { session } } = await supa.auth.getSession();
+    const { error } = await supa.from('colaboradores').insert({ ...dados, criado_por: session.user.id });
+    if(error){ alert('Erro ao criar: '+error.message); return; }
+  }
+
+  fecharModalColab();
+  await carregarColaboradores();
+  renderColaboradores();
+}
+window.salvarColaborador = salvarColaborador;
+
+async function excluirColaborador(id){
+  if(!confirm('Excluir este colaborador do cadastro? Não dá pra desfazer.')) return;
+  const { error } = await supa.from('colaboradores').delete().eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  await carregarColaboradores();
+  renderColaboradores();
+}
+window.excluirColaborador = excluirColaborador;
+
+init();
+</script>
+<script src="acessibilidade.js"></script>
+<script src="hub-sidebar.js"></script>
+</body>
+</html>
