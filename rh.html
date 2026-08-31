@@ -139,7 +139,7 @@
 
   /* Férias */
   .ferias-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
-  .ferias-hero{background:linear-gradient(135deg,var(--info),#2d4d68);border-radius:18px;padding:26px 28px;color:#fff;}
+  .ferias-hero{background:linear-gradient(135deg,var(--burgundy),var(--burgundy-dark));border-radius:18px;padding:26px 28px;color:#fff;}
   .ferias-hero h2{font-family:var(--headfont);font-size:19px;margin:0 0 4px;}
   .ferias-hero p{font-size:12.5px;color:rgba(255,255,255,.85);margin:0;}
   .ferias-form label{font-size:11px;color:var(--gray);font-weight:600;display:block;margin-bottom:4px;}
@@ -208,8 +208,8 @@
     <div class="form-grid">
       <div style="grid-column:span 2"><label>Nome completo*</label><input id="cNome" placeholder="Nome completo" /></div>
       <div><label>Cargo</label><input id="cCargo" placeholder="Ex: Atendente" /></div>
-      <div><label>Departamento</label><input id="cDepartamento" placeholder="Ex: Recepção" /></div>
-      <div><label>E-mail</label><input id="cEmail" type="email" placeholder="email@exemplo.com" /></div>
+      <div><label>Departamento</label><input id="cDepartamento" placeholder="Ex: Recepção" list="departamentosExistentes" /><datalist id="departamentosExistentes"></datalist></div>
+      <div><label>E-mail pessoal</label><input id="cEmail" type="email" placeholder="email@exemplo.com" /></div>
       <div><label>Telefone</label><input id="cTelefone" placeholder="(35) 99999-9999" /></div>
       <div><label>Status</label><select id="cStatus">
         <option value="ativo" selected>Ativo</option>
@@ -218,11 +218,38 @@
         <option value="desligado">Desligado</option>
       </select></div>
       <div><label>Data de admissão</label><input id="cAdmissao" type="date" /></div>
+      <div><label>PIS</label><input id="cPis" placeholder="000.00000.00-0" /></div>
       <div style="grid-column:span 2"><label>Observações</label><textarea id="cObs" placeholder="Anotações internas..."></textarea></div>
+    </div>
+    <div style="background:var(--paper);border-radius:9px;padding:12px 14px;margin-bottom:6px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;cursor:pointer;">
+        <input type="checkbox" id="cPrecisaEmail" style="width:auto" onchange="toggleStatusEmailBioflora()">
+        Essa pessoa precisa de um e-mail @farmaciabioflora?
+      </label>
+      <div id="statusEmailBiofloraArea" style="display:none;margin-top:8px;">
+        <label style="font-size:11px;color:var(--gray);font-weight:600;">Status</label>
+        <select id="cStatusEmail" style="width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;">
+          <option value="pendente">Pendente — chefia ainda vai criar</option>
+          <option value="criado">Já criado</option>
+        </select>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn secondary" onclick="fecharModalColab()">Cancelar</button>
       <button class="btn" onclick="salvarColaborador()">Salvar</button>
+    </div>
+    <div id="areaDocumentosColab" style="display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:16px;">
+      <h3 style="font-size:14px;">Documentos</h3>
+      <div id="listaDocumentosColab" style="margin-bottom:10px;"></div>
+      <label style="font-size:11px;color:var(--gray);font-weight:600;">Tipo de documento</label>
+      <select id="tipoDocColab" style="width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;margin-bottom:8px;">
+        <option value="foto">Foto de perfil</option>
+        <option value="identidade_cnh">Identidade / CNH</option>
+        <option value="carteira_trabalho">Cópia da carteira de trabalho</option>
+        <option value="outro">Outro</option>
+      </select>
+      <input type="file" id="arquivoDocColab" style="width:100%;font-size:12.5px;">
+      <button class="btn secondary" style="margin-top:8px;width:100%;" onclick="enviarDocumentoColab()">Enviar documento</button>
     </div>
   </div>
 </div>
@@ -238,22 +265,24 @@ let abaAtiva = 'colaboradores';
 let colabEmEdicaoId = null;
 let meuPapelRH = null;
 
-const PODE_ADMIN_RH = ['chefia','rh']; // colaboradores, aprovação de férias etc
+const PODE_ADMIN_RH = ['chefia','rh']; // colaboradores, ponto (entrada), avaliações
 const PODE_VER_PONTO = ['chefia','rh','gestao'];
+const PODE_RELATORIOS = ['chefia']; // visão geral só da chefia
+const PODE_APROVAR_FERIAS = ['chefia']; // nem o RH aprova
 
 async function init(){
   const { papel } = await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente','cpd']);
   meuPapelRH = papel;
 
-  // Colaboradores e Ponto têm dados sensíveis/administrativos — só
-  // quem já tinha acesso antes continua tendo
   if(!PODE_ADMIN_RH.includes(papel)){
     document.querySelector('.rh-nav-item[data-tab="colaboradores"]').style.display = 'none';
     document.querySelector('.rh-nav-item[data-tab="avaliacoes"]').style.display = 'none';
-    document.querySelector('.rh-nav-item[data-tab="relatorios"]').style.display = 'none';
   }
   if(!PODE_VER_PONTO.includes(papel)){
     document.querySelector('.rh-nav-item[data-tab="ponto"]').style.display = 'none';
+  }
+  if(!PODE_RELATORIOS.includes(papel)){
+    document.querySelector('.rh-nav-item[data-tab="relatorios"]').style.display = 'none';
   }
 
   if(PODE_ADMIN_RH.includes(papel)) await carregarColaboradores();
@@ -261,8 +290,9 @@ async function init(){
 }
 
 function trocarAba(aba){
-  if((aba === 'colaboradores' || aba === 'avaliacoes' || aba === 'relatorios') && !PODE_ADMIN_RH.includes(meuPapelRH)) return;
+  if((aba === 'colaboradores' || aba === 'avaliacoes') && !PODE_ADMIN_RH.includes(meuPapelRH)) return;
   if(aba === 'ponto' && !PODE_VER_PONTO.includes(meuPapelRH)) return;
+  if(aba === 'relatorios' && !PODE_RELATORIOS.includes(meuPapelRH)) return;
   abaAtiva = aba;
   document.querySelectorAll('.rh-nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab===aba));
 
@@ -622,15 +652,27 @@ function iniciais(nome){
   return (nome||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase();
 }
 
+let setoresCoresCache = {};
+
 async function carregarColaboradores(){
   const { data, error } = await supa.from('colaboradores').select('*').order('nome_completo');
   if(error){ console.error(error); return; }
   todosColaboradores = data || [];
+
+  const { data: cores } = await supa.from('setores_config').select('*');
+  setoresCoresCache = {};
+  (cores||[]).forEach(s => { setoresCoresCache[s.nome] = s.cor; });
+}
+
+function corDoSetor(nome){
+  if(!nome) return 'var(--gray)';
+  return setoresCoresCache[nome] || 'var(--burgundy)';
 }
 
 function renderColaboradores(termoBusca){
   const ativos = todosColaboradores.filter(c => c.status === 'ativo').length;
   const departamentos = new Set(todosColaboradores.map(c=>c.departamento).filter(Boolean)).size;
+  const pendenciasEmail = todosColaboradores.filter(c => c.precisa_email_bioflora && c.email_bioflora_status === 'pendente').length;
 
   document.getElementById('rhMain').innerHTML = `
     <div class="hero">
@@ -643,9 +685,14 @@ function renderColaboradores(termoBusca){
       </div>
     </div>
 
+    ${(pendenciasEmail > 0 && meuPapelRH === 'chefia') ? `<div style="background:var(--warn-tint);color:#8A6512;border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:16px;">📧 <strong>${pendenciasEmail}</strong> colaborador(es) esperando criação de e-mail @farmaciabioflora — dá uma olhada nos cards marcados abaixo.</div>` : ''}
+
     <div class="toolbar-row">
       <div class="search-box"><span class="ico">🔍</span><input id="buscaColab" placeholder="Buscar colaborador..." oninput="filtrarColaboradores(this.value)"></div>
-      <button class="btn dark" onclick="abrirModalColab()">+ Adicionar colaborador</button>
+      <div style="display:flex;gap:8px;">
+        ${meuPapelRH === 'chefia' ? `<button class="btn secondary" onclick="abrirConfigSetores()">🎨 Cores dos setores</button>` : ''}
+        <button class="btn dark" onclick="abrirModalColab()">+ Adicionar colaborador</button>
+      </div>
     </div>
 
     <div class="colab-grid" id="colabGrid"></div>
@@ -667,7 +714,7 @@ window.filtrarColaboradores = filtrarColaboradores;
 
 function renderGridColaboradores(lista){
   document.getElementById('colabGrid').innerHTML = lista.length ? lista.map(c => `
-    <div class="colab-card">
+    <div class="colab-card" style="border-left:4px solid ${corDoSetor(c.departamento)}">
       <div class="colab-card-top">
         <div class="colab-avatar">${iniciais(c.nome_completo)}</div>
         <span class="colab-status ${c.status}">${STATUS_LABELS[c.status]}</span>
@@ -676,7 +723,8 @@ function renderGridColaboradores(lista){
       <p class="colab-cargo">${c.cargo || 'Cargo não informado'}</p>
       ${c.email ? `<div class="colab-detail"><span class="ico">✉️</span>${c.email}</div>` : ''}
       ${c.telefone ? `<div class="colab-detail"><span class="ico">📞</span>${c.telefone}</div>` : ''}
-      ${c.departamento ? `<div class="colab-detail"><span class="ico">📍</span>${c.departamento}</div>` : ''}
+      ${c.departamento ? `<div class="colab-detail"><span class="ico" style="color:${corDoSetor(c.departamento)}">●</span>${c.departamento}</div>` : ''}
+      ${c.precisa_email_bioflora ? `<div class="colab-detail"><span class="ico">📧</span>${c.email_bioflora_status === 'criado' ? 'E-mail Bioflora criado' : '<strong style="color:var(--warn)">Pendente: criar e-mail Bioflora</strong>'}</div>` : ''}
       <div class="colab-card-actions">
         <button class="edit" onclick="abrirModalColab('${c.id}')">Editar</button>
         <button class="del" onclick="excluirColaborador('${c.id}')">Excluir</button>
@@ -696,10 +744,31 @@ function abrirModalColab(id){
   document.getElementById('cTelefone').value = c?.telefone || '';
   document.getElementById('cStatus').value = c?.status || 'ativo';
   document.getElementById('cAdmissao').value = c?.data_admissao || '';
+  document.getElementById('cPis').value = c?.pis || '';
   document.getElementById('cObs').value = c?.observacoes || '';
+  document.getElementById('cPrecisaEmail').checked = c?.precisa_email_bioflora || false;
+  document.getElementById('cStatusEmail').value = c?.email_bioflora_status === 'criado' ? 'criado' : 'pendente';
+  toggleStatusEmailBioflora();
+
+  const listaDeptos = [...new Set(todosColaboradores.map(x=>x.departamento).filter(Boolean))];
+  document.getElementById('departamentosExistentes').innerHTML = listaDeptos.map(d=>`<option value="${d}">`).join('');
+
+  const areaDocs = document.getElementById('areaDocumentosColab');
+  if(id){
+    areaDocs.style.display = 'block';
+    carregarDocumentosColab(id);
+  } else {
+    areaDocs.style.display = 'none';
+  }
+
   document.getElementById('modalColab').classList.add('show');
 }
 window.abrirModalColab = abrirModalColab;
+
+function toggleStatusEmailBioflora(){
+  document.getElementById('statusEmailBiofloraArea').style.display = document.getElementById('cPrecisaEmail').checked ? 'block' : 'none';
+}
+window.toggleStatusEmailBioflora = toggleStatusEmailBioflora;
 
 function fecharModalColab(){
   document.getElementById('modalColab').classList.remove('show');
@@ -711,6 +780,8 @@ async function salvarColaborador(){
   const nome_completo = document.getElementById('cNome').value.trim();
   if(!nome_completo){ alert('Digite o nome completo.'); return; }
 
+  const precisaEmail = document.getElementById('cPrecisaEmail').checked;
+
   const dados = {
     nome_completo,
     cargo: document.getElementById('cCargo').value.trim() || null,
@@ -719,7 +790,10 @@ async function salvarColaborador(){
     telefone: document.getElementById('cTelefone').value.trim() || null,
     status: document.getElementById('cStatus').value,
     data_admissao: document.getElementById('cAdmissao').value || null,
+    pis: document.getElementById('cPis').value.trim() || null,
     observacoes: document.getElementById('cObs').value.trim() || null,
+    precisa_email_bioflora: precisaEmail,
+    email_bioflora_status: precisaEmail ? document.getElementById('cStatusEmail').value : 'nao_solicitado',
   };
 
   if(colabEmEdicaoId){
@@ -747,6 +821,98 @@ async function excluirColaborador(id){
 window.excluirColaborador = excluirColaborador;
 
 // ============================================================
+// DOCUMENTOS DO COLABORADOR (foto, identidade/CNH, carteira de
+// trabalho) — bucket privado, só chefia/RH sobem e veem
+// ============================================================
+const TIPO_DOC_LABEL = {foto:'Foto de perfil', identidade_cnh:'Identidade / CNH', carteira_trabalho:'Carteira de trabalho', outro:'Outro'};
+
+async function carregarDocumentosColab(colaboradorId){
+  const { data } = await supa.from('colaborador_documentos').select('*').eq('colaborador_id', colaboradorId).order('enviado_em', {ascending:false});
+  const lista = document.getElementById('listaDocumentosColab');
+  if(!data || !data.length){ lista.innerHTML = '<p style="font-size:11.5px;color:var(--gray);">Nenhum documento enviado ainda.</p>'; return; }
+
+  lista.innerHTML = (await Promise.all(data.map(async d => {
+    const { data: signed } = await supa.storage.from('colaboradores-docs').createSignedUrl(d.arquivo_url, 300);
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px;">
+      <span>${TIPO_DOC_LABEL[d.tipo]||d.tipo} — ${d.nome_arquivo}</span>
+      <span style="display:flex;gap:8px;">
+        ${signed?.signedUrl ? `<a href="${signed.signedUrl}" target="_blank" style="color:var(--burgundy);text-decoration:none;font-weight:600;">Ver</a>` : ''}
+        <button style="border:none;background:none;color:var(--bad);cursor:pointer;font-size:11px;" onclick="excluirDocumentoColab('${d.id}','${d.arquivo_url}')">Excluir</button>
+      </span>
+    </div>`;
+  }))).join('');
+}
+
+async function enviarDocumentoColab(){
+  if(!colabEmEdicaoId){ alert('Salve o colaborador primeiro.'); return; }
+  const arquivo = document.getElementById('arquivoDocColab').files[0];
+  if(!arquivo){ alert('Escolha um arquivo.'); return; }
+  const tipo = document.getElementById('tipoDocColab').value;
+
+  const caminho = `${colabEmEdicaoId}/${Date.now()}_${arquivo.name}`;
+  const { error: erroUpload } = await supa.storage.from('colaboradores-docs').upload(caminho, arquivo);
+  if(erroUpload){ alert('Erro ao enviar: '+erroUpload.message); return; }
+
+  const { data: { session } } = await supa.auth.getSession();
+  const { error } = await supa.from('colaborador_documentos').insert({
+    colaborador_id: colabEmEdicaoId, tipo, nome_arquivo: arquivo.name, arquivo_url: caminho, enviado_por: session.user.id
+  });
+  if(error){ alert('Erro ao registrar: '+error.message); return; }
+
+  document.getElementById('arquivoDocColab').value = '';
+  await carregarDocumentosColab(colabEmEdicaoId);
+}
+window.enviarDocumentoColab = enviarDocumentoColab;
+
+async function excluirDocumentoColab(docId, caminhoArquivo){
+  if(!confirm('Excluir esse documento?')) return;
+  await supa.storage.from('colaboradores-docs').remove([caminhoArquivo]);
+  await supa.from('colaborador_documentos').delete().eq('id', docId);
+  await carregarDocumentosColab(colabEmEdicaoId);
+}
+window.excluirDocumentoColab = excluirDocumentoColab;
+
+// ============================================================
+// CORES POR SETOR — só a chefia define
+// ============================================================
+function abrirConfigSetores(){
+  const setores = [...new Set(todosColaboradores.map(c=>c.departamento).filter(Boolean))];
+  if(!setores.length){ alert('Cadastre colaboradores com departamento preenchido primeiro.'); return; }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay show';
+  overlay.id = 'overlaySetores';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>Cor por setor</h3>
+      <p class="desc" style="margin-bottom:14px;">Usada nos cards de colaborador e no calendário de férias.</p>
+      ${setores.map(s => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);">
+          <span style="font-size:13px;">${s}</span>
+          <input type="color" value="${setoresCoresCache[s]||'#8B1A3A'}" id="cor_${s.replace(/[^a-zA-Z0-9]/g,'_')}" style="width:44px;height:30px;border:none;cursor:pointer;">
+        </div>`).join('')}
+      <div class="modal-actions">
+        <button class="btn secondary" onclick="document.getElementById('overlaySetores').remove()">Cancelar</button>
+        <button class="btn" onclick="salvarConfigSetores(${JSON.stringify(setores)})">Salvar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+window.abrirConfigSetores = abrirConfigSetores;
+
+async function salvarConfigSetores(setores){
+  for(const s of setores){
+    const cor = document.getElementById('cor_'+s.replace(/[^a-zA-Z0-9]/g,'_')).value;
+    await supa.from('setores_config').upsert({ nome: s, cor });
+  }
+  document.getElementById('overlaySetores').remove();
+  await carregarColaboradores();
+  renderColaboradores();
+}
+window.salvarConfigSetores = salvarConfigSetores;
+
+
+// ============================================================
 // FÉRIAS & AUSÊNCIAS
 // ============================================================
 let meuUserId = null;
@@ -758,12 +924,13 @@ async function renderAbaFerias(){
   const { data: { session } } = await supa.auth.getSession();
   meuUserId = session.user.id;
 
-  const admin = PODE_ADMIN_RH.includes(meuPapelRH);
+  const souChefiaAprovador = PODE_APROVAR_FERIAS.includes(meuPapelRH);
+  const possoPreencherEmNomeDeOutro = PODE_ADMIN_RH.includes(meuPapelRH); // chefia + RH
 
   document.getElementById('rhMain').innerHTML = `
     <div class="ferias-hero">
       <h2>Férias & Ausências</h2>
-      <p>${admin ? 'Gerencie as solicitações da equipe.' : 'Solicite suas férias e acompanhe a aprovação.'}</p>
+      <p>${souChefiaAprovador ? 'Gerencie as solicitações da equipe.' : 'Solicite suas férias e acompanhe a aprovação.'}</p>
     </div>
 
     <div class="ferias-grid" style="margin-top:18px;">
@@ -771,33 +938,49 @@ async function renderAbaFerias(){
         <h2>Solicitar férias</h2>
         <p class="desc">Escolha o período desejado — a chefia analisa e aprova.</p>
         <div class="ferias-form">
+          ${possoPreencherEmNomeDeOutro ? `<label>Nome do colaborador</label><input id="fNomeFerias" placeholder="Nome de quem vai tirar férias">` : ''}
           <label>Data de início</label><input type="date" id="fInicioFerias">
           <label>Data de fim</label><input type="date" id="fFimFerias">
           <label>Motivo / observação (opcional)</label><textarea id="fMotivoFerias" placeholder="Ex: viagem em família"></textarea>
           <div id="avisoConflitoFerias"></div>
+          <div id="confirmacaoFerias"></div>
           <button class="btn" onclick="solicitarFerias()">Enviar solicitação</button>
+          ${possoPreencherEmNomeDeOutro ? `<p style="font-size:11px;color:var(--gray);margin-top:8px;">Pra quem não tem login no Hub (trabalho não depende de computador), preenche o nome aqui mesmo.</p>` : ''}
         </div>
       </div>
 
       <div class="panel-white">
-        <h2>${admin ? 'Central de Aprovação' : 'Minhas solicitações'} ${admin ? `<span class="pendentes-badge" id="badgePendentes"></span>` : ''}</h2>
-        <p class="desc">${admin ? 'Todas as solicitações da equipe.' : 'Seu histórico de pedidos.'}</p>
+        <h2>${souChefiaAprovador ? 'Central de Aprovação' : 'Minhas solicitações'} ${souChefiaAprovador ? `<span class="pendentes-badge" id="badgePendentes"></span>` : ''}</h2>
+        <p class="desc">${souChefiaAprovador ? 'Todas as solicitações da equipe.' : 'Seu histórico de pedidos.'}</p>
         <div id="listaSolicitacoes"></div>
       </div>
     </div>
 
-    <div class="panel-white">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div><h2 style="margin:0;">Calendário de férias e feriados</h2><p class="desc" style="margin:2px 0 0;">Só mostra solicitações já aprovadas.</p></div>
-        <div class="cal-ferias-nav">
-          <button onclick="mudarMesCalFerias(-1)">← Anterior</button>
-          <strong id="mesCalFeriasLabel" style="font-family:var(--headfont);font-size:13px;"></strong>
-          <button onclick="mudarMesCalFerias(1)">Próximo →</button>
-        </div>
+    <div class="ferias-grid">
+      <div class="panel-white">
+        <h2>Já aprovadas</h2>
+        <p class="desc">Quem está de férias confirmadas, mais próximo primeiro.</p>
+        <div id="listaAprovadas"></div>
       </div>
-      <div class="cal-ferias-grid" id="calFeriasGrid"></div>
+
+      <div class="panel-white">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div><h2 style="margin:0;">Calendário</h2><p class="desc" style="margin:2px 0 0;">Férias aprovadas e feriados.</p></div>
+          <div class="cal-ferias-nav">
+            <button onclick="mudarMesCalFerias(-1)">←</button>
+            <strong id="mesCalFeriasLabel" style="font-family:var(--headfont);font-size:12.5px;"></strong>
+            <button onclick="mudarMesCalFerias(1)">→</button>
+          </div>
+        </div>
+        <div class="cal-ferias-grid" id="calFeriasGrid"></div>
+      </div>
     </div>
   `;
+
+  if(possoPreencherEmNomeDeOutro){
+    const { data: perfil } = await supa.from('perfis').select('nome_exibicao').eq('id', session.user.id).maybeSingle();
+    document.getElementById('fNomeFerias').value = perfil?.nome_exibicao || '';
+  }
 
   await carregarDadosFerias();
 }
@@ -827,8 +1010,16 @@ async function solicitarFerias(){
   if(fim < inicio){ alert('A data de fim não pode ser antes da data de início.'); return; }
 
   const { data: { session } } = await supa.auth.getSession();
-  const { data: perfil } = await supa.from('perfis').select('nome_exibicao').eq('id', session.user.id).maybeSingle();
-  const nome = perfil?.nome_exibicao || session.user.email;
+
+  const campoNome = document.getElementById('fNomeFerias');
+  let nome;
+  if(campoNome){
+    nome = campoNome.value.trim();
+    if(!nome){ alert('Preencha o nome do colaborador.'); return; }
+  } else {
+    const { data: perfil } = await supa.from('perfis').select('nome_exibicao').eq('id', session.user.id).maybeSingle();
+    nome = perfil?.nome_exibicao || session.user.email;
+  }
 
   const { error } = await supa.from('ferias_solicitacoes').insert({
     solicitante_id: session.user.id,
@@ -842,6 +1033,11 @@ async function solicitarFerias(){
   document.getElementById('fInicioFerias').value = '';
   document.getElementById('fFimFerias').value = '';
   document.getElementById('fMotivoFerias').value = '';
+  const confirmEl = document.getElementById('confirmacaoFerias');
+  if(confirmEl){
+    confirmEl.innerHTML = `<div style="font-size:12.5px;background:var(--good-tint);color:var(--good);border-radius:8px;padding:9px 12px;margin-bottom:10px;">✅ Solicitação recebida! Você será avisado quando a chefia analisar.</div>`;
+    setTimeout(()=>{ confirmEl.innerHTML=''; }, 6000);
+  }
   await carregarDadosFerias();
 }
 window.solicitarFerias = solicitarFerias;
@@ -865,10 +1061,10 @@ function conferirConflitoFerias(){
 }
 
 function renderListaSolicitacoes(){
-  const admin = PODE_ADMIN_RH.includes(meuPapelRH);
-  const lista = admin ? feriasCache : feriasCache.filter(s => s.solicitante_id === meuUserId);
+  const souChefiaAprovador = PODE_APROVAR_FERIAS.includes(meuPapelRH);
+  const lista = souChefiaAprovador ? feriasCache : feriasCache.filter(s => s.solicitante_id === meuUserId);
 
-  if(admin){
+  if(souChefiaAprovador){
     const pendentes = feriasCache.filter(s=>s.status==='pendente').length;
     const badge = document.getElementById('badgePendentes');
     if(badge) badge.textContent = pendentes + ' pendente' + (pendentes===1?'':'s');
@@ -880,11 +1076,15 @@ function renderListaSolicitacoes(){
         <div class="solic-nome">${s.solicitante_nome}${s.motivo ? ' — <span style="font-weight:400;color:var(--gray);">'+s.motivo+'</span>' : ''}</div>
         <div class="solic-datas">${fmtDataBR(s.data_inicio)} a ${fmtDataBR(s.data_fim)} (${s.dias_totais} dia${s.dias_totais===1?'':'s'})</div>
         ${s.status==='rejeitada' && s.motivo_rejeicao ? `<div class="solic-datas" style="color:var(--bad)">Motivo: ${s.motivo_rejeicao}</div>` : ''}
-        ${(admin && s.status==='pendente') ? `<div class="solic-actions">
+        ${(souChefiaAprovador && s.status==='pendente') ? `<div class="solic-actions">
           <button class="aprovar" onclick="aprovarFerias('${s.id}')">Aprovar</button>
           <button class="rejeitar" onclick="rejeitarFerias('${s.id}')">Rejeitar</button>
         </div>` : ''}
-        ${(!admin && s.status==='pendente' && s.solicitante_id===meuUserId) ? `<div class="solic-actions">
+        ${(souChefiaAprovador && s.status==='aprovada') ? `<div class="solic-actions">
+          <button class="rejeitar" onclick="rejeitarFerias('${s.id}')">Reprovar</button>
+          <button class="rejeitar" onclick="excluirFerias('${s.id}')">Excluir</button>
+        </div>` : ''}
+        ${(!souChefiaAprovador && s.status==='pendente' && s.solicitante_id===meuUserId) ? `<div class="solic-actions">
           <button class="rejeitar" onclick="cancelarFerias('${s.id}')">Cancelar pedido</button>
         </div>` : ''}
       </div>
@@ -892,7 +1092,27 @@ function renderListaSolicitacoes(){
     </div>
   `).join('') : '<p style="font-size:12.5px;color:var(--gray);text-align:center;padding:20px 0;">Tudo limpo! Nenhuma solicitação.</p>';
 
+  renderListaAprovadas();
   conferirConflitoFerias();
+}
+
+function renderListaAprovadas(){
+  const el = document.getElementById('listaAprovadas');
+  if(!el) return;
+  const hojeStr = new Date().toISOString().slice(0,10);
+  const aprovadas = feriasCache.filter(s => s.status === 'aprovada').sort((a,b) => a.data_inicio.localeCompare(b.data_inicio));
+
+  el.innerHTML = aprovadas.length ? aprovadas.map(s => {
+    const emCurso = s.data_inicio <= hojeStr && s.data_fim >= hojeStr;
+    return `
+    <div class="solic-item">
+      <div>
+        <div class="solic-nome">${s.solicitante_nome}</div>
+        <div class="solic-datas">${fmtDataBR(s.data_inicio)} a ${fmtDataBR(s.data_fim)} (${s.dias_totais} dia${s.dias_totais===1?'':'s'})</div>
+      </div>
+      <span class="solic-status ${emCurso?'pendente':'aprovada'}">${emCurso?'Em curso':'Aprovada'}</span>
+    </div>`;
+  }).join('') : '<p style="font-size:12.5px;color:var(--gray);text-align:center;padding:20px 0;">Ninguém de férias no momento.</p>';
 }
 
 function fmtDataBR(d){ return new Date(d+'T00:00:00').toLocaleDateString('pt-BR'); }
@@ -913,6 +1133,14 @@ async function rejeitarFerias(id){
   await carregarDadosFerias();
 }
 window.rejeitarFerias = rejeitarFerias;
+
+async function excluirFerias(id){
+  if(!confirm('Excluir essa solicitação de vez? Não dá pra desfazer.')) return;
+  const { error } = await supa.from('ferias_solicitacoes').delete().eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  await carregarDadosFerias();
+}
+window.excluirFerias = excluirFerias;
 
 async function cancelarFerias(id){
   if(!confirm('Cancelar essa solicitação?')) return;
@@ -951,7 +1179,11 @@ function renderCalendarioFerias(){
     html += `<div class="cal-ferias-day ${ehFeriado?'feriado':''} ${key===hojeStr?'hoje':''}" title="${ehFeriado||''}">
       <div class="cal-ferias-day-num">${dia}</div>
       ${ehFeriado ? `<div class="cal-ferias-chip" style="background:var(--bad)">${ehFeriado}</div>` : ''}
-      ${pessoasFerias.slice(0,2).map(s=>`<div class="cal-ferias-chip">${s.solicitante_nome.split(' ')[0]}</div>`).join('')}
+      ${pessoasFerias.slice(0,2).map(s=>{
+        const colabMatch = todosColaboradores.find(c => c.nome_completo.toLowerCase() === s.solicitante_nome.toLowerCase());
+        const cor = colabMatch ? corDoSetor(colabMatch.departamento) : 'var(--info)';
+        return `<div class="cal-ferias-chip" style="background:${cor}">${s.solicitante_nome.split(' ')[0]}</div>`;
+      }).join('')}
       ${pessoasFerias.length>2 ? `<div style="color:var(--gray);font-size:9px;">+${pessoasFerias.length-2}</div>` : ''}
     </div>`;
   }
