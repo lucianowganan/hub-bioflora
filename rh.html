@@ -136,6 +136,42 @@
   .num{font-variant-numeric:tabular-nums;text-align:right;}
   .num.pos{color:var(--good);} .num.neg{color:var(--bad);}
   th.num, td.num{text-align:right;}
+
+  /* Férias */
+  .ferias-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .ferias-hero{background:linear-gradient(135deg,var(--info),#2d4d68);border-radius:18px;padding:26px 28px;color:#fff;}
+  .ferias-hero h2{font-family:var(--headfont);font-size:19px;margin:0 0 4px;}
+  .ferias-hero p{font-size:12.5px;color:rgba(255,255,255,.85);margin:0;}
+  .ferias-form label{font-size:11px;color:var(--gray);font-weight:600;display:block;margin-bottom:4px;}
+  .ferias-form input, .ferias-form textarea{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:7px;margin-bottom:10px;}
+  .ferias-form textarea{resize:vertical;min-height:56px;font-family:inherit;}
+  .aviso-conflito{font-size:12px;background:var(--warn-tint);color:#8A6512;border-radius:8px;padding:9px 12px;margin-bottom:10px;}
+  .solic-item{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line);gap:10px;}
+  .solic-item:last-child{border-bottom:none;}
+  .solic-nome{font-weight:600;font-size:13px;}
+  .solic-datas{font-size:11.5px;color:var(--gray);margin-top:2px;}
+  .solic-status{font-size:10px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+  .solic-status.pendente{background:var(--warn-tint);color:#8A6512;}
+  .solic-status.aprovada{background:var(--good-tint);color:var(--good);}
+  .solic-status.rejeitada{background:var(--bad-tint);color:var(--bad);}
+  .solic-status.cancelada{background:#F1ECEA;color:var(--gray);}
+  .solic-actions{display:flex;gap:6px;margin-top:6px;}
+  .solic-actions button{font-family:'Maven Pro',sans-serif;font-size:10.5px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:#fff;cursor:pointer;}
+  .solic-actions button.aprovar{color:var(--good);border-color:var(--good-tint);}
+  .solic-actions button.rejeitar{color:var(--bad);border-color:var(--bad-tint);}
+  .pendentes-badge{background:var(--warn);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;}
+
+  .cal-ferias-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-ferias-weekday{text-align:center;font-size:9.5px;font-weight:700;color:var(--gray);text-transform:uppercase;padding:2px 0 6px;}
+  .cal-ferias-day{min-height:64px;border:1px solid var(--line);border-radius:7px;padding:4px 5px;background:#fff;font-size:10px;}
+  .cal-ferias-day.empty{visibility:hidden;}
+  .cal-ferias-day.feriado{background:var(--bad-tint);border-color:#E8C4B8;}
+  .cal-ferias-day.hoje{border-color:var(--burgundy);border-width:1.5px;}
+  .cal-ferias-day-num{font-weight:700;color:var(--gray);}
+  .cal-ferias-day.feriado .cal-ferias-day-num{color:var(--bad);}
+  .cal-ferias-chip{background:var(--info);color:#fff;border-radius:3px;padding:1px 4px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cal-ferias-nav{display:flex;gap:6px;align-items:center;}
+  .cal-ferias-nav button{font-family:'Maven Pro',sans-serif;font-size:11.5px;padding:6px 11px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -202,28 +238,38 @@ let abaAtiva = 'colaboradores';
 let colabEmEdicaoId = null;
 let meuPapelRH = null;
 
+const PODE_ADMIN_RH = ['chefia','rh']; // colaboradores, aprovação de férias etc
+const PODE_VER_PONTO = ['chefia','rh','gestao'];
+
 async function init(){
-  const { papel } = await requireRole(['chefia','rh','gestao']);
+  const { papel } = await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente','cpd']);
   meuPapelRH = papel;
 
-  // Colaboradores tem dados sensíveis — só chefia/RH, gestão não vê
-  if(papel === 'gestao'){
+  // Colaboradores e Ponto têm dados sensíveis/administrativos — só
+  // quem já tinha acesso antes continua tendo
+  if(!PODE_ADMIN_RH.includes(papel)){
     document.querySelector('.rh-nav-item[data-tab="colaboradores"]').style.display = 'none';
+    document.querySelector('.rh-nav-item[data-tab="avaliacoes"]').style.display = 'none';
+    document.querySelector('.rh-nav-item[data-tab="relatorios"]').style.display = 'none';
+  }
+  if(!PODE_VER_PONTO.includes(papel)){
+    document.querySelector('.rh-nav-item[data-tab="ponto"]').style.display = 'none';
   }
 
-  await carregarColaboradores();
-  trocarAba(papel === 'gestao' ? 'ponto' : 'colaboradores');
+  if(PODE_ADMIN_RH.includes(papel)) await carregarColaboradores();
+  trocarAba(PODE_ADMIN_RH.includes(papel) ? 'colaboradores' : 'ferias');
 }
 
 function trocarAba(aba){
-  if(aba === 'colaboradores' && meuPapelRH === 'gestao') return; // sem acesso
+  if((aba === 'colaboradores' || aba === 'avaliacoes' || aba === 'relatorios') && !PODE_ADMIN_RH.includes(meuPapelRH)) return;
+  if(aba === 'ponto' && !PODE_VER_PONTO.includes(meuPapelRH)) return;
   abaAtiva = aba;
   document.querySelectorAll('.rh-nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab===aba));
 
   if(aba === 'colaboradores') renderColaboradores();
   else if(aba === 'ponto') renderAbaPonto();
+  else if(aba === 'ferias') renderAbaFerias();
   else if(aba === 'dashboard') renderPlaceholder('🏠', 'Dashboard geral', 'Visão consolidada de todos os módulos de RH — vem em seguida.');
-  else if(aba === 'ferias') renderPlaceholder('📅', 'Férias & Ausências', 'Central de solicitação e aprovação de férias, com calendário completo — próxima peça a ser construída.');
   else if(aba === 'avaliacoes') renderPlaceholder('📊', 'Avaliações', 'Avaliações de desempenho, ocorrências, advertências e RNC — em construção.');
   else if(aba === 'relatorios') renderPlaceholder('📈', 'Relatórios & Insights', 'Custo de folha, performance por departamento e distribuição salarial — em construção.');
 }
@@ -699,6 +745,222 @@ async function excluirColaborador(id){
   renderColaboradores();
 }
 window.excluirColaborador = excluirColaborador;
+
+// ============================================================
+// FÉRIAS & AUSÊNCIAS
+// ============================================================
+let meuUserId = null;
+let feriasCache = [];
+let feriadosCache = [];
+let mesCalFerias = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+async function renderAbaFerias(){
+  const { data: { session } } = await supa.auth.getSession();
+  meuUserId = session.user.id;
+
+  const admin = PODE_ADMIN_RH.includes(meuPapelRH);
+
+  document.getElementById('rhMain').innerHTML = `
+    <div class="ferias-hero">
+      <h2>Férias & Ausências</h2>
+      <p>${admin ? 'Gerencie as solicitações da equipe.' : 'Solicite suas férias e acompanhe a aprovação.'}</p>
+    </div>
+
+    <div class="ferias-grid" style="margin-top:18px;">
+      <div class="panel-white">
+        <h2>Solicitar férias</h2>
+        <p class="desc">Escolha o período desejado — a chefia analisa e aprova.</p>
+        <div class="ferias-form">
+          <label>Data de início</label><input type="date" id="fInicioFerias">
+          <label>Data de fim</label><input type="date" id="fFimFerias">
+          <label>Motivo / observação (opcional)</label><textarea id="fMotivoFerias" placeholder="Ex: viagem em família"></textarea>
+          <div id="avisoConflitoFerias"></div>
+          <button class="btn" onclick="solicitarFerias()">Enviar solicitação</button>
+        </div>
+      </div>
+
+      <div class="panel-white">
+        <h2>${admin ? 'Central de Aprovação' : 'Minhas solicitações'} ${admin ? `<span class="pendentes-badge" id="badgePendentes"></span>` : ''}</h2>
+        <p class="desc">${admin ? 'Todas as solicitações da equipe.' : 'Seu histórico de pedidos.'}</p>
+        <div id="listaSolicitacoes"></div>
+      </div>
+    </div>
+
+    <div class="panel-white">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div><h2 style="margin:0;">Calendário de férias e feriados</h2><p class="desc" style="margin:2px 0 0;">Só mostra solicitações já aprovadas.</p></div>
+        <div class="cal-ferias-nav">
+          <button onclick="mudarMesCalFerias(-1)">← Anterior</button>
+          <strong id="mesCalFeriasLabel" style="font-family:var(--headfont);font-size:13px;"></strong>
+          <button onclick="mudarMesCalFerias(1)">Próximo →</button>
+        </div>
+      </div>
+      <div class="cal-ferias-grid" id="calFeriasGrid"></div>
+    </div>
+  `;
+
+  await carregarDadosFerias();
+}
+window.renderAbaFerias = renderAbaFerias;
+
+async function carregarDadosFerias(){
+  const { data: solic } = await supa.from('ferias_solicitacoes').select('*').order('criado_em', {ascending:false});
+  feriasCache = solic || [];
+
+  const { data: fer } = await supa.from('feriados').select('*').order('data');
+  feriadosCache = fer || [];
+
+  renderListaSolicitacoes();
+  renderCalendarioFerias();
+}
+
+function diasEntre(inicio, fim){
+  const d1 = new Date(inicio+'T00:00:00'), d2 = new Date(fim+'T00:00:00');
+  return Math.round((d2-d1)/(1000*60*60*24)) + 1;
+}
+
+async function solicitarFerias(){
+  const inicio = document.getElementById('fInicioFerias').value;
+  const fim = document.getElementById('fFimFerias').value;
+  const motivo = document.getElementById('fMotivoFerias').value.trim() || null;
+  if(!inicio || !fim){ alert('Escolha as datas de início e fim.'); return; }
+  if(fim < inicio){ alert('A data de fim não pode ser antes da data de início.'); return; }
+
+  const { data: { session } } = await supa.auth.getSession();
+  const { data: perfil } = await supa.from('perfis').select('nome_exibicao').eq('id', session.user.id).maybeSingle();
+  const nome = perfil?.nome_exibicao || session.user.email;
+
+  const { error } = await supa.from('ferias_solicitacoes').insert({
+    solicitante_id: session.user.id,
+    solicitante_nome: nome,
+    data_inicio: inicio, data_fim: fim,
+    dias_totais: diasEntre(inicio, fim),
+    motivo
+  });
+  if(error){ alert('Erro ao enviar: '+error.message); return; }
+
+  document.getElementById('fInicioFerias').value = '';
+  document.getElementById('fFimFerias').value = '';
+  document.getElementById('fMotivoFerias').value = '';
+  await carregarDadosFerias();
+}
+window.solicitarFerias = solicitarFerias;
+
+// Avisa (não bloqueia) se já tem gente com férias sobrepondo o período digitado
+function conferirConflitoFerias(){
+  const inicio = document.getElementById('fInicioFerias')?.value;
+  const fim = document.getElementById('fFimFerias')?.value;
+  const el = document.getElementById('avisoConflitoFerias');
+  if(!el) return;
+  if(!inicio || !fim){ el.innerHTML=''; return; }
+
+  const sobrepondo = feriasCache.filter(s =>
+    s.status !== 'rejeitada' && s.status !== 'cancelada' &&
+    s.solicitante_id !== meuUserId &&
+    s.data_inicio <= fim && s.data_fim >= inicio
+  );
+  el.innerHTML = sobrepondo.length
+    ? `<div class="aviso-conflito">⚠️ Já tem ${sobrepondo.length} solicitação(ões) nesse período: ${sobrepondo.map(s=>s.solicitante_nome).join(', ')}.</div>`
+    : '';
+}
+
+function renderListaSolicitacoes(){
+  const admin = PODE_ADMIN_RH.includes(meuPapelRH);
+  const lista = admin ? feriasCache : feriasCache.filter(s => s.solicitante_id === meuUserId);
+
+  if(admin){
+    const pendentes = feriasCache.filter(s=>s.status==='pendente').length;
+    const badge = document.getElementById('badgePendentes');
+    if(badge) badge.textContent = pendentes + ' pendente' + (pendentes===1?'':'s');
+  }
+
+  document.getElementById('listaSolicitacoes').innerHTML = lista.length ? lista.map(s => `
+    <div class="solic-item">
+      <div>
+        <div class="solic-nome">${s.solicitante_nome}${s.motivo ? ' — <span style="font-weight:400;color:var(--gray);">'+s.motivo+'</span>' : ''}</div>
+        <div class="solic-datas">${fmtDataBR(s.data_inicio)} a ${fmtDataBR(s.data_fim)} (${s.dias_totais} dia${s.dias_totais===1?'':'s'})</div>
+        ${s.status==='rejeitada' && s.motivo_rejeicao ? `<div class="solic-datas" style="color:var(--bad)">Motivo: ${s.motivo_rejeicao}</div>` : ''}
+        ${(admin && s.status==='pendente') ? `<div class="solic-actions">
+          <button class="aprovar" onclick="aprovarFerias('${s.id}')">Aprovar</button>
+          <button class="rejeitar" onclick="rejeitarFerias('${s.id}')">Rejeitar</button>
+        </div>` : ''}
+        ${(!admin && s.status==='pendente' && s.solicitante_id===meuUserId) ? `<div class="solic-actions">
+          <button class="rejeitar" onclick="cancelarFerias('${s.id}')">Cancelar pedido</button>
+        </div>` : ''}
+      </div>
+      <span class="solic-status ${s.status}">${{pendente:'Pendente',aprovada:'Aprovada',rejeitada:'Rejeitada',cancelada:'Cancelada'}[s.status]}</span>
+    </div>
+  `).join('') : '<p style="font-size:12.5px;color:var(--gray);text-align:center;padding:20px 0;">Tudo limpo! Nenhuma solicitação.</p>';
+
+  conferirConflitoFerias();
+}
+
+function fmtDataBR(d){ return new Date(d+'T00:00:00').toLocaleDateString('pt-BR'); }
+
+async function aprovarFerias(id){
+  const { data: { session } } = await supa.auth.getSession();
+  const { error } = await supa.from('ferias_solicitacoes').update({ status:'aprovada', aprovado_por: session.user.id, aprovado_em: new Date().toISOString() }).eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  await carregarDadosFerias();
+}
+window.aprovarFerias = aprovarFerias;
+
+async function rejeitarFerias(id){
+  const motivo = prompt('Motivo da rejeição (opcional):') || null;
+  const { data: { session } } = await supa.auth.getSession();
+  const { error } = await supa.from('ferias_solicitacoes').update({ status:'rejeitada', aprovado_por: session.user.id, aprovado_em: new Date().toISOString(), motivo_rejeicao: motivo }).eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  await carregarDadosFerias();
+}
+window.rejeitarFerias = rejeitarFerias;
+
+async function cancelarFerias(id){
+  if(!confirm('Cancelar essa solicitação?')) return;
+  const { error } = await supa.from('ferias_solicitacoes').update({ status:'cancelada' }).eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  await carregarDadosFerias();
+}
+window.cancelarFerias = cancelarFerias;
+
+function mudarMesCalFerias(delta){
+  mesCalFerias = new Date(mesCalFerias.getFullYear(), mesCalFerias.getMonth()+delta, 1);
+  renderCalendarioFerias();
+}
+window.mudarMesCalFerias = mudarMesCalFerias;
+
+function renderCalendarioFerias(){
+  const grid = document.getElementById('calFeriasGrid');
+  if(!grid) return;
+  document.getElementById('mesCalFeriasLabel').textContent = mesCalFerias.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+
+  const ano = mesCalFerias.getFullYear(), mes = mesCalFerias.getMonth();
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes+1, 0).getDate();
+  const hojeStr = new Date().toISOString().slice(0,10);
+
+  const feriasAprovadas = feriasCache.filter(s => s.status === 'aprovada');
+  const feriadosPorData = {};
+  feriadosCache.forEach(f => { feriadosPorData[f.data] = f.nome; });
+
+  let html = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d=>`<div class="cal-ferias-weekday">${d}</div>`).join('');
+  for(let i=0;i<primeiroDiaSemana;i++) html += `<div class="cal-ferias-day empty"></div>`;
+  for(let dia=1; dia<=totalDias; dia++){
+    const key = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const ehFeriado = feriadosPorData[key];
+    const pessoasFerias = feriasAprovadas.filter(s => s.data_inicio <= key && s.data_fim >= key);
+    html += `<div class="cal-ferias-day ${ehFeriado?'feriado':''} ${key===hojeStr?'hoje':''}" title="${ehFeriado||''}">
+      <div class="cal-ferias-day-num">${dia}</div>
+      ${ehFeriado ? `<div class="cal-ferias-chip" style="background:var(--bad)">${ehFeriado}</div>` : ''}
+      ${pessoasFerias.slice(0,2).map(s=>`<div class="cal-ferias-chip">${s.solicitante_nome.split(' ')[0]}</div>`).join('')}
+      ${pessoasFerias.length>2 ? `<div style="color:var(--gray);font-size:9px;">+${pessoasFerias.length-2}</div>` : ''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+document.addEventListener('input', (e) => {
+  if(e.target.id === 'fInicioFerias' || e.target.id === 'fFimFerias') conferirConflitoFerias();
+});
 
 init();
 </script>
