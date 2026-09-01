@@ -21,7 +21,7 @@
   }
 
   function aplicar(){
-    document.body.style.zoom = NIVEIS_FONTE[nivelFonte];
+    document.documentElement.style.zoom = NIVEIS_FONTE[nivelFonte];
     document.documentElement.classList.toggle('a11y-contraste', contraste);
     document.documentElement.classList.toggle('a11y-espacado', espacado);
     document.documentElement.classList.toggle('a11y-leitura', leituraFacil);
@@ -69,35 +69,37 @@
       html.a11y-leitura body{font-family:Arial, Helvetica, sans-serif !important;}
 
       html.a11y-contraste{
-        --burgundy:#FFD600 !important; --burgundy-tint:#332B00 !important;
-        --ink:#FFFFFF !important; --paper:#000000 !important; --line:#555555 !important; --gray:#DDDDDD !important;
-        --good:#00E676 !important; --good-tint:#00331A !important;
-        --bad:#FF5252 !important; --bad-tint:#330000 !important;
-        --warn:#FFD600 !important; --warn-tint:#332B00 !important;
-        --info:#40C4FF !important; --info-tint:#00263A !important;
+        --burgundy:#FFD600 !important; --burgundy-tint:transparent !important;
+        --ink:#FFFFFF !important; --paper:#000000 !important; --line:#555555 !important; --gray:#CCCCCC !important;
+        --good:#00E676 !important; --good-tint:transparent !important;
+        --bad:#FF5252 !important; --bad-tint:transparent !important;
+        --warn:#FFD600 !important; --warn-tint:transparent !important;
+        --info:#40C4FF !important; --info-tint:transparent !important;
       }
       html.a11y-contraste body{background:#000 !important;color:#fff !important;}
-      html.a11y-contraste .panel, html.a11y-contraste .card, html.a11y-contraste .kpi,
-      html.a11y-contraste .coluna, html.a11y-contraste .card-tarefa, html.a11y-contraste .module-card,
-      html.a11y-contraste .integ-card, html.a11y-contraste .qs-card, html.a11y-contraste .box,
-      html.a11y-contraste table, html.a11y-contraste .mini-list-row {
-        background:#111 !important; border-color:#555 !important; color:#fff !important;
+      /* Regra genérica: TODO elemento de QUALQUER página vira fundo
+         transparente + texto branco. Isso garante que nunca existe
+         combinação ilegível (fundo claro esquecido + texto branco por
+         cima), sem precisar manter uma lista de classes por página —
+         cobre páginas futuras automaticamente. O widget de
+         acessibilidade em si fica de fora, mantém a aparência normal. */
+      html.a11y-contraste *:not(.a11y-fab):not(.a11y-panel):not(.a11y-panel *){
+        background-color: transparent !important;
+        background-image: none !important;
+        color: #fff !important;
+        border-color: #555 !important;
       }
-      html.a11y-contraste a{color:#FFD600 !important;}
-      html.a11y-contraste input, html.a11y-contraste select, html.a11y-contraste textarea{
-        background:#111 !important; color:#fff !important; border-color:#555 !important;
+      html.a11y-contraste input:not(.a11y-fab), html.a11y-contraste select, html.a11y-contraste textarea{
+        background-color:#111 !important; color:#fff !important; border-color:#777 !important;
       }
-      /* Elementos com fundo sólido vinho (agora amarelo) precisam de texto
-         preto por cima — branco fica ilegível no amarelo. */
-      html.a11y-contraste .btn:not(.secondary),
-      html.a11y-contraste .quadro-tab.active,
-      html.a11y-contraste .kpi.accent,
-      html.a11y-contraste .role-pill,
-      html.a11y-contraste .rolePill,
-      html.a11y-contraste .hero,
-      html.a11y-contraste .qs-card.accent,
-      html.a11y-contraste .btn-reset-senha[style*="background"] {
-        color:#000 !important;
+      html.a11y-contraste a{color:#FFD600 !important; text-decoration:underline;}
+      /* Bolhas de mensagem e cards continuam distinguíveis do fundo
+         preto puro, só que agora sempre com texto branco garantido */
+      html.a11y-contraste .msg-row, html.a11y-contraste .panel, html.a11y-contraste .card,
+      html.a11y-contraste .kpi, html.a11y-contraste .coluna, html.a11y-contraste .card-tarefa,
+      html.a11y-contraste .module-card, html.a11y-contraste .integ-card, html.a11y-contraste .qs-card,
+      html.a11y-contraste .box, html.a11y-contraste table, html.a11y-contraste .mini-list-row {
+        background-color:#111 !important;
       }
     `;
     const style = document.createElement('style');

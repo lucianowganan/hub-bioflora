@@ -34,6 +34,8 @@
   .canal-item.active{background:var(--burgundy);color:#fff;font-weight:600;}
   .canal-item .hash{opacity:.6;}
   .canal-item .lock{font-size:10px;opacity:.7;margin-left:auto;}
+  .canal-badge{background:var(--burgundy);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:auto;}
+  .canal-item .lock ~ .canal-badge{margin-left:6px;}
 
   .novo-grupo-btn{margin:6px 10px;font-family:'Maven Pro',sans-serif;font-size:11.5px;font-weight:600;color:var(--gray);background:transparent;border:1.5px dashed var(--line);border-radius:8px;padding:7px;cursor:pointer;width:calc(100% - 20px);}
   .novo-grupo-btn:hover{border-color:var(--burgundy);color:var(--burgundy);}
@@ -96,7 +98,7 @@
   .reacao-btn{font-family:'Maven Pro',sans-serif;font-size:11.5px;border:1px solid var(--line);background:#fff;border-radius:20px;padding:2px 9px;cursor:pointer;color:var(--gray);}
   .reacao-btn.on{background:var(--burgundy-tint);border-color:var(--burgundy);color:var(--burgundy);font-weight:700;}
 
-  .input-area{padding:14px 22px;border-top:1px solid var(--line);background:#fff;display:flex;gap:8px;align-items:flex-end;}
+  .input-area{padding:14px 22px;border-top:1px solid var(--line);background:#fff;display:flex;gap:8px;align-items:flex-end;position:sticky;bottom:0;z-index:5;flex-shrink:0;}
   .input-area textarea{flex:1;font-family:'Maven Pro',sans-serif;font-size:13.5px;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;resize:none;min-height:44px;max-height:120px;}
   .anexo-btn{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:17px;flex-shrink:0;}
   .anexo-btn:hover{border-color:var(--burgundy);}
@@ -251,6 +253,12 @@ let alvoAtivoId = null;
 let subscricaoAtual = null;
 let arquivoSelecionado = null;
 
+// Não lidas + notificação global — ficam ativas o tempo todo (não só
+// na conversa que está aberta na tela)
+let contadorNaoLidosCanais = {}; // canal_id -> quantidade
+let leituraCanais = {}; // canal_id -> Date da última leitura
+let subscricaoGlobal = null;
+
 async function init(){
   const { session, papel } = await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente','cpd']);
   meuUserId = session.user.id;
@@ -341,7 +349,70 @@ async function carregarTudo(){
   const { data: c } = await supa.from('canais_chat').select('*').order('criado_em');
   canais = c || [];
   await carregarConversasDm();
+  await carregarNaoLidosCanais();
   renderSidebar();
+  assinarTempoRealGlobal();
+}
+
+// ============================================================
+// NÃO LIDAS NOS CANAIS + NOTIFICAÇÃO GLOBAL
+// (funciona pra qualquer canal/DM, não só a conversa aberta)
+// ============================================================
+async function carregarNaoLidosCanais(){
+  if(!canais.length) return;
+  const { data: leituras } = await supa.from('canais_leitura').select('canal_id,lida_ate').eq('usuario_id', meuUserId);
+  leituraCanais = {};
+  (leituras||[]).forEach(l => { leituraCanais[l.canal_id] = new Date(l.lida_ate); });
+
+  const trintaDiasAtras = new Date(Date.now() - 30*24*60*60*1000).toISOString();
+  const { data: mensagens } = await supa.from('mensagens_chat')
+    .select('canal_id,autor_id,criado_em')
+    .in('canal_id', canais.map(c=>c.id))
+    .neq('autor_id', meuUserId)
+    .gte('criado_em', trintaDiasAtras);
+
+  contadorNaoLidosCanais = {};
+  (mensagens||[]).forEach(m => {
+    const lidaAte = leituraCanais[m.canal_id];
+    // Sem registro de leitura ainda = canal nunca aberto por essa
+    // pessoa; considera tudo como não lido nesse caso.
+    if(!lidaAte || new Date(m.criado_em) > lidaAte){
+      contadorNaoLidosCanais[m.canal_id] = (contadorNaoLidosCanais[m.canal_id]||0) + 1;
+    }
+  });
+}
+
+async function marcarCanalComoLido(canalId){
+  const agora = new Date().toISOString();
+  leituraCanais[canalId] = new Date(agora);
+  contadorNaoLidosCanais[canalId] = 0;
+  await supa.from('canais_leitura').upsert({ canal_id: canalId, usuario_id: meuUserId, lida_ate: agora });
+}
+
+function assinarTempoRealGlobal(){
+  if(subscricaoGlobal) supa.removeChannel(subscricaoGlobal);
+  subscricaoGlobal = supa.channel('chat-global-'+meuUserId)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensagens_chat' }, (payload) => {
+      const m = payload.new;
+      if(m.autor_id === meuUserId) return;
+      const estouVendoEsseCanal = modoAtual==='canal' && alvoAtivoId===m.canal_id;
+      if(estouVendoEsseCanal) return; // já tratado pela assinatura da conversa aberta
+
+      contadorNaoLidosCanais[m.canal_id] = (contadorNaoLidosCanais[m.canal_id]||0) + 1;
+      renderSidebar();
+      notificarMensagemNova(m, 'canal');
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dm_mensagens' }, async (payload) => {
+      const m = payload.new;
+      if(m.remetente_id === meuUserId || m.destinatario_id !== meuUserId) return;
+      const estouVendoEssaDm = modoAtual==='dm' && alvoAtivoId===m.remetente_id;
+      if(estouVendoEssaDm) return; // já tratado pela assinatura da conversa aberta
+
+      await carregarConversasDm();
+      renderSidebar();
+      notificarMensagemNova({...m, autor_id: m.remetente_id}, 'dm');
+    })
+    .subscribe();
 }
 
 async function carregarConversasDm(){
@@ -397,10 +468,12 @@ function renderSidebar(){
 
 function canalItemHtml(c){
   const ativo = modoAtual==='canal' && alvoAtivoId===c.id;
+  const naoLidas = contadorNaoLidosCanais[c.id] || 0;
   return `
     <div class="canal-item ${ativo?'active':''}" onclick="abrirCanal('${c.id}')">
       <span class="hash">#</span> ${c.nome}
       ${c.privado ? '<span class="lock">🔒</span>' : ''}
+      ${naoLidas > 0 ? `<span class="canal-badge">${naoLidas}</span>` : ''}
     </div>`;
 }
 
@@ -593,6 +666,8 @@ async function abrirCanal(canalId){
   renderSidebar();
   await carregarMensagensCanal();
   assinarTempoRealCanal();
+  await marcarCanalComoLido(canalId);
+  renderSidebar();
 }
 window.abrirCanal = abrirCanal;
 
