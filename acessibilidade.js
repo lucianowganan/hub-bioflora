@@ -10,12 +10,14 @@
 
   let nivelFonte = parseInt(localStorage.getItem('a11y_fonte') || '0', 10);
   let contraste = localStorage.getItem('a11y_contraste') === '1';
+  let temaEscuro = localStorage.getItem('a11y_escuro') === '1';
   let espacado = localStorage.getItem('a11y_espacado') === '1';
   let leituraFacil = localStorage.getItem('a11y_leitura') === '1';
 
   function salvar(){
     localStorage.setItem('a11y_fonte', nivelFonte);
     localStorage.setItem('a11y_contraste', contraste ? '1' : '0');
+    localStorage.setItem('a11y_escuro', temaEscuro ? '1' : '0');
     localStorage.setItem('a11y_espacado', espacado ? '1' : '0');
     localStorage.setItem('a11y_leitura', leituraFacil ? '1' : '0');
   }
@@ -23,6 +25,7 @@
   function aplicar(){
     document.documentElement.style.zoom = NIVEIS_FONTE[nivelFonte];
     document.documentElement.classList.toggle('a11y-contraste', contraste);
+    document.documentElement.classList.toggle('a11y-escuro', temaEscuro && !contraste);
     document.documentElement.classList.toggle('a11y-espacado', espacado);
     document.documentElement.classList.toggle('a11y-leitura', leituraFacil);
     atualizarPainel();
@@ -33,6 +36,8 @@
     if(fonteLabel) fonteLabel.textContent = LABELS_FONTE[nivelFonte];
     const tContraste = document.getElementById('a11yToggleContraste');
     if(tContraste) tContraste.classList.toggle('on', contraste);
+    const tEscuro = document.getElementById('a11yToggleEscuro');
+    if(tEscuro) tEscuro.classList.toggle('on', temaEscuro);
     const tEspacado = document.getElementById('a11yToggleEspacado');
     if(tEspacado) tEspacado.classList.toggle('on', espacado);
     const tLeitura = document.getElementById('a11yToggleLeitura');
@@ -70,36 +75,48 @@
 
       html.a11y-contraste{
         --burgundy:#FFD600 !important; --burgundy-tint:transparent !important;
-        --ink:#FFFFFF !important; --paper:#000000 !important; --line:#555555 !important; --gray:#CCCCCC !important;
+        --ink:#FFFFFF !important; --paper:#000000 !important; --line:#777777 !important; --gray:#DDDDDD !important;
         --good:#00E676 !important; --good-tint:transparent !important;
         --bad:#FF5252 !important; --bad-tint:transparent !important;
         --warn:#FFD600 !important; --warn-tint:transparent !important;
         --info:#40C4FF !important; --info-tint:transparent !important;
       }
       html.a11y-contraste body{background:#000 !important;color:#fff !important;}
-      /* Regra genérica: TODO elemento de QUALQUER página vira fundo
-         transparente + texto branco. Isso garante que nunca existe
-         combinação ilegível (fundo claro esquecido + texto branco por
-         cima), sem precisar manter uma lista de classes por página —
-         cobre páginas futuras automaticamente. O widget de
-         acessibilidade em si fica de fora, mantém a aparência normal. */
       html.a11y-contraste *:not(.a11y-fab):not(.a11y-panel):not(.a11y-panel *){
-        background-color: transparent !important;
-        background-image: none !important;
-        color: #fff !important;
-        border-color: #555 !important;
+        background:transparent !important;
+        color:#fff !important;
+        border-color:#777 !important;
+        box-shadow:none !important;
       }
       html.a11y-contraste input:not(.a11y-fab), html.a11y-contraste select, html.a11y-contraste textarea{
-        background-color:#111 !important; color:#fff !important; border-color:#777 !important;
+        background:#000 !important; color:#fff !important; border:1px solid #999 !important;
       }
       html.a11y-contraste a{color:#FFD600 !important; text-decoration:underline;}
-      /* Bolhas de mensagem e cards continuam distinguíveis do fundo
-         preto puro, só que agora sempre com texto branco garantido */
-      html.a11y-contraste .msg-row, html.a11y-contraste .panel, html.a11y-contraste .card,
-      html.a11y-contraste .kpi, html.a11y-contraste .coluna, html.a11y-contraste .card-tarefa,
-      html.a11y-contraste .module-card, html.a11y-contraste .integ-card, html.a11y-contraste .qs-card,
-      html.a11y-contraste .box, html.a11y-contraste table, html.a11y-contraste .mini-list-row {
-        background-color:#111 !important;
+
+      html.a11y-escuro{
+        --burgundy:#C4527A !important; --burgundy-tint:rgba(196,82,122,.16) !important;
+        --ink:#ECE7E8 !important; --paper:#1B1819 !important; --line:#3A3538 !important; --gray:#AFA6A8 !important;
+        --good:#4FBE79 !important; --good-tint:rgba(79,190,121,.14) !important;
+        --bad:#E36B5C !important; --bad-tint:rgba(227,107,92,.14) !important;
+        --warn:#D9A54A !important; --warn-tint:rgba(217,165,74,.14) !important;
+        --info:#5B9BD1 !important; --info-tint:rgba(91,155,209,.14) !important;
+      }
+      html.a11y-escuro body{background:#1B1819 !important;color:#ECE7E8 !important;}
+      html.a11y-escuro *:not(.a11y-fab):not(.a11y-panel):not(.a11y-panel *){
+        background:transparent !important;
+        color:#ECE7E8 !important;
+        border-color:#3A3538 !important;
+      }
+      html.a11y-escuro input:not(.a11y-fab), html.a11y-escuro select, html.a11y-escuro textarea{
+        background:#242023 !important; color:#ECE7E8 !important; border:1px solid #4A4448 !important;
+      }
+      html.a11y-escuro a{color:#C4527A !important;}
+      html.a11y-escuro .panel, html.a11y-escuro .card, html.a11y-escuro .kpi,
+      html.a11y-escuro .coluna, html.a11y-escuro .card-tarefa, html.a11y-escuro .module-card,
+      html.a11y-escuro .box, html.a11y-escuro table, html.a11y-escuro .msg-row.bot,
+      html.a11y-escuro .colab-card, html.a11y-escuro .cliente-row, html.a11y-escuro .brinde-card,
+      html.a11y-escuro .aval-card, html.a11y-escuro .modal {
+        background:#242023 !important;
       }
     `;
     const style = document.createElement('style');
@@ -127,6 +144,10 @@
         </div>
       </div>
       <div class="a11y-block a11y-row">
+        <span class="a11y-label" style="margin:0">🌙 Tema escuro</span>
+        <button class="a11y-toggle" id="a11yToggleEscuro" aria-label="Ativar tema escuro"></button>
+      </div>
+      <div class="a11y-block a11y-row" style="margin-top:12px">
         <span class="a11y-label" style="margin:0">Alto contraste</span>
         <button class="a11y-toggle" id="a11yToggleContraste" aria-label="Ativar alto contraste"></button>
       </div>
@@ -157,8 +178,15 @@
       nivelFonte = Math.max(nivelFonte-1, 0);
       aplicar(); salvar();
     });
+    document.getElementById('a11yToggleEscuro').addEventListener('click', () => {
+      temaEscuro = !temaEscuro;
+      if(temaEscuro) contraste = false;
+      aplicar(); salvar();
+    });
     document.getElementById('a11yToggleContraste').addEventListener('click', () => {
-      contraste = !contraste; aplicar(); salvar();
+      contraste = !contraste;
+      if(contraste) temaEscuro = false;
+      aplicar(); salvar();
     });
     document.getElementById('a11yToggleEspacado').addEventListener('click', () => {
       espacado = !espacado; aplicar(); salvar();
@@ -167,7 +195,7 @@
       leituraFacil = !leituraFacil; aplicar(); salvar();
     });
     document.getElementById('a11yReset').addEventListener('click', () => {
-      nivelFonte = 0; contraste = false; espacado = false; leituraFacil = false;
+      nivelFonte = 0; contraste = false; temaEscuro = false; espacado = false; leituraFacil = false;
       aplicar(); salvar();
     });
   }
