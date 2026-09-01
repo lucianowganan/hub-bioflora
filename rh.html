@@ -176,6 +176,23 @@
 
   /* Avaliações */
   .aval-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+
+  /* Histórico estilo "status uptime" */
+  .status-row{display:grid;grid-template-columns:170px 1fr 90px;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);}
+  .status-row:last-child{border-bottom:none;}
+  .status-row-nome{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .status-bars{display:flex;gap:2px;align-items:flex-end;height:26px;}
+  .status-bar{flex:1;min-width:3px;max-width:9px;height:100%;border-radius:2px;cursor:default;background:#E7DFE0;}
+  .status-bar.good{background:var(--good);}
+  .status-bar.medio{background:var(--warn);}
+  .status-bar.ruim{background:var(--bad);}
+  .status-row-media{font-size:12px;font-weight:700;text-align:right;}
+  .status-row-media.good{color:var(--good);}
+  .status-row-media.medio{color:#8A6512;}
+  .status-row-media.ruim{color:var(--bad);}
+  .status-legenda{display:flex;gap:16px;font-size:11px;color:var(--gray);margin-top:14px;}
+  .status-legenda span{display:inline-flex;align-items:center;gap:5px;}
+  .status-legenda i{width:9px;height:9px;border-radius:2px;display:inline-block;}
   .aval-filtro-btn{font-family:'Maven Pro',sans-serif;font-size:12px;font-weight:600;padding:8px 14px;border-radius:20px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--gray);}
   .aval-filtro-btn.active{background:var(--burgundy);color:#fff;border-color:var(--burgundy);}
   .aval-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
@@ -1303,6 +1320,17 @@ async function renderAbaAvaliacoes(){
       </div>
     </div>
 
+    <div class="panel-white">
+      <h2>Histórico de desempenho</h2>
+      <p class="desc">Cada barrinha é uma avaliação, da mais antiga (esquerda) pra mais recente (direita) — verde é boa nota, amarelo é média, vermelho pede atenção.</p>
+      <div id="statusRows"></div>
+      <div class="status-legenda">
+        <span><i style="background:var(--good)"></i> Nota ≥ 4</span>
+        <span><i style="background:var(--warn)"></i> Nota entre 2,5 e 4</span>
+        <span><i style="background:var(--bad)"></i> Nota &lt; 2,5</span>
+      </div>
+    </div>
+
     <div class="toolbar-row">
       <div class="aval-toolbar">
         <button class="aval-filtro-btn ${!filtroTipoAval?'active':''}" onclick="filtrarAval(null)">Todos</button>
@@ -1318,12 +1346,53 @@ async function renderAbaAvaliacoes(){
   document.getElementById('colaboradoresParaAval') && (document.getElementById('colaboradoresParaAval').innerHTML = listaColab.map(n=>`<option value="${n}">`).join(''));
 
   renderGridAvaliacoes();
+  renderStatusRows();
 }
 window.renderAbaAvaliacoes = renderAbaAvaliacoes;
 
 function mediaAval(a){
   const notas = [a.nota_pontualidade, a.nota_qualidade, a.nota_equipe].filter(n=>n!=null);
   return notas.length ? notas.reduce((x,y)=>x+y,0)/notas.length : 0;
+}
+
+function faixaNota(media){
+  if(media >= 4) return 'good';
+  if(media >= 2.5) return 'medio';
+  return 'ruim';
+}
+
+function renderStatusRows(){
+  const area = document.getElementById('statusRows');
+  if(!area) return;
+
+  const soAvaliacoes = avaliacoesCache.filter(a => a.tipo === 'avaliacao');
+  const porColaborador = {};
+  soAvaliacoes.forEach(a => {
+    if(!porColaborador[a.colaborador_nome]) porColaborador[a.colaborador_nome] = [];
+    porColaborador[a.colaborador_nome].push(a);
+  });
+
+  const nomes = Object.keys(porColaborador).sort();
+  if(!nomes.length){
+    area.innerHTML = '<p style="font-size:12.5px;color:var(--gray);text-align:center;padding:20px 0;">Ainda não tem avaliações de desempenho registradas.</p>';
+    return;
+  }
+
+  area.innerHTML = nomes.map(nome => {
+    const lista = porColaborador[nome].slice().sort((a,b) => a.data.localeCompare(b.data));
+    const mediaGeralColab = lista.reduce((s,a)=>s+mediaAval(a),0) / lista.length;
+    const faixaGeral = faixaNota(mediaGeralColab);
+    const barras = lista.map(a => {
+      const m = mediaAval(a);
+      return `<div class="status-bar ${faixaNota(m)}" title="${nome} — ${a.periodo || fmtDataBR(a.data)} — nota ${m.toFixed(1)}"></div>`;
+    }).join('');
+    return `
+      <div class="status-row">
+        <div class="status-row-nome">${nome}</div>
+        <div class="status-bars">${barras}</div>
+        <div class="status-row-media ${faixaGeral}">${mediaGeralColab.toFixed(1)} méd.</div>
+      </div>`;
+  }).join('');
 }
 
 function filtrarAval(tipo){ filtroTipoAval = tipo; renderAbaAvaliacoes(); }
