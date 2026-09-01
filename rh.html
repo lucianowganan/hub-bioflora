@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="auth-guard.js"></script>
 <style>
   :root{
@@ -172,6 +173,38 @@
   .cal-ferias-chip{background:var(--info);color:#fff;border-radius:3px;padding:1px 4px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .cal-ferias-nav{display:flex;gap:6px;align-items:center;}
   .cal-ferias-nav button{font-family:'Maven Pro',sans-serif;font-size:11.5px;padding:6px 11px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;}
+
+  /* Avaliações */
+  .aval-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+  .aval-filtro-btn{font-family:'Maven Pro',sans-serif;font-size:12px;font-weight:600;padding:8px 14px;border-radius:20px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--gray);}
+  .aval-filtro-btn.active{background:var(--burgundy);color:#fff;border-color:var(--burgundy);}
+  .aval-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+  .aval-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;}
+  .aval-tipo-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:20px;}
+  .aval-tipo-tag.avaliacao{background:var(--info-tint);color:var(--info);}
+  .aval-tipo-tag.ocorrencia{background:var(--warn-tint);color:#8A6512;}
+  .aval-tipo-tag.advertencia{background:var(--bad-tint);color:var(--bad);}
+  .aval-tipo-tag.rnc{background:#F1ECEA;color:var(--gray);}
+  .aval-tipo-tag.meta{background:var(--good-tint);color:var(--good);}
+  .aval-nome{font-family:var(--headfont);font-size:15px;font-weight:600;margin:10px 0 2px;}
+  .aval-sub{font-size:11px;color:var(--gray);margin-bottom:10px;}
+  .aval-notas{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--paper);border-radius:8px;padding:10px;margin-bottom:10px;}
+  .aval-notas div{text-align:center;}
+  .aval-notas .n{font-family:var(--headfont);font-size:16px;font-weight:600;}
+  .aval-notas .l{font-size:9px;color:var(--gray);text-transform:uppercase;}
+  .aval-media-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--good-tint);color:var(--good);}
+  .aval-desc{font-size:12px;color:var(--ink);margin-bottom:8px;line-height:1.5;}
+  .aval-foot{font-size:10.5px;color:var(--gray);border-top:1px solid var(--line);padding-top:8px;display:flex;justify-content:space-between;}
+  .aval-del{border:none;background:none;color:var(--bad);cursor:pointer;font-size:10.5px;}
+  .estrelas{color:#E0A93D;}
+
+  /* Relatórios */
+  .rel-kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+  .rel-kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:flex;align-items:center;gap:14px;}
+  .rel-kpi .circ{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .rel-kpi .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:600;}
+  .rel-kpi .value{font-family:var(--headfont);font-weight:600;font-size:21px;}
+  .rel-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;}
 </style>
 </head>
 <body>
@@ -219,6 +252,7 @@
       </select></div>
       <div><label>Data de admissão</label><input id="cAdmissao" type="date" /></div>
       <div><label>PIS</label><input id="cPis" placeholder="000.00000.00-0" /></div>
+      <div id="campoSalarioColab" style="display:none"><label>Salário</label><input id="cSalario" type="number" step="0.01" placeholder="0,00" /></div>
       <div style="grid-column:span 2"><label>Observações</label><textarea id="cObs" placeholder="Anotações internas..."></textarea></div>
     </div>
     <div style="background:var(--paper);border-radius:9px;padding:12px 14px;margin-bottom:6px;">
@@ -250,6 +284,52 @@
       </select>
       <input type="file" id="arquivoDocColab" style="width:100%;font-size:12.5px;">
       <button class="btn secondary" style="margin-top:8px;width:100%;" onclick="enviarDocumentoColab()">Enviar documento</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalAval">
+  <div class="modal">
+    <h3 id="modalAvalTitulo">Novo registro</h3>
+    <div class="form-grid">
+      <div><label>Tipo</label><select id="avTipo" onchange="toggleCamposAval()">
+        <option value="avaliacao">Avaliação de desempenho</option>
+        <option value="ocorrencia">Ocorrência pontual</option>
+        <option value="advertencia">Advertência</option>
+        <option value="rnc">RNC (não conformidade)</option>
+        <option value="meta">Meta</option>
+      </select></div>
+      <div><label>Colaborador</label><input id="avColaborador" placeholder="Nome" list="colaboradoresParaAval"></div>
+      <datalist id="colaboradoresParaAval"></datalist>
+    </div>
+    <div class="form-grid" id="camposAvaliacaoPeriodica">
+      <div style="grid-column:span 2"><label>Período (ex: Q1 2026, Janeiro 2026)</label><input id="avPeriodo" placeholder="Período da avaliação"></div>
+    </div>
+    <div id="camposNotas" style="background:var(--paper);border-radius:9px;padding:14px;margin-bottom:10px;">
+      <div class="form-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:0;">
+        <div><label>Pontualidade (1-5)</label><input id="avNotaPontualidade" type="number" min="1" max="5"></div>
+        <div><label>Qualidade (1-5)</label><input id="avNotaQualidade" type="number" min="1" max="5"></div>
+        <div><label>Trabalho em equipe (1-5)</label><input id="avNotaEquipe" type="number" min="1" max="5"></div>
+      </div>
+    </div>
+    <div class="form-grid" id="campoTitulo">
+      <div style="grid-column:span 2"><label>Título / resumo</label><input id="avTitulo" placeholder="Ex: Atraso recorrente, Meta de vendas Q1..."></div>
+    </div>
+    <div class="form-grid" id="campoStatusMeta" style="display:none">
+      <div style="grid-column:span 2"><label>Status da meta</label><select id="avStatusMeta">
+        <option value="em_andamento">Em andamento</option>
+        <option value="cumprida">Cumprida</option>
+        <option value="nao_cumprida">Não cumprida</option>
+      </select></div>
+    </div>
+    <div class="form-grid">
+      <div><label>Avaliador / responsável</label><input id="avAvaliador" placeholder="Quem está registrando"></div>
+      <div><label>Data</label><input id="avData" type="date"></div>
+      <div style="grid-column:span 2"><label>Observações</label><textarea id="avDescricao" placeholder="Detalhes, comentários..."></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalAval').classList.remove('show')">Cancelar</button>
+      <button class="btn" onclick="salvarAvaliacao()">Salvar</button>
     </div>
   </div>
 </div>
@@ -300,8 +380,8 @@ function trocarAba(aba){
   else if(aba === 'ponto') renderAbaPonto();
   else if(aba === 'ferias') renderAbaFerias();
   else if(aba === 'dashboard') renderPlaceholder('🏠', 'Dashboard geral', 'Visão consolidada de todos os módulos de RH — vem em seguida.');
-  else if(aba === 'avaliacoes') renderPlaceholder('📊', 'Avaliações', 'Avaliações de desempenho, ocorrências, advertências e RNC — em construção.');
-  else if(aba === 'relatorios') renderPlaceholder('📈', 'Relatórios & Insights', 'Custo de folha, performance por departamento e distribuição salarial — em construção.');
+  else if(aba === 'avaliacoes') renderAbaAvaliacoes();
+  else if(aba === 'relatorios') renderAbaRelatorios();
 }
 window.trocarAba = trocarAba;
 
@@ -745,6 +825,8 @@ function abrirModalColab(id){
   document.getElementById('cStatus').value = c?.status || 'ativo';
   document.getElementById('cAdmissao').value = c?.data_admissao || '';
   document.getElementById('cPis').value = c?.pis || '';
+  document.getElementById('campoSalarioColab').style.display = meuPapelRH === 'chefia' ? 'block' : 'none';
+  document.getElementById('cSalario').value = c?.salario || '';
   document.getElementById('cObs').value = c?.observacoes || '';
   document.getElementById('cPrecisaEmail').checked = c?.precisa_email_bioflora || false;
   document.getElementById('cStatusEmail').value = c?.email_bioflora_status === 'criado' ? 'criado' : 'pendente';
@@ -791,6 +873,7 @@ async function salvarColaborador(){
     status: document.getElementById('cStatus').value,
     data_admissao: document.getElementById('cAdmissao').value || null,
     pis: document.getElementById('cPis').value.trim() || null,
+    ...(meuPapelRH === 'chefia' ? { salario: document.getElementById('cSalario').value || null } : {}),
     observacoes: document.getElementById('cObs').value.trim() || null,
     precisa_email_bioflora: precisaEmail,
     email_bioflora_status: precisaEmail ? document.getElementById('cStatusEmail').value : 'nao_solicitado',
@@ -1193,6 +1276,254 @@ function renderCalendarioFerias(){
 document.addEventListener('input', (e) => {
   if(e.target.id === 'fInicioFerias' || e.target.id === 'fFimFerias') conferirConflitoFerias();
 });
+
+// ============================================================
+// AVALIAÇÕES — desempenho, ocorrências, advertências, RNC, metas
+// ============================================================
+let avaliacoesCache = [];
+let filtroTipoAval = null;
+const TIPO_AVAL_LABEL = {avaliacao:'Avaliação', ocorrencia:'Ocorrência', advertencia:'Advertência', rnc:'RNC', meta:'Meta'};
+
+async function renderAbaAvaliacoes(){
+  const { data } = await supa.from('avaliacoes_rh').select('*').order('data', {ascending:false});
+  avaliacoesCache = data || [];
+
+  const totalAvaliacoes = avaliacoesCache.filter(a=>a.tipo==='avaliacao').length;
+  const medias = avaliacoesCache.filter(a=>a.tipo==='avaliacao').map(mediaAval);
+  const mediaGeral = medias.length ? (medias.reduce((a,b)=>a+b,0)/medias.length).toFixed(1) : '—';
+
+  document.getElementById('rhMain').innerHTML = `
+    <div class="hero">
+      <h1>Performance &<br>Evolução</h1>
+      <p>Monitore o desenvolvimento da equipe através de avaliações contínuas e feedback estruturado.</p>
+      <div class="hero-stats">
+        <div><div class="n">${totalAvaliacoes}</div><div class="l">Avaliações</div></div>
+        <div><div class="n">${mediaGeral}</div><div class="l">Média geral</div></div>
+        <div><div class="n">${avaliacoesCache.length}</div><div class="l">Registros totais</div></div>
+      </div>
+    </div>
+
+    <div class="toolbar-row">
+      <div class="aval-toolbar">
+        <button class="aval-filtro-btn ${!filtroTipoAval?'active':''}" onclick="filtrarAval(null)">Todos</button>
+        ${Object.entries(TIPO_AVAL_LABEL).map(([k,l])=>`<button class="aval-filtro-btn ${filtroTipoAval===k?'active':''}" onclick="filtrarAval('${k}')">${l}</button>`).join('')}
+      </div>
+      <button class="btn dark" onclick="abrirModalAval()">+ Novo registro</button>
+    </div>
+
+    <div class="aval-grid" id="avalGrid"></div>
+  `;
+
+  const listaColab = todosColaboradores.map(c=>c.nome_completo);
+  document.getElementById('colaboradoresParaAval') && (document.getElementById('colaboradoresParaAval').innerHTML = listaColab.map(n=>`<option value="${n}">`).join(''));
+
+  renderGridAvaliacoes();
+}
+window.renderAbaAvaliacoes = renderAbaAvaliacoes;
+
+function mediaAval(a){
+  const notas = [a.nota_pontualidade, a.nota_qualidade, a.nota_equipe].filter(n=>n!=null);
+  return notas.length ? notas.reduce((x,y)=>x+y,0)/notas.length : 0;
+}
+
+function filtrarAval(tipo){ filtroTipoAval = tipo; renderAbaAvaliacoes(); }
+window.filtrarAval = filtrarAval;
+
+function renderGridAvaliacoes(){
+  const lista = filtroTipoAval ? avaliacoesCache.filter(a=>a.tipo===filtroTipoAval) : avaliacoesCache;
+  document.getElementById('avalGrid').innerHTML = lista.length ? lista.map(a => {
+    const media = a.tipo==='avaliacao' ? mediaAval(a).toFixed(1) : null;
+    return `
+    <div class="aval-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <span class="aval-tipo-tag ${a.tipo}">${TIPO_AVAL_LABEL[a.tipo]}</span>
+        ${media ? `<span class="aval-media-badge">★ ${media}</span>` : ''}
+        ${a.tipo==='meta' && a.status_meta ? `<span class="tag ${a.status_meta==='cumprida'?'good':a.status_meta==='nao_cumprida'?'bad':'neutral'}">${{cumprida:'Cumprida',nao_cumprida:'Não cumprida',em_andamento:'Em andamento'}[a.status_meta]}</span>` : ''}
+      </div>
+      <div class="aval-nome">${a.colaborador_nome}</div>
+      <div class="aval-sub">${a.periodo || fmtDataBR(a.data)}${a.titulo ? ' — '+a.titulo : ''}</div>
+      ${a.tipo==='avaliacao' ? `<div class="aval-notas">
+        <div><div class="n">${a.nota_pontualidade??'—'}</div><div class="l">Pontualidade</div></div>
+        <div><div class="n">${a.nota_qualidade??'—'}</div><div class="l">Qualidade</div></div>
+        <div><div class="n">${a.nota_equipe??'—'}</div><div class="l">Equipe</div></div>
+      </div>` : ''}
+      <div class="aval-desc">${a.descricao || '<em style="color:var(--gray)">Sem observações.</em>'}</div>
+      <div class="aval-foot">
+        <span>${fmtDataBR(a.data)} · by ${a.avaliador_nome || '—'}</span>
+        <button class="aval-del" onclick="excluirAvaliacao('${a.id}')">Excluir</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty-state">Nenhum registro ainda.</div>';
+}
+
+function abrirModalAval(){
+  document.getElementById('modalAvalTitulo').textContent = 'Novo registro';
+  document.getElementById('avTipo').value = 'avaliacao';
+  document.getElementById('avColaborador').value = '';
+  document.getElementById('avPeriodo').value = '';
+  document.getElementById('avNotaPontualidade').value = '';
+  document.getElementById('avNotaQualidade').value = '';
+  document.getElementById('avNotaEquipe').value = '';
+  document.getElementById('avTitulo').value = '';
+  document.getElementById('avStatusMeta').value = 'em_andamento';
+  document.getElementById('avAvaliador').value = '';
+  document.getElementById('avData').value = new Date().toISOString().slice(0,10);
+  document.getElementById('avDescricao').value = '';
+  toggleCamposAval();
+  document.getElementById('modalAval').classList.add('show');
+}
+window.abrirModalAval = abrirModalAval;
+
+function toggleCamposAval(){
+  const tipo = document.getElementById('avTipo').value;
+  document.getElementById('camposAvaliacaoPeriodica').style.display = tipo==='avaliacao' ? 'grid' : 'none';
+  document.getElementById('camposNotas').style.display = tipo==='avaliacao' ? 'block' : 'none';
+  document.getElementById('campoTitulo').style.display = tipo==='avaliacao' ? 'none' : 'grid';
+  document.getElementById('campoStatusMeta').style.display = tipo==='meta' ? 'grid' : 'none';
+}
+window.toggleCamposAval = toggleCamposAval;
+
+async function salvarAvaliacao(){
+  const colaborador_nome = document.getElementById('avColaborador').value.trim();
+  if(!colaborador_nome){ alert('Informe o colaborador.'); return; }
+  const tipo = document.getElementById('avTipo').value;
+
+  const { data: { session } } = await supa.auth.getSession();
+  const dados = {
+    tipo, colaborador_nome,
+    periodo: tipo==='avaliacao' ? (document.getElementById('avPeriodo').value.trim() || null) : null,
+    nota_pontualidade: tipo==='avaliacao' ? (document.getElementById('avNotaPontualidade').value || null) : null,
+    nota_qualidade: tipo==='avaliacao' ? (document.getElementById('avNotaQualidade').value || null) : null,
+    nota_equipe: tipo==='avaliacao' ? (document.getElementById('avNotaEquipe').value || null) : null,
+    titulo: tipo!=='avaliacao' ? (document.getElementById('avTitulo').value.trim() || null) : null,
+    status_meta: tipo==='meta' ? document.getElementById('avStatusMeta').value : null,
+    avaliador_nome: document.getElementById('avAvaliador').value.trim() || null,
+    data: document.getElementById('avData').value || new Date().toISOString().slice(0,10),
+    descricao: document.getElementById('avDescricao').value.trim() || null,
+    criado_por: session.user.id
+  };
+
+  const { error } = await supa.from('avaliacoes_rh').insert(dados);
+  if(error){ alert('Erro ao salvar: '+error.message); return; }
+  document.getElementById('modalAval').classList.remove('show');
+  await renderAbaAvaliacoes();
+}
+window.salvarAvaliacao = salvarAvaliacao;
+
+async function excluirAvaliacao(id){
+  if(!confirm('Excluir este registro?')) return;
+  const { error } = await supa.from('avaliacoes_rh').delete().eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  await renderAbaAvaliacoes();
+}
+window.excluirAvaliacao = excluirAvaliacao;
+
+// ============================================================
+// RELATÓRIOS & INSIGHTS — só chefia
+// ============================================================
+let chartPerformanceDept = null;
+let chartSalarial = null;
+
+async function renderAbaRelatorios(){
+  await carregarColaboradores();
+  const { data: avaliacoes } = await supa.from('avaliacoes_rh').select('*').eq('tipo','avaliacao');
+  const { data: ferias } = await supa.from('ferias_solicitacoes').select('*').eq('status','aprovada').order('data_inicio');
+
+  const ativos = todosColaboradores.filter(c=>c.status==='ativo');
+  const custoFolha = ativos.reduce((soma,c)=>soma + (Number(c.salario)||0), 0);
+  const hojeStr = new Date().toISOString().slice(0,10);
+  const proximasFerias = (ferias||[]).filter(f=>f.data_fim >= hojeStr).slice(0,6);
+
+  document.getElementById('rhMain').innerHTML = `
+    <h1 style="font-family:var(--headfont);font-size:24px;margin:0 0 4px;">Relatórios & <span style="color:var(--burgundy);font-style:italic;">Insights</span></h1>
+    <p style="font-size:13px;color:var(--gray);margin:0 0 22px;">Análise de performance, custos e capital humano.</p>
+
+    <div class="rel-kpi-row">
+      <div class="rel-kpi"><div class="circ" style="background:var(--burgundy-tint);">💰</div><div><div class="label">Custo folha</div><div class="value">R$ ${custoFolha.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div></div>
+      <div class="rel-kpi"><div class="circ" style="background:var(--info-tint);">👥</div><div><div class="label">Headcount</div><div class="value">${ativos.length} ativos</div></div></div>
+      <div class="rel-kpi"><div class="circ" style="background:var(--good-tint);">📊</div><div><div class="label">Avaliações</div><div class="value">${(avaliacoes||[]).length}</div></div></div>
+    </div>
+
+    <div class="rel-grid">
+      <div class="panel-white">
+        <h2>Performance por departamento</h2>
+        <p class="desc">Média das notas de avaliação (pontualidade, qualidade, equipe)</p>
+        <canvas id="chartPerformanceDept" height="130"></canvas>
+      </div>
+      <div class="panel-white">
+        <h2>Próximas férias</h2>
+        <p class="desc">Períodos já aprovados</p>
+        <div>${proximasFerias.length ? proximasFerias.map(f=>`
+          <div class="solic-item"><div><div class="solic-nome">${f.solicitante_nome}</div><div class="solic-datas">${fmtDataBR(f.data_inicio)} a ${fmtDataBR(f.data_fim)}</div></div></div>
+        `).join('') : '<p style="font-size:12.5px;color:var(--gray);text-align:center;padding:20px 0;">Sem férias agendadas.</p>'}</div>
+      </div>
+    </div>
+
+    <div class="panel-white" style="margin-top:16px;">
+      <h2>Distribuição salarial por departamento</h2>
+      <p class="desc">Média de salário cadastrado por setor</p>
+      <canvas id="chartSalarial" height="90"></canvas>
+    </div>
+  `;
+
+  renderGraficoPerformanceDept(avaliacoes || []);
+  renderGraficoSalarial(ativos);
+}
+window.renderAbaRelatorios = renderAbaRelatorios;
+
+function renderGraficoPerformanceDept(avaliacoes){
+  const porDepto = {};
+  avaliacoes.forEach(a => {
+    const colab = todosColaboradores.find(c => c.nome_completo.toLowerCase() === a.colaborador_nome.toLowerCase());
+    const depto = colab?.departamento || 'Não definido';
+    if(!porDepto[depto]) porDepto[depto] = {pont:[], qual:[], eq:[]};
+    if(a.nota_pontualidade!=null) porDepto[depto].pont.push(a.nota_pontualidade);
+    if(a.nota_qualidade!=null) porDepto[depto].qual.push(a.nota_qualidade);
+    if(a.nota_equipe!=null) porDepto[depto].eq.push(a.nota_equipe);
+  });
+  const media = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+  const deptos = Object.keys(porDepto);
+
+  if(chartPerformanceDept) chartPerformanceDept.destroy();
+  const ctx = document.getElementById('chartPerformanceDept');
+  if(!ctx) return;
+  chartPerformanceDept = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: deptos,
+      datasets: [
+        { label:'Pontualidade', data: deptos.map(d=>media(porDepto[d].pont)), backgroundColor:'#B4472F' },
+        { label:'Qualidade', data: deptos.map(d=>media(porDepto[d].qual)), backgroundColor:'#8B9D6B' },
+        { label:'Equipe', data: deptos.map(d=>media(porDepto[d].eq)), backgroundColor:'#3E6B93' },
+      ]
+    },
+    options: { responsive:true, scales:{y:{beginAtZero:true, max:5}}, plugins:{legend:{position:'bottom'}} }
+  });
+}
+
+function renderGraficoSalarial(ativos){
+  const porDepto = {};
+  ativos.forEach(c => {
+    if(!c.salario) return;
+    const depto = c.departamento || 'Não definido';
+    if(!porDepto[depto]) porDepto[depto] = [];
+    porDepto[depto].push(Number(c.salario));
+  });
+  const deptos = Object.keys(porDepto);
+
+  if(chartSalarial) chartSalarial.destroy();
+  const ctx = document.getElementById('chartSalarial');
+  if(!ctx) return;
+  if(!deptos.length){ ctx.parentElement.innerHTML = '<p style="font-size:12.5px;color:var(--gray);text-align:center;padding:20px 0;">Nenhum salário cadastrado ainda.</p>'; return; }
+  chartSalarial = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: deptos,
+      datasets: [{ label:'Salário médio', data: deptos.map(d => porDepto[d].reduce((a,b)=>a+b,0)/porDepto[d].length), backgroundColor: deptos.map(d=>corDoSetor(d)) }]
+    },
+    options: { responsive:true, indexAxis:'y', plugins:{legend:{display:false}} }
+  });
+}
 
 init();
 </script>
