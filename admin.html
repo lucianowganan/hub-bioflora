@@ -124,7 +124,7 @@ const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', conferencia:'Conferência', atendente:'Atendente', sem_papel:'Sem papel'};
+const ROLE_LABELS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', conferencia:'Conferência', atendente:'Atendente', cpd:'CPD', sem_papel:'Sem papel'};
 
 async function logout(){ await supa.auth.signOut(); window.location.href = 'login.html'; }
 
@@ -339,7 +339,7 @@ window.excluirAviso = excluirAviso;
 
 init();
 </script>
-<script src="acessibilidade.js"></script>
+<script src="acessibilidade.js?v=2"></script>
 <script src="hub-sidebar.js"></script>
 </body>
 </html>

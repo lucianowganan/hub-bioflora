@@ -530,6 +530,7 @@ function renderAbaPonto(){
   `;
 
   if(meuPapelRH === 'gestao') document.getElementById('uploadPanel').style.display = 'none';
+  if(meuPapelRH === 'rh') document.getElementById('dashboardArea').style.display = 'none';
 
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
@@ -606,7 +607,7 @@ function renderAbaPonto(){
         if(upsertErr) throw upsertErr;
       }
       showStatusPonto(`✓ ${parsed.length} funcionários salvos para o período ${inicio} a ${fim}.`, 'ok');
-      await loadDashboardPonto();
+      if(meuPapelRH !== 'rh') await loadDashboardPonto();
     } catch(err){
       console.error(err);
       showStatusPonto('Erro ao salvar: ' + err.message, 'err');
@@ -615,7 +616,7 @@ function renderAbaPonto(){
   });
 
   checkPrazoPonto();
-  loadDashboardPonto();
+  if(meuPapelRH !== 'rh') loadDashboardPonto();
 }
 
 async function checkPrazoPonto(){
@@ -1596,7 +1597,7 @@ function renderGraficoSalarial(ativos){
 
 init();
 </script>
-<script src="acessibilidade.js"></script>
+<script src="acessibilidade.js?v=2"></script>
 <script src="hub-sidebar.js"></script>
 </body>
 </html>
