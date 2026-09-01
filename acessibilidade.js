@@ -93,30 +93,17 @@
       }
       html.a11y-contraste a{color:#FFD600 !important; text-decoration:underline;}
 
+      /* Tema escuro por inversão de cor — mesma técnica que extensões
+         de "modo escuro forçado" usam. Não depende de nenhuma classe,
+         variável ou estrutura da página: funciona igual em qualquer
+         tela, presente ou futura, garantido. */
       html.a11y-escuro{
-        --burgundy:#C4527A !important; --burgundy-tint:rgba(196,82,122,.16) !important;
-        --ink:#ECE7E8 !important; --paper:#1B1819 !important; --line:#3A3538 !important; --gray:#AFA6A8 !important;
-        --good:#4FBE79 !important; --good-tint:rgba(79,190,121,.14) !important;
-        --bad:#E36B5C !important; --bad-tint:rgba(227,107,92,.14) !important;
-        --warn:#D9A54A !important; --warn-tint:rgba(217,165,74,.14) !important;
-        --info:#5B9BD1 !important; --info-tint:rgba(91,155,209,.14) !important;
+        filter: invert(1) hue-rotate(180deg);
+        background:#fff;
       }
-      html.a11y-escuro body{background:#1B1819 !important;color:#ECE7E8 !important;}
-      html.a11y-escuro *:not(.a11y-fab):not(.a11y-panel):not(.a11y-panel *){
-        background:transparent !important;
-        color:#ECE7E8 !important;
-        border-color:#3A3538 !important;
-      }
-      html.a11y-escuro input:not(.a11y-fab), html.a11y-escuro select, html.a11y-escuro textarea{
-        background:#242023 !important; color:#ECE7E8 !important; border:1px solid #4A4448 !important;
-      }
-      html.a11y-escuro a{color:#C4527A !important;}
-      html.a11y-escuro .panel, html.a11y-escuro .card, html.a11y-escuro .kpi,
-      html.a11y-escuro .coluna, html.a11y-escuro .card-tarefa, html.a11y-escuro .module-card,
-      html.a11y-escuro .box, html.a11y-escuro table, html.a11y-escuro .msg-row.bot,
-      html.a11y-escuro .colab-card, html.a11y-escuro .cliente-row, html.a11y-escuro .brinde-card,
-      html.a11y-escuro .aval-card, html.a11y-escuro .modal {
-        background:#242023 !important;
+      html.a11y-escuro img, html.a11y-escuro video, html.a11y-escuro svg image,
+      html.a11y-escuro .a11y-fab, html.a11y-escuro .a11y-panel{
+        filter: invert(1) hue-rotate(180deg); /* desfaz a inversão só nessas, senão fotos ficam com cor estranha */
       }
     `;
     const style = document.createElement('style');
