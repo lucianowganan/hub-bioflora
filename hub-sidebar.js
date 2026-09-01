@@ -14,6 +14,7 @@
     { href: 'tarefas.html', icon: '🗂️', label: 'Quadro de Tarefas', roles: null },
     { href: 'calendario-interno.html', icon: '🗓️', label: 'Calendário Interno', roles: null },
     { href: 'rh.html', icon: '🗂️', label: 'Central de RH', roles: null },
+    { href: 'cliente-fiel.html', icon: '💳', label: 'Cliente Fiel', roles: ['chefia','recepcao','conferencia','atendente'] },
     { href: 'rotulos.html', icon: '🏷️', label: 'Controle de Rótulos', roles: ['chefia','recepcao','conferencia','atendente'] },
     { href: 'producao.html', icon: '🧪', label: 'Ordem de Produção', roles: ['chefia','laboratorio','conferencia','atendente'] },
     { href: 'controle-producao.html', icon: '📋', label: 'Controle de Produção', roles: ['chefia','laboratorio'] },

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cliente Fiel — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="auth-guard.js"></script>
+<style>
+  :root{
+    --vinho:#8B1A3A; --vinho-escuro:#6B1230; --vinho-tint:#F7EEF1;
+    --ink:#2A2A2A; --paper:#F4F4F4; --line:#E8E0E3; --gray:#5A5A5A;
+    --good:#2D9B4E; --good-tint:#EAF6ED; --bad:#E84040; --bad-tint:#FDEDED;
+    --warn:#B87700; --warn-tint:#FFF3D6;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .shell{display:flex;min-height:100vh;}
+
+  .cf-nav{width:220px;flex-shrink:0;background:#fff;border-right:1px solid var(--line);padding:24px 16px;}
+  .cf-nav-brand{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 2px;}
+  .cf-nav-brand span{color:var(--vinho);}
+  .cf-nav-sub{font-size:11px;color:var(--gray);margin:0 0 22px;}
+  .cf-nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;cursor:pointer;font-size:13.5px;color:var(--gray);margin-bottom:2px;}
+  .cf-nav-item:hover{background:var(--paper);}
+  .cf-nav-item.active{background:var(--vinho);color:#fff;font-weight:600;}
+  .cf-nav-foot{margin-top:24px;}
+  .cf-nav-foot a{font-size:12px;color:var(--gray);text-decoration:none;}
+
+  .cf-main{flex:1;padding:32px 36px 60px;max-width:1300px;}
+
+  .hero{background:linear-gradient(160deg,var(--vinho),var(--vinho-escuro));border-radius:20px;padding:34px 38px;color:#fff;margin-bottom:22px;position:relative;overflow:hidden;}
+  .hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:rgba(255,255,255,.05);border-radius:50%;}
+  .hero h1{font-family:var(--headfont);font-size:32px;font-weight:600;margin:0 0 6px;}
+  .hero p{font-size:13.5px;color:rgba(255,255,255,.85);margin:0 0 20px;max-width:440px;}
+  .hero-stats{display:flex;gap:32px;position:relative;}
+  .hero-stats .n{font-family:var(--headfont);font-size:28px;font-weight:600;}
+  .hero-stats .l{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.7);margin-top:2px;}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;}
+  .kpi .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:600;}
+  .kpi .value{font-family:var(--headfont);font-weight:600;font-size:24px;margin-top:5px;}
+  .kpi.alert{background:var(--warn-tint);}
+  .kpi.alert .value{color:var(--warn);}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:16px;}
+  .panel h2{font-family:var(--headfont);font-size:15px;font-weight:600;margin:0 0 4px;}
+  .panel .desc{font-size:12px;color:var(--gray);margin:0 0 14px;}
+
+  .search-row{display:flex;gap:10px;margin-bottom:18px;}
+  .search-row input{flex:1;font-family:'Maven Pro',sans-serif;font-size:14px;padding:12px 16px;border:1px solid var(--line);border-radius:10px;}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;padding:11px 20px;border-radius:10px;border:none;cursor:pointer;background:var(--vinho);color:#fff;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn.dark{background:var(--ink);color:#fff;}
+
+  .cliente-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;cursor:pointer;background:#fff;}
+  .cliente-row:hover{border-color:var(--vinho);}
+  .avatar{width:38px;height:38px;border-radius:50%;background:var(--vinho);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--headfont);font-weight:700;font-size:13px;flex-shrink:0;}
+  .cliente-row-info{flex:1;}
+  .cliente-row-nome{font-size:13px;font-weight:700;}
+  .cliente-row-sub{font-size:11px;color:var(--gray);}
+  .cliente-row-pts{font-size:14px;font-weight:800;color:var(--vinho);}
+  .nivel-tag{font-size:9px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:20px;background:var(--vinho-tint);color:var(--vinho);margin-left:6px;}
+
+  .ficha-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;}
+  .ficha-avatar{width:56px;height:56px;border-radius:50%;background:var(--vinho);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--headfont);font-weight:700;font-size:20px;}
+  .ficha-pts{font-family:var(--headfont);font-size:34px;font-weight:700;color:var(--vinho);}
+  .ficha-info-row{display:flex;gap:8px;font-size:12.5px;color:var(--gray);margin-top:3px;flex-wrap:wrap;}
+  .extrato-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .extrato-item:last-child{border-bottom:none;}
+  .extrato-pts{font-weight:800;}
+  .extrato-pts.pos{color:var(--good);} .extrato-pts.neg{color:var(--bad);}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .form-grid label{font-size:11px;color:var(--gray);font-weight:600;display:block;margin-bottom:4px;}
+  .form-grid input,.form-grid select,.form-grid textarea{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:7px;}
+
+  .brinde-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+  .brinde-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center;}
+  .brinde-card img{width:100%;height:100px;object-fit:cover;border-radius:10px;margin-bottom:10px;background:var(--paper);}
+  .brinde-emoji-placeholder{width:100%;height:100px;border-radius:10px;margin-bottom:10px;background:var(--vinho-tint);display:flex;align-items:center;justify-content:center;font-size:32px;}
+  .brinde-nome{font-weight:700;font-size:13px;}
+  .brinde-pts{color:var(--vinho);font-weight:800;font-size:13px;margin:4px 0 8px;}
+  .tag-inativo{background:#F1ECEA;color:var(--gray);font-size:9px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:20px;}
+
+  .modal-overlay{position:fixed !important;inset:0 !important;background:rgba(0,0,0,.4);display:none;align-items:center !important;justify-content:center !important;z-index:999 !important;padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:16px;padding:24px;max-width:460px;width:100%;max-height:88vh;overflow:auto;}
+  .modal h3{font-family:var(--headfont);margin:0 0 14px;font-size:16px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--gray);font-size:13px;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="cf-nav">
+    <h1 class="cf-nav-brand">Cliente <span>Fiel</span></h1>
+    <p class="cf-nav-sub">Farmácia Bioflora</p>
+    <div class="cf-nav-item" data-tab="dashboard" onclick="trocarAbaCF('dashboard')">🏠 Dashboard</div>
+    <div class="cf-nav-item" data-tab="buscar" onclick="trocarAbaCF('buscar')">🔍 Buscar cliente</div>
+    <div class="cf-nav-item" data-tab="brindes" onclick="trocarAbaCF('brindes')">🎁 Catálogo de brindes</div>
+    <div class="cf-nav-foot"><a href="index.html">← Voltar ao Hub</a></div>
+  </nav>
+  <main class="cf-main" id="cfMain"></main>
+</div>
+
+<div class="modal-overlay" id="modalNovoCliente">
+  <div class="modal">
+    <h3>Novo cliente</h3>
+    <div class="form-grid">
+      <div style="grid-column:span 2"><label>Nome completo*</label><input id="ncNome"></div>
+      <div><label>Telefone</label><input id="ncTelefone" placeholder="(35) 99999-9999"></div>
+      <div><label>CPF</label><input id="ncCpf"></div>
+      <div><label>E-mail</label><input id="ncEmail" type="email"></div>
+      <div><label>Data de nascimento</label><input id="ncNascimento" type="date"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalNovoCliente').classList.remove('show')">Cancelar</button>
+      <button class="btn" onclick="salvarNovoCliente()">Cadastrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalLancarPontos">
+  <div class="modal">
+    <h3>Lançar pontos</h3>
+    <div class="form-grid">
+      <div><label>Pontos*</label><input id="lpPontos" type="number"></div>
+      <div><label>Validade (opcional)</label><input id="lpValidade" type="date"></div>
+      <div style="grid-column:span 2"><label>Descrição</label><input id="lpDescricao" placeholder="Ex: Compra de R$ 150,00"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalLancarPontos').classList.remove('show')">Cancelar</button>
+      <button class="btn" onclick="confirmarLancarPontos()">Lançar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalResgate">
+  <div class="modal">
+    <h3>Registrar resgate</h3>
+    <div class="form-grid">
+      <div style="grid-column:span 2"><label>Brinde</label><select id="rgBrinde" onchange="atualizarSaldoAposResgate()"></select></div>
+    </div>
+    <p id="rgAvisoSaldo" style="font-size:12px;color:var(--gray);"></p>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px;">
+      <input type="checkbox" id="rgRetiradoAgora" style="width:auto"> Cliente já levou o brinde agora
+    </label>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalResgate').classList.remove('show')">Cancelar</button>
+      <button class="btn" onclick="confirmarResgate()">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalBrinde">
+  <div class="modal">
+    <h3 id="modalBrindeTitulo">Novo brinde</h3>
+    <div class="form-grid">
+      <div style="grid-column:span 2"><label>Nome*</label><input id="brNome"></div>
+      <div><label>Pontos necessários*</label><input id="brPontos" type="number"></div>
+      <div><label>Estoque (opcional)</label><input id="brEstoque" type="number"></div>
+      <div style="grid-column:span 2"><label>URL da imagem (opcional)</label><input id="brImagem" placeholder="https://..."></div>
+      <div style="grid-column:span 2"><label>Descrição</label><textarea id="brDescricao"></textarea></div>
+      <div><label>Status</label><select id="brAtivo"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalBrinde').classList.remove('show')">Cancelar</button>
+      <button class="btn" onclick="salvarBrinde()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let abaAtivaCF = 'dashboard';
+let clienteEmFichaId = null;
+let clientesCacheCF = [];
+let brindesCacheCF = [];
+
+async function init(){
+  await requireRole(['chefia','recepcao','conferencia','atendente']);
+  trocarAbaCF('dashboard');
+}
+
+function trocarAbaCF(aba){
+  abaAtivaCF = aba;
+  document.querySelectorAll('.cf-nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab===aba));
+  if(aba==='dashboard') renderDashboardCF();
+  else if(aba==='buscar') renderBuscarCF();
+  else if(aba==='brindes') renderBrindesCF();
+}
+window.trocarAbaCF = trocarAbaCF;
+
+function saldoCliente(clienteId, transacoes){
+  return transacoes.filter(t=>t.cliente_id===clienteId).reduce((s,t)=>s+t.pontos,0);
+}
+
+let chartPontosMes = null;
+
+async function renderDashboardCF(){
+  const { data: clientes } = await supa.from('clientes_fidelidade').select('*');
+  const { data: transacoes } = await supa.from('fidelidade_transacoes').select('*');
+  const { data: resgates } = await supa.from('fidelidade_resgates').select('*');
+  clientesCacheCF = clientes || [];
+
+  const trans = transacoes || [];
+  const pontosCirculando = trans.reduce((s,t)=>s+t.pontos,0);
+  const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
+  const resgatesMes = (resgates||[]).filter(r=>new Date(r.criado_em) >= inicioMes).length;
+
+  const hojeStr = new Date().toISOString().slice(0,10);
+  const em30dias = new Date(); em30dias.setDate(em30dias.getDate()+30);
+  const em30diasStr = em30dias.toISOString().slice(0,10);
+  const clientesComVencimento = new Set(
+    trans.filter(t => t.tipo==='ganho' && t.data_validade && t.data_validade >= hojeStr && t.data_validade <= em30diasStr).map(t=>t.cliente_id)
+  );
+
+  document.getElementById('cfMain').innerHTML = `
+    <div class="hero">
+      <h1>Cliente Fiel</h1>
+      <p>Fidelidade sem cartão físico — busca por nome, telefone ou CPF.</p>
+      <div class="hero-stats">
+        <div><div class="n">${clientesCacheCF.length}</div><div class="l">Clientes</div></div>
+        <div><div class="n">${pontosCirculando.toLocaleString('pt-BR')}</div><div class="l">Pontos em circulação</div></div>
+        <div><div class="n">${resgatesMes}</div><div class="l">Resgates este mês</div></div>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="label">Total de clientes</div><div class="value">${clientesCacheCF.length}</div></div>
+      <div class="kpi"><div class="label">Pontos em circulação</div><div class="value">${pontosCirculando.toLocaleString('pt-BR')}</div></div>
+      <div class="kpi"><div class="label">Resgates no mês</div><div class="value">${resgatesMes}</div></div>
+      <div class="kpi alert"><div class="label">⏰ Pontos vencendo (30d)</div><div class="value">${clientesComVencimento.size} clientes</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Clientes cadastrados recentemente</h2>
+      <p class="desc">Últimos 8 cadastros</p>
+      <div id="listaRecentesCF"></div>
+    </div>
+  `;
+
+  const recentes = [...clientesCacheCF].sort((a,b)=>new Date(b.criado_em)-new Date(a.criado_em)).slice(0,8);
+  document.getElementById('listaRecentesCF').innerHTML = recentes.length ? recentes.map(c => {
+    const saldo = saldoCliente(c.id, trans);
+    return clienteRowHtml(c, saldo);
+  }).join('') : '<div class="empty-state">Nenhum cliente cadastrado ainda.</div>';
+}
+
+function clienteRowHtml(c, saldo){
+  return `<div class="cliente-row" onclick="abrirFichaCliente('${c.id}')">
+    <div class="avatar">${iniciaisCF(c.nome)}</div>
+    <div class="cliente-row-info">
+      <div class="cliente-row-nome">${c.nome}<span class="nivel-tag">${c.nivel_atual}</span></div>
+      <div class="cliente-row-sub">${c.telefone || c.cpf || 'sem contato'}</div>
+    </div>
+    <div class="cliente-row-pts">${saldo} pts</div>
+  </div>`;
+}
+function iniciaisCF(nome){ return (nome||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase(); }
+
+async function renderBuscarCF(){
+  document.getElementById('cfMain').innerHTML = `
+    <h1 style="font-family:var(--headfont);font-size:22px;margin:0 0 16px;">Buscar cliente</h1>
+    <div class="search-row">
+      <input id="buscaClienteCF" placeholder="Nome, telefone, CPF ou código..." oninput="filtrarClientesCF(this.value)">
+      <button class="btn dark" onclick="document.getElementById('modalNovoCliente').classList.add('show')">+ Novo cliente</button>
+    </div>
+    <div id="resultadoBuscaCF"></div>
+  `;
+  const { data: clientes } = await supa.from('clientes_fidelidade').select('*').order('nome');
+  clientesCacheCF = clientes || [];
+  filtrarClientesCF('');
+}
+window.renderBuscarCF = renderBuscarCF;
+
+async function filtrarClientesCF(termo){
+  const t = termo.trim().toLowerCase();
+  const lista = !t ? clientesCacheCF : clientesCacheCF.filter(c =>
+    (c.nome||'').toLowerCase().includes(t) || (c.telefone||'').includes(t) || (c.cpf||'').includes(t) || (c.codigo_acesso||'').toLowerCase().includes(t)
+  );
+  const { data: transacoes } = await supa.from('fidelidade_transacoes').select('cliente_id,pontos').in('cliente_id', lista.map(c=>c.id));
+  document.getElementById('resultadoBuscaCF').innerHTML = lista.length ? lista.map(c => clienteRowHtml(c, saldoCliente(c.id, transacoes||[]))).join('') : '<div class="empty-state">Nenhum cliente encontrado.</div>';
+}
+window.filtrarClientesCF = filtrarClientesCF;
+
+async function salvarNovoCliente(){
+  const nome = document.getElementById('ncNome').value.trim();
+  if(!nome){ alert('Digite o nome.'); return; }
+  const { data: { session } } = await supa.auth.getSession();
+  const { data, error } = await supa.from('clientes_fidelidade').insert({
+    nome,
+    telefone: document.getElementById('ncTelefone').value.trim() || null,
+    cpf: document.getElementById('ncCpf').value.trim() || null,
+    email: document.getElementById('ncEmail').value.trim() || null,
+    data_nascimento: document.getElementById('ncNascimento').value || null,
+    criado_por: session.user.id
+  }).select().single();
+  if(error){ alert('Erro: '+error.message); return; }
+  document.getElementById('modalNovoCliente').classList.remove('show');
+  ['ncNome','ncTelefone','ncCpf','ncEmail','ncNascimento'].forEach(id=>document.getElementById(id).value='');
+  abrirFichaCliente(data.id);
+}
+window.salvarNovoCliente = salvarNovoCliente;
+
+async function abrirFichaCliente(id){
+  clienteEmFichaId = id;
+  const { data: cliente } = await supa.from('clientes_fidelidade').select('*').eq('id', id).single();
+  const { data: transacoes } = await supa.from('fidelidade_transacoes').select('*').eq('cliente_id', id).order('criado_em', {ascending:false});
+  const saldo = (transacoes||[]).reduce((s,t)=>s+t.pontos,0);
+
+  document.getElementById('cfMain').innerHTML = `
+    <button class="btn secondary" style="margin-bottom:16px;" onclick="renderBuscarCF()">← Voltar à busca</button>
+    <div class="panel">
+      <div class="ficha-header">
+        <div style="display:flex;gap:14px;align-items:center;">
+          <div class="ficha-avatar">${iniciaisCF(cliente.nome)}</div>
+          <div>
+            <h2 style="font-size:18px;margin:0;">${cliente.nome}</h2>
+            <div class="ficha-info-row">
+              ${cliente.telefone?`<span>📞 ${cliente.telefone}</span>`:''}
+              ${cliente.cpf?`<span>${cliente.cpf}</span>`:''}
+              <span>Código: ${cliente.codigo_acesso}</span>
+              <span class="nivel-tag">${cliente.nivel_atual}</span>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div class="ficha-pts">${saldo}</div>
+          <div style="font-size:11px;color:var(--gray);">pontos</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn" onclick="abrirModalLancarPontos()">+ Lançar pontos</button>
+        <button class="btn secondary" onclick="abrirModalResgate()">🎁 Registrar resgate</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Histórico completo</h2>
+      <p class="desc">Todos os lançamentos, mais recente primeiro</p>
+      <div id="extratoClienteCF"></div>
+    </div>
+  `;
+
+  document.getElementById('extratoClienteCF').innerHTML = (transacoes||[]).length ? transacoes.map(t => `
+    <div class="extrato-item">
+      <div>
+        <div>${t.descricao || {ganho:'Pontos ganhos',resgate:'Resgate',ajuste:'Ajuste',expiracao:'Expiração'}[t.tipo]}</div>
+        <div style="color:var(--gray);font-size:11px;">${new Date(t.criado_em).toLocaleDateString('pt-BR')}${t.data_validade ? ' · válido até '+new Date(t.data_validade+'T00:00:00').toLocaleDateString('pt-BR') : ''}</div>
+      </div>
+      <div class="extrato-pts ${t.pontos>=0?'pos':'neg'}">${t.pontos>=0?'+':''}${t.pontos}</div>
+    </div>`).join('') : '<div class="empty-state">Nenhum lançamento ainda.</div>';
+}
+window.abrirFichaCliente = abrirFichaCliente;
+
+function abrirModalLancarPontos(){
+  document.getElementById('lpPontos').value = '';
+  document.getElementById('lpValidade').value = '';
+  document.getElementById('lpDescricao').value = '';
+  document.getElementById('modalLancarPontos').classList.add('show');
+}
+window.abrirModalLancarPontos = abrirModalLancarPontos;
+
+async function confirmarLancarPontos(){
+  const pontos = Number(document.getElementById('lpPontos').value);
+  if(!pontos){ alert('Informe a quantidade de pontos.'); return; }
+  const { data: { session } } = await supa.auth.getSession();
+  const { error } = await supa.from('fidelidade_transacoes').insert({
+    cliente_id: clienteEmFichaId, tipo: 'ganho', pontos,
+    descricao: document.getElementById('lpDescricao').value.trim() || null,
+    data_validade: document.getElementById('lpValidade').value || null,
+    registrado_por: session.user.id
+  });
+  if(error){ alert('Erro: '+error.message); return; }
+  document.getElementById('modalLancarPontos').classList.remove('show');
+  abrirFichaCliente(clienteEmFichaId);
+}
+window.confirmarLancarPontos = confirmarLancarPontos;
+
+async function abrirModalResgate(){
+  const { data: brindes } = await supa.from('fidelidade_brindes').select('*').eq('ativo', true).order('pontos_necessarios');
+  brindesCacheCF = brindes || [];
+  document.getElementById('rgBrinde').innerHTML = brindesCacheCF.map(b=>`<option value="${b.id}">${b.nome} — ${b.pontos_necessarios} pts</option>`).join('') || '<option>Nenhum brinde ativo</option>';
+  document.getElementById('rgRetiradoAgora').checked = false;
+  atualizarSaldoAposResgate();
+  document.getElementById('modalResgate').classList.add('show');
+}
+window.abrirModalResgate = abrirModalResgate;
+
+async function atualizarSaldoAposResgate(){
+  const brindeId = document.getElementById('rgBrinde').value;
+  const brinde = brindesCacheCF.find(b=>b.id===brindeId);
+  if(!brinde){ document.getElementById('rgAvisoSaldo').textContent=''; return; }
+  const { data: transacoes } = await supa.from('fidelidade_transacoes').select('pontos').eq('cliente_id', clienteEmFichaId);
+  const saldo = (transacoes||[]).reduce((s,t)=>s+t.pontos,0);
+  const restante = saldo - brinde.pontos_necessarios;
+  document.getElementById('rgAvisoSaldo').innerHTML = restante < 0
+    ? `<strong style="color:var(--bad)">Saldo insuficiente</strong> — cliente tem ${saldo} pts, precisa de ${brinde.pontos_necessarios}.`
+    : `Saldo atual: ${saldo} pts → depois do resgate: ${restante} pts.`;
+}
+window.atualizarSaldoAposResgate = atualizarSaldoAposResgate;
+
+async function confirmarResgate(){
+  const brindeId = document.getElementById('rgBrinde').value;
+  const brinde = brindesCacheCF.find(b=>b.id===brindeId);
+  if(!brinde){ alert('Escolha um brinde.'); return; }
+
+  const { data: { session } } = await supa.auth.getSession();
+  const { data: transacao, error: erroTrans } = await supa.from('fidelidade_transacoes').insert({
+    cliente_id: clienteEmFichaId, tipo: 'resgate', pontos: -brinde.pontos_necessarios,
+    descricao: 'Resgate: '+brinde.nome, registrado_por: session.user.id
+  }).select().single();
+  if(erroTrans){ alert('Erro: '+erroTrans.message); return; }
+
+  const retiradoAgora = document.getElementById('rgRetiradoAgora').checked;
+  const { error: erroResgate } = await supa.from('fidelidade_resgates').insert({
+    cliente_id: clienteEmFichaId, brinde_id: brindeId, transacao_id: transacao.id,
+    pontos_usados: brinde.pontos_necessarios, retirado: retiradoAgora,
+    retirado_em: retiradoAgora ? new Date().toISOString() : null, registrado_por: session.user.id
+  });
+  if(erroResgate){ alert('Erro ao registrar resgate: '+erroResgate.message); return; }
+
+  document.getElementById('modalResgate').classList.remove('show');
+  abrirFichaCliente(clienteEmFichaId);
+}
+window.confirmarResgate = confirmarResgate;
+
+async function renderBrindesCF(){
+  const { data } = await supa.from('fidelidade_brindes').select('*').order('pontos_necessarios');
+  brindesCacheCF = data || [];
+
+  document.getElementById('cfMain').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <h1 style="font-family:var(--headfont);font-size:22px;margin:0;">Catálogo de brindes</h1>
+      <button class="btn dark" onclick="abrirModalBrinde()">+ Novo brinde</button>
+    </div>
+    <div class="brinde-grid" id="brindeGridCF"></div>
+  `;
+
+  document.getElementById('brindeGridCF').innerHTML = brindesCacheCF.length ? brindesCacheCF.map(b => `
+    <div class="brinde-card">
+      ${b.imagem_url ? `<img src="${b.imagem_url}" alt="${b.nome}">` : `<div class="brinde-emoji-placeholder">🎁</div>`}
+      <div class="brinde-nome">${b.nome}</div>
+      <div class="brinde-pts">${b.pontos_necessarios} pts</div>
+      ${!b.ativo ? '<span class="tag-inativo">Inativo</span>' : ''}
+      ${b.estoque!=null ? `<div style="font-size:11px;color:var(--gray);margin-top:4px;">Estoque: ${b.estoque}</div>` : ''}
+      <div style="margin-top:10px;"><button class="btn secondary" style="width:100%;font-size:11px;padding:7px;" onclick="abrirModalBrinde('${b.id}')">Editar</button></div>
+    </div>
+  `).join('') : '<div class="empty-state">Nenhum brinde cadastrado ainda.</div>';
+}
+window.renderBrindesCF = renderBrindesCF;
+
+let brindeEmEdicaoId = null;
+function abrirModalBrinde(id){
+  brindeEmEdicaoId = id || null;
+  const b = id ? brindesCacheCF.find(x=>x.id===id) : null;
+  document.getElementById('modalBrindeTitulo').textContent = b ? 'Editar brinde' : 'Novo brinde';
+  document.getElementById('brNome').value = b?.nome || '';
+  document.getElementById('brPontos').value = b?.pontos_necessarios || '';
+  document.getElementById('brEstoque').value = b?.estoque ?? '';
+  document.getElementById('brImagem').value = b?.imagem_url || '';
+  document.getElementById('brDescricao').value = b?.descricao || '';
+  document.getElementById('brAtivo').value = String(b?.ativo ?? true);
+  document.getElementById('modalBrinde').classList.add('show');
+}
+window.abrirModalBrinde = abrirModalBrinde;
+
+async function salvarBrinde(){
+  const nome = document.getElementById('brNome').value.trim();
+  const pontos_necessarios = Number(document.getElementById('brPontos').value);
+  if(!nome || !pontos_necessarios){ alert('Preencha nome e pontos necessários.'); return; }
+
+  const dados = {
+    nome, pontos_necessarios,
+    estoque: document.getElementById('brEstoque').value || null,
+    imagem_url: document.getElementById('brImagem').value.trim() || null,
+    descricao: document.getElementById('brDescricao').value.trim() || null,
+    ativo: document.getElementById('brAtivo').value === 'true'
+  };
+
+  const { error } = brindeEmEdicaoId
+    ? await supa.from('fidelidade_brindes').update(dados).eq('id', brindeEmEdicaoId)
+    : await supa.from('fidelidade_brindes').insert(dados);
+  if(error){ alert('Erro: '+error.message); return; }
+
+  document.getElementById('modalBrinde').classList.remove('show');
+  renderBrindesCF();
+}
+window.salvarBrinde = salvarBrinde;
+
+init();
+</script>
+<script src="acessibilidade.js"></script>
+<script src="hub-sidebar.js"></script>
+</body>
+</html>
