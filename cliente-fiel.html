@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="auth-guard.js"></script>
 <style>
   :root{
@@ -33,11 +34,12 @@
 
   .cf-main{flex:1;padding:32px 36px 60px;max-width:1300px;}
 
-  .hero{background:linear-gradient(160deg,var(--vinho),var(--vinho-escuro));border-radius:20px;padding:34px 38px;color:#fff;margin-bottom:22px;position:relative;overflow:hidden;}
+  .hero{background:linear-gradient(160deg,var(--vinho),var(--vinho-escuro));border-radius:20px;padding:34px 38px;color:#fff;margin-bottom:22px;position:relative;overflow:hidden;display:flex;justify-content:space-between;align-items:center;gap:24px;}
   .hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:rgba(255,255,255,.05);border-radius:50%;}
+  .hero-left{flex-shrink:0;}
   .hero h1{font-family:var(--headfont);font-size:32px;font-weight:600;margin:0 0 6px;}
-  .hero p{font-size:13.5px;color:rgba(255,255,255,.85);margin:0 0 20px;max-width:440px;}
-  .hero-stats{display:flex;gap:32px;position:relative;}
+  .hero p{font-size:13.5px;color:rgba(255,255,255,.85);margin:0;max-width:340px;}
+  .hero-stats{display:flex;gap:32px;position:relative;justify-content:flex-end;}
   .hero-stats .n{font-family:var(--headfont);font-size:28px;font-weight:600;}
   .hero-stats .l{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.7);margin-top:2px;}
 
@@ -103,6 +105,7 @@
     <div class="cf-nav-item" data-tab="dashboard" onclick="trocarAbaCF('dashboard')">🏠 Dashboard</div>
     <div class="cf-nav-item" data-tab="buscar" onclick="trocarAbaCF('buscar')">🔍 Buscar cliente</div>
     <div class="cf-nav-item" data-tab="brindes" onclick="trocarAbaCF('brindes')">🎁 Catálogo de brindes</div>
+    <div class="cf-nav-item" data-tab="niveis" onclick="trocarAbaCF('niveis')">⭐ Níveis</div>
     <div class="cf-nav-foot"><a href="index.html">← Voltar ao Hub</a></div>
   </nav>
   <main class="cf-main" id="cfMain"></main>
@@ -110,17 +113,38 @@
 
 <div class="modal-overlay" id="modalNovoCliente">
   <div class="modal">
-    <h3>Novo cliente</h3>
+    <h3 id="modalClienteTitulo">Novo cliente</h3>
     <div class="form-grid">
       <div style="grid-column:span 2"><label>Nome completo*</label><input id="ncNome"></div>
       <div><label>Telefone</label><input id="ncTelefone" placeholder="(35) 99999-9999"></div>
       <div><label>CPF</label><input id="ncCpf"></div>
       <div><label>E-mail</label><input id="ncEmail" type="email"></div>
       <div><label>Data de nascimento</label><input id="ncNascimento" type="date"></div>
+      <div style="grid-column:span 2"><label>Código no Fórmula Certa</label><input id="ncCodigoFC" placeholder="Código do cliente no sistema de gestão"></div>
+      <div style="grid-column:span 2"><label>Observações internas (não aparece pro cliente)</label><textarea id="ncObs" placeholder="Anotações da equipe..."></textarea></div>
     </div>
     <div class="modal-actions">
       <button class="btn secondary" onclick="document.getElementById('modalNovoCliente').classList.remove('show')">Cancelar</button>
-      <button class="btn" onclick="salvarNovoCliente()">Cadastrar</button>
+      <button class="btn" onclick="salvarNovoCliente()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalImportar">
+  <div class="modal" style="max-width:640px;">
+    <h3>Importar clientes (planilha)</h3>
+    <div id="importarPasso1">
+      <p style="font-size:12.5px;color:var(--gray);">Aceita .xlsx ou .csv. A primeira linha deve ter os nomes das colunas.</p>
+      <input type="file" id="arquivoImportar" accept=".xlsx,.csv" style="width:100%;margin-bottom:10px;">
+    </div>
+    <div id="importarPasso2" style="display:none;">
+      <p style="font-size:12.5px;color:var(--gray);margin-bottom:10px;">Diz qual coluna da planilha corresponde a cada campo (deixa em "Não importar" se não tiver):</p>
+      <div id="mapeamentoCamposArea"></div>
+      <p id="importarResumo" style="font-size:12px;color:var(--gray);margin-top:10px;"></p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalImportar').classList.remove('show')">Cancelar</button>
+      <button class="btn" id="btnImportarAvancar" onclick="avancarImportacao()">Avançar</button>
     </div>
   </div>
 </div>
@@ -130,7 +154,7 @@
     <h3>Lançar pontos</h3>
     <div class="form-grid">
       <div><label>Pontos*</label><input id="lpPontos" type="number"></div>
-      <div><label>Validade (opcional)</label><input id="lpValidade" type="date"></div>
+      <div><label>Validade</label><input value="Automática: 6 meses" disabled style="background:var(--paper);color:var(--gray);"></div>
       <div style="grid-column:span 2"><label>Descrição</label><input id="lpDescricao" placeholder="Ex: Compra de R$ 150,00"></div>
     </div>
     <div class="modal-actions">
@@ -196,8 +220,54 @@ function trocarAbaCF(aba){
   if(aba==='dashboard') renderDashboardCF();
   else if(aba==='buscar') renderBuscarCF();
   else if(aba==='brindes') renderBrindesCF();
+  else if(aba==='niveis') renderNiveisCF();
 }
 window.trocarAbaCF = trocarAbaCF;
+
+let niveisCacheCF = null;
+async function carregarNiveisCF(){
+  if(niveisCacheCF) return niveisCacheCF;
+  const { data } = await supa.from('niveis_fidelidade').select('*').order('pontos_minimos');
+  niveisCacheCF = data || [];
+  return niveisCacheCF;
+}
+async function calcularNivelPorSaldo(saldo){
+  const niveis = await carregarNiveisCF();
+  const alcancados = niveis.filter(n => saldo >= n.pontos_minimos);
+  return alcancados.length ? alcancados[alcancados.length-1].nivel : (niveis[0]?.nivel || 'bronze');
+}
+
+async function renderNiveisCF(){
+  const { data } = await supa.from('niveis_fidelidade').select('*').order('pontos_minimos');
+  const niveis = data || [];
+  niveisCacheCF = niveis;
+
+  document.getElementById('cfMain').innerHTML = `
+    <h1 style="font-family:var(--headfont);font-size:22px;margin:0 0 6px;">Configuração de níveis</h1>
+    <p style="font-size:12.5px;color:var(--gray);margin:0 0 18px;">Pontos mínimos pra alcançar cada nível — o nível do cliente é calculado automaticamente pelo saldo atual dele.</p>
+    <div class="panel">
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+        ${niveis.map(n => `
+          <div><label style="text-transform:capitalize;">${n.nivel}</label><input type="number" id="nivel_${n.nivel}" value="${n.pontos_minimos}"></div>
+        `).join('')}
+      </div>
+      <button class="btn" onclick="salvarNiveisCF()">Salvar níveis</button>
+    </div>
+  `;
+}
+window.renderNiveisCF = renderNiveisCF;
+
+async function salvarNiveisCF(){
+  const niveis = niveisCacheCF.map(n => n.nivel);
+  for(const nivel of niveis){
+    const valor = Number(document.getElementById('nivel_'+nivel).value);
+    await supa.from('niveis_fidelidade').update({ pontos_minimos: valor }).eq('nivel', nivel);
+  }
+  niveisCacheCF = null;
+  alert('Níveis atualizados.');
+  renderNiveisCF();
+}
+window.salvarNiveisCF = salvarNiveisCF;
 
 function saldoCliente(clienteId, transacoes){
   return transacoes.filter(t=>t.cliente_id===clienteId).reduce((s,t)=>s+t.pontos,0);
@@ -206,6 +276,7 @@ function saldoCliente(clienteId, transacoes){
 let chartPontosMes = null;
 
 async function renderDashboardCF(){
+  await carregarNiveisCF();
   const { data: clientes } = await supa.from('clientes_fidelidade').select('*');
   const { data: transacoes } = await supa.from('fidelidade_transacoes').select('*');
   const { data: resgates } = await supa.from('fidelidade_resgates').select('*');
@@ -216,8 +287,9 @@ async function renderDashboardCF(){
   const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
   const resgatesMes = (resgates||[]).filter(r=>new Date(r.criado_em) >= inicioMes).length;
 
-  const hojeStr = new Date().toISOString().slice(0,10);
-  const em30dias = new Date(); em30dias.setDate(em30dias.getDate()+30);
+  const hojeStr = hojeBrasiliaStr();
+  const [anoH, mesH, diaH] = hojeStr.split('-').map(Number);
+  const em30dias = new Date(anoH, mesH-1, diaH); em30dias.setDate(em30dias.getDate()+30);
   const em30diasStr = em30dias.toISOString().slice(0,10);
   const clientesComVencimento = new Set(
     trans.filter(t => t.tipo==='ganho' && t.data_validade && t.data_validade >= hojeStr && t.data_validade <= em30diasStr).map(t=>t.cliente_id)
@@ -225,8 +297,10 @@ async function renderDashboardCF(){
 
   document.getElementById('cfMain').innerHTML = `
     <div class="hero">
-      <h1>Cliente Fiel</h1>
-      <p>Fidelidade sem cartão físico — busca por nome, telefone ou CPF.</p>
+      <div class="hero-left">
+        <h1>Cliente Fiel</h1>
+        <p>Fidelidade sem cartão físico — busca por nome, telefone ou CPF.</p>
+      </div>
       <div class="hero-stats">
         <div><div class="n">${clientesCacheCF.length}</div><div class="l">Clientes</div></div>
         <div><div class="n">${pontosCirculando.toLocaleString('pt-BR')}</div><div class="l">Pontos em circulação</div></div>
@@ -255,11 +329,17 @@ async function renderDashboardCF(){
   }).join('') : '<div class="empty-state">Nenhum cliente cadastrado ainda.</div>';
 }
 
+function calcularNivelPorSaldoSync(saldo){
+  const niveis = niveisCacheCF || [];
+  const alcancados = niveis.filter(n => saldo >= n.pontos_minimos);
+  return alcancados.length ? alcancados[alcancados.length-1].nivel : (niveis[0]?.nivel || 'bronze');
+}
+
 function clienteRowHtml(c, saldo){
   return `<div class="cliente-row" onclick="abrirFichaCliente('${c.id}')">
     <div class="avatar">${iniciaisCF(c.nome)}</div>
     <div class="cliente-row-info">
-      <div class="cliente-row-nome">${c.nome}<span class="nivel-tag">${c.nivel_atual}</span></div>
+      <div class="cliente-row-nome">${c.nome}<span class="nivel-tag">${calcularNivelPorSaldoSync(saldo)}</span></div>
       <div class="cliente-row-sub">${c.telefone || c.cpf || 'sem contato'}</div>
     </div>
     <div class="cliente-row-pts">${saldo} pts</div>
@@ -268,11 +348,13 @@ function clienteRowHtml(c, saldo){
 function iniciaisCF(nome){ return (nome||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase(); }
 
 async function renderBuscarCF(){
+  await carregarNiveisCF();
   document.getElementById('cfMain').innerHTML = `
     <h1 style="font-family:var(--headfont);font-size:22px;margin:0 0 16px;">Buscar cliente</h1>
     <div class="search-row">
       <input id="buscaClienteCF" placeholder="Nome, telefone, CPF ou código..." oninput="filtrarClientesCF(this.value)">
-      <button class="btn dark" onclick="document.getElementById('modalNovoCliente').classList.add('show')">+ Novo cliente</button>
+      <button class="btn secondary" onclick="abrirModalImportar()">📄 Importar planilha</button>
+      <button class="btn dark" onclick="abrirModalNovoCliente()">+ Novo cliente</button>
     </div>
     <div id="resultadoBuscaCF"></div>
   `;
@@ -292,21 +374,55 @@ async function filtrarClientesCF(termo){
 }
 window.filtrarClientesCF = filtrarClientesCF;
 
+let clienteEmEdicaoId = null;
+
+function abrirModalNovoCliente(){
+  clienteEmEdicaoId = null;
+  document.getElementById('modalClienteTitulo').textContent = 'Novo cliente';
+  ['ncNome','ncTelefone','ncCpf','ncEmail','ncNascimento','ncCodigoFC','ncObs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('modalNovoCliente').classList.add('show');
+}
+window.abrirModalNovoCliente = abrirModalNovoCliente;
+
+function abrirModalEditarCliente(cliente){
+  clienteEmEdicaoId = cliente.id;
+  document.getElementById('modalClienteTitulo').textContent = 'Editar cliente';
+  document.getElementById('ncNome').value = cliente.nome || '';
+  document.getElementById('ncTelefone').value = cliente.telefone || '';
+  document.getElementById('ncCpf').value = cliente.cpf || '';
+  document.getElementById('ncEmail').value = cliente.email || '';
+  document.getElementById('ncNascimento').value = cliente.data_nascimento || '';
+  document.getElementById('ncCodigoFC').value = cliente.codigo_formula_certa || '';
+  document.getElementById('ncObs').value = cliente.observacoes || '';
+  document.getElementById('modalNovoCliente').classList.add('show');
+}
+window.abrirModalEditarCliente = abrirModalEditarCliente;
+
 async function salvarNovoCliente(){
   const nome = document.getElementById('ncNome').value.trim();
   if(!nome){ alert('Digite o nome.'); return; }
-  const { data: { session } } = await supa.auth.getSession();
-  const { data, error } = await supa.from('clientes_fidelidade').insert({
+  const dados = {
     nome,
     telefone: document.getElementById('ncTelefone').value.trim() || null,
     cpf: document.getElementById('ncCpf').value.trim() || null,
     email: document.getElementById('ncEmail').value.trim() || null,
     data_nascimento: document.getElementById('ncNascimento').value || null,
-    criado_por: session.user.id
-  }).select().single();
+    codigo_formula_certa: document.getElementById('ncCodigoFC').value.trim() || null,
+    observacoes: document.getElementById('ncObs').value.trim() || null,
+  };
+
+  if(clienteEmEdicaoId){
+    const { error } = await supa.from('clientes_fidelidade').update(dados).eq('id', clienteEmEdicaoId);
+    if(error){ alert('Erro: '+error.message); return; }
+    document.getElementById('modalNovoCliente').classList.remove('show');
+    abrirFichaCliente(clienteEmEdicaoId);
+    return;
+  }
+
+  const { data: { session } } = await supa.auth.getSession();
+  const { data, error } = await supa.from('clientes_fidelidade').insert({ ...dados, criado_por: session.user.id }).select().single();
   if(error){ alert('Erro: '+error.message); return; }
   document.getElementById('modalNovoCliente').classList.remove('show');
-  ['ncNome','ncTelefone','ncCpf','ncEmail','ncNascimento'].forEach(id=>document.getElementById(id).value='');
   abrirFichaCliente(data.id);
 }
 window.salvarNovoCliente = salvarNovoCliente;
@@ -316,6 +432,7 @@ async function abrirFichaCliente(id){
   const { data: cliente } = await supa.from('clientes_fidelidade').select('*').eq('id', id).single();
   const { data: transacoes } = await supa.from('fidelidade_transacoes').select('*').eq('cliente_id', id).order('criado_em', {ascending:false});
   const saldo = (transacoes||[]).reduce((s,t)=>s+t.pontos,0);
+  const nivel = await calcularNivelPorSaldo(saldo);
 
   document.getElementById('cfMain').innerHTML = `
     <button class="btn secondary" style="margin-bottom:16px;" onclick="renderBuscarCF()">← Voltar à busca</button>
@@ -329,7 +446,8 @@ async function abrirFichaCliente(id){
               ${cliente.telefone?`<span>📞 ${cliente.telefone}</span>`:''}
               ${cliente.cpf?`<span>${cliente.cpf}</span>`:''}
               <span>Código: ${cliente.codigo_acesso}</span>
-              <span class="nivel-tag">${cliente.nivel_atual}</span>
+              ${cliente.codigo_formula_certa?`<span>Fórmula Certa: ${cliente.codigo_formula_certa}</span>`:''}
+              <span class="nivel-tag">${nivel}</span>
             </div>
           </div>
         </div>
@@ -338,9 +456,12 @@ async function abrirFichaCliente(id){
           <div style="font-size:11px;color:var(--gray);">pontos</div>
         </div>
       </div>
-      <div style="display:flex;gap:10px;">
+      ${cliente.observacoes ? `<div style="background:var(--paper);border-radius:9px;padding:12px 14px;font-size:12.5px;margin-bottom:14px;"><strong>Observações internas:</strong> ${cliente.observacoes}</div>` : ''}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn" onclick="abrirModalLancarPontos()">+ Lançar pontos</button>
         <button class="btn secondary" onclick="abrirModalResgate()">🎁 Registrar resgate</button>
+        <button class="btn secondary" onclick='abrirModalEditarCliente(${JSON.stringify(cliente)})'>✏️ Editar dados</button>
+        <button class="btn secondary" style="color:var(--bad);border-color:var(--bad-tint);margin-left:auto;" onclick="excluirCliente()">Excluir cliente</button>
       </div>
     </div>
 
@@ -357,14 +478,45 @@ async function abrirFichaCliente(id){
         <div>${t.descricao || {ganho:'Pontos ganhos',resgate:'Resgate',ajuste:'Ajuste',expiracao:'Expiração'}[t.tipo]}</div>
         <div style="color:var(--gray);font-size:11px;">${new Date(t.criado_em).toLocaleDateString('pt-BR')}${t.data_validade ? ' · válido até '+new Date(t.data_validade+'T00:00:00').toLocaleDateString('pt-BR') : ''}</div>
       </div>
-      <div class="extrato-pts ${t.pontos>=0?'pos':'neg'}">${t.pontos>=0?'+':''}${t.pontos}</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="extrato-pts ${t.pontos>=0?'pos':'neg'}">${t.pontos>=0?'+':''}${t.pontos}</div>
+        <button style="border:none;background:none;color:var(--bad);cursor:pointer;font-size:11px;" onclick="excluirLancamento('${t.id}')">Excluir</button>
+      </div>
     </div>`).join('') : '<div class="empty-state">Nenhum lançamento ainda.</div>';
 }
 window.abrirFichaCliente = abrirFichaCliente;
 
+async function excluirLancamento(transacaoId){
+  if(!confirm('Excluir esse lançamento? O saldo do cliente será recalculado automaticamente.')) return;
+  const { error } = await supa.from('fidelidade_transacoes').delete().eq('id', transacaoId);
+  if(error){ alert('Erro: '+error.message); return; }
+  abrirFichaCliente(clienteEmFichaId);
+}
+window.excluirLancamento = excluirLancamento;
+
+async function excluirCliente(){
+  if(!confirm('Excluir esse cliente do cadastro de vez? Todo o histórico de pontos dele também será apagado. Não dá pra desfazer.')) return;
+  const { error } = await supa.from('clientes_fidelidade').delete().eq('id', clienteEmFichaId);
+  if(error){ alert('Erro: '+error.message); return; }
+  renderBuscarCF();
+}
+window.excluirCliente = excluirCliente;
+
+// Data de hoje no fuso de Brasília, sempre -- não depende do
+// horário/fuso configurado no computador de quem está usando
+function hojeBrasiliaStr(){
+  const partes = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date());
+  return partes; // já sai no formato YYYY-MM-DD
+}
+function validadeSeisMesesStr(){
+  const [ano, mes, dia] = hojeBrasiliaStr().split('-').map(Number);
+  const d = new Date(ano, mes-1, dia);
+  d.setMonth(d.getMonth() + 6);
+  return d.toISOString().slice(0,10);
+}
+
 function abrirModalLancarPontos(){
   document.getElementById('lpPontos').value = '';
-  document.getElementById('lpValidade').value = '';
   document.getElementById('lpDescricao').value = '';
   document.getElementById('modalLancarPontos').classList.add('show');
 }
@@ -377,7 +529,7 @@ async function confirmarLancarPontos(){
   const { error } = await supa.from('fidelidade_transacoes').insert({
     cliente_id: clienteEmFichaId, tipo: 'ganho', pontos,
     descricao: document.getElementById('lpDescricao').value.trim() || null,
-    data_validade: document.getElementById('lpValidade').value || null,
+    data_validade: validadeSeisMesesStr(),
     registrado_por: session.user.id
   });
   if(error){ alert('Erro: '+error.message); return; }
@@ -403,9 +555,13 @@ async function atualizarSaldoAposResgate(){
   const { data: transacoes } = await supa.from('fidelidade_transacoes').select('pontos').eq('cliente_id', clienteEmFichaId);
   const saldo = (transacoes||[]).reduce((s,t)=>s+t.pontos,0);
   const restante = saldo - brinde.pontos_necessarios;
-  document.getElementById('rgAvisoSaldo').innerHTML = restante < 0
+  let aviso = restante < 0
     ? `<strong style="color:var(--bad)">Saldo insuficiente</strong> — cliente tem ${saldo} pts, precisa de ${brinde.pontos_necessarios}.`
     : `Saldo atual: ${saldo} pts → depois do resgate: ${restante} pts.`;
+  if(brinde.estoque != null && brinde.estoque <= 0){
+    aviso += `<br><strong style="color:var(--bad)">Sem estoque desse brinde no momento.</strong>`;
+  }
+  document.getElementById('rgAvisoSaldo').innerHTML = aviso;
 }
 window.atualizarSaldoAposResgate = atualizarSaldoAposResgate;
 
@@ -413,6 +569,7 @@ async function confirmarResgate(){
   const brindeId = document.getElementById('rgBrinde').value;
   const brinde = brindesCacheCF.find(b=>b.id===brindeId);
   if(!brinde){ alert('Escolha um brinde.'); return; }
+  if(brinde.estoque != null && brinde.estoque <= 0){ alert('Esse brinde está sem estoque.'); return; }
 
   const { data: { session } } = await supa.auth.getSession();
   const { data: transacao, error: erroTrans } = await supa.from('fidelidade_transacoes').insert({
@@ -428,6 +585,10 @@ async function confirmarResgate(){
     retirado_em: retiradoAgora ? new Date().toISOString() : null, registrado_por: session.user.id
   });
   if(erroResgate){ alert('Erro ao registrar resgate: '+erroResgate.message); return; }
+
+  if(brinde.estoque != null){
+    await supa.from('fidelidade_brindes').update({ estoque: Math.max(brinde.estoque - 1, 0) }).eq('id', brindeId);
+  }
 
   document.getElementById('modalResgate').classList.remove('show');
   abrirFichaCliente(clienteEmFichaId);
@@ -496,6 +657,98 @@ async function salvarBrinde(){
   renderBrindesCF();
 }
 window.salvarBrinde = salvarBrinde;
+
+// ============================================================
+// IMPORTAÇÃO DE CLIENTES (planilha XLSX/CSV)
+// ============================================================
+let importState = { headers: [], rows: [], passo: 1 };
+const CAMPOS_IMPORTACAO = [
+  { chave:'nome', label:'Nome completo*' },
+  { chave:'telefone', label:'Telefone' },
+  { chave:'cpf', label:'CPF' },
+  { chave:'email', label:'E-mail' },
+  { chave:'data_nascimento', label:'Data de nascimento' },
+  { chave:'codigo_formula_certa', label:'Código Fórmula Certa' },
+];
+
+function abrirModalImportar(){
+  importState = { headers: [], rows: [], passo: 1 };
+  document.getElementById('arquivoImportar').value = '';
+  document.getElementById('importarPasso1').style.display = 'block';
+  document.getElementById('importarPasso2').style.display = 'none';
+  document.getElementById('btnImportarAvancar').textContent = 'Avançar';
+  document.getElementById('modalImportar').classList.add('show');
+}
+window.abrirModalImportar = abrirModalImportar;
+
+function lerArquivoImportacao(){
+  return new Promise((resolve, reject) => {
+    const arquivo = document.getElementById('arquivoImportar').files[0];
+    if(!arquivo){ reject('Escolha um arquivo primeiro.'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try{
+        const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const linhas = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
+        resolve(linhas);
+      }catch(err){ reject('Não consegui ler esse arquivo: '+err.message); }
+    };
+    reader.readAsArrayBuffer(arquivo);
+  });
+}
+
+async function avancarImportacao(){
+  if(importState.passo === 1){
+    let linhas;
+    try{ linhas = await lerArquivoImportacao(); }
+    catch(msg){ alert(msg); return; }
+    if(!linhas.length){ alert('Planilha vazia.'); return; }
+
+    importState.headers = linhas[0].map(h => String(h||'').trim());
+    importState.rows = linhas.slice(1).filter(r => r.some(c => String(c||'').trim() !== ''));
+
+    document.getElementById('mapeamentoCamposArea').innerHTML = CAMPOS_IMPORTACAO.map(c => `
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;align-items:end;">
+        <div style="align-self:center;font-size:13px;font-weight:600;">${c.label}</div>
+        <div><select id="map_${c.chave}">
+          <option value="">Não importar</option>
+          ${importState.headers.map((h,i)=>`<option value="${i}" ${h.toLowerCase().includes(c.chave.split('_')[0])?'selected':''}>${h}</option>`).join('')}
+        </select></div>
+      </div>`).join('');
+    document.getElementById('importarResumo').textContent = `${importState.rows.length} linha(s) encontrada(s) na planilha.`;
+
+    document.getElementById('importarPasso1').style.display = 'none';
+    document.getElementById('importarPasso2').style.display = 'block';
+    document.getElementById('btnImportarAvancar').textContent = 'Importar';
+    importState.passo = 2;
+    return;
+  }
+
+  // Passo 2: monta e importa de verdade
+  const colunaNome = document.getElementById('map_nome').value;
+  if(colunaNome === ''){ alert('É preciso mapear pelo menos o campo Nome.'); return; }
+
+  const { data: { session } } = await supa.auth.getSession();
+  const registros = importState.rows.map(linha => {
+    const obj = { criado_por: session.user.id };
+    CAMPOS_IMPORTACAO.forEach(c => {
+      const idx = document.getElementById('map_'+c.chave).value;
+      obj[c.chave] = idx !== '' ? String(linha[idx]||'').trim() || null : null;
+    });
+    return obj;
+  }).filter(r => r.nome);
+
+  if(!registros.length){ alert('Nenhuma linha com nome preenchido pra importar.'); return; }
+
+  const { error } = await supa.from('clientes_fidelidade').insert(registros);
+  if(error){ alert('Erro ao importar: '+error.message); return; }
+
+  document.getElementById('modalImportar').classList.remove('show');
+  alert(`${registros.length} cliente(s) importado(s) com sucesso.`);
+  renderBuscarCF();
+}
+window.avancarImportacao = avancarImportacao;
 
 init();
 </script>
