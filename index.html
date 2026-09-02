@@ -136,6 +136,7 @@
   .module-card p{font-size:11.5px;color:var(--gray);margin:0;line-height:1.4;}
   .card-horas .stripe{background:var(--burgundy);}
   .card-rh .stripe{background:var(--burgundy);}
+  .card-visitas .stripe{background:var(--burgundy);}
   .card-rotulos .stripe{background:var(--warn);}
   .card-producao .stripe{background:var(--info);}
   .card-controle .stripe{background:#6E4A8C;}
@@ -209,6 +210,7 @@
     <a href="tarefas.html" class="side-btn">🗂️<span class="tooltip">Quadro de Tarefas</span></a>
     <a href="calendario-interno.html" class="side-btn">🗓️<span class="tooltip">Calendário Interno</span></a>
     <a href="rh.html" class="side-btn" id="sideRHBtn">🗂️<span class="tooltip">Central de RH</span></a>
+    <a href="visitas-medicas.html" class="side-btn" id="sideVisitasBtn" style="display:none">🩺<span class="tooltip">Visitas de Representantes</span></a>
     <a href="rotulos.html" class="side-btn" id="sideRotulosBtn" style="display:none">🏷️<span class="tooltip">Controle de Rótulos</span></a>
     <a href="producao.html" class="side-btn" id="sideProducaoBtn" style="display:none">🧪<span class="tooltip">Ordem de Produção</span></a>
     <a href="controle-producao.html" class="side-btn" id="sideControleBtn" style="display:none">📋<span class="tooltip">Controle de Produção</span></a>
@@ -288,6 +290,10 @@
         <div class="stripe" style="background:#8B1A3A"></div><div class="icon">🗂️</div><h3>Central de RH</h3>
         <p>Colaboradores, ponto, férias, avaliações e relatórios — tudo num só lugar.</p>
       </a>
+      <a class="module-card card-visitas" href="visitas-medicas.html" data-roles="chefia">
+        <div class="stripe" style="background:#8B1A3A"></div><div class="icon">🩺</div><h3>Visitas de Representantes</h3>
+        <p>Agenda de horários e solicitações vindas do link da bio.</p>
+      </a>
       <a class="module-card card-clientefiel" href="cliente-fiel.html" data-roles="chefia,recepcao,conferencia,atendente">
         <div class="stripe" style="background:#8B1A3A"></div><div class="icon">💳</div><h3>Cliente Fiel</h3>
         <p>Programa de fidelidade sem cartão físico — pontos, brindes e histórico.</p>
@@ -365,6 +371,7 @@ async function init(){
   document.getElementById('heroGreeting').textContent = `Bem-vindo(a), ${primeiroNome.charAt(0).toUpperCase()+primeiroNome.slice(1)}`;
   document.getElementById('rolePill').textContent = ROLE_LABELS[papel];
   if(papel === 'chefia') document.getElementById('sideAdminBtn').style.display = 'flex';
+  if(papel === 'chefia') document.getElementById('sideVisitasBtn').style.display = 'flex';
   if(['chefia','recepcao','conferencia','atendente'].includes(papel)) document.getElementById('sideRotulosBtn').style.display = 'flex';
   if(['chefia','laboratorio','conferencia','atendente'].includes(papel)) document.getElementById('sideProducaoBtn').style.display = 'flex';
   if(['chefia','laboratorio'].includes(papel)) document.getElementById('sideControleBtn').style.display = 'flex';

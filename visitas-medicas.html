@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visitas de Representantes — Hub Bioflora</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<style>
+  :root{
+    --wine:#8B1A3A; --wine-dark:#5f1027; --cream:#faf6f0; --paper:#fff;
+    --charcoal:#241d1a; --muted:#8a7c72; --line:#e6dbca; --sage:#4f8a5c;
+    --radius:16px; --radius-pill:999px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Maven Pro',sans-serif;background:var(--cream);color:var(--charcoal);}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;}
+  .layout{display:flex;min-height:100vh;}
+  .main{flex:1;padding:32px 28px 60px;max-width:920px;margin:0 auto;width:100%;}
+  .page-head{margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+  .page-head h1{font-size:26px;color:var(--wine-dark);margin-bottom:4px;}
+  .page-head p{font-size:14px;color:var(--muted);}
+  .page-head-actions{display:flex;gap:10px;flex-shrink:0;}
+  .btn.secondary{background:none;border:1.5px solid var(--line);color:var(--charcoal);}
+  .tabs{display:flex;gap:8px;margin-bottom:24px;border-bottom:1.5px solid var(--line);}
+  .tab-btn{
+    background:none;border:none;padding:10px 4px;margin-right:20px;
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14.5px;color:var(--muted);
+    cursor:pointer;border-bottom:2.5px solid transparent;
+  }
+  .tab-btn.active{color:var(--wine-dark);border-color:var(--wine);}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .card{background:var(--paper);border:1.5px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+  .card h3{font-size:15px;margin-bottom:14px;color:var(--wine-dark);}
+
+  .add-slot-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+  .field input{border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:14px;background:var(--cream);}
+  .btn{background:var(--wine);color:#fff;border:none;border-radius:var(--radius-pill);padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;cursor:pointer;}
+  .btn.danger{background:#b23a3a;}
+  .btn.small{padding:6px 12px;font-size:12px;}
+
+  .slot-date-block{margin-bottom:14px;}
+  .slot-date-title{font-size:13px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;}
+  .slot-chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .slot-chip{
+    display:flex;align-items:center;gap:8px;
+    border-radius:var(--radius-pill);padding:7px 8px 7px 14px;font-size:13px;font-weight:600;
+    border:1.5px solid var(--line);
+  }
+  .slot-chip.disponivel{background:#eef7ef;border-color:#bfe3c4;color:#2f6b3a;}
+  .slot-chip.reservado{background:#fdf1e6;border-color:#f0d3ad;color:#8a5a1c;}
+  .slot-chip button{background:none;border:none;color:inherit;opacity:.6;cursor:pointer;font-size:14px;line-height:1;}
+
+  table{width:100%;border-collapse:collapse;}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);padding:8px 10px;border-bottom:1.5px solid var(--line);}
+  td{padding:12px 10px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:top;}
+  .status-badge{display:inline-block;padding:4px 10px;border-radius:var(--radius-pill);font-size:11px;font-weight:700;}
+  .status-pendente{background:#fdf1e6;color:#8a5a1c;}
+  .status-confirmada{background:#eef7ef;color:#2f6b3a;}
+  .status-cancelada{background:#fbe8e8;color:#9c3a3a;}
+  .row-actions{display:flex;gap:6px;margin-top:6px;}
+  .empty-state{padding:30px;text-align:center;color:var(--muted);font-size:14px;}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <div class="main">
+    <div class="page-head">
+      <div>
+        <h1>Visitas de Representantes</h1>
+        <p>Libere horários na agenda e acompanhe as solicitações de profissionais de saúde vindas do link da bio.</p>
+      </div>
+      <div class="page-head-actions">
+        <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+        <button class="btn secondary" onclick="logout()">Sair</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('agenda')">Agenda</button>
+      <button class="tab-btn" onclick="switchTab('solicitacoes')">Solicitações <span id="pendCount"></span></button>
+    </div>
+
+    <!-- AGENDA -->
+    <div class="panel active" id="panel-agenda">
+      <div class="card">
+        <h3>Liberar novo horário</h3>
+        <div class="add-slot-form">
+          <div class="field">
+            <label>Data</label>
+            <input type="date" id="newSlotDate">
+          </div>
+          <div class="field">
+            <label>Horário</label>
+            <input type="time" id="newSlotTime">
+          </div>
+          <button class="btn" onclick="addSlot()">+ Adicionar horário</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Horários futuros</h3>
+        <div id="slotsList"><div class="empty-state">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- SOLICITAÇÕES -->
+    <div class="panel" id="panel-solicitacoes">
+      <div class="card" style="padding:0;overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Profissional</th><th>Contato</th><th>Data/Horário</th><th>Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="reqTableBody">
+            <tr><td colspan="5" class="empty-state">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function init(){
+  await requireRole(['chefia']);
+  loadSlots();
+  loadRequests();
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+
+/* ---- AGENDA ---- */
+function addSlot(){
+  const data = document.getElementById('newSlotDate').value;
+  const time = document.getElementById('newSlotTime').value;
+  if(!data || !time){ alert('Escolha data e horário'); return; }
+  supa.from('link_bio_visita_slots').insert({ data, horario: time }).then(({error})=>{
+    if(error){ alert('Erro ao adicionar horário'); console.warn(error); return; }
+    document.getElementById('newSlotDate').value='';
+    document.getElementById('newSlotTime').value='';
+    loadSlots();
+  });
+}
+function deleteSlot(id){
+  if(!confirm('Remover esse horário da agenda?')) return;
+  supa.from('link_bio_visita_slots').delete().eq('id', id).then(({error})=>{
+    if(error){ alert('Erro ao remover'); return; }
+    loadSlots();
+  });
+}
+function loadSlots(){
+  const wrap = document.getElementById('slotsList');
+  supa.from('link_bio_visita_slots')
+    .select('*')
+    .gte('data', new Date().toISOString().slice(0,10))
+    .neq('status', 'cancelado')
+    .order('data', {ascending:true}).order('horario', {ascending:true})
+    .then(({data, error})=>{
+      if(error){ wrap.innerHTML = '<div class="empty-state">Erro ao carregar</div>'; return; }
+      if(!data || data.length===0){ wrap.innerHTML = '<div class="empty-state">Nenhum horário liberado ainda</div>'; return; }
+      const byDate = {};
+      data.forEach(s => (byDate[s.data] = byDate[s.data]||[]).push(s));
+      wrap.innerHTML = Object.keys(byDate).map(date=>{
+        const label = new Date(date+'T00:00:00').toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+        const chips = byDate[date].map(s=>`
+          <div class="slot-chip ${s.status}">
+            ${s.horario} — ${s.status === 'disponivel' ? 'livre' : 'reservado'}
+            ${s.status==='disponivel' ? `<button onclick="deleteSlot('${s.id}')">✕</button>` : ''}
+          </div>
+        `).join('');
+        return `<div class="slot-date-block"><div class="slot-date-title">${label}</div><div class="slot-chip-row">${chips}</div></div>`;
+      }).join('');
+    });
+}
+
+/* ---- SOLICITAÇÕES ---- */
+function loadRequests(){
+  const tbody = document.getElementById('reqTableBody');
+  supa.from('link_bio_visitas_medicas')
+    .select('*')
+    .order('created_at', {ascending:false})
+    .then(({data, error})=>{
+      if(error){ tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Erro ao carregar</td></tr>'; return; }
+      if(!data || data.length===0){ tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nenhuma solicitação ainda</td></tr>'; return; }
+      const pendentes = data.filter(r=>r.status==='pendente').length;
+      document.getElementById('pendCount').textContent = pendentes>0 ? `(${pendentes})` : '';
+      tbody.innerHTML = data.map(r=>`
+        <tr>
+          <td><strong>${r.nome}</strong><br><span style="color:var(--muted);font-size:12px;">${r.profissao}${r.registro?' · '+r.registro:''}${r.clinica?'<br>'+r.clinica:''}</span></td>
+          <td>${r.telefone}</td>
+          <td>${r.data_preferida ? new Date(r.data_preferida+'T00:00:00').toLocaleDateString('pt-BR') : '—'} ${r.horario_preferido||''}</td>
+          <td><span class="status-badge status-${r.status}">${r.status}</span></td>
+          <td>
+            ${r.status==='pendente' ? `
+              <div class="row-actions">
+                <button class="btn small" onclick="updateReqStatus('${r.id}','confirmada')">Confirmar</button>
+                <button class="btn small danger" onclick="updateReqStatus('${r.id}','cancelada')">Cancelar</button>
+              </div>` : ''}
+          </td>
+        </tr>
+      `).join('');
+    });
+}
+function updateReqStatus(id, status){
+  supa.from('link_bio_visitas_medicas').update({status}).eq('id', id).then(({error})=>{
+    if(error){ alert('Erro ao atualizar'); return; }
+    loadRequests();
+  });
+}
+
+init();
+</script>
+<script src="acessibilidade.js?v=3"></script>
+<script src="hub-sidebar.js"></script>
+</body>
+</html>
