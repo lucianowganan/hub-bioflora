@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farmácia Bioflora</title>
+<meta name="description" content="Farmácia de manipulação e drogaria em Itajubá, Minas Gerais.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --wine:#7a1a35;
+    --wine-dark:#4f1123;
+    --wine-light:#a3395a;
+    --cream:#f7f1e7;
+    --paper:#fffdfa;
+    --sage:#6f8a5c;
+    --sage-dark:#4f6941;
+    --clay:#c8794a;
+    --charcoal:#241d1a;
+    --muted:#8a7c72;
+    --line:#e6dbca;
+    --radius-pill:999px;
+    --radius:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:'Maven Pro',sans-serif;
+    background:var(--charcoal);
+    color:var(--charcoal);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;min-height:100vh;background:var(--cream);position:relative;padding-bottom:70px;overflow-x:hidden;}
+  
+
+  .fade-in{opacity:0;transform:translateY(14px);transition:opacity .6s ease, transform .6s ease;}
+  .fade-in.visible{opacity:1;transform:translateY(0);}
+
+  /* ---- HERO ---- */
+  .hero{
+    position:relative;
+    padding:0 0 30px;
+    text-align:center;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(122,26,53,0.16), transparent 55%),
+      radial-gradient(circle at 100% 10%, rgba(111,138,92,0.18), transparent 45%),
+      var(--cream);
+    overflow:hidden;
+  }
+  .hero-banner{
+    width:100%;
+    aspect-ratio: 10 / 3;
+    background:
+      url('banner-hero.webp') center/cover no-repeat;
+    position:relative;
+  }
+  
+  .avatar{
+    width:98px;height:98px;border-radius:50%;
+    margin:-49px auto 0;
+    position:relative;
+    background:#ffffff;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+    border:4px solid var(--cream);
+    box-shadow:0 10px 26px rgba(36,29,26,0.28);
+  }
+  .avatar img{width:100%;height:100%;object-fit:cover;}
+  .avatar .fallback{color:var(--wine-dark);font-weight:800;font-size:30px;letter-spacing:0.5px;font-family:'Maven Pro',sans-serif;}
+  .brand-name{margin-top:16px;font-size:27px;font-weight:600;color:var(--wine-dark);letter-spacing:-0.3px;}
+  .brand-tag{margin-top:8px;font-size:clamp(12.5px, 3.6vw, 15px);color:var(--muted);font-weight:600;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 12px;}
+  .brand-tag .arrow{display:inline-block;animation:bob 1.6s ease-in-out infinite;color:var(--sage-dark);}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(5px);}}
+
+  .social-row{
+    display:flex;justify-content:center;gap:12px;
+    padding:18px 24px 0;position:relative;
+  }
+  .social-hint{
+    position:absolute;top:-4px;left:50%;transform:translateX(-50%) translateY(-100%) scale(0.9);
+    background:var(--wine-dark);color:var(--cream);
+    font-size:11.5px;font-weight:700;padding:7px 14px;border-radius:var(--radius-pill);
+    white-space:nowrap;opacity:0;pointer-events:none;
+    transition:opacity .3s ease, transform .3s ease;
+  }
+  .social-hint::after{
+    content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%) rotate(45deg);
+    width:8px;height:8px;background:var(--wine-dark);
+  }
+  .social-hint.show{opacity:1;transform:translateX(-50%) translateY(-118%) scale(1);}
+  .social-btn{
+    width:42px;height:42px;border-radius:50%;
+    background:var(--paper);border:1.5px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--wine-dark);text-decoration:none;
+    transition:transform .15s ease;
+  }
+  .social-btn:active{transform:scale(0.92);}
+
+  /* ---- QUIZ BANNER ---- */
+  .quiz-banner{
+    margin:22px 20px 0;
+    background:linear-gradient(135deg, var(--wine) 0%, var(--wine-dark) 100%);
+    border-radius:var(--radius);
+    padding:22px 22px 24px;
+    color:var(--cream);
+    text-align:left;
+    position:relative;
+    overflow:hidden;
+    cursor:pointer;
+    box-shadow:0 14px 30px rgba(122,26,53,0.28);
+    min-height:150px;
+  }
+  .quiz-banner::before{
+    content:'✦';position:absolute;top:-10px;right:-6px;font-size:110px;color:rgba(255,255,255,0.06);
+  }
+  .quiz-banner-photo{
+    position:absolute;bottom:0;right:0;height:100%;width:150px;
+    background:url('wanessa-cta.png') bottom right/contain no-repeat;
+    pointer-events:none;
+  }
+  .quiz-banner h3{font-size:21px;font-weight:600;margin-bottom:8px;max-width:220px;line-height:1.3;}
+  .quiz-banner p{font-size:15px;opacity:.85;max-width:230px;margin-bottom:16px;line-height:1.45;}
+  .quiz-banner .go{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--cream);color:var(--wine-dark);
+    border-radius:var(--radius-pill);padding:10px 18px;
+    font-weight:700;font-size:15px;
+  }
+
+  /* ---- SECTION HEAD ---- */
+  .section-head{
+    padding:32px 24px 4px;
+    display:flex;align-items:baseline;justify-content:space-between;
+  }
+  .section-head h2{font-size:19px;font-weight:600;color:var(--wine-dark);}
+  .section-head span{font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+
+  /* ---- BENTO GRID (dores do cliente) ---- */
+  .bento{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    grid-auto-rows:78px;
+    gap:10px;
+    padding:16px 24px 4px;
+  }
+  .bcell{
+    border-radius:18px;padding:14px;
+    display:flex;flex-direction:column;justify-content:flex-end;
+    cursor:pointer;position:relative;overflow:hidden;
+    transition:transform .18s ease;
+    color:var(--wine-dark);
+  }
+  .bcell:active{transform:scale(0.96);}
+  .b-icon{font-size:22px;margin-bottom:6px;}
+  .bcell h4{font-size:14px;font-weight:800;line-height:1.25;font-family:'Maven Pro',sans-serif;}
+  .b-tall{grid-column:span 2;grid-row:span 3;border-radius:24px;}
+  .b-wide{grid-column:span 2;grid-row:span 2;}
+  .b-square{grid-column:span 2;grid-row:span 2;}
+  .b-round{grid-column:span 2;grid-row:span 3;border-radius:24px;}
+  .b-square2{grid-column:span 2;grid-row:span 2;}
+  .b-wide2{grid-column:span 4;grid-row:span 2;flex-direction:row;align-items:center;gap:12px;}
+  .b-wide2 h4{font-size:14px;}
+  .b-wide2 .b-icon{margin-bottom:0;}
+  .bcell-badge{
+    position:absolute;top:12px;left:12px;
+    background:rgba(255,255,255,0.92);
+    color:var(--wine-dark);
+    font-size:10.5px;font-weight:800;letter-spacing:.3px;
+    padding:6px 12px;border-radius:var(--radius-pill);
+    display:inline-flex;align-items:center;gap:4px;
+  }
+
+  /* ---- ACCORDION DETAIL (expands under carousel when tapped) ---- */
+  .lab-detail{
+    margin:6px 24px 0;
+    max-height:0;overflow:hidden;
+    transition:max-height .35s ease;
+    border-radius:16px;
+  }
+  .lab-detail.open{max-height:220px;}
+  .lab-detail-inner{
+    background:var(--paper);border:1.5px solid var(--line);border-radius:16px;padding:16px 18px;
+  }
+  .lab-detail-inner p{font-size:13px;color:var(--charcoal);opacity:.85;margin-bottom:12px;line-height:1.5;}
+  .lab-detail-inner .btn-mini{
+    display:inline-flex;align-items:center;gap:6px;background:var(--wine);color:#fff;
+    border:none;border-radius:var(--radius-pill);padding:10px 16px;font-family:inherit;font-weight:700;font-size:12.5px;
+  }
+
+  /* ---- WHATSAPP CARDS ---- */
+  .wa-list{padding:14px 24px 4px;display:flex;flex-direction:column;gap:10px;}
+  .wa-card{
+    display:flex;align-items:center;gap:13px;
+    background:var(--paper);border:1.5px solid var(--line);border-radius:16px;
+    padding:14px 16px;text-decoration:none;
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .wa-card:active{transform:scale(0.98);}
+  .wa-icon{
+    width:42px;height:42px;border-radius:50%;background:#e9f6ec;
+    display:flex;align-items:center;justify-content:center;color:#2f7d42;flex-shrink:0;
+  }
+  .wa-text{flex:1;min-width:0;}
+  .wa-text .lbl{font-size:15.5px;font-weight:700;color:var(--charcoal);}
+  .wa-text .sub{font-size:13px;color:var(--muted);margin-top:1px;}
+  .wa-arrow{color:var(--sage-dark);flex-shrink:0;}
+
+  /* ---- VISIT CARD ---- */
+  .visit-card{
+    margin:26px 24px 0;
+    background:linear-gradient(135deg, var(--wine-dark) 0%, var(--wine) 100%);
+    border-radius:var(--radius);
+    padding:24px 22px;
+    color:var(--cream);
+    position:relative;overflow:hidden;
+  }
+  .visit-card::before{
+    content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;
+    background:radial-gradient(circle, rgba(200,121,74,0.35), transparent 70%);
+  }
+  .visit-card h3{font-size:19px;font-weight:600;margin-bottom:7px;color:var(--cream);}
+  .visit-card p{font-size:14.5px;opacity:0.85;margin-bottom:16px;line-height:1.5;max-width:280px;}
+  .visit-btn{
+    background:var(--clay);color:#3a1a0a;
+    border:none;border-radius:var(--radius-pill);
+    padding:11px 18px;font-family:inherit;font-weight:700;font-size:14.5px;
+    cursor:pointer;
+  }
+
+  /* ---- INSTAGRAM STRIP ---- */
+  .ig-strip{display:flex;gap:12px;padding:16px 24px 8px;overflow-x:auto;scrollbar-width:none;}
+  .ig-strip::-webkit-scrollbar{display:none;}
+  .ig-embed-wrap{flex:0 0 auto;width:260px;border-radius:14px;overflow:hidden;background:var(--paper);border:1px solid var(--line);}
+
+  /* ---- ABOUT / SOBRE A FARMÁCIA ---- */
+  .about-section{margin:34px 24px 0;text-align:left;}
+  .about-section-title{font-size:22px;font-weight:800;color:var(--wine-dark);text-align:center;margin-bottom:6px;}
+  .about-section-kicker{font-size:14px;color:var(--muted);text-align:center;margin-bottom:18px;font-weight:600;}
+  .about-photo{
+    width:100%;height:190px;border-radius:20px;margin-bottom:22px;
+    background:url('about-photo.jpg') center/cover no-repeat;
+  }
+  .about-section h3{font-size:17px;font-weight:800;color:var(--wine-dark);margin:22px 0 8px;}
+  .about-section p{font-size:15px;color:var(--charcoal);opacity:.85;line-height:1.6;margin-bottom:6px;}
+  .about-section ul{margin:8px 0 6px 0;padding-left:20px;}
+  .about-section li{font-size:14.5px;color:var(--charcoal);opacity:.85;line-height:1.55;margin-bottom:6px;}
+  .about-section li strong{color:var(--wine-dark);opacity:1;}
+  .about-video{
+    width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;margin-top:24px;
+    box-shadow:0 12px 26px rgba(36,29,26,0.18);
+  }
+  .about-video iframe{width:100%;height:100%;border:none;display:block;}
+  .hours-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:22px 0 4px;}
+  .hours-pill{
+    background:var(--paper);border:1.5px solid var(--line);
+    border-radius:var(--radius-pill);padding:10px 16px;
+    font-size:13.5px;font-weight:700;color:var(--wine-dark);
+    display:flex;align-items:center;gap:6px;
+  }
+  footer{
+    text-align:center;padding:34px 24px 12px;
+    font-size:12px;color:var(--muted);
+  }
+  footer .addr{margin-bottom:4px;font-weight:700;color:var(--charcoal);}
+  footer .made{margin-top:14px;font-size:10.5px;opacity:.6;}
+
+  /* ---- CHAT MODAL ---- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(36,29,26,0.6);
+    display:none;align-items:flex-end;justify-content:center;z-index:100;
+  }
+  .overlay.active{display:flex;}
+  .sheet{
+    width:100%;max-width:480px;background:var(--paper);
+    border-radius:26px 26px 0 0;padding:24px 22px 30px;
+    max-height:88vh;overflow-y:auto;animation:slideup .28s cubic-bezier(.2,.9,.3,1);
+  }
+  @keyframes slideup{from{transform:translateY(40px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .sheet-title{font-family:'Maven Pro',sans-serif;font-weight:600;font-size:19px;color:var(--wine-dark);}
+  .sheet-close{background:var(--cream);border:none;width:30px;height:30px;border-radius:50%;font-size:16px;color:var(--muted);cursor:pointer;}
+  .progress{height:5px;background:var(--line);border-radius:var(--radius-pill);overflow:hidden;margin-bottom:24px;}
+  .progress-bar{height:100%;background:linear-gradient(90deg, var(--wine-light), var(--wine-dark));border-radius:var(--radius-pill);transition:width .3s ease;width:0%;}
+  .q-title{font-size:18.5px;font-weight:700;margin-bottom:16px;color:var(--charcoal);font-family:'Maven Pro',sans-serif;}
+  .opt{
+    display:block;width:100%;text-align:left;
+    background:var(--cream);border:1.5px solid var(--line);
+    border-radius:14px;padding:14px 16px;margin-bottom:10px;
+    font-family:inherit;font-size:15.5px;font-weight:600;color:var(--charcoal);
+    cursor:pointer;transition:border-color .15s ease, background .15s ease;
+  }
+  .opt:active{background:#efe2c9;border-color:var(--sage);}
+  .result-box{background:var(--cream);border:1.5px solid var(--line);border-radius:16px;padding:18px;}
+  .result-tag{display:inline-block;background:var(--sage);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:var(--radius-pill);margin-bottom:10px;}
+  .result-box h4{font-size:18.5px;margin-bottom:6px;color:var(--wine-dark);font-family:'Maven Pro',sans-serif;}
+  .result-box p{font-size:15px;color:var(--charcoal);opacity:.85;margin-bottom:14px;}
+  .btnrow{display:flex;gap:10px;}
+  .btn-primary{flex:1;background:var(--wine);color:#fff;border:none;border-radius:var(--radius-pill);padding:13px;font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer;}
+  .btn-secondary{background:none;border:1.5px solid var(--line);color:var(--charcoal);border-radius:var(--radius-pill);padding:13px 16px;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer;}
+
+  /* ---- LEAD POPUP ---- */
+  .lead-overlay{position:fixed;inset:0;background:rgba(36,29,26,0.65);display:none;align-items:center;justify-content:center;z-index:200;padding:24px;}
+  .lead-overlay.active{display:flex;}
+  .lead-card{background:var(--paper);border-radius:22px;padding:28px 22px;max-width:360px;width:100%;position:relative;animation:slideup .25s ease;}
+  .slot-date-group{margin-bottom:10px;}
+  .slot-date-label{font-size:12px;font-weight:800;color:var(--sage-dark);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+  .slot-btns{display:flex;flex-wrap:wrap;gap:8px;}
+  .slot-btn{
+    background:var(--cream);border:1.5px solid var(--line);border-radius:var(--radius-pill);
+    padding:8px 14px;font-family:inherit;font-size:13px;font-weight:700;color:var(--charcoal);
+    cursor:pointer;
+  }
+  .slot-btn.selected{background:var(--wine);border-color:var(--wine);color:#fff;}
+  .lead-close{position:absolute;top:14px;right:16px;background:var(--cream);border:none;width:28px;height:28px;border-radius:50%;font-size:15px;color:var(--muted);cursor:pointer;}
+  .lead-card h4{font-family:'Maven Pro',sans-serif;font-size:19px;font-weight:600;color:var(--wine-dark);margin-bottom:8px;}
+  .lead-card p{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.5;}
+  .lead-input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-family:inherit;font-size:14px;margin-bottom:10px;background:var(--cream);}
+  .lead-input:focus{outline:none;border-color:var(--sage);}
+
+  /* ---- PROACTIVE CHAT TEASER ---- */
+  .chat-teaser{
+    position:fixed;bottom:18px;left:50%;
+    transform:translateX(-50%) translateY(30px);
+    width:calc(100% - 32px);max-width:400px;
+    background:var(--paper);border:1.5px solid var(--line);
+    border-radius:20px;padding:14px 40px 14px 14px;
+    display:flex;align-items:center;gap:12px;
+    box-shadow:0 16px 34px rgba(36,29,26,0.22);
+    z-index:150;cursor:pointer;
+    opacity:0;pointer-events:none;
+    transition:opacity .4s ease, transform .4s cubic-bezier(.2,.9,.3,1);
+  }
+  .chat-teaser.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
+  .teaser-avatar{
+    width:40px;height:40px;border-radius:50%;flex-shrink:0;
+    background:#ffffff;border:1.5px solid var(--line);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+  }
+  .teaser-avatar img{width:100%;height:100%;object-fit:cover;}
+  .teaser-avatar .fallback{color:var(--wine-dark);font-weight:800;font-size:14px;font-family:'Maven Pro',sans-serif;}
+  .teaser-text{display:flex;flex-direction:column;gap:2px;}
+  .teaser-text strong{font-size:13.5px;color:var(--charcoal);}
+  .teaser-text span{font-size:12px;color:var(--muted);line-height:1.35;}
+  .teaser-close{
+    position:absolute;top:8px;right:8px;background:var(--cream);border:none;
+    width:22px;height:22px;border-radius:50%;font-size:11px;color:var(--muted);cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-banner"></div>
+    <div class="avatar"><img src="logo-b.png" alt="Bioflora" onerror="this.style.display='none'; this.parentElement.innerHTML+='<span class=&quot;fallback&quot;>B</span>';"></div>
+    <div class="brand-name">Farmácia Bioflora</div>
+    <p class="brand-tag">Farmácia de manipulação e drogaria em Itajubá, MG <span class="arrow">↓</span></p>
+
+    <div class="social-row" id="socialRow">
+      <a class="social-btn" href="https://instagram.com/bioflorafarmacia" target="_blank" aria-label="Instagram" data-hint="Nos siga no Instagram">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+      </a>
+      <a class="social-btn" href="https://facebook.com/bioflorafarmacia" target="_blank" aria-label="Facebook" data-hint="Curta no Facebook">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+      </a>
+      <a class="social-btn" href="https://youtube.com/@bioflorafarmaciaa" target="_blank" aria-label="YouTube" data-hint="Acesse nosso canal">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9l5 3-5 3z" fill="currentColor" stroke="none"/></svg>
+      </a>
+      <a class="social-btn" href="https://www.farmaciabioflora.com.br" target="_blank" aria-label="Site" data-hint="Visite nosso site">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg>
+      </a>
+      <div class="social-hint" id="socialHint"></div>
+    </div>
+
+    <div class="quiz-banner fade-in" onclick="openChat()">
+      <h3>Não sabe por onde começar?</h3>
+      <p>Escolha o que você precisa e a gente já te leva pro caminho mais rápido — sem enrolação ;)</p>
+      <span class="go">Responder agora →</span>
+      <div class="quiz-banner-photo"></div>
+    </div>
+  </div>
+
+  <!-- PRODUCT CAROUSEL -->
+  <div class="section-head fade-in">
+    <h2>O que você procura</h2>
+  </div>
+  <div class="bento">
+    <div class="bcell b-tall" style="background:linear-gradient(0deg, rgba(36,29,26,0.75) 0%, rgba(36,29,26,0.25) 45%, rgba(36,29,26,0.05) 75%), url('card-site.webp') center/cover no-repeat; color:#fff;" onclick="window.open('https://www.farmaciabioflora.com.br','_blank')">
+      <span class="bcell-badge fade-in">👆 Clique aqui</span>
+      <h4>Produtos com<br>desconto especial</h4>
+    </div>
+    <div class="bcell b-wide" style="background:linear-gradient(0deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.15) 60%), url('card-site-menopausa.webp') center/cover no-repeat; color:#fff;" onclick="toggleDetail('hormonal')">
+      <span class="bcell-badge fade-in">👆 Clique aqui</span>
+      <h4>Suplemento pra ajudar na menopausa</h4>
+    </div>
+    <div class="bcell b-square" style="background:linear-gradient(0deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.15) 60%), url('card-site-skincare.webp') center/cover no-repeat; color:#fff;" onclick="toggleDetail('skincare')">
+      <span class="bcell-badge fade-in">👆 Clique aqui</span>
+      <h4>Skincare e beleza</h4>
+    </div>
+    <div class="bcell b-round" style="background:linear-gradient(0deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.1) 65%), url('card-site-pet.webp') center/cover no-repeat; color:#fff;" onclick="toggleDetail('veterinario')">
+      <span class="bcell-badge fade-in">👆 Clique aqui</span>
+      <h4>Manipulação para meu pet</h4>
+    </div>
+    <div class="bcell b-square2" style="background:linear-gradient(0deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.15) 60%), url('card-site-whatsapp.webp') center/cover no-repeat; color:#fff;" onclick="toggleDetail('receita')">
+      <span class="bcell-badge fade-in">👆 Clique aqui</span>
+      <h4>Manipular minha receita</h4>
+    </div>
+    <div class="bcell b-wide2" style="background:linear-gradient(90deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.3) 55%, rgba(36,29,26,0.05) 100%), url('card-site-emagrecimento.webp') center/cover no-repeat; color:#fff;" onclick="toggleDetail('emagrecimento')">
+      <span class="bcell-badge fade-in">👆 Clique aqui</span>
+      <h4 style="font-size:15px;max-width:180px;">Quero perder os quilinhos</h4>
+    </div>
+  </div>
+
+  <div class="lab-detail" id="detail-hormonal">
+    <div class="lab-detail-inner">
+      <p>Suplementos e fórmulas manipuladas pra apoiar mulheres 40+ na menopausa — equilíbrio hormonal, libido e bem-estar, sempre com acompanhamento farmacêutico.</p>
+      <a class="btn-mini" href="https://wa.me/5535984493997?text=Ol%C3%A1!%20Quero%20saber%20mais%20sobre%20suplementos%20para%20menopausa" target="_blank">Falar com a farmácia →</a>
+    </div>
+  </div>
+  <div class="lab-detail" id="detail-veterinario">
+    <div class="lab-detail-inner">
+      <p>Manipulação Veterinária — fórmulas manipuladas especialmente para cães e gatos, com a qualidade e o cuidado Bioflora.</p>
+      <a class="btn-mini" href="https://wa.me/5535984493997?text=Ol%C3%A1!%20Quero%20saber%20mais%20sobre%20manipula%C3%A7%C3%A3o%20veterin%C3%A1ria" target="_blank">Falar com a farmácia →</a>
+    </div>
+  </div>
+  <div class="lab-detail" id="detail-skincare">
+    <div class="lab-detail-inner">
+      <p>Fórmulas manipuladas de skincare e beleza — cuidados com a pele sob medida pra sua necessidade, com orientação farmacêutica.</p>
+      <a class="btn-mini" href="https://wa.me/5535984493997?text=Ol%C3%A1!%20Quero%20saber%20mais%20sobre%20skincare%20e%20beleza" target="_blank">Falar com a farmácia →</a>
+    </div>
+  </div>
+  <div class="lab-detail" id="detail-receita">
+    <div class="lab-detail-inner">
+      <p>Traga sua receita e a gente manipula com precisão e qualidade farmacêutica — do jeito certo, na dose certa.</p>
+      <a class="btn-mini" href="https://wa.me/5535984493997?text=Ol%C3%A1!%20Quero%20manipular%20uma%20receita" target="_blank">Enviar receita →</a>
+    </div>
+  </div>
+  <div class="lab-detail" id="detail-emagrecimento">
+    <div class="lab-detail-inner">
+      <p>Fórmulas manipuladas de apoio ao emagrecimento e composição corporal, sempre com orientação farmacêutica.</p>
+      <a class="btn-mini" href="https://wa.me/5535984493997?text=Ol%C3%A1!%20Quero%20saber%20sobre%20emagrecimento" target="_blank">Falar com a farmácia →</a>
+    </div>
+  </div>
+
+  <!-- WHATSAPP CARDS -->
+  <div class="wa-list" style="margin-top:30px;">
+    <a class="wa-card" href="https://wa.me/5535984493997?text=Ol%C3%A1!%20Quero%20fazer%20um%20or%C3%A7amento" target="_blank">
+      <div class="wa-icon">
+        <svg width="22" height="22" viewBox="0 0 32 32"><path fill="#25D366" d="M16 0C7.163 0 0 7.163 0 16c0 2.822.737 5.556 2.137 7.968L0 32l8.24-2.104A15.93 15.93 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0z"/><path fill="#fff" d="M23.47 19.16c-.36-.18-2.14-1.06-2.47-1.18-.33-.12-.57-.18-.81.18-.24.36-.93 1.18-1.14 1.42-.21.24-.42.27-.78.09-.36-.18-1.52-.56-2.9-1.79-1.07-.96-1.79-2.14-2-2.5-.21-.36-.02-.55.16-.73.16-.16.36-.42.54-.63.18-.21.24-.36.36-.6.12-.24.06-.45-.03-.63-.09-.18-.81-1.95-1.11-2.67-.29-.7-.59-.6-.81-.61h-.69c-.24 0-.63.09-.96.45-.33.36-1.26 1.23-1.26 3s1.29 3.48 1.47 3.72c.18.24 2.54 3.88 6.16 5.44.86.37 1.53.59 2.05.76.86.27 1.64.23 2.26.14.69-.1 2.14-.87 2.44-1.72.3-.85.3-1.57.21-1.72-.09-.15-.33-.24-.69-.42z"/></svg>
+      </div>
+      <div class="wa-text">
+        <div class="lbl">Orçamento e atendimento</div>
+        <div class="sub">Resposta em até 1h no horário comercial</div>
+      </div>
+      <span class="wa-arrow">→</span>
+    </a>
+  </div>
+
+  <!-- VISIT CARD -->
+  <div class="visit-card fade-in">
+    <h3>Solicitar visita de representante</h3>
+    <p>Médicos, veterinários e nutricionistas podem agendar uma visita da nossa equipe pra conhecer nossas linhas de manipulação.</p>
+    <button class="visit-btn" onclick="openVisit()">Solicitar visita</button>
+  </div>
+
+  <!-- SOBRE A FARMÁCIA -->
+  <div class="about-section fade-in">
+    <div class="about-section-title">Quem somos?</div>
+    <div class="about-section-kicker">Conheça a Farmácia Bioflora</div>
+    <div class="about-photo"></div>
+
+    <p>Há mais de 20 anos cuidando da saúde e bem-estar de Itajubá com manipulação de alta qualidade, ética e acolhimento — eleitos várias vezes a melhor farmácia de manipulação da região.</p>
+    <p>Atendemos todo o Brasil com medicamentos controlados, nutracêuticos, hormônios, dermocosméticos, suplementos esportivos e um laboratório veterinário dedicado aos pets.</p>
+    <p>Liderados pela farmacêutica Wanessa, valorizamos transparência, excelência, inovação e um atendimento humanizado — cuidando de você, sua família e seus pets com o que há de melhor em manipulação farmacêutica.</p>
+
+    <div class="about-video">
+      <iframe src="https://www.youtube.com/embed/lwIJYrd0OdY" title="Conheça a Farmácia Bioflora" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+
+    <div class="hours-row">
+      <span class="hours-pill">🕗 Seg-Sex · 8h–18h30</span>
+      <span class="hours-pill">🕗 Sáb · 8h–12h30</span>
+    </div>
+  </div>
+
+  <!-- INSTAGRAM STRIP (embed oficial — troque os links de post pelos reais) -->
+  <div class="section-head fade-in">
+    <h2>No Instagram</h2>
+    <a href="https://www.instagram.com/bioflorafarmacia" target="_blank" style="font-size:11.5px;color:var(--muted);font-weight:700;text-decoration:none;">Ver perfil →</a>
+  </div>
+  <div class="ig-strip">
+    <div class="ig-embed-wrap">
+      <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/bioflorafarmacia/" data-instgrm-version="14" style="margin:0;width:100%;"></blockquote>
+    </div>
+    <div class="ig-embed-wrap">
+      <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/bioflorafarmacia/" data-instgrm-version="14" style="margin:0;width:100%;"></blockquote>
+    </div>
+    <div class="ig-embed-wrap">
+      <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/bioflorafarmacia/" data-instgrm-version="14" style="margin:0;width:100%;"></blockquote>
+    </div>
+  </div>
+  <script async src="//www.instagram.com/embed.js"></script>
+
+  <footer>
+    <div class="addr">Farmácia Bioflora · Itajubá, MG</div>
+    <div>Seg a Sex · 8h–18h30 | Sáb · 8h–12h30</div>
+    <div class="made">Feito sob medida para a Bioflora</div>
+  </footer>
+
+</div>
+
+<!-- ============ PROACTIVE CHAT TEASER ============ -->
+<div class="chat-teaser" id="chatTeaser" onclick="openChat(); dismissTeaser();">
+  <button class="teaser-close" onclick="event.stopPropagation(); dismissTeaser();">✕</button>
+  <div class="teaser-avatar"><img src="logo-b.png" alt="Bioflora" onerror="this.style.display='none'; this.parentElement.innerHTML+='<span class=&quot;fallback&quot;>B</span>';"></div>
+  <div class="teaser-text">
+    <strong>Posso te ajudar?</strong>
+    <span>Escolha o que você precisa e te levo direto pro caminho certo.</span>
+  </div>
+</div>
+
+<!-- ============ CHAT / QUIZ MODAL ============ -->
+<div class="overlay" id="chatOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <div class="sheet-title">Vamos te orientar</div>
+      <button class="sheet-close" onclick="closeChat()">✕</button>
+    </div>
+    <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+    <div id="chatBody"></div>
+  </div>
+</div>
+
+<!-- ============ LEAD CAPTURE POPUP ============ -->
+<div class="lead-overlay" id="leadOverlay">
+  <div class="lead-card">
+    <button class="lead-close" onclick="closeLead()">✕</button>
+    <h4>Antes de você ir...</h4>
+    <p>Deixe seu contato e a gente te ajuda a encontrar a fórmula certa — sem compromisso.</p>
+    <input class="lead-input" id="leadName" placeholder="Nome">
+    <input class="lead-input" id="leadPhone" placeholder="WhatsApp">
+    <input class="lead-input" id="leadEmail" placeholder="E-mail (opcional)">
+    <button class="btn-primary" style="width:100%" onclick="submitLead()">Quero ser contatado(a)</button>
+  </div>
+</div>
+
+<!-- ============ VISITA MÉDICA POPUP ============ -->
+<div class="lead-overlay" id="visitOverlay">
+  <div class="lead-card" style="max-height:85vh;overflow-y:auto;">
+    <button class="lead-close" onclick="closeVisit()">✕</button>
+    <h4>Solicitar visita de representante</h4>
+    <p>Preencha seus dados e escolha um horário disponível na agenda.</p>
+    <input class="lead-input" id="visitNome" placeholder="Nome completo">
+    <select class="lead-input" id="visitProfissao">
+      <option value="">Sua área de atuação</option>
+      <option value="Médico(a)">Médico(a)</option>
+      <option value="Veterinário(a)">Veterinário(a)</option>
+      <option value="Nutricionista">Nutricionista</option>
+      <option value="Outro">Outro profissional de saúde</option>
+    </select>
+    <input class="lead-input" id="visitRegistro" placeholder="CRM/CRMV/CRN (opcional)">
+    <input class="lead-input" id="visitClinica" placeholder="Clínica/consultório (opcional)">
+    <input class="lead-input" id="visitTelefone" placeholder="WhatsApp">
+    <div id="visitSlotsWrap" style="margin:6px 0 10px;">
+      <div style="font-size:13px;font-weight:700;color:var(--wine-dark);margin-bottom:8px;">Escolha um horário disponível</div>
+      <div id="visitSlotsList" style="font-size:13.5px;color:var(--muted);">Carregando horários...</div>
+    </div>
+    <textarea class="lead-input" id="visitObs" placeholder="Observações (opcional)" rows="2" style="resize:vertical;font-family:inherit;"></textarea>
+    <button class="btn-primary" style="width:100%" onclick="submitVisit()" id="visitSubmitBtn" disabled>Escolha um horário acima</button>
+  </div>
+</div>
+
+<script>
+/* ============== PROACTIVE CHAT TEASER (10s) ============== */
+let teaserShown = false;
+setTimeout(()=>{
+  if(document.getElementById('chatOverlay').classList.contains('active')) return;
+  document.getElementById('chatTeaser').classList.add('show');
+  teaserShown = true;
+  track('chat_teaser_shown');
+}, 10000);
+function dismissTeaser(){
+  document.getElementById('chatTeaser').classList.remove('show');
+}
+
+/* ============== ROTATING SOCIAL HINTS ============== */
+(function(){
+  const btns = Array.from(document.querySelectorAll('#socialRow .social-btn'));
+  const hint = document.getElementById('socialHint');
+  let i = 0;
+  function cycle(){
+    const btn = btns[i % btns.length];
+    hint.textContent = btn.dataset.hint;
+    const rowRect = document.getElementById('socialRow').getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    hint.style.left = (btnRect.left - rowRect.left + btnRect.width/2) + 'px';
+    hint.classList.add('show');
+    setTimeout(()=> hint.classList.remove('show'), 1800);
+    i++;
+  }
+  setTimeout(()=>{ cycle(); setInterval(cycle, 3200); }, 1500);
+})();
+
+/* ============== SUPABASE (link_bio_events / link_bio_leads) ============== */
+const SB_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+function track(event, data){
+  sb.from('link_bio_events').insert({ event, data: data || {} })
+    .then(({error}) => { if(error) console.warn('track error', error); });
+}
+document.querySelectorAll('.wa-card, .pcard-cta, .social-btn, .visit-btn, .quiz-banner').forEach(el=>{
+  el.addEventListener('click', ()=> track('click', {label: el.textContent?.trim().slice(0,40) || el.getAttribute('aria-label')}));
+});
+
+/* ============== SCROLL REVEAL ============== */
+const io = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
+},{threshold:0.15});
+document.querySelectorAll('.fade-in').forEach(el=>io.observe(el));
+
+/* ============== PRODUCT DETAIL TOGGLE ============== */
+let openDetail = null;
+function toggleDetail(id){
+  const el = document.getElementById('detail-'+id);
+  if(openDetail && openDetail !== el) openDetail.classList.remove('open');
+  el.classList.toggle('open');
+  openDetail = el.classList.contains('open') ? el : null;
+  if(el.classList.contains('open')){
+    track('lab_expand', {lab:id});
+    setTimeout(()=> el.scrollIntoView({behavior:'smooth', block:'nearest'}), 150);
+  }
+}
+
+/* ============== ROTEADOR DE ATENDIMENTO (5 portas) ============== */
+const WA_NUM = '5535984493997';
+function waLink(msg){ return `https://wa.me/${WA_NUM}?text=${encodeURIComponent(msg)}`; }
+
+function openChat(){
+  document.getElementById('chatOverlay').classList.add('active');
+  track('router_start');
+  screenHome();
+}
+function closeChat(){ document.getElementById('chatOverlay').classList.remove('active'); }
+function setProgress(pct){ document.getElementById('progressBar').style.width = pct+'%'; }
+
+function renderScreen(title, subtitle, optionsHtml, footHtml){
+  const body = document.getElementById('chatBody');
+  body.innerHTML = `
+    <div class="q-title">${title}</div>
+    ${subtitle ? `<p style="font-size:14px;color:var(--muted);margin:-10px 0 16px;">${subtitle}</p>` : ''}
+    ${optionsHtml}
+    ${footHtml || ''}
+  `;
+}
+function optBtn(label, sub, onclick){
+  return `<button class="opt" onclick="${onclick}" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;">
+    <span>${label}</span>
+    ${sub ? `<span style="font-size:12px;font-weight:500;opacity:.65;">${sub}</span>` : ''}
+  </button>`;
+}
+
+/* Tela inicial */
+function screenHome(){
+  setProgress(15);
+  const options = [
+    optBtn('🧾 Receita ou manipulação', 'Orçamentos, receitas e dúvidas', "screenReceita()"),
+    optBtn('🛍️ Comprar produtos', 'Conheça nossa loja', "screenComprar()"),
+    optBtn('🔄 Já sou cliente', 'Repetições, pedidos e atendimento', "screenCliente()"),
+    optBtn('🐾 Linha veterinária', 'Manipulados e produtos para seu pet', "screenVet()"),
+    optBtn('👩‍⚕️ Sou profissional da saúde', 'Atendimento para prescritores', "goVisitForm()"),
+  ].join('');
+  const foot = `<div style="text-align:center;margin-top:14px;">
+    <a href="#" onclick="event.preventDefault(); track('router_fallback'); window.open(waLink('Olá! Vim pelo Instagram da Bioflora e gostaria de falar com vocês.'),'_blank');" style="font-size:13px;color:var(--muted);font-weight:600;text-decoration:underline;">Não encontrou o que procura? Fale conosco</a>
+  </div>`;
+  renderScreen('Como podemos te ajudar?', 'Escolha uma opção e te direcionamos para o caminho mais rápido.', options, foot);
+}
+
+/* 1) Receita ou manipulação */
+function screenReceita(){
+  setProgress(45);
+  track('router_branch', {branch:'receita'});
+  const options = [
+    optBtn('Já tenho uma receita', '', "screenReceitaStatus()"),
+    optBtn('Ainda não tenho receita / quero tirar uma dúvida', '', "receitaDuvida()"),
+  ].join('');
+  renderScreen('O que você precisa?', '', options, backBtn());
+}
+function screenReceitaStatus(){
+  setProgress(75);
+  const options = [
+    optBtn('Tenho a receita em mãos', '', "receitaFinal()"),
+    optBtn('Tenho uma foto/arquivo dela', '', "receitaFinal()"),
+    optBtn('Já enviei anteriormente para a Bioflora', '', "receitaFinal()"),
+  ].join('');
+  renderScreen('Como está sua receita?', '', options, backBtn());
+}
+function receitaFinal(){
+  track('router_complete', {branch:'receita', outcome:'com_receita'});
+  window.open(waLink('Olá! Vim pelo Instagram da Bioflora e gostaria de solicitar um orçamento de uma fórmula. Já tenho minha receita e vou enviá-la aqui para vocês. 😊'), '_blank');
+  closeChat();
+}
+function receitaDuvida(){
+  track('router_complete', {branch:'receita', outcome:'duvida'});
+  window.open(waLink('Olá! Vim pelo Instagram da Bioflora. Tenho interesse em manipulação, mas ainda não tenho uma receita e gostaria de tirar uma dúvida antes de continuar. Minha dúvida é: '), '_blank');
+  closeChat();
+}
+
+/* 2) Comprar produtos */
+function screenComprar(){
+  setProgress(45);
+  track('router_branch', {branch:'comprar'});
+  const options = [
+    optBtn('Sim, quero comprar', '', "comprarLoja()"),
+    optBtn('Ainda estou escolhendo', '', "comprarDuvida()"),
+  ].join('');
+  renderScreen('Você já sabe qual produto procura?', '', options, backBtn());
+}
+function comprarLoja(){
+  track('router_complete', {branch:'comprar', outcome:'loja'});
+  window.open('https://www.farmaciabioflora.com.br', '_blank');
+  closeChat();
+}
+function comprarDuvida(){
+  track('router_complete', {branch:'comprar', outcome:'duvida'});
+  window.open(waLink('Olá! Vim pelo Instagram da Bioflora e gostaria de ajuda para escolher um produto. Estou procurando algo para... '), '_blank');
+  closeChat();
+}
+
+/* 3) Já sou cliente */
+function screenCliente(){
+  setProgress(45);
+  track('router_branch', {branch:'cliente'});
+  const options = [
+    optBtn('Repetir uma fórmula', '', "clienteRepetir()"),
+    optBtn('Comprar novamente um produto', '', "clienteRecompra()"),
+    optBtn('Acompanhar/falar sobre um pedido', '', "clientePedido()"),
+    optBtn('Outra dúvida', '', "clienteDuvida()"),
+  ].join('');
+  renderScreen('Como podemos te ajudar novamente?', '', options, backBtn());
+}
+function clienteRepetir(){
+  setProgress(75);
+  renderScreen('Repetir fórmula', 'Só seu nome pra já chegar certo pro atendente:', `
+    <input class="lead-input" id="rNome" placeholder="Seu nome" style="margin-bottom:12px;">
+    <button class="btn-primary" style="width:100%" onclick="clienteRepetirEnviar()">Continuar no WhatsApp</button>
+  `, backBtn());
+}
+function clienteRepetirEnviar(){
+  const nome = document.getElementById('rNome').value || '';
+  track('router_complete', {branch:'cliente', outcome:'repetir'});
+  window.open(waLink(`Olá! Já sou cliente Bioflora e vim pelo link do Instagram. Gostaria de verificar a repetição de uma fórmula que já fiz com vocês.\nMeu nome é: ${nome}`), '_blank');
+  closeChat();
+}
+function clienteRecompra(){
+  track('router_complete', {branch:'cliente', outcome:'recompra'});
+  window.open(waLink('Olá! Já sou cliente Bioflora e vim pelo link do Instagram. Gostaria de comprar novamente um produto que já adquiri com vocês.'), '_blank');
+  closeChat();
+}
+function clientePedido(){
+  setProgress(75);
+  renderScreen('Acompanhar pedido', 'Esses dados ajudam a localizar mais rápido:', `
+    <input class="lead-input" id="pNome" placeholder="Seu nome" style="margin-bottom:10px;">
+    <input class="lead-input" id="pData" placeholder="Pedido feito aproximadamente em (ex: semana passada)" style="margin-bottom:12px;">
+    <button class="btn-primary" style="width:100%" onclick="clientePedidoEnviar()">Continuar no WhatsApp</button>
+  `, backBtn());
+}
+function clientePedidoEnviar(){
+  const nome = document.getElementById('pNome').value || '';
+  const data = document.getElementById('pData').value || '';
+  track('router_complete', {branch:'cliente', outcome:'pedido'});
+  window.open(waLink(`Olá! Já sou cliente Bioflora e gostaria de verificar um pedido que fiz com vocês.\nMeu nome é: ${nome}\nO pedido foi feito aproximadamente em: ${data}`), '_blank');
+  closeChat();
+}
+function clienteDuvida(){
+  track('router_complete', {branch:'cliente', outcome:'duvida'});
+  window.open(waLink('Olá! Já sou cliente Bioflora e vim pelo link do Instagram. Tenho uma dúvida: '), '_blank');
+  closeChat();
+}
+
+/* 4) Linha veterinária */
+function screenVet(){
+  setProgress(45);
+  track('router_branch', {branch:'veterinario'});
+  const options = [
+    optBtn('Tenho uma receita veterinária', '', "vetReceita()"),
+    optBtn('Quero repetir uma fórmula', '', "screenVetRepetir()"),
+    optBtn('Quero conhecer produtos veterinários', '', "vetProdutos()"),
+    optBtn('Tenho uma dúvida', '', "vetDuvida()"),
+  ].join('');
+  renderScreen('O que você precisa para seu pet?', '', options, backBtn());
+}
+function vetReceita(){
+  track('router_complete', {branch:'veterinario', outcome:'receita'});
+  window.open(waLink('Olá! Vim pelo Instagram da Bioflora e gostaria de solicitar um orçamento de manipulação veterinária. Já tenho a receita e vou enviá-la aqui para vocês. 😊'), '_blank');
+  closeChat();
+}
+function screenVetRepetir(){
+  setProgress(75);
+  renderScreen('Repetir fórmula veterinária', 'Seu nome e o do seu pet:', `
+    <input class="lead-input" id="vNome" placeholder="Seu nome" style="margin-bottom:10px;">
+    <input class="lead-input" id="vPet" placeholder="Nome do pet" style="margin-bottom:12px;">
+    <button class="btn-primary" style="width:100%" onclick="vetRepetirEnviar()">Continuar no WhatsApp</button>
+  `, backBtn());
+}
+function vetRepetirEnviar(){
+  const nome = document.getElementById('vNome').value || '';
+  const pet = document.getElementById('vPet').value || '';
+  track('router_complete', {branch:'veterinario', outcome:'repetir'});
+  window.open(waLink(`Olá! Já sou cliente Bioflora e gostaria de repetir uma fórmula veterinária.\nMeu nome é: ${nome}\nNome do pet: ${pet}`), '_blank');
+  closeChat();
+}
+function vetProdutos(){
+  track('router_complete', {branch:'veterinario', outcome:'produtos'});
+  window.open(waLink('Olá! Vim pelo Instagram da Bioflora e gostaria de conhecer os produtos da linha veterinária.'), '_blank');
+  closeChat();
+}
+function vetDuvida(){
+  track('router_complete', {branch:'veterinario', outcome:'duvida'});
+  window.open(waLink('Olá! Vim pelo Instagram da Bioflora. Tenho uma dúvida sobre manipulação veterinária: '), '_blank');
+  closeChat();
+}
+
+/* 5) Profissional da saúde */
+function goVisitForm(){
+  track('router_complete', {branch:'profissional'});
+  closeChat();
+  openVisit();
+}
+
+/* Botão voltar (sempre volta pra tela inicial — fluxo é raso, 2 níveis no máximo) */
+function backBtn(){
+  return `<div style="margin-top:6px;"><button class="btn-secondary" style="width:100%" onclick="screenHome()">← Voltar</button></div>`;
+}
+
+
+let leadShown = false;
+function showLead(reason){
+  if(leadShown) return;
+  leadShown = true;
+  document.getElementById('leadOverlay').classList.add('active');
+  track('lead_popup_shown', {reason});
+}
+function closeLead(){ document.getElementById('leadOverlay').classList.remove('active'); }
+function submitLead(){
+  const name = document.getElementById('leadName').value;
+  const phone = document.getElementById('leadPhone').value;
+  const email = document.getElementById('leadEmail').value;
+  if(!name || !phone){ alert('Preencha nome e WhatsApp'); return; }
+  sb.from('link_bio_leads').insert({ nome:name, telefone:phone, email:email||null, origem:'popup' })
+    .then(({error})=>{
+      if(error){ console.warn('lead error', error); alert('Não deu pra salvar agora, tenta de novo em instantes.'); return; }
+      track('lead_captured', {name, phone, email});
+      closeLead();
+      alert('Obrigado! Em breve entraremos em contato.');
+    });
+}
+document.addEventListener('mouseleave', (e)=>{ if(e.clientY < 10) showLead('exit_intent'); });
+setTimeout(()=> showLead('time_on_page'), 45000);
+
+/* ============== VISITA MÉDICA (agenda real) ============== */
+let selectedSlotId = null;
+
+function openVisit(){
+  document.getElementById('visitOverlay').classList.add('active');
+  track('visit_form_opened');
+  loadVisitSlots();
+}
+function closeVisit(){ document.getElementById('visitOverlay').classList.remove('active'); }
+
+function loadVisitSlots(){
+  selectedSlotId = null;
+  document.getElementById('visitSubmitBtn').disabled = true;
+  document.getElementById('visitSubmitBtn').textContent = 'Escolha um horário acima';
+  const listEl = document.getElementById('visitSlotsList');
+  listEl.textContent = 'Carregando horários...';
+
+  sb.from('link_bio_visita_slots')
+    .select('*')
+    .eq('status', 'disponivel')
+    .gte('data', new Date().toISOString().slice(0,10))
+    .order('data', {ascending:true})
+    .order('horario', {ascending:true})
+    .then(({data, error})=>{
+      if(error){ listEl.textContent = 'Não deu pra carregar os horários agora.'; console.warn(error); return; }
+      if(!data || data.length === 0){
+        listEl.innerHTML = 'Nenhum horário disponível no momento. Fale direto pelo WhatsApp:<br><a href="'+waLink('Olá! Vim pelo Instagram da Bioflora, sou profissional de saúde e gostaria de agendar uma visita.')+'" target="_blank" style="color:var(--wine-dark);font-weight:700;">Falar no WhatsApp →</a>';
+        return;
+      }
+      const byDate = {};
+      data.forEach(s => { (byDate[s.data] = byDate[s.data] || []).push(s); });
+      listEl.innerHTML = Object.keys(byDate).map(date => {
+        const label = new Date(date+'T00:00:00').toLocaleDateString('pt-BR', {weekday:'short', day:'2-digit', month:'short'});
+        const btns = byDate[date].map(s =>
+          `<button type="button" class="slot-btn" data-slot="${s.id}" onclick="selectSlot('${s.id}', this)">${s.horario}</button>`
+        ).join('');
+        return `<div class="slot-date-group"><div class="slot-date-label">${label}</div><div class="slot-btns">${btns}</div></div>`;
+      }).join('');
+    });
+}
+
+function selectSlot(id, btnEl){
+  selectedSlotId = id;
+  document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+  btnEl.classList.add('selected');
+  document.getElementById('visitSubmitBtn').disabled = false;
+  document.getElementById('visitSubmitBtn').textContent = 'Confirmar solicitação';
+}
+
+function submitVisit(){
+  const nome = document.getElementById('visitNome').value;
+  const profissao = document.getElementById('visitProfissao').value;
+  const registro = document.getElementById('visitRegistro').value;
+  const clinica = document.getElementById('visitClinica').value;
+  const telefone = document.getElementById('visitTelefone').value;
+  const obs = document.getElementById('visitObs').value;
+  if(!nome || !profissao || !telefone){ alert('Preencha nome, área de atuação e WhatsApp'); return; }
+  if(!selectedSlotId){ alert('Escolha um horário disponível'); return; }
+
+  const btn = document.getElementById('visitSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+
+  // Reserva o slot só se ele ainda estiver disponível (evita 2 pessoas pegarem o mesmo horário)
+  sb.from('link_bio_visita_slots')
+    .update({status:'reservado'})
+    .eq('id', selectedSlotId)
+    .eq('status', 'disponivel')
+    .select()
+    .then(({data: slotData, error: slotError})=>{
+      if(slotError || !slotData || slotData.length === 0){
+        alert('Esse horário acabou de ser reservado por outra pessoa. Escolha outro.');
+        btn.disabled = false; btn.textContent = 'Confirmar solicitação';
+        loadVisitSlots();
+        return;
+      }
+      sb.from('link_bio_visitas_medicas').insert({
+        nome, profissao, registro: registro||null, clinica: clinica||null,
+        telefone, observacoes: obs||null, slot_id: selectedSlotId,
+        data_preferida: slotData[0].data, horario_preferido: slotData[0].horario
+      }).then(({error})=>{
+        if(error){
+          console.warn('visit error', error);
+          alert('Não deu pra enviar agora, tenta de novo em instantes.');
+          btn.disabled = false; btn.textContent = 'Confirmar solicitação';
+          return;
+        }
+        track('visit_requested', {nome, profissao, slot: selectedSlotId});
+        closeVisit();
+        alert('Visita agendada! Nossa equipe confirma com você em breve.');
+      });
+    });
+}
+</script>
+
+</body>
+</html>
