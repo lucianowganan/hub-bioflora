@@ -88,6 +88,10 @@
   .msg-body .msg-meta strong{color:var(--ink);font-weight:700;}
   .msg-body .msg-texto{font-size:13.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid var(--line);border-radius:0 10px 10px 10px;padding:9px 13px;}
   .msg-row.mine .msg-texto{background:var(--burgundy-tint);border-color:#EAD2DA;}
+  .msg-texto.truncada{max-height:38vh;overflow:hidden;position:relative;}
+  .msg-texto.truncada::after{content:'';position:absolute;bottom:0;left:0;right:0;height:36px;background:linear-gradient(transparent,#fff);}
+  .msg-row.mine .msg-texto.truncada::after{background:linear-gradient(transparent,var(--burgundy-tint));}
+  .msg-expandir-btn{display:block;font-family:'Maven Pro',sans-serif;font-size:11px;font-weight:600;color:var(--burgundy);background:none;border:none;cursor:pointer;padding:4px 0 0;text-decoration:underline;}
   .msg-anexo img, .msg-anexo video{max-width:280px;max-height:280px;border-radius:10px;margin-top:6px;display:block;}
   .pdf-chip{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:600;color:var(--burgundy);background:var(--burgundy-tint);border:1px solid #EAD2DA;border-radius:8px;padding:8px 13px;text-decoration:none;}
   .pdf-chip:hover{border-color:var(--burgundy);}
@@ -99,7 +103,7 @@
   .reacao-btn.on{background:var(--burgundy-tint);border-color:var(--burgundy);color:var(--burgundy);font-weight:700;}
 
   .input-area{padding:14px 22px;border-top:1px solid var(--line);background:#fff;display:flex;gap:8px;align-items:flex-end;position:sticky;bottom:0;z-index:5;flex-shrink:0;}
-  .input-area textarea{flex:1;font-family:'Maven Pro',sans-serif;font-size:13.5px;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;resize:none;min-height:44px;max-height:120px;}
+  .input-area textarea{flex:1;font-family:'Maven Pro',sans-serif;font-size:13.5px;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;resize:none;min-height:44px;max-height:160px;overflow-y:auto;}
   .anexo-btn{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:17px;flex-shrink:0;}
   .anexo-btn:hover{border-color:var(--burgundy);}
   .input-area button.enviar{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:0 22px;height:44px;border-radius:10px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;flex-shrink:0;}
@@ -271,7 +275,10 @@ async function init(){
   document.getElementById('msgInput').addEventListener('keydown', (e) => {
     if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); enviarMensagem(); }
   });
-  document.getElementById('msgInput').addEventListener('input', () => avisarQueEstouDigitando());
+  document.getElementById('msgInput').addEventListener('input', () => {
+    avisarQueEstouDigitando();
+    autoCrescerTextarea();
+  });
 
   if('Notification' in window && Notification.permission === 'default'){
     Notification.requestPermission();
@@ -321,6 +328,12 @@ function notificarMensagemNova(m, tipo){
 // ============================================================
 let ultimoEnvioDigitando = 0;
 let timeoutEsconderDigitando = null;
+
+function autoCrescerTextarea(){
+  const el = document.getElementById('msgInput');
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
 
 function avisarQueEstouDigitando(){
   if(!modoAtual || !subscricaoAtual) return;
@@ -827,6 +840,16 @@ function inserirMensagemNaTela(m, tipo){
   area.scrollTop = area.scrollHeight;
 }
 
+// Formatação estilo WhatsApp: *negrito*, _itálico_, ~riscado~.
+// Escapa HTML primeiro (segurança) e só depois aplica a formatação.
+function formatarTextoMensagem(texto){
+  let seguro = (texto||'').replace(/</g,'&lt;');
+  seguro = seguro.replace(/\*([^\*\n]+)\*/g, '<strong>$1</strong>');
+  seguro = seguro.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+  seguro = seguro.replace(/~([^~\n]+)~/g, '<del>$1</del>');
+  return seguro;
+}
+
 function renderMensagem(m, tipo, agrupada){
   const nome = nomesPorId[m.autor_id] || 'Alguém';
   const hora = new Date(m.criado_em).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
@@ -850,12 +873,18 @@ function renderMensagem(m, tipo, agrupada){
   const minhaReacao = reacoesMsg.find(r=>r.usuario_id===meuUserId)?.reacao;
   const botaoExcluir = (minha||meuPapel==='chefia') ? `<button class="msg-del" onclick="excluirMensagem('${m.id}','${tipo}')">excluir</button>` : '';
 
+  // Mensagens gigantes (mais de ~800 caracteres) começam cortadas,
+  // com botão pra expandir — não deixa uma mensagem tomar a tela toda
+  const textoLongo = m.conteudo && m.conteudo.length > 800;
+  const idTexto = 'txt_'+m.id;
+
   return `
     <div class="msg-row ${minha?'mine':''} ${agrupada?'agrupada':''}" id="msg_${m.id}">
       ${agrupada ? `<div class="msg-avatar-spacer"><span class="msg-hora-hover">${hora}</span></div>` : `<div class="msg-avatar">${iniciais(nome)}</div>`}
       <div class="msg-body">
         ${agrupada ? '' : `<div class="msg-meta"><strong>${nome}</strong> · ${hora}${botaoExcluir}</div>`}
-        ${m.conteudo ? `<div class="msg-texto">${(m.conteudo||'').replace(/</g,'&lt;')}</div>` : ''}
+        ${m.conteudo ? `<div class="msg-texto ${textoLongo?'truncada':''}" id="${idTexto}">${formatarTextoMensagem(m.conteudo)}</div>
+        ${textoLongo ? `<button class="msg-expandir-btn" onclick="expandirMensagem('${idTexto}', this)">Ver mensagem completa</button>` : ''}` : ''}
         ${anexoHtml}
         <div class="msg-reacoes">
           <button class="reacao-btn ${minhaReacao==='check'?'on':''}" onclick="reagir('${m.id}','${tipo}','check')">✅ ${checkCount||''}</button>
@@ -865,6 +894,13 @@ function renderMensagem(m, tipo, agrupada){
       </div>
     </div>`;
 }
+
+function expandirMensagem(idTexto, botao){
+  const el = document.getElementById(idTexto);
+  el.classList.toggle('truncada');
+  botao.textContent = el.classList.contains('truncada') ? 'Ver mensagem completa' : 'Ver menos';
+}
+window.expandirMensagem = expandirMensagem;
 
 async function carregarReacoesPara(mensagemIds, tipo){
   if(!mensagemIds.length) return;
@@ -900,12 +936,12 @@ function anexoSelecionado(input){
   const tipo = file.type.startsWith('image') ? 'imagem' : file.type.startsWith('video') ? 'video' : file.type.startsWith('audio') ? 'audio' : file.type === 'application/pdf' ? 'pdf' : null;
   if(!tipo){
     alert('Só é possível enviar imagem, áudio, vídeo ou PDF.');
-    input.value = '';
+    input.value = ''; input.style.height='auto';
     return;
   }
   if(file.size > TAMANHO_MAX_ANEXO){
     alert(`Esse arquivo tem ${(file.size/1024/1024).toFixed(1)}MB — o limite por anexo é 25MB.`);
-    input.value = '';
+    input.value = ''; input.style.height='auto';
     return;
   }
 
@@ -943,7 +979,7 @@ async function enviarMensagem(){
       : 'imagem';
   }
 
-  input.value = '';
+  input.value = ''; input.style.height='auto';
   cancelarAnexo();
 
   if(modoAtual === 'canal'){
