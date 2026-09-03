@@ -41,6 +41,7 @@
 
   .empty-state{text-align:center;padding:60px 20px;color:var(--gray);}
   .empty-state .big{font-size:36px;margin-bottom:10px;}
+  .period-btn.active{background:var(--burgundy);color:#fff;border-color:var(--burgundy);}
 </style>
 </head>
 <body>
@@ -171,8 +172,10 @@ function renderSelector(nomes){
         <select id="selectAtendente">${nomes.map(n=>`<option value="${n}">${n}</option>`).join('')}</select>
       </div>
     </div>
+    ${periodToggleHtml()}
     <div id="dashArea"></div>
   `;
+  ligarPeriodToggle();
   const sel = document.getElementById('selectAtendente');
   sel.addEventListener('change', ()=>loadDashboard(sel.value));
   if(nomes.length) loadDashboard(nomes[0]);
@@ -181,12 +184,70 @@ function renderSelector(nomes){
 function renderFixed(nome){
   document.getElementById('content').innerHTML = `
     <div class="panel"><p class="desc" style="margin:0">Mostrando os erros registrados para <strong>${nome}</strong></p></div>
+    ${periodToggleHtml()}
     <div id="dashArea"></div>
   `;
+  ligarPeriodToggle();
   loadDashboard(nome);
 }
 
+// ---------- Período (dia = hoje / mês calendário — não é "30 dias
+// corridos", então já começa zerado sozinho todo dia 1) ----------
+let modoPeriodo = 'mes';
+let mesSelecionadoMeusErros = new Date().toISOString().slice(0,7);
+let nomeAtualDashboard = null;
+
+function periodToggleHtml(){
+  return `
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+      <button class="btn secondary period-btn" id="btnPDia" onclick="mudarPeriodoMeusErros('dia')">Hoje</button>
+      <button class="btn secondary period-btn active" id="btnPMes" onclick="mudarPeriodoMeusErros('mes')">Ver por mês</button>
+      <select id="seletorMesMeusErros" style="font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;" onchange="mesSelecionadoMeusErros=this.value; loadDashboard(nomeAtualDashboard);"></select>
+    </div>`;
+}
+
+function popularMesesMeusErros(){
+  const sel = document.getElementById('seletorMesMeusErros');
+  if(!sel) return;
+  const opcoes = [];
+  const hoje = new Date();
+  for(let i=0;i<12;i++){
+    const d = new Date(hoje.getFullYear(), hoje.getMonth()-i, 1);
+    const valor = d.toISOString().slice(0,7);
+    const label = d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+    opcoes.push(`<option value="${valor}">${label.charAt(0).toUpperCase()+label.slice(1)}</option>`);
+  }
+  sel.innerHTML = opcoes.join('');
+  sel.value = mesSelecionadoMeusErros;
+}
+
+function ligarPeriodToggle(){
+  popularMesesMeusErros();
+  document.getElementById('seletorMesMeusErros').style.display = modoPeriodo==='mes' ? 'inline-block' : 'none';
+}
+
+function mudarPeriodoMeusErros(modo){
+  modoPeriodo = modo;
+  document.getElementById('btnPDia').classList.toggle('active', modo==='dia');
+  document.getElementById('btnPMes').classList.toggle('active', modo==='mes');
+  document.getElementById('seletorMesMeusErros').style.display = modo==='mes' ? 'inline-block' : 'none';
+  loadDashboard(nomeAtualDashboard);
+}
+window.mudarPeriodoMeusErros = mudarPeriodoMeusErros;
+
+function limitesPeriodoMeusErros(){
+  if(modoPeriodo === 'dia'){
+    const hoje = new Date().toISOString().slice(0,10);
+    return { inicio: hoje+'T00:00:00', fim: hoje+'T23:59:59', label: 'hoje' };
+  }
+  const [ano, mes] = mesSelecionadoMeusErros.split('-').map(Number);
+  const inicio = new Date(ano, mes-1, 1, 0,0,0);
+  const fim = new Date(ano, mes, 0, 23,59,59);
+  return { inicio: inicio.toISOString(), fim: fim.toISOString(), label: 'no mês' };
+}
+
 async function loadDashboard(nome){
+  nomeAtualDashboard = nome;
   const { data, error } = await supa.from('erros_registrados').select('tipo_erro,registrado_em').eq('atendente', nome).order('registrado_em');
   if(error){ console.error(error); return; }
 
@@ -201,8 +262,8 @@ async function loadDashboard(nome){
   const ma = movingAverage7(dailyCounts, days60);
   const maEquipe = movingAverage7(equipeDiaria, days60);
 
-  const umMesAtras = new Date(); umMesAtras.setDate(umMesAtras.getDate()-30);
-  const recentes = data.filter(d => new Date(d.registrado_em) >= umMesAtras);
+  const { inicio, fim, label } = limitesPeriodoMeusErros();
+  const recentes = data.filter(d => d.registrado_em >= inicio && d.registrado_em <= fim);
   const porTipo = {};
   recentes.forEach(r => { porTipo[r.tipo_erro] = (porTipo[r.tipo_erro]||0)+1; });
   const ranking = Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
@@ -226,7 +287,7 @@ async function loadDashboard(nome){
 
   document.getElementById('dashArea').innerHTML = `
     <div class="kpi-row">
-      <div class="kpi"><div class="label">Erros no último mês</div><div class="value">${totalMes}</div></div>
+      <div class="kpi"><div class="label">Erros ${label}</div><div class="value">${totalMes}</div></div>
       <div class="kpi"><div class="label">Média móvel atual (7d)</div><div class="value">${mediaAtual.toFixed(1)}</div></div>
       <div class="kpi"><div class="label">Erro mais frequente</div><div class="value" style="font-size:16px">${tipoMaisFrequente}</div></div>
     </div>
@@ -237,7 +298,7 @@ async function loadDashboard(nome){
     </div>
     <div class="panel">
       <h2>O que mais está errando</h2>
-      <p class="desc">Ranking por tipo de erro, últimos 30 dias</p>
+      <p class="desc">Ranking por tipo de erro, ${label}</p>
       <canvas id="chartRanking"></canvas>
     </div>
     <div class="panel">
