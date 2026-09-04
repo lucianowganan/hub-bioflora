@@ -28,6 +28,8 @@
   .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
   .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
   .btn.small{padding:6px 12px;font-size:11.5px;}
+  .area-tab-btn{font-family:'Maven Pro',sans-serif;font-size:13.5px;font-weight:600;padding:10px 20px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--gray);cursor:pointer;}
+  .area-tab-btn.active{background:var(--burgundy);color:#fff;border-color:var(--burgundy);}
 
   .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px;}
   .kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;}
@@ -128,6 +130,11 @@
     </div>
   </header>
 
+  <div class="area-tabs" style="display:flex;gap:8px;margin-bottom:22px;">
+    <button class="area-tab-btn active" id="tabCapsula" onclick="trocarArea('capsula')">💊 Cápsula</button>
+    <button class="area-tab-btn" id="tabDermato" onclick="trocarArea('dermato')">🧴 Dermato</button>
+  </div>
+
   <div class="add-form" id="addForm">
     <h2>Registrar nova ordem</h2>
     <div class="form-grid">
@@ -140,6 +147,10 @@
       <div><label>Prioridade</label><select id="fPrioridade">
         <option value="media" selected>Média</option><option value="baixa">Baixa</option>
         <option value="alta">Alta</option><option value="urgente">Urgente</option>
+      </select></div>
+      <div><label>Laboratório</label><select id="fArea">
+        <option value="capsula">💊 Cápsula</option>
+        <option value="dermato">🧴 Dermato</option>
       </select></div>
     </div>
     <div class="form-grid">
@@ -231,6 +242,22 @@ const STATUS_ORDER = ['ordem_criada','em_manipulacao','liberado'];
 const PRIO_LABELS = {baixa:'Baixa', media:'Média', alta:'Alta', urgente:'Urgente'};
 let currentFilter = null;
 let allOrdens = [];
+let areaAtual = 'capsula';
+
+function trocarArea(area){
+  areaAtual = area;
+  document.getElementById('tabCapsula').classList.toggle('active', area==='capsula');
+  document.getElementById('tabDermato').classList.toggle('active', area==='dermato');
+  currentFilter = null;
+  renderKpis();
+  renderTable();
+  atualizarListaProdutos();
+}
+window.trocarArea = trocarArea;
+
+function ordensDaArea(){
+  return allOrdens.filter(o => (o.area || 'capsula') === areaAtual);
+}
 let prazosPorPrioridade = { urgente:3, alta:5, media:7, baixa:10 };
 let contadorLinhasOrdem = 0;
 
@@ -239,6 +266,7 @@ async function init(){
   await carregarPrazos();
   document.getElementById('toggleForm').addEventListener('click', ()=>{
     document.getElementById('addForm').classList.toggle('show');
+    document.getElementById('fArea').value = areaAtual;
     if(document.getElementById('addForm').classList.contains('show') && !document.getElementById('ordensRowsArea').children.length){
       adicionarLinhaOrdem();
     }
@@ -272,13 +300,14 @@ function adicionarLinhaOrdem(){
 window.adicionarLinhaOrdem = adicionarLinhaOrdem;
 
 async function atualizarListaProdutos(){
-  const produtos = [...new Set(allOrdens.map(o=>o.produto))].sort();
+  const produtos = [...new Set(ordensDaArea().map(o=>o.produto))].sort();
   document.getElementById('produtosExistentes').innerHTML = produtos.map(p=>`<option value="${p}">`).join('');
 }
 
 document.getElementById('saveCard').addEventListener('click', async ()=>{
   const produto = document.getElementById('fProduto').value.trim();
   if(!produto){ alert('Informe o nome do produto.'); return; }
+  const area = document.getElementById('fArea').value;
 
   const linhas = Array.from(document.querySelectorAll('.ordem-row-form')).map(row => ({
     numero_ordem: row.querySelector('.numOrdemInput').value.trim(),
@@ -287,13 +316,13 @@ document.getElementById('saveCard').addEventListener('click', async ()=>{
 
   if(!linhas.length){ alert('Preencha pelo menos um número de ordem.'); return; }
 
-  const jaExiste = allOrdens.find(o => o.produto.trim().toLowerCase() === produto.toLowerCase() && (o.status==='ordem_criada' || o.status==='em_manipulacao'));
+  const jaExiste = allOrdens.find(o => o.area === area && o.produto.trim().toLowerCase() === produto.toLowerCase() && (o.status==='ordem_criada' || o.status==='em_manipulacao'));
   if(jaExiste){
     const confirmou = await pedirConfirmacaoDuplicidade(jaExiste);
     if(!confirmou) return;
   }
 
-  await salvarOrdens(produto, linhas);
+  await salvarOrdens(produto, linhas, area);
 });
 
 function pedirConfirmacaoDuplicidade(ordemExistente){
@@ -316,14 +345,14 @@ function pedirConfirmacaoDuplicidade(ordemExistente){
   });
 }
 
-async function salvarOrdens(produto, linhas){
+async function salvarOrdens(produto, linhas, area){
   const prioridade = document.getElementById('fPrioridade').value;
   const solicitado_por = document.getElementById('fSolicitante').value.trim() || null;
   const observacoes = document.getElementById('fObs').value.trim() || null;
   const hoje = new Date().toISOString().slice(0,10);
 
   const inserts = linhas.map(l => ({
-    produto, prioridade, solicitado_por, observacoes,
+    produto, prioridade, solicitado_por, observacoes, area,
     numero_ordem: l.numero_ordem, quantidade: l.quantidade,
     data_ordem_criada: hoje
   }));
@@ -518,10 +547,11 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
 });
 
 function renderKpis(){
-  const abertas = allOrdens.filter(o => o.status !== 'liberado');
+  const ordens = ordensDaArea();
+  const abertas = ordens.filter(o => o.status !== 'liberado');
   const atrasadas = abertas.filter(o => { const p = calcPrazo(o); return p && p.diasRestantes < 0; });
   const counts = {ordem_criada:0, em_manipulacao:0, liberado:0};
-  allOrdens.forEach(o=> counts[o.status]++);
+  ordens.forEach(o=> counts[o.status]++);
 
   const cards = [
     { status:'no_lab', icon:'🧪', label:'No laboratório (total)', value: abertas.length },
@@ -543,6 +573,7 @@ let chartSemanal = null;
 let chartPrioridade = null;
 
 function renderGraficos(){
+  const ordens = ordensDaArea();
   // Ordens criadas x liberadas por semana, últimas 8 semanas
   const semanas = [];
   const hoje = new Date();
@@ -554,7 +585,7 @@ function renderGraficos(){
     fimSemana.setDate(inicioSemana.getDate() + 6);
     semanas.push({ inicio: inicioSemana, fim: fimSemana, criadas: 0, liberadas: 0 });
   }
-  allOrdens.forEach(o => {
+  ordens.forEach(o => {
     if(o.data_ordem_criada){
       const d = new Date(o.data_ordem_criada+'T00:00:00');
       const s = semanas.find(sw => d >= sw.inicio && d <= sw.fim);
@@ -581,7 +612,7 @@ function renderGraficos(){
   });
 
   // Por prioridade, só ordens ainda abertas
-  const abertas = allOrdens.filter(o => o.status !== 'liberado');
+  const abertas = ordens.filter(o => o.status !== 'liberado');
   const porPrioridade = { urgente:0, alta:0, media:0, baixa:0 };
   abertas.forEach(o => { if(porPrioridade[o.prioridade] != null) porPrioridade[o.prioridade]++; });
 
@@ -604,10 +635,10 @@ function setFilter(status){
 window.setFilter = setFilter;
 
 function renderTable(){
-  let rows = allOrdens;
-  if(currentFilter === 'no_lab') rows = allOrdens.filter(o=>o.status!=='liberado');
-  else if(currentFilter === 'atraso') rows = allOrdens.filter(o=>{ const p=calcPrazo(o); return p && p.diasRestantes<0; });
-  else if(currentFilter) rows = allOrdens.filter(o=>o.status===currentFilter);
+  let rows = ordensDaArea();
+  if(currentFilter === 'no_lab') rows = rows.filter(o=>o.status!=='liberado');
+  else if(currentFilter === 'atraso') rows = rows.filter(o=>{ const p=calcPrazo(o); return p && p.diasRestantes<0; });
+  else if(currentFilter) rows = rows.filter(o=>o.status===currentFilter);
 
   document.getElementById('tbody').innerHTML = rows.length
     ? rows.map(renderRow).join('')
@@ -628,7 +659,7 @@ async function mostrarPopupPrazoSeNecessario(){
   const chave = 'producao_prazo_popup_' + hojeStr;
   if(localStorage.getItem(chave)) return;
 
-  const abertas = allOrdens.filter(o => o.status !== 'liberado');
+  const abertas = allOrdens.filter(o => o.status !== 'liberado'); // avisa das duas áreas juntas
   if(!abertas.length) return;
 
   const comPrazo = abertas.map(o => ({ ordem: o, prazo: calcPrazo(o) })).filter(x => x.prazo);
@@ -637,7 +668,7 @@ async function mostrarPopupPrazoSeNecessario(){
   document.getElementById('prazoPopupLista').innerHTML = comPrazo.map(({ordem, prazo}) => `
     <div class="prazo-popup-item">
       <div>
-        <strong>${ordem.produto}</strong> <span style="color:var(--gray);font-size:11.5px">(nº ${ordem.numero_ordem||'—'})</span><br>
+        <strong>${ordem.produto}</strong> <span style="color:var(--gray);font-size:11.5px">(nº ${ordem.numero_ordem||'—'} · ${ordem.area==='dermato'?'🧴 Dermato':'💊 Cápsula'})</span><br>
         <span style="font-size:11px;color:var(--gray)">Prioridade ${PRIO_LABELS[ordem.prioridade]} · criada em ${fmtDate(ordem.data_ordem_criada)}</span>
       </div>
       ${prazo.diasRestantes < 0

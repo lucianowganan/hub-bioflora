@@ -25,7 +25,6 @@
     { href: 'chat.html', icon: '💬', label: 'Chat Interno', roles: null },
     { href: 'wanessia.html', icon: '🤖', label: 'Wanessia', roles: null },
     { href: 'vendas-yampi.html', icon: '📊', label: 'Vendas (Yampi)', roles: ['chefia','gestao'] },
-    { href: 'calendario3.html', icon: '📅', label: 'Google Calendar', roles: ['chefia'] },
     { href: 'admin.html', icon: '🔐', label: 'Administração', roles: ['chefia'] },
   ];
 

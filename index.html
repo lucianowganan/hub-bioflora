@@ -218,7 +218,6 @@
     <a href="erros.html" class="side-btn" id="sideErrosBtn" style="display:none">✍️<span class="tooltip">Registro de Erros</span></a>
     <a href="meus-erros.html" class="side-btn">📈<span class="tooltip">Meus Erros</span></a>
     <a href="chat.html" class="side-btn">💬<span class="tooltip">Chat Interno</span></a>
-    <a href="calendario3.html" class="side-btn" id="sideGCalBtn" style="display:none">📅<span class="tooltip">Google Calendar</span></a>
     <a href="admin.html" class="side-btn" id="sideAdminBtn" style="display:none">🔐<span class="tooltip">Administração</span></a>
   </nav>
   <div class="bottom">
@@ -256,12 +255,6 @@
 
     <div class="section-title">Integrações</div>
     <div class="integ-grid">
-      <a class="integ-card" href="calendario3.html" data-roles="chefia" style="text-decoration:none;color:inherit;border-style:solid;cursor:pointer;">
-        <div class="integ-icon">📅</div>
-        <h3>Google Calendar</h3>
-        <p>Sua agenda pessoal do Google, direto no Hub.</p>
-        <span class="integ-soon" style="background:var(--good-tint);color:var(--good);">Disponível →</span>
-      </a>
       <div class="integ-card">
         <div class="integ-icon">🤝</div>
         <h3>CRM</h3>
@@ -377,7 +370,6 @@ async function init(){
   if(['chefia','laboratorio'].includes(papel)) document.getElementById('sideControleBtn').style.display = 'flex';
   if(['chefia','laboratorio','conferencia'].includes(papel)) document.getElementById('sideReaproveitamentoBtn').style.display = 'flex';
   if(['chefia','conferencia'].includes(papel)) document.getElementById('sideErrosBtn').style.display = 'flex';
-  if(papel === 'chefia') document.getElementById('sideGCalBtn').style.display = 'flex';
 
   if(papel === 'sem_papel'){
     document.getElementById('roleBanner').style.display = 'block';
