@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="auth-guard.js"></script>
 <style>
   :root{
@@ -105,6 +106,18 @@
         <input type="date" id="dataReferenciaInc" onchange="dataReferenciaInc=this.value; carregarDesempenho();">
       </div>
       <div class="kpi-row" id="kpisDesempenho"></div>
+    </div>
+
+    <div class="card">
+      <h2>Inclusões por atendente</h2>
+      <p class="desc">Ranking de volume — quem incluiu mais no período</p>
+      <canvas id="chartInclusoes" height="90"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Inclusões x Erros</h2>
+      <p class="desc">Comparação lado a lado — volume de trabalho x quantidade de erro</p>
+      <canvas id="chartComparativo" height="100"></canvas>
     </div>
 
     <div class="card">
@@ -247,6 +260,40 @@ async function carregarDesempenho(){
         <div class="perf-nums">${d.inclusoes} inclusões · ${d.erros} erro${d.erros===1?'':'s'}</div>
       </div>`;
   }).join('') : '<div class="empty-state">Sem inclusões ou erros registrados nesse período.</div>';
+
+  renderGraficosInc(entradas);
+}
+
+let chartInclusoesInstance = null;
+let chartComparativoInstance = null;
+
+function renderGraficosInc(entradas){
+  const nomes = entradas.map(([nome]) => nome.split(' ').slice(0,2).join(' '));
+  const inclusoesVals = entradas.map(([,d]) => d.inclusoes);
+  const errosVals = entradas.map(([,d]) => d.erros);
+
+  if(chartInclusoesInstance) chartInclusoesInstance.destroy();
+  chartInclusoesInstance = new Chart(document.getElementById('chartInclusoes'), {
+    type: 'bar',
+    data: {
+      labels: nomes,
+      datasets: [{ label: 'Inclusões', data: inclusoesVals, backgroundColor: '#3E6B93', borderRadius: 4 }]
+    },
+    options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}} }
+  });
+
+  if(chartComparativoInstance) chartComparativoInstance.destroy();
+  chartComparativoInstance = new Chart(document.getElementById('chartComparativo'), {
+    type: 'bar',
+    data: {
+      labels: nomes,
+      datasets: [
+        { label: 'Inclusões', data: inclusoesVals, backgroundColor: '#3E6B93', borderRadius: 4 },
+        { label: 'Erros', data: errosVals, backgroundColor: '#B4472F', borderRadius: 4 },
+      ]
+    },
+    options: { responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}} }
+  });
 }
 
 function corPct(pct){
