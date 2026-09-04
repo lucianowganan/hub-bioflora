@@ -374,7 +374,8 @@ async function carregarTudo(){
 // ============================================================
 async function carregarNaoLidosCanais(){
   if(!canais.length) return;
-  const { data: leituras } = await supa.from('canais_leitura').select('canal_id,lida_ate').eq('usuario_id', meuUserId);
+  const { data: leituras, error: erroLeitura } = await supa.from('canais_leitura').select('canal_id,lida_ate').eq('usuario_id', meuUserId);
+  if(erroLeitura) console.error('Erro ao buscar canais_leitura:', erroLeitura);
   leituraCanais = {};
   (leituras||[]).forEach(l => { leituraCanais[l.canal_id] = new Date(l.lida_ate); });
 
@@ -400,10 +401,25 @@ async function marcarCanalComoLido(canalId){
   const agora = new Date().toISOString();
   leituraCanais[canalId] = new Date(agora);
   contadorNaoLidosCanais[canalId] = 0;
-  await supa.from('canais_leitura').upsert(
-    { canal_id: canalId, usuario_id: meuUserId, lida_ate: agora },
-    { onConflict: 'canal_id,usuario_id' }
-  );
+
+  // Em vez de upsert (que depende do onConflict bater certinho com a
+  // chave composta), faz na unha: tenta atualizar primeiro; se não
+  // existir nenhuma linha ainda pra essa pessoa+canal, insere.
+  const { data: atualizado, error: erroUpdate } = await supa
+    .from('canais_leitura')
+    .update({ lida_ate: agora })
+    .eq('canal_id', canalId)
+    .eq('usuario_id', meuUserId)
+    .select();
+
+  if(erroUpdate){ console.error('Erro ao marcar canal como lido (update):', erroUpdate); return; }
+
+  if(!atualizado || atualizado.length === 0){
+    const { error: erroInsert } = await supa
+      .from('canais_leitura')
+      .insert({ canal_id: canalId, usuario_id: meuUserId, lida_ate: agora });
+    if(erroInsert) console.error('Erro ao marcar canal como lido (insert):', erroInsert);
+  }
 }
 
 function assinarTempoRealGlobal(){
