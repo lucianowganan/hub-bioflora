@@ -224,7 +224,7 @@
   <div class="panel">
     <div class="kpi-row" id="dashKpis"></div>
     <h2>Erros mais frequentes (todos os atendentes)</h2>
-    <p class="desc">Últimos 30 dias</p>
+    <p class="desc" id="chartTopErrosSub">Período selecionado acima</p>
     <div class="chart-type-row">
       <button class="chip-btn active" data-tipo="barh" onclick="setChartTipo('barh')">Barras horizontais</button>
       <button class="chip-btn" data-tipo="barv" onclick="setChartTipo('barv')">Barras verticais</button>
@@ -536,6 +536,8 @@ window.deleteTipoErro = deleteTipoErro;
 // ---------- Dashboard geral ----------
 let chartTopErrosInstance = null;
 let dashboardDataCache = null;
+let dadosTendenciaCache = null;
+let diasTendenciaCache = [];
 let chartTipoAtual = 'barh';
 
 function setChartTipo(tipo){
@@ -559,6 +561,24 @@ function movingAverage7(dailyCounts, days){
   });
 }
 
+// Lista de dias (YYYY-MM-DD) que o gráfico de tendência vai EXIBIR —
+// exatamente o período escolhido, nem um dia a mais. Pro "hoje ainda
+// não acabou" não mostrar dias futuros vazios, corta no dia de hoje
+// quando o mês selecionado é o atual.
+function diasDoPeriodoExibido(){
+  const hojeStr = localDateStr(new Date());
+  if(modoPeriodoResumo === 'dia') return [dataSelecionada];
+  const [ano, mes] = mesResumoSelecionado.split('-').map(Number);
+  const dias = [];
+  const totalDiasMes = new Date(ano, mes, 0).getDate();
+  for(let d=1; d<=totalDiasMes; d++){
+    const dia = `${ano}-${String(mes).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if(dia > hojeStr) break; // não mostra dias futuros do mês corrente
+    dias.push(dia);
+  }
+  return dias;
+}
+
 async function loadDashboard(){
   if(!supa) return;
   const { inicioISO, fimISO, label } = limitesPeriodoResumo();
@@ -566,6 +586,16 @@ async function loadDashboard(){
     .select('atendente,tipo_erro,registrado_em').gte('registrado_em', inicioISO).lte('registrado_em', fimISO);
   if(error){ console.error(error); return; }
   dashboardDataCache = data;
+
+  // Busca 6 dias A MAIS antes do início do período só pra calcular a
+  // média móvel de 7 dias direito no primeiro dia exibido — sem isso
+  // os primeiros dias do mês ficariam com média artificialmente baixa
+  diasTendenciaCache = diasDoPeriodoExibido();
+  const primeiroDia = diasTendenciaCache[0] || localDateStr(new Date());
+  const seteDiasAntes = new Date(primeiroDia+'T00:00:00'); seteDiasAntes.setDate(seteDiasAntes.getDate()-6);
+  const { data: dadosTendencia } = await supa.from('erros_registrados')
+    .select('registrado_em').gte('registrado_em', seteDiasAntes.toISOString()).lte('registrado_em', fimISO);
+  dadosTendenciaCache = dadosTendencia || [];
 
   document.getElementById('resumoSub').textContent = `Erros mais frequentes de toda a equipe ${label} selecionado — onde prestar atenção`;
 
@@ -599,6 +629,12 @@ const CHART_PALETTE = ['#8B1A3A','#C9922B','#3E6B93','#3F7A57','#6E4A8C','#B4472
 
 function renderTopErrosChart(){
   if(!dashboardDataCache) return;
+  const subEl = document.getElementById('chartTopErrosSub');
+  if(subEl){
+    subEl.textContent = modoPeriodoResumo === 'dia'
+      ? `Dia ${new Date(dataSelecionada+'T00:00:00').toLocaleDateString('pt-BR')}`
+      : document.getElementById('seletorMesResumo').selectedOptions[0]?.textContent || 'Mês selecionado';
+  }
   const data = dashboardDataCache;
   const porTipo = {};
   data.forEach(r => { porTipo[r.tipo_erro] = (porTipo[r.tipo_erro]||0)+1; });
@@ -609,9 +645,9 @@ function renderTopErrosChart(){
   const ctx = document.getElementById('chartTopErros');
 
   if(chartTipoAtual === 'media'){
-    const days = lastNDaysLocal(60);
+    const days = diasTendenciaCache;
     const dailyCounts = {};
-    data.forEach(r => { const k = localDayKey(r.registrado_em); dailyCounts[k] = (dailyCounts[k]||0)+1; });
+    (dadosTendenciaCache||[]).forEach(r => { const k = localDayKey(r.registrado_em); dailyCounts[k] = (dailyCounts[k]||0)+1; });
     const ma = movingAverage7(dailyCounts, days);
     chartTopErrosInstance = new Chart(ctx, {
       type:'line',

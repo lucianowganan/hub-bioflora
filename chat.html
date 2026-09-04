@@ -98,7 +98,8 @@
   .msg-del{font-size:10.5px;color:var(--gray);background:none;border:none;cursor:pointer;margin-left:8px;text-decoration:underline;opacity:.6;}
   .msg-del:hover{opacity:1;color:var(--bad);}
 
-  .msg-reacoes{display:flex;gap:6px;margin-top:6px;}
+  .msg-reacoes{display:flex;gap:6px;margin-top:0;height:0;overflow:hidden;opacity:0;transition:opacity .12s;}
+  .msg-row:hover .msg-reacoes, .msg-reacoes.tem-reacao{height:auto;overflow:visible;opacity:1;margin-top:6px;}
   .reacao-btn{font-family:'Maven Pro',sans-serif;font-size:11.5px;border:1px solid var(--line);background:#fff;border-radius:20px;padding:2px 9px;cursor:pointer;color:var(--gray);}
   .reacao-btn.on{background:var(--burgundy-tint);border-color:var(--burgundy);color:var(--burgundy);font-weight:700;}
 
@@ -399,7 +400,10 @@ async function marcarCanalComoLido(canalId){
   const agora = new Date().toISOString();
   leituraCanais[canalId] = new Date(agora);
   contadorNaoLidosCanais[canalId] = 0;
-  await supa.from('canais_leitura').upsert({ canal_id: canalId, usuario_id: meuUserId, lida_ate: agora });
+  await supa.from('canais_leitura').upsert(
+    { canal_id: canalId, usuario_id: meuUserId, lida_ate: agora },
+    { onConflict: 'canal_id,usuario_id' }
+  );
 }
 
 function assinarTempoRealGlobal(){
@@ -886,7 +890,7 @@ function renderMensagem(m, tipo, agrupada){
         ${m.conteudo ? `<div class="msg-texto ${textoLongo?'truncada':''}" id="${idTexto}">${formatarTextoMensagem(m.conteudo)}</div>
         ${textoLongo ? `<button class="msg-expandir-btn" onclick="expandirMensagem('${idTexto}', this)">Ver mensagem completa</button>` : ''}` : ''}
         ${anexoHtml}
-        <div class="msg-reacoes">
+        <div class="msg-reacoes ${(checkCount||xCount)?'tem-reacao':''}">
           <button class="reacao-btn ${minhaReacao==='check'?'on':''}" onclick="reagir('${m.id}','${tipo}','check')">✅ ${checkCount||''}</button>
           <button class="reacao-btn ${minhaReacao==='x'?'on':''}" onclick="reagir('${m.id}','${tipo}','x')">❌ ${xCount||''}</button>
           ${agrupada ? botaoExcluir : ''}

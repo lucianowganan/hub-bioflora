@@ -43,6 +43,10 @@
         background:transparent;transition:.15s;position:relative;flex-shrink:0;font-family:inherit;}
       .hs-btn:hover{background:rgba(255,255,255,.1);color:#fff;}
       .hs-btn.active{background:#fff;color:#8B1A3A;}
+      .hs-badge{position:absolute;top:2px;right:2px;background:#E84040;color:#fff;font-size:9.5px;font-weight:700;
+        min-width:16px;height:16px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 3px;
+        font-family:'Maven Pro',sans-serif;line-height:1;}
+      .hs-badge.show{display:flex;}
       .hs-btn .hs-tooltip{position:fixed;left:64px;background:#161213;color:#fff;font-size:11.5px;
         padding:5px 10px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:.12s;z-index:200;}
       .hs-btn:hover .hs-tooltip{opacity:1;}
@@ -73,7 +77,7 @@
     btn.href = m.href;
     btn.className = 'hs-btn' + (atual ? ' active' : '');
     btn.dataset.roles = m.roles ? m.roles.join(',') : '';
-    btn.innerHTML = `${m.icon}<span class="hs-tooltip">${m.label}</span>`;
+    btn.innerHTML = `${m.icon}<span class="hs-tooltip">${m.label}</span>${m.href==='chat.html' ? '<span class="hs-badge" id="hsBadgeChat"></span>' : ''}`;
     btn.addEventListener('mouseenter', () => {
       const tip = btn.querySelector('.hs-tooltip');
       const rect = btn.getBoundingClientRect();
@@ -118,6 +122,34 @@
     return aside;
   }
 
+  async function calcularNaoLidasChat(supa, userId){
+    try{
+      const { data: canais } = await supa.from('canais_chat').select('id');
+      const idsCanais = (canais||[]).map(c=>c.id);
+      let totalCanais = 0;
+      if(idsCanais.length){
+        const { data: leituras } = await supa.from('canais_leitura').select('canal_id,lida_ate').eq('usuario_id', userId);
+        const leituraPorCanal = {};
+        (leituras||[]).forEach(l => { leituraPorCanal[l.canal_id] = l.lida_ate; });
+        const trintaDias = new Date(Date.now() - 30*24*60*60*1000).toISOString();
+        const { data: msgs } = await supa.from('mensagens_chat').select('canal_id,criado_em').in('canal_id', idsCanais).neq('autor_id', userId).gte('criado_em', trintaDias);
+        (msgs||[]).forEach(m => {
+          const lida = leituraPorCanal[m.canal_id];
+          if(!lida || m.criado_em > lida) totalCanais++;
+        });
+      }
+      const { count: totalDms } = await supa.from('dm_mensagens').select('id', {count:'exact', head:true}).eq('destinatario_id', userId).eq('lida', false);
+      return totalCanais + (totalDms||0);
+    }catch(e){ return 0; }
+  }
+
+  function atualizarBadgeChat(total){
+    const badge = document.getElementById('hsBadgeChat');
+    if(!badge) return;
+    badge.textContent = total > 99 ? '99+' : String(total);
+    badge.classList.toggle('show', total > 0);
+  }
+
   async function aplicarPermissoes(aside){
     try{
       const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -129,6 +161,16 @@
         const roles = btn.dataset.roles;
         if(roles && !roles.split(',').includes(papel)) btn.style.display = 'none';
       });
+
+      // Não mostra o badge de "não lidas" pra quem já está DENTRO do chat
+      if(paginaAtual() !== 'chat.html'){
+        const total = await calcularNaoLidasChat(supa, session.user.id);
+        atualizarBadgeChat(total);
+        setInterval(async () => {
+          const t = await calcularNaoLidasChat(supa, session.user.id);
+          atualizarBadgeChat(t);
+        }, 30000);
+      }
     }catch(e){ /* se der erro, deixa tudo visível — melhor mostrar de mais do que travar a navegação */ }
   }
 

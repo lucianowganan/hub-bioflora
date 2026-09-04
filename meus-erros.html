@@ -221,6 +221,14 @@ function popularMesesMeusErros(){
   sel.value = mesSelecionadoMeusErros;
 }
 
+function trocarVisaoSemana(visao){
+  document.getElementById('btnSemanaPizza').classList.toggle('active', visao==='pizza');
+  document.getElementById('btnSemanaBarra').classList.toggle('active', visao==='barra');
+  document.getElementById('chartSemanaPizza').style.display = visao==='pizza' ? 'block' : 'none';
+  document.getElementById('chartSemanaBarra').style.display = visao==='barra' ? 'block' : 'none';
+}
+window.trocarVisaoSemana = trocarVisaoSemana;
+
 function ligarPeriodToggle(){
   popularMesesMeusErros();
   document.getElementById('seletorMesMeusErros').style.display = modoPeriodo==='mes' ? 'inline-block' : 'none';
@@ -314,10 +322,12 @@ async function loadDashboard(nome){
     <div class="panel">
       <h2>Distribuição por dia da semana</h2>
       <p class="desc">Em quais dias os erros mais acontecem, todo o histórico</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center">
-        <canvas id="chartSemanaPizza"></canvas>
-        <canvas id="chartSemanaBarra"></canvas>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button class="btn secondary period-btn active" id="btnSemanaPizza" onclick="trocarVisaoSemana('pizza')">Pizza</button>
+        <button class="btn secondary period-btn" id="btnSemanaBarra" onclick="trocarVisaoSemana('barra')">Barras</button>
       </div>
+      <canvas id="chartSemanaPizza"></canvas>
+      <canvas id="chartSemanaBarra" style="display:none"></canvas>
     </div>
   `;
 
