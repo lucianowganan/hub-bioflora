@@ -17,13 +17,13 @@
   body{font-family:'Maven Pro',sans-serif;background:var(--cream);color:var(--charcoal);}
   h1,h2,h3{font-family:'Space Grotesk',sans-serif;}
   .layout{display:flex;min-height:100vh;}
-  .main{flex:1;padding:32px 28px 60px;max-width:920px;margin:0 auto;width:100%;}
+  .main{flex:1;padding:32px 28px 60px;max-width:980px;margin:0 auto;width:100%;}
   .page-head{margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
   .page-head h1{font-size:26px;color:var(--wine-dark);margin-bottom:4px;}
   .page-head p{font-size:14px;color:var(--muted);}
   .page-head-actions{display:flex;gap:10px;flex-shrink:0;}
   .btn.secondary{background:none;border:1.5px solid var(--line);color:var(--charcoal);}
-  .tabs{display:flex;gap:8px;margin-bottom:24px;border-bottom:1.5px solid var(--line);}
+  .tabs{display:flex;gap:8px;margin-bottom:24px;border-bottom:1.5px solid var(--line);flex-wrap:wrap;}
   .tab-btn{
     background:none;border:none;padding:10px 4px;margin-right:20px;
     font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14.5px;color:var(--muted);
@@ -39,10 +39,15 @@
   .add-slot-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
   .field{display:flex;flex-direction:column;gap:4px;}
   .field label{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
-  .field input{border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:14px;background:var(--cream);}
+  .field input, .field select, .field textarea{border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:14px;background:var(--cream);}
   .btn{background:var(--wine);color:#fff;border:none;border-radius:var(--radius-pill);padding:10px 18px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;cursor:pointer;}
   .btn.danger{background:#b23a3a;}
   .btn.small{padding:6px 12px;font-size:12px;}
+  .btn.ghost{background:none;border:1.5px solid var(--line);color:var(--charcoal);}
+
+  .view-toggle{display:flex;gap:8px;margin-bottom:16px;}
+  .view-toggle button{background:var(--paper);border:1.5px solid var(--line);color:var(--muted);border-radius:var(--radius-pill);padding:7px 16px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;cursor:pointer;}
+  .view-toggle button.active{background:var(--wine);color:#fff;border-color:var(--wine);}
 
   .slot-date-block{margin-bottom:14px;}
   .slot-date-title{font-size:13px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;}
@@ -54,7 +59,21 @@
   }
   .slot-chip.disponivel{background:#eef7ef;border-color:#bfe3c4;color:#2f6b3a;}
   .slot-chip.reservado{background:#fdf1e6;border-color:#f0d3ad;color:#8a5a1c;}
-  .slot-chip button{background:none;border:none;color:inherit;opacity:.6;cursor:pointer;font-size:14px;line-height:1;}
+  .slot-chip button{background:none;border:none;color:inherit;opacity:.6;cursor:pointer;font-size:11.5px;line-height:1;font-family:'Maven Pro',sans-serif;font-weight:700;}
+  .slot-chip button:hover{opacity:1;}
+
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-weekday{text-align:center;font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;padding:2px 0 6px;}
+  .cal-day{min-height:56px;border:1.5px solid var(--line);border-radius:8px;padding:5px 6px;background:var(--paper);font-size:11px;cursor:pointer;}
+  .cal-day.empty{visibility:hidden;}
+  .cal-day.selecionado{border-color:var(--wine);border-width:2px;}
+  .cal-day-num{font-weight:700;color:var(--muted);}
+  .cal-dot-row{display:flex;gap:3px;margin-top:4px;}
+  .cal-dot{width:7px;height:7px;border-radius:50%;}
+  .cal-dot.disponivel{background:#2f6b3a;}
+  .cal-dot.reservado{background:#8a5a1c;}
+  .cal-nav{display:flex;gap:8px;align-items:center;margin-bottom:14px;}
+  .cal-nav button{font-family:'Maven Pro',sans-serif;font-size:12px;padding:6px 12px;border:1.5px solid var(--line);background:var(--paper);border-radius:8px;cursor:pointer;}
 
   table{width:100%;border-collapse:collapse;}
   th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);padding:8px 10px;border-bottom:1.5px solid var(--line);}
@@ -63,8 +82,22 @@
   .status-pendente{background:#fdf1e6;color:#8a5a1c;}
   .status-confirmada{background:#eef7ef;color:#2f6b3a;}
   .status-cancelada{background:#fbe8e8;color:#9c3a3a;}
-  .row-actions{display:flex;gap:6px;margin-top:6px;}
+  .row-actions{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
   .empty-state{padding:30px;text-align:center;color:var(--muted);font-size:14px;}
+  select.mini{font-family:'Maven Pro',sans-serif;font-size:12px;padding:5px 8px;border-radius:8px;border:1.5px solid var(--line);background:var(--cream);}
+
+  .prescritor-row, .kit-row{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line);gap:10px;}
+  .prescritor-row:last-child, .kit-row:last-child{border-bottom:none;}
+  .prescritor-nome{font-weight:700;font-size:14px;}
+  .prescritor-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .tipo-tag{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:var(--radius-pill);background:var(--cream);color:var(--wine-dark);margin-right:6px;}
+  .kit-itens{font-size:12.5px;color:var(--charcoal);white-space:pre-line;margin-top:6px;line-height:1.6;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(36,29,26,.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:var(--radius);padding:24px;max-width:460px;width:100%;max-height:88vh;overflow:auto;}
+  .modal h3{margin-bottom:14px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
 </style>
 </head>
 <body>
@@ -74,7 +107,7 @@
     <div class="page-head">
       <div>
         <h1>Visitas de Representantes</h1>
-        <p>Libere horários na agenda e acompanhe as solicitações de profissionais de saúde vindas do link da bio.</p>
+        <p>Agenda, solicitações e CRM de prescritores visitados.</p>
       </div>
       <div class="page-head-actions">
         <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
@@ -85,9 +118,10 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('agenda')">Agenda</button>
       <button class="tab-btn" onclick="switchTab('solicitacoes')">Solicitações <span id="pendCount"></span></button>
+      <button class="tab-btn" onclick="switchTab('prescritores')">Prescritores</button>
+      <button class="tab-btn" onclick="switchTab('kits')">Kits</button>
     </div>
 
-    <!-- AGENDA -->
     <div class="panel active" id="panel-agenda">
       <div class="card">
         <h3>Liberar novo horário</h3>
@@ -104,26 +138,120 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="view-toggle">
+        <button class="active" id="viewListaBtn" onclick="trocarVisaoAgenda('lista')">📋 Lista</button>
+        <button id="viewCalBtn" onclick="trocarVisaoAgenda('calendario')">📅 Calendário</button>
+      </div>
+
+      <div class="card" id="viewLista">
         <h3>Horários futuros</h3>
         <div id="slotsList"><div class="empty-state">Carregando...</div></div>
       </div>
+
+      <div class="card" id="viewCalendario" style="display:none">
+        <div class="cal-nav">
+          <button onclick="mudarMesCal(-1)">←</button>
+          <strong id="calMesLabel" style="font-family:'Space Grotesk',sans-serif;"></strong>
+          <button onclick="mudarMesCal(1)">→</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div id="calDiaDetalhe" style="margin-top:18px;"></div>
+      </div>
     </div>
 
-    <!-- SOLICITAÇÕES -->
     <div class="panel" id="panel-solicitacoes">
       <div class="card" style="padding:0;overflow-x:auto;">
         <table>
           <thead>
             <tr>
-              <th>Profissional</th><th>Contato</th><th>Data/Horário</th><th>Status</th><th></th>
+              <th>Profissional</th><th>Contato</th><th>Data/Horário</th><th>Status</th><th>Kit</th><th>Confirmação</th><th></th>
             </tr>
           </thead>
           <tbody id="reqTableBody">
-            <tr><td colspan="5" class="empty-state">Carregando...</td></tr>
+            <tr><td colspan="7" class="empty-state">Carregando...</td></tr>
           </tbody>
         </table>
       </div>
+    </div>
+
+    <div class="panel" id="panel-prescritores">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3 style="margin:0;">Prescritores cadastrados</h3>
+          <button class="btn small" onclick="abrirModalPrescritor()">+ Novo prescritor</button>
+        </div>
+        <div id="prescritoresList"><div class="empty-state">Carregando...</div></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-kits">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3 style="margin:0;">Kits de visita</h3>
+          <button class="btn small" onclick="abrirModalKit()">+ Novo kit</button>
+        </div>
+        <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px;">O que levar em cada tipo de visita — pra já saber o que separar antes de sair.</p>
+        <div id="kitsList"><div class="empty-state">Carregando...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalPrescritor">
+  <div class="modal">
+    <h3 id="modalPrescritorTitulo">Novo prescritor</h3>
+    <div class="field" style="margin-bottom:10px;"><label>Nome*</label><input id="pNome"></div>
+    <div class="field" style="margin-bottom:10px;"><label>Tipo</label>
+      <select id="pTipo">
+        <option value="medico">Médico</option>
+        <option value="veterinario">Veterinário</option>
+        <option value="nutricionista">Nutricionista</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:10px;"><label>Telefone</label><input id="pTelefone"></div>
+    <div class="field" style="margin-bottom:10px;"><label>E-mail</label><input id="pEmail" type="email"></div>
+    <div class="field" style="margin-bottom:10px;"><label>Clínica</label><input id="pClinica"></div>
+    <div class="field" style="margin-bottom:10px;"><label>Observações</label><textarea id="pObs" rows="3"></textarea></div>
+    <div id="pHistorico"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModal('modalPrescritor')">Cancelar</button>
+      <button class="btn" onclick="salvarPrescritor()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalKit">
+  <div class="modal">
+    <h3 id="modalKitTitulo">Novo kit</h3>
+    <div class="field" style="margin-bottom:10px;"><label>Nome do kit</label><input id="kNome" placeholder="Ex: Kit Vet"></div>
+    <div class="field" style="margin-bottom:10px;"><label>Tipo</label>
+      <select id="kTipo">
+        <option value="medico">Médico</option>
+        <option value="veterinario">Veterinário</option>
+        <option value="nutricionista">Nutricionista</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+    <div class="field"><label>Itens (um por linha)</label><textarea id="kItens" rows="6" placeholder="Amostra de biscoito medicamentoso (Biscovet)&#10;Amostra de pasta vet&#10;Amostra de caps pequena&#10;Amostra de caps grande&#10;Flyer memento vet"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModal('modalKit')">Cancelar</button>
+      <button class="btn" onclick="salvarKit()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalConfirmacao">
+  <div class="modal" style="max-width:400px">
+    <h3>Notificar confirmação da visita</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Escolhe como avisar o profissional que a visita foi confirmada. Depois de enviar de verdade, marca como enviado aqui.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <a class="btn" id="btnWhats" target="_blank" style="text-decoration:none;text-align:center;">📱 Abrir WhatsApp</a>
+      <a class="btn secondary" id="btnEmail" style="text-decoration:none;text-align:center;">✉️ Abrir e-mail</a>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModal('modalConfirmacao')">Fechar</button>
+      <button class="btn" onclick="marcarConfirmacaoEnviada()">Marcar como enviado</button>
     </div>
   </div>
 </div>
@@ -133,8 +261,15 @@ const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+let kitsCache = [];
+let prescritoresCache = [];
+let slotsCache = [];
+let requestsCache = [];
+
 async function init(){
   await requireRole(['chefia']);
+  await carregarKits();
+  await carregarPrescritores();
   loadSlots();
   loadRequests();
 }
@@ -144,9 +279,12 @@ function switchTab(tab){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   event.target.classList.add('active');
   document.getElementById('panel-'+tab).classList.add('active');
+  if(tab === 'prescritores') renderPrescritores();
+  if(tab === 'kits') renderKits();
 }
 
-/* ---- AGENDA ---- */
+function fecharModal(id){ document.getElementById(id).classList.remove('show'); }
+
 function addSlot(){
   const data = document.getElementById('newSlotDate').value;
   const time = document.getElementById('newSlotTime').value;
@@ -158,6 +296,7 @@ function addSlot(){
     loadSlots();
   });
 }
+
 function deleteSlot(id){
   if(!confirm('Remover esse horário da agenda?')) return;
   supa.from('link_bio_visita_slots').delete().eq('id', id).then(({error})=>{
@@ -165,6 +304,31 @@ function deleteSlot(id){
     loadSlots();
   });
 }
+window.deleteSlot = deleteSlot;
+
+async function cancelarReserva(slotId){
+  if(!confirm('Cancelar essa visita reservada? O horário volta a ficar livre pra outra pessoa marcar.')) return;
+
+  const { data: visita } = await supa.from('link_bio_visitas_medicas').select('id').eq('slot_id', slotId).neq('status','cancelada').maybeSingle();
+  if(visita){
+    await supa.from('link_bio_visitas_medicas').update({ status: 'cancelada' }).eq('id', visita.id);
+  }
+  const { error } = await supa.from('link_bio_visita_slots').update({ status: 'disponivel' }).eq('id', slotId);
+  if(error){ alert('Erro ao cancelar: '+error.message); return; }
+  loadSlots();
+  loadRequests();
+}
+window.cancelarReserva = cancelarReserva;
+
+function trocarVisaoAgenda(visao){
+  document.getElementById('viewListaBtn').classList.toggle('active', visao==='lista');
+  document.getElementById('viewCalBtn').classList.toggle('active', visao==='calendario');
+  document.getElementById('viewLista').style.display = visao==='lista' ? 'block' : 'none';
+  document.getElementById('viewCalendario').style.display = visao==='calendario' ? 'block' : 'none';
+  if(visao === 'calendario') renderCalendario();
+}
+window.trocarVisaoAgenda = trocarVisaoAgenda;
+
 function loadSlots(){
   const wrap = document.getElementById('slotsList');
   supa.from('link_bio_visita_slots')
@@ -174,39 +338,99 @@ function loadSlots(){
     .order('data', {ascending:true}).order('horario', {ascending:true})
     .then(({data, error})=>{
       if(error){ wrap.innerHTML = '<div class="empty-state">Erro ao carregar</div>'; return; }
-      if(!data || data.length===0){ wrap.innerHTML = '<div class="empty-state">Nenhum horário liberado ainda</div>'; return; }
+      slotsCache = data || [];
+      if(!slotsCache.length){ wrap.innerHTML = '<div class="empty-state">Nenhum horário liberado ainda</div>'; return; }
       const byDate = {};
-      data.forEach(s => (byDate[s.data] = byDate[s.data]||[]).push(s));
+      slotsCache.forEach(s => (byDate[s.data] = byDate[s.data]||[]).push(s));
       wrap.innerHTML = Object.keys(byDate).map(date=>{
         const label = new Date(date+'T00:00:00').toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
         const chips = byDate[date].map(s=>`
           <div class="slot-chip ${s.status}">
             ${s.horario} — ${s.status === 'disponivel' ? 'livre' : 'reservado'}
-            ${s.status==='disponivel' ? `<button onclick="deleteSlot('${s.id}')">✕</button>` : ''}
+            ${s.status==='disponivel' ? `<button onclick="deleteSlot('${s.id}')" title="Excluir horário">✕</button>` : `<button onclick="cancelarReserva('${s.id}')" title="Cancelar reserva">CANCELAR</button>`}
           </div>
         `).join('');
         return `<div class="slot-date-block"><div class="slot-date-title">${label}</div><div class="slot-chip-row">${chips}</div></div>`;
       }).join('');
+      if(document.getElementById('viewCalendario').style.display !== 'none') renderCalendario();
     });
 }
 
-/* ---- SOLICITAÇÕES ---- */
+let mesCalAtual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let diaCalSelecionado = null;
+
+function mudarMesCal(delta){
+  mesCalAtual = new Date(mesCalAtual.getFullYear(), mesCalAtual.getMonth()+delta, 1);
+  diaCalSelecionado = null;
+  renderCalendario();
+}
+window.mudarMesCal = mudarMesCal;
+
+function renderCalendario(){
+  document.getElementById('calMesLabel').textContent = mesCalAtual.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+  const ano = mesCalAtual.getFullYear(), mes = mesCalAtual.getMonth();
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes+1, 0).getDate();
+
+  const porData = {};
+  slotsCache.forEach(s => { (porData[s.data] = porData[s.data]||[]).push(s); });
+
+  let html = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d=>`<div class="cal-weekday">${d}</div>`).join('');
+  for(let i=0;i<primeiroDiaSemana;i++) html += `<div class="cal-day empty"></div>`;
+  for(let dia=1; dia<=totalDias; dia++){
+    const key = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const slotsDoDia = porData[key] || [];
+    html += `<div class="cal-day ${key===diaCalSelecionado?'selecionado':''}" onclick="selecionarDiaCal('${key}')">
+      <div class="cal-day-num">${dia}</div>
+      ${slotsDoDia.length ? `<div class="cal-dot-row">${slotsDoDia.slice(0,5).map(s=>`<span class="cal-dot ${s.status}"></span>`).join('')}</div>` : ''}
+    </div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+
+  if(diaCalSelecionado) selecionarDiaCal(diaCalSelecionado, true);
+  else document.getElementById('calDiaDetalhe').innerHTML = '';
+}
+
+function selecionarDiaCal(dataStr, semRerender){
+  diaCalSelecionado = dataStr;
+  if(!semRerender) renderCalendario();
+  const slotsDoDia = slotsCache.filter(s=>s.data===dataStr).sort((a,b)=>a.horario.localeCompare(b.horario));
+  const label = new Date(dataStr+'T00:00:00').toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+  document.getElementById('calDiaDetalhe').innerHTML = `
+    <h3 style="margin-bottom:10px;">${label}</h3>
+    ${slotsDoDia.length ? `<div class="slot-chip-row">${slotsDoDia.map(s=>`
+      <div class="slot-chip ${s.status}">
+        ${s.horario} — ${s.status === 'disponivel' ? 'livre' : 'reservado'}
+        ${s.status==='disponivel' ? `<button onclick="deleteSlot('${s.id}')">✕</button>` : `<button onclick="cancelarReserva('${s.id}')">CANCELAR</button>`}
+      </div>`).join('')}</div>` : `<p class="empty-state">Nenhum horário liberado nesse dia.</p>`}
+  `;
+}
+window.selecionarDiaCal = selecionarDiaCal;
+
 function loadRequests(){
   const tbody = document.getElementById('reqTableBody');
   supa.from('link_bio_visitas_medicas')
     .select('*')
     .order('created_at', {ascending:false})
     .then(({data, error})=>{
-      if(error){ tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Erro ao carregar</td></tr>'; return; }
-      if(!data || data.length===0){ tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nenhuma solicitação ainda</td></tr>'; return; }
-      const pendentes = data.filter(r=>r.status==='pendente').length;
+      if(error){ tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Erro ao carregar</td></tr>'; return; }
+      requestsCache = data || [];
+      if(!requestsCache.length){ tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Nenhuma solicitação ainda</td></tr>'; return; }
+      const pendentes = requestsCache.filter(r=>r.status==='pendente').length;
       document.getElementById('pendCount').textContent = pendentes>0 ? `(${pendentes})` : '';
-      tbody.innerHTML = data.map(r=>`
+      tbody.innerHTML = requestsCache.map(r=>`
         <tr>
           <td><strong>${r.nome}</strong><br><span style="color:var(--muted);font-size:12px;">${r.profissao}${r.registro?' · '+r.registro:''}${r.clinica?'<br>'+r.clinica:''}</span></td>
           <td>${r.telefone}</td>
           <td>${r.data_preferida ? new Date(r.data_preferida+'T00:00:00').toLocaleDateString('pt-BR') : '—'} ${r.horario_preferido||''}</td>
           <td><span class="status-badge status-${r.status}">${r.status}</span></td>
+          <td>
+            <select class="mini" onchange="atualizarKitVisita('${r.id}', this.value)">
+              <option value="">— nenhum —</option>
+              ${kitsCache.map(k=>`<option value="${k.id}" ${r.kit_id===k.id?'selected':''}>${k.nome}</option>`).join('')}
+            </select>
+          </td>
+          <td>${r.confirmacao_enviada ? `<span class="status-badge status-confirmada">Enviada</span>` : (r.status==='confirmada' ? `<button class="btn small ghost" onclick="abrirModalConfirmacao('${r.id}')">Notificar</button>` : '—')}</td>
           <td>
             ${r.status==='pendente' ? `
               <div class="row-actions">
@@ -218,12 +442,177 @@ function loadRequests(){
       `).join('');
     });
 }
+
 function updateReqStatus(id, status){
   supa.from('link_bio_visitas_medicas').update({status}).eq('id', id).then(({error})=>{
     if(error){ alert('Erro ao atualizar'); return; }
     loadRequests();
   });
 }
+window.updateReqStatus = updateReqStatus;
+
+function atualizarKitVisita(id, kitId){
+  supa.from('link_bio_visitas_medicas').update({ kit_id: kitId || null }).eq('id', id).then(({error})=>{
+    if(error) alert('Erro ao salvar kit: '+error.message);
+  });
+}
+window.atualizarKitVisita = atualizarKitVisita;
+
+let confirmacaoVisitaId = null;
+function abrirModalConfirmacao(id){
+  confirmacaoVisitaId = id;
+  const r = requestsCache.find(x=>x.id===id);
+  const dataFmt = r.data_preferida ? new Date(r.data_preferida+'T00:00:00').toLocaleDateString('pt-BR') : '';
+  const msg = encodeURIComponent(`Olá, ${r.nome}! Sua visita do representante da Farmácia Bioflora está confirmada para ${dataFmt} às ${r.horario_preferido||''}. Até lá!`);
+  const telLimpo = (r.telefone||'').replace(/\D/g,'');
+  document.getElementById('btnWhats').href = telLimpo ? `https://wa.me/55${telLimpo}?text=${msg}` : '#';
+  document.getElementById('btnEmail').href = `mailto:?subject=${encodeURIComponent('Visita confirmada — Farmácia Bioflora')}&body=${msg}`;
+  document.getElementById('modalConfirmacao').classList.add('show');
+}
+window.abrirModalConfirmacao = abrirModalConfirmacao;
+
+function marcarConfirmacaoEnviada(){
+  const metodo = prompt('Como você enviou? Digite "whatsapp" ou "email"', 'whatsapp');
+  if(!metodo) return;
+  supa.from('link_bio_visitas_medicas').update({
+    confirmacao_enviada: true, confirmacao_metodo: metodo.toLowerCase().includes('email')?'email':'whatsapp', confirmacao_enviada_em: new Date().toISOString()
+  }).eq('id', confirmacaoVisitaId).then(({error})=>{
+    if(error){ alert('Erro: '+error.message); return; }
+    fecharModal('modalConfirmacao');
+    loadRequests();
+  });
+}
+window.marcarConfirmacaoEnviada = marcarConfirmacaoEnviada;
+
+async function carregarPrescritores(){
+  const { data } = await supa.from('visitas_prescritores').select('*').order('nome');
+  prescritoresCache = data || [];
+}
+
+function renderPrescritores(){
+  const wrap = document.getElementById('prescritoresList');
+  if(!prescritoresCache.length){ wrap.innerHTML = '<div class="empty-state">Nenhum prescritor cadastrado ainda.</div>'; return; }
+  const TIPO_LABEL = {medico:'Médico', veterinario:'Veterinário', nutricionista:'Nutricionista', outro:'Outro'};
+  wrap.innerHTML = prescritoresCache.map(p => `
+    <div class="prescritor-row">
+      <div>
+        <div class="prescritor-nome"><span class="tipo-tag">${TIPO_LABEL[p.tipo]}</span>${p.nome}</div>
+        <div class="prescritor-sub">${p.clinica||''}${p.telefone?' · '+p.telefone:''}${p.email?' · '+p.email:''}</div>
+        ${p.observacoes ? `<div class="prescritor-sub" style="margin-top:4px;">${p.observacoes}</div>` : ''}
+      </div>
+      <button class="btn small ghost" onclick="abrirModalPrescritor('${p.id}')">Editar</button>
+    </div>
+  `).join('');
+}
+
+function abrirModalPrescritor(id){
+  const p = id ? prescritoresCache.find(x=>x.id===id) : null;
+  document.getElementById('modalPrescritorTitulo').textContent = p ? 'Editar prescritor' : 'Novo prescritor';
+  document.getElementById('modalPrescritorTitulo').dataset.id = id || '';
+  document.getElementById('pNome').value = p?.nome || '';
+  document.getElementById('pTipo').value = p?.tipo || 'medico';
+  document.getElementById('pTelefone').value = p?.telefone || '';
+  document.getElementById('pEmail').value = p?.email || '';
+  document.getElementById('pClinica').value = p?.clinica || '';
+  document.getElementById('pObs').value = p?.observacoes || '';
+
+  const historicoEl = document.getElementById('pHistorico');
+  if(p){
+    const visitas = requestsCache.filter(r => r.prescritor_id===p.id || (r.telefone && p.telefone && r.telefone.replace(/\D/g,'')===p.telefone.replace(/\D/g,'')));
+    historicoEl.innerHTML = visitas.length ? `
+      <div style="margin:14px 0;padding-top:14px;border-top:1px solid var(--line);">
+        <label style="font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;">Histórico de visitas</label>
+        ${visitas.map(v=>`<div style="font-size:12.5px;margin-top:6px;">${v.data_preferida?new Date(v.data_preferida+'T00:00:00').toLocaleDateString('pt-BR'):'—'} — <span class="status-badge status-${v.status}">${v.status}</span></div>`).join('')}
+      </div>` : '';
+  } else {
+    historicoEl.innerHTML = '';
+  }
+
+  document.getElementById('modalPrescritor').classList.add('show');
+}
+window.abrirModalPrescritor = abrirModalPrescritor;
+
+async function salvarPrescritor(){
+  const nome = document.getElementById('pNome').value.trim();
+  if(!nome){ alert('Digite o nome.'); return; }
+  const id = document.getElementById('modalPrescritorTitulo').dataset.id;
+  const dados = {
+    nome,
+    tipo: document.getElementById('pTipo').value,
+    telefone: document.getElementById('pTelefone').value.trim() || null,
+    email: document.getElementById('pEmail').value.trim() || null,
+    clinica: document.getElementById('pClinica').value.trim() || null,
+    observacoes: document.getElementById('pObs').value.trim() || null,
+  };
+  const { error } = id
+    ? await supa.from('visitas_prescritores').update(dados).eq('id', id)
+    : await supa.from('visitas_prescritores').insert(dados);
+  if(error){ alert('Erro: '+error.message); return; }
+  fecharModal('modalPrescritor');
+  await carregarPrescritores();
+  renderPrescritores();
+}
+window.salvarPrescritor = salvarPrescritor;
+
+async function carregarKits(){
+  const { data } = await supa.from('visitas_kits').select('*').order('nome');
+  kitsCache = data || [];
+}
+
+function renderKits(){
+  const wrap = document.getElementById('kitsList');
+  if(!kitsCache.length){ wrap.innerHTML = '<div class="empty-state">Nenhum kit cadastrado ainda.</div>'; return; }
+  const TIPO_LABEL = {medico:'Médico', veterinario:'Veterinário', nutricionista:'Nutricionista', outro:'Outro'};
+  wrap.innerHTML = kitsCache.map(k => `
+    <div class="kit-row">
+      <div style="flex:1;">
+        <div class="prescritor-nome"><span class="tipo-tag">${TIPO_LABEL[k.tipo]||'Outro'}</span>${k.nome}</div>
+        <div class="kit-itens">${(k.itens||'').replace(/</g,'&lt;')}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button class="btn small ghost" onclick="abrirModalKit('${k.id}')">Editar</button>
+        <button class="btn small danger" onclick="excluirKit('${k.id}')">Excluir</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function abrirModalKit(id){
+  const k = id ? kitsCache.find(x=>x.id===id) : null;
+  document.getElementById('modalKitTitulo').textContent = k ? 'Editar kit' : 'Novo kit';
+  document.getElementById('modalKitTitulo').dataset.id = id || '';
+  document.getElementById('kNome').value = k?.nome || '';
+  document.getElementById('kTipo').value = k?.tipo || 'outro';
+  document.getElementById('kItens').value = k?.itens || '';
+  document.getElementById('modalKit').classList.add('show');
+}
+window.abrirModalKit = abrirModalKit;
+
+async function salvarKit(){
+  const nome = document.getElementById('kNome').value.trim();
+  const itens = document.getElementById('kItens').value.trim();
+  if(!nome || !itens){ alert('Preencha o nome e os itens do kit.'); return; }
+  const id = document.getElementById('modalKitTitulo').dataset.id;
+  const dados = { nome, tipo: document.getElementById('kTipo').value, itens };
+  const { error } = id
+    ? await supa.from('visitas_kits').update(dados).eq('id', id)
+    : await supa.from('visitas_kits').insert(dados);
+  if(error){ alert('Erro: '+error.message); return; }
+  fecharModal('modalKit');
+  await carregarKits();
+  renderKits();
+  loadRequests();
+}
+window.salvarKit = salvarKit;
+
+async function excluirKit(id){
+  if(!confirm('Excluir esse kit?')) return;
+  const { error } = await supa.from('visitas_kits').delete().eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  await carregarKits();
+  renderKits();
+}
+window.excluirKit = excluirKit;
 
 init();
 </script>
