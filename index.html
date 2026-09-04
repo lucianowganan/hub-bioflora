@@ -216,6 +216,7 @@
     <a href="controle-producao.html" class="side-btn" id="sideControleBtn" style="display:none">📋<span class="tooltip">Controle de Produção</span></a>
     <a href="reaproveitamento.html" class="side-btn" id="sideReaproveitamentoBtn" style="display:none">♻️<span class="tooltip">Reaproveitamento</span></a>
     <a href="erros.html" class="side-btn" id="sideErrosBtn" style="display:none">✍️<span class="tooltip">Registro de Erros</span></a>
+    <a href="inclusoes.html" class="side-btn" id="sideInclusoesBtn" style="display:none">🧮<span class="tooltip">Inclusões & Performance</span></a>
     <a href="meus-erros.html" class="side-btn">📈<span class="tooltip">Meus Erros</span></a>
     <a href="chat.html" class="side-btn">💬<span class="tooltip">Chat Interno</span></a>
     <a href="admin.html" class="side-btn" id="sideAdminBtn" style="display:none">🔐<span class="tooltip">Administração</span></a>
@@ -311,6 +312,10 @@
         <div class="stripe"></div><div class="icon">📝</div><h3>Registro de Erros</h3>
         <p>Grade de lançamento da conferência.</p>
       </a>
+      <a class="module-card card-inclusoes" href="inclusoes.html" data-roles="chefia,conferencia">
+        <div class="stripe" style="background:#B4472F"></div><div class="icon">🧮</div><h3>Inclusões & Performance</h3>
+        <p>Cruza inclusões diárias com erros — % de erro por atendente.</p>
+      </a>
       <a class="module-card card-meuserros" href="meus-erros.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
         <div class="stripe"></div><div class="icon">📈</div><h3>Meus Erros</h3>
         <p>Seu desempenho individual detalhado.</p>
@@ -370,6 +375,7 @@ async function init(){
   if(['chefia','laboratorio'].includes(papel)) document.getElementById('sideControleBtn').style.display = 'flex';
   if(['chefia','laboratorio','conferencia'].includes(papel)) document.getElementById('sideReaproveitamentoBtn').style.display = 'flex';
   if(['chefia','conferencia'].includes(papel)) document.getElementById('sideErrosBtn').style.display = 'flex';
+  if(['chefia','conferencia'].includes(papel)) document.getElementById('sideInclusoesBtn').style.display = 'flex';
 
   if(papel === 'sem_papel'){
     document.getElementById('roleBanner').style.display = 'block';

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inclusões & Performance — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC; --bad:#B4472F; --bad-tint:#FBEBE6;
+    --warn:#C9922B; --warn-tint:#FBF1E0; --info:#3E6B93; --info-tint:#E9F0F6;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1100px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand-text h1{font-family:var(--headfont);font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+
+  .tabs{display:flex;gap:8px;margin-bottom:22px;border-bottom:1.5px solid var(--line);}
+  .tab-btn{background:none;border:none;padding:10px 4px;margin-right:24px;font-family:var(--headfont);font-weight:600;font-size:14px;color:var(--gray);cursor:pointer;border-bottom:2.5px solid transparent;}
+  .tab-btn.active{color:var(--burgundy);border-color:var(--burgundy);}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .card h2{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 4px;}
+  .card .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+
+  .date-row{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;}
+  .date-row input[type=date]{font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;}
+  .period-btn{font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:600;padding:8px 16px;border-radius:20px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--gray);}
+  .period-btn.active{background:var(--burgundy);color:#fff;border-color:var(--burgundy);}
+
+  .lancar-row{display:grid;grid-template-columns:1fr 140px;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);}
+  .lancar-row:last-child{border-bottom:none;}
+  .lancar-nome{font-size:13.5px;font-weight:600;}
+  .lancar-row input{width:100%;font-family:'Maven Pro',sans-serif;font-size:14px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;text-align:center;}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .kpi .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:600;}
+  .kpi .value{font-family:var(--headfont);font-weight:600;font-size:24px;margin-top:5px;}
+
+  .perf-row{padding:14px 0;border-bottom:1px solid var(--line);}
+  .perf-row:last-child{border-bottom:none;}
+  .perf-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .perf-nome{font-size:13.5px;font-weight:700;}
+  .perf-nums{font-size:11.5px;color:var(--gray);}
+  .perf-pct{font-family:var(--headfont);font-weight:700;font-size:15px;}
+  .perf-bar-track{height:10px;background:var(--paper);border-radius:6px;overflow:hidden;border:1px solid var(--line);}
+  .perf-bar-fill{height:100%;border-radius:6px;transition:width .3s;}
+
+  .empty-state{text-align:center;padding:40px 20px;color:var(--gray);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand-text">
+      <h1>Inclusões & Performance</h1>
+      <p>Farmácia Bioflora — cruzamento de inclusões diárias com erros por atendente</p>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button onclick="logout()" class="btn secondary">Sair</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="trocarAbaInc('lancar')">📝 Lançar inclusões</button>
+    <button class="tab-btn" onclick="trocarAbaInc('desempenho')">📊 Desempenho</button>
+  </div>
+
+  <!-- LANÇAR -->
+  <div class="panel active" id="painelLancar">
+    <div class="card">
+      <h2>Quantidade de inclusões do dia</h2>
+      <p class="desc">Preenche quantas inclusões cada atendente fez nesse dia. Salva automaticamente ao sair do campo.</p>
+      <div class="date-row">
+        <label style="font-size:12.5px;color:var(--gray);font-weight:600;">Data:</label>
+        <input type="date" id="dataLancar">
+        <button class="btn secondary" onclick="irParaHojeInc()">Hoje</button>
+      </div>
+      <div id="listaLancar"></div>
+    </div>
+  </div>
+
+  <!-- DESEMPENHO -->
+  <div class="panel" id="painelDesempenho">
+    <div class="card">
+      <div class="date-row">
+        <button class="period-btn active" id="btnPeriodoDiaInc" onclick="mudarPeriodoInc('dia')">Diário</button>
+        <button class="period-btn" id="btnPeriodoSemanaInc" onclick="mudarPeriodoInc('semana')">Semanal</button>
+        <button class="period-btn" id="btnPeriodoMesInc" onclick="mudarPeriodoInc('mes')">Mensal</button>
+        <input type="date" id="dataReferenciaInc" onchange="dataReferenciaInc=this.value; carregarDesempenho();">
+      </div>
+      <div class="kpi-row" id="kpisDesempenho"></div>
+    </div>
+
+    <div class="card">
+      <h2>Por atendente</h2>
+      <p class="desc" id="descPeriodoInc"></p>
+      <div id="listaDesempenho"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let atendentesInc = [];
+let dataLancarAtual = localDateStrInc(new Date());
+let periodoInc = 'dia';
+let dataReferenciaInc = localDateStrInc(new Date());
+
+function localDateStrInc(d){
+  const local = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+  return local.toISOString().slice(0,10);
+}
+
+async function init(){
+  await requireRole(['chefia','conferencia']);
+  const { data: at } = await supa.from('atendentes_erros').select('nome,grupo').order('criado_em');
+  atendentesInc = (at||[]).map(a=>a.nome);
+
+  document.getElementById('dataLancar').value = dataLancarAtual;
+  document.getElementById('dataLancar').addEventListener('change', (e)=>{ dataLancarAtual = e.target.value; renderLancar(); });
+  document.getElementById('dataReferenciaInc').value = dataReferenciaInc;
+
+  renderLancar();
+}
+
+function trocarAbaInc(aba){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.textContent.includes(aba==='lancar'?'Lançar':'Desempenho')));
+  document.getElementById('painelLancar').classList.toggle('active', aba==='lancar');
+  document.getElementById('painelDesempenho').classList.toggle('active', aba==='desempenho');
+  if(aba==='desempenho') carregarDesempenho();
+}
+window.trocarAbaInc = trocarAbaInc;
+
+function irParaHojeInc(){
+  dataLancarAtual = localDateStrInc(new Date());
+  document.getElementById('dataLancar').value = dataLancarAtual;
+  renderLancar();
+}
+window.irParaHojeInc = irParaHojeInc;
+
+async function renderLancar(){
+  const { data: existentes } = await supa.from('inclusoes_diarias').select('atendente,quantidade').eq('data', dataLancarAtual);
+  const mapa = {};
+  (existentes||[]).forEach(e => { mapa[e.atendente] = e.quantidade; });
+
+  document.getElementById('listaLancar').innerHTML = atendentesInc.length ? atendentesInc.map(nome => `
+    <div class="lancar-row">
+      <div class="lancar-nome">${nome}</div>
+      <input type="number" min="0" value="${mapa[nome] ?? ''}" placeholder="0" onchange="salvarInclusao('${nome}', this.value)">
+    </div>
+  `).join('') : '<div class="empty-state">Nenhum atendente cadastrado ainda (cadastra em Registro de Erros).</div>';
+}
+
+async function salvarInclusao(atendente, valor){
+  const quantidade = Number(valor) || 0;
+  const { data: { session } } = await supa.auth.getSession();
+  const { error } = await supa.from('inclusoes_diarias').upsert({
+    atendente, data: dataLancarAtual, quantidade, registrado_por: session.user.id
+  }, { onConflict: 'atendente,data' });
+  if(error) alert('Erro ao salvar: '+error.message);
+}
+window.salvarInclusao = salvarInclusao;
+
+function mudarPeriodoInc(p){
+  periodoInc = p;
+  document.getElementById('btnPeriodoDiaInc').classList.toggle('active', p==='dia');
+  document.getElementById('btnPeriodoSemanaInc').classList.toggle('active', p==='semana');
+  document.getElementById('btnPeriodoMesInc').classList.toggle('active', p==='mes');
+  carregarDesempenho();
+}
+window.mudarPeriodoInc = mudarPeriodoInc;
+
+function limitesPeriodoInc(){
+  const ref = new Date(dataReferenciaInc+'T12:00:00');
+  if(periodoInc === 'dia'){
+    return { inicio: dataReferenciaInc, fim: dataReferenciaInc, label: `dia ${ref.toLocaleDateString('pt-BR')}` };
+  }
+  if(periodoInc === 'semana'){
+    const diaSemana = ref.getDay();
+    const inicioSemana = new Date(ref); inicioSemana.setDate(ref.getDate()-diaSemana);
+    const fimSemana = new Date(inicioSemana); fimSemana.setDate(inicioSemana.getDate()+6);
+    return { inicio: localDateStrInc(inicioSemana), fim: localDateStrInc(fimSemana), label: `semana de ${inicioSemana.toLocaleDateString('pt-BR')} a ${fimSemana.toLocaleDateString('pt-BR')}` };
+  }
+  const ano = ref.getFullYear(), mes = ref.getMonth();
+  const inicioMes = new Date(ano, mes, 1);
+  const fimMes = new Date(ano, mes+1, 0);
+  return { inicio: localDateStrInc(inicioMes), fim: localDateStrInc(fimMes), label: `${ref.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}` };
+}
+
+async function carregarDesempenho(){
+  const { inicio, fim, label } = limitesPeriodoInc();
+  document.getElementById('descPeriodoInc').textContent = `Período: ${label}`;
+
+  const [{ data: inclusoes }, { data: erros }] = await Promise.all([
+    supa.from('inclusoes_diarias').select('atendente,quantidade,data').gte('data', inicio).lte('data', fim),
+    supa.from('erros_registrados').select('atendente,registrado_em').gte('registrado_em', inicio+'T00:00:00').lte('registrado_em', fim+'T23:59:59'),
+  ]);
+
+  const porAtendente = {};
+  atendentesInc.forEach(nome => { porAtendente[nome] = { inclusoes: 0, erros: 0 }; });
+  (inclusoes||[]).forEach(i => { if(!porAtendente[i.atendente]) porAtendente[i.atendente] = {inclusoes:0,erros:0}; porAtendente[i.atendente].inclusoes += i.quantidade; });
+  (erros||[]).forEach(e => { if(!porAtendente[e.atendente]) porAtendente[e.atendente] = {inclusoes:0,erros:0}; porAtendente[e.atendente].erros += 1; });
+
+  const totalInclusoes = Object.values(porAtendente).reduce((s,a)=>s+a.inclusoes,0);
+  const totalErros = Object.values(porAtendente).reduce((s,a)=>s+a.erros,0);
+  const pctGeral = totalInclusoes > 0 ? (totalErros/totalInclusoes*100) : 0;
+
+  document.getElementById('kpisDesempenho').innerHTML = `
+    <div class="kpi"><div class="label">Total de inclusões</div><div class="value">${totalInclusoes}</div></div>
+    <div class="kpi"><div class="label">Total de erros</div><div class="value">${totalErros}</div></div>
+    <div class="kpi"><div class="label">% de erro geral</div><div class="value" style="color:${corPct(pctGeral)}">${pctGeral.toFixed(1)}%</div></div>
+  `;
+
+  const entradas = Object.entries(porAtendente).filter(([nome,d]) => d.inclusoes>0 || d.erros>0).sort((a,b)=> b[1].inclusoes - a[1].inclusoes);
+
+  document.getElementById('listaDesempenho').innerHTML = entradas.length ? entradas.map(([nome, d]) => {
+    const pct = d.inclusoes>0 ? (d.erros/d.inclusoes*100) : (d.erros>0 ? 100 : 0);
+    const cor = corPct(pct);
+    const largura = Math.min(pct, 100);
+    return `
+      <div class="perf-row">
+        <div class="perf-top">
+          <span class="perf-nome">${nome}</span>
+          <span class="perf-pct" style="color:${cor}">${pct.toFixed(1)}%</span>
+        </div>
+        <div class="perf-bar-track"><div class="perf-bar-fill" style="width:${largura}%;background:${cor}"></div></div>
+        <div class="perf-nums">${d.inclusoes} inclusões · ${d.erros} erro${d.erros===1?'':'s'}</div>
+      </div>`;
+  }).join('') : '<div class="empty-state">Sem inclusões ou erros registrados nesse período.</div>';
+}
+
+function corPct(pct){
+  if(pct <= 2) return 'var(--good)';
+  if(pct <= 5) return 'var(--warn)';
+  return 'var(--bad)';
+}
+
+init();
+</script>
+<script src="acessibilidade.js?v=3"></script>
+<script src="hub-sidebar.js"></script>
+</body>
+</html>
