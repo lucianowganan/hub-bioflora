@@ -79,7 +79,7 @@
 
   <div class="tabs">
     <button class="tab-btn active" onclick="trocarAbaInc('lancar')">📝 Lançar inclusões</button>
-    <button class="tab-btn" onclick="trocarAbaInc('desempenho')">📊 Desempenho</button>
+    <button class="tab-btn" id="tabDesempenhoInc" onclick="trocarAbaInc('desempenho')" style="display:none">📊 Desempenho</button>
   </div>
 
   <!-- LANÇAR -->
@@ -145,7 +145,10 @@ function localDateStrInc(d){
 }
 
 async function init(){
-  await requireRole(['chefia','conferencia']);
+  const { papel } = await requireRole(['chefia','conferencia','atendente']);
+  meuPapelInc = papel;
+  if(papel === 'chefia') document.getElementById('tabDesempenhoInc').style.display = 'inline-block';
+
   const { data: at } = await supa.from('atendentes_erros').select('nome,grupo').order('criado_em');
   atendentesInc = (at||[]).map(a=>a.nome);
 
@@ -156,7 +159,10 @@ async function init(){
   renderLancar();
 }
 
+let meuPapelInc = null;
+
 function trocarAbaInc(aba){
+  if(aba === 'desempenho' && meuPapelInc !== 'chefia') return;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.textContent.includes(aba==='lancar'?'Lançar':'Desempenho')));
   document.getElementById('painelLancar').classList.toggle('active', aba==='lancar');
   document.getElementById('painelDesempenho').classList.toggle('active', aba==='desempenho');

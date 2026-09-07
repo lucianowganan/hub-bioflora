@@ -280,6 +280,14 @@ async function loadDashboard(nome){
   const mediaAtual = ma[ma.length-1] || 0;
   const tipoMaisFrequente = ranking.length ? ranking[0][0] : '—';
 
+  // Inclusões do mesmo período, pra calcular a % de erro pessoal
+  const { data: inclusoesData } = await supa.from('inclusoes_diarias')
+    .select('quantidade').eq('atendente', nome)
+    .gte('data', inicio.slice(0,10)).lte('data', fim.slice(0,10));
+  const totalInclusoes = (inclusoesData||[]).reduce((s,i)=>s+i.quantidade, 0);
+  const pctErroPessoal = totalInclusoes > 0 ? (totalMes/totalInclusoes*100) : (totalMes>0 ? 100 : 0);
+  const corPctPessoal = pctErroPessoal<=2 ? 'var(--good,#3F7A57)' : pctErroPessoal<=5 ? '#C9922B' : 'var(--bad,#B4472F)';
+
   // Evolução mensal total (todo o histórico do atendente)
   const porMes = {};
   data.forEach(r => { const k = r.registrado_em.slice(0,7); porMes[k] = (porMes[k]||0)+1; });
@@ -294,6 +302,15 @@ async function loadDashboard(nome){
   data.forEach(r => { const d = new Date(r.registrado_em); porDiaSemana[d.getDay()]++; });
 
   document.getElementById('dashArea').innerHTML = `
+    <div class="panel" style="border-color:${corPctPessoal};">
+      <h2>🧮 Minhas inclusões x erros</h2>
+      <p class="desc">Mesmo período selecionado acima (${label})</p>
+      <div class="kpi-row">
+        <div class="kpi"><div class="label">Inclusões</div><div class="value">${totalInclusoes}</div></div>
+        <div class="kpi"><div class="label">Erros</div><div class="value">${totalMes}</div></div>
+        <div class="kpi"><div class="label">% de erro</div><div class="value" style="color:${corPctPessoal}">${pctErroPessoal.toFixed(1)}%</div></div>
+      </div>
+    </div>
     <div class="kpi-row">
       <div class="kpi"><div class="label">Erros ${label}</div><div class="value">${totalMes}</div></div>
       <div class="kpi"><div class="label">Média móvel atual (7d)</div><div class="value">${mediaAtual.toFixed(1)}</div></div>
