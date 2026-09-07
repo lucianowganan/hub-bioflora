@@ -162,15 +162,17 @@
   .solic-actions button.rejeitar{color:var(--bad);border-color:var(--bad-tint);}
   .pendentes-badge{background:var(--warn);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;}
 
-  .cal-ferias-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-  .cal-ferias-weekday{text-align:center;font-size:9.5px;font-weight:700;color:var(--gray);text-transform:uppercase;padding:2px 0 6px;}
-  .cal-ferias-day{min-height:64px;border:1px solid var(--line);border-radius:7px;padding:4px 5px;background:#fff;font-size:10px;}
+  .cal-ferias-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;width:100%;max-width:100%;}
+  .cal-ferias-weekday{text-align:center;font-size:9.5px;font-weight:700;color:var(--gray);text-transform:uppercase;padding:2px 0 6px;min-width:0;}
+  .cal-ferias-day{min-height:56px;min-width:0;border:1px solid var(--line);border-radius:7px;padding:4px 5px;background:#fff;font-size:10px;overflow:hidden;}
   .cal-ferias-day.empty{visibility:hidden;}
   .cal-ferias-day.feriado{background:var(--bad-tint);border-color:#E8C4B8;}
   .cal-ferias-day.hoje{border-color:var(--burgundy);border-width:1.5px;}
   .cal-ferias-day-num{font-weight:700;color:var(--gray);}
   .cal-ferias-day.feriado .cal-ferias-day-num{color:var(--bad);}
-  .cal-ferias-chip{background:var(--info);color:#fff;border-radius:3px;padding:1px 4px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cal-ferias-feriado-label{font-size:8.5px;color:var(--bad);font-weight:600;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cal-ferias-dots{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;}
+  .cal-ferias-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;cursor:default;}
   .cal-ferias-nav{display:flex;gap:6px;align-items:center;}
   .cal-ferias-nav button{font-family:'Maven Pro',sans-serif;font-size:11.5px;padding:6px 11px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;}
 
@@ -1298,15 +1300,15 @@ function renderCalendarioFerias(){
     const key = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
     const ehFeriado = feriadosPorData[key];
     const pessoasFerias = feriasAprovadas.filter(s => s.data_inicio <= key && s.data_fim >= key);
-    html += `<div class="cal-ferias-day ${ehFeriado?'feriado':''} ${key===hojeStr?'hoje':''}" title="${ehFeriado||''}">
+    const nomesTooltip = pessoasFerias.map(s=>s.solicitante_nome).join(', ');
+    html += `<div class="cal-ferias-day ${ehFeriado?'feriado':''} ${key===hojeStr?'hoje':''}" title="${ehFeriado ? ehFeriado + (nomesTooltip?' — ':'') : ''}${nomesTooltip}">
       <div class="cal-ferias-day-num">${dia}</div>
-      ${ehFeriado ? `<div class="cal-ferias-chip" style="background:var(--bad)">${ehFeriado}</div>` : ''}
-      ${pessoasFerias.slice(0,2).map(s=>{
+      ${ehFeriado ? `<div class="cal-ferias-feriado-label">${ehFeriado}</div>` : ''}
+      ${pessoasFerias.length ? `<div class="cal-ferias-dots">${pessoasFerias.map(s=>{
         const colabMatch = todosColaboradores.find(c => c.nome_completo.toLowerCase() === s.solicitante_nome.toLowerCase());
         const cor = colabMatch ? corDoSetor(colabMatch.departamento) : 'var(--info)';
-        return `<div class="cal-ferias-chip" style="background:${cor}">${s.solicitante_nome.split(' ')[0]}</div>`;
-      }).join('')}
-      ${pessoasFerias.length>2 ? `<div style="color:var(--gray);font-size:9px;">+${pessoasFerias.length-2}</div>` : ''}
+        return `<span class="cal-ferias-dot" style="background:${cor}" title="${s.solicitante_nome}"></span>`;
+      }).join('')}</div>` : ''}
     </div>`;
   }
   grid.innerHTML = html;
