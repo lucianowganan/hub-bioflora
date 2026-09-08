@@ -561,7 +561,8 @@ async function renderWidgets(papel, perfil){
   const podeVerReaproveitamento = ['chefia','laboratorio','conferencia','atendente'].includes(papel);
 
   if(podeVerErrosProprios) cards.push(await widgetMeusErros(perfil.atendente_vinculado));
-  if(podeVerErrosProprios) cards.push(await widgetMinhasInclusoes(perfil.atendente_vinculado));
+  if(podeVerErrosProprios) cards.push(await widgetMinhasInclusoes(perfil.atendente_vinculado, false));
+  if(papel === 'chefia') cards.push(await widgetMinhasInclusoes(null, true));
   if(podeVerErrosGeral) cards.push(await widgetErrosEquipe());
   if(podeVerReaproveitamento) cards.push(await widgetReaproveitamento());
   if(podeVerRotulos) cards.push(await widgetRotulos());
@@ -571,7 +572,8 @@ async function renderWidgets(papel, perfil){
   area.innerHTML = cards.length ? `<div class="grid">${cards.join('')}</div>` : '';
 
   if(podeVerErrosProprios) drawMeusErrosChart(perfil.atendente_vinculado);
-  if(podeVerErrosProprios) ligarWidgetMinhasInclusoes(perfil.atendente_vinculado);
+  if(podeVerErrosProprios) ligarWidgetMinhasInclusoes(perfil.atendente_vinculado, false);
+  if(papel === 'chefia') await ligarSeletorInclusoesChefia();
   if(podeVerErrosGeral) drawErrosEquipeChart();
 }
 
@@ -592,14 +594,15 @@ async function drawMeusErrosChart(nome){
 }
 
 // ---- Minhas Inclusões x Erros (home) ----
-async function widgetMinhasInclusoes(nome){
+async function widgetMinhasInclusoes(nome, mostrarSeletor){
   return `<div class="card w6">
-    <div class="card-head"><h2>Minhas Inclusões x Erros</h2><span class="card-icon">🧮</span></div>
-    <p class="card-sub">Acompanhe suas metas e sua % de erro</p>
+    <div class="card-head"><h2>${mostrarSeletor ? 'Inclusões x Erros' : 'Minhas Inclusões x Erros'}</h2><span class="card-icon">🧮</span></div>
+    <p class="card-sub">${mostrarSeletor ? 'Acompanhe as metas e a % de erro de cada atendente' : 'Acompanhe suas metas e sua % de erro'}</p>
+    ${mostrarSeletor ? `<select id="homeIncSeletorAtendente" onchange="trocarAtendenteIncHome(this.value)" style="width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 10px;border:1px solid #E7DFE0;border-radius:8px;margin-bottom:12px;"><option value="">Carregando...</option></select>` : ''}
     <div style="display:flex;gap:6px;margin-bottom:14px;">
-      <button class="home-period-btn active" id="homeIncPDia" onclick="mudarPeriodoIncHome('dia','${nome}')">Dia</button>
-      <button class="home-period-btn" id="homeIncPSemana" onclick="mudarPeriodoIncHome('semana','${nome}')">Semana</button>
-      <button class="home-period-btn" id="homeIncPMes" onclick="mudarPeriodoIncHome('mes','${nome}')">Mês</button>
+      <button class="home-period-btn active" id="homeIncPDia" onclick="mudarPeriodoIncHome('dia')">Dia</button>
+      <button class="home-period-btn" id="homeIncPSemana" onclick="mudarPeriodoIncHome('semana')">Semana</button>
+      <button class="home-period-btn" id="homeIncPMes" onclick="mudarPeriodoIncHome('mes')">Mês</button>
     </div>
     <div class="kpi-row" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
       <div class="kpi"><div class="label" style="font-size:10px;text-transform:uppercase;color:var(--gray);font-weight:600;">Inclusões</div><div class="value" id="homeIncTotal" style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;margin-top:4px;">—</div></div>
@@ -610,6 +613,7 @@ async function widgetMinhasInclusoes(nome){
 }
 
 let periodoIncHome = 'dia';
+let nomeIncHomeAtual = null;
 function localDateStrHomeInc(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
 
 function limitesPeriodoIncHome(){
@@ -628,16 +632,37 @@ function limitesPeriodoIncHome(){
   return { inicio: localDateStrHomeInc(new Date(ano,mes,1)), fim: localDateStrHomeInc(new Date(ano,mes+1,0)) };
 }
 
-async function mudarPeriodoIncHome(periodo, nome){
+async function mudarPeriodoIncHome(periodo){
   periodoIncHome = periodo;
   document.getElementById('homeIncPDia').classList.toggle('active', periodo==='dia');
   document.getElementById('homeIncPSemana').classList.toggle('active', periodo==='semana');
   document.getElementById('homeIncPMes').classList.toggle('active', periodo==='mes');
-  await ligarWidgetMinhasInclusoes(nome);
+  await ligarWidgetMinhasInclusoes(nomeIncHomeAtual);
 }
 window.mudarPeriodoIncHome = mudarPeriodoIncHome;
 
+async function trocarAtendenteIncHome(nome){
+  nomeIncHomeAtual = nome;
+  await ligarWidgetMinhasInclusoes(nome);
+}
+window.trocarAtendenteIncHome = trocarAtendenteIncHome;
+
+async function ligarSeletorInclusoesChefia(){
+  const { data } = await supa.from('atendentes_erros').select('nome').order('criado_em');
+  const nomes = (data||[]).map(a=>a.nome);
+  const sel = document.getElementById('homeIncSeletorAtendente');
+  if(!sel) return;
+  sel.innerHTML = nomes.map(n=>`<option value="${n}">${n}</option>`).join('');
+  if(nomes.length){
+    nomeIncHomeAtual = nomes[0];
+    await ligarWidgetMinhasInclusoes(nomes[0]);
+  }
+}
+window.ligarSeletorInclusoesChefia = ligarSeletorInclusoesChefia;
+
 async function ligarWidgetMinhasInclusoes(nome){
+  if(!nome) return;
+  nomeIncHomeAtual = nome;
   const { inicio, fim } = limitesPeriodoIncHome();
   const [{ data: inclusoes }, { data: erros }] = await Promise.all([
     supa.from('inclusoes_diarias').select('quantidade').eq('atendente', nome).gte('data', inicio).lte('data', fim),
