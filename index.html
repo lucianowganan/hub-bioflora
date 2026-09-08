@@ -77,6 +77,8 @@
   .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;grid-column:span 12;}
   @media (min-width:760px){
     .card.w4{grid-column:span 4;} .card.w6{grid-column:span 6;} .card.w8{grid-column:span 8;} .card.w12{grid-column:span 12;}
+    .home-period-btn{font-family:'Maven Pro',sans-serif;font-size:11.5px;font-weight:600;padding:6px 14px;border-radius:16px;border:1px solid #E7DFE0;background:#fff;cursor:pointer;color:#6E6266;}
+    .home-period-btn.active{background:#8B1A3A;color:#fff;border-color:#8B1A3A;}
   }
   .card h2{font-family:var(--headfont);font-size:15px;font-weight:600;margin:0 0 2px;color:var(--ink);}
   .card .card-sub{font-size:11.5px;color:var(--gray);margin:0 0 16px;}
@@ -559,6 +561,7 @@ async function renderWidgets(papel, perfil){
   const podeVerReaproveitamento = ['chefia','laboratorio','conferencia','atendente'].includes(papel);
 
   if(podeVerErrosProprios) cards.push(await widgetMeusErros(perfil.atendente_vinculado));
+  if(podeVerErrosProprios) cards.push(await widgetMinhasInclusoes(perfil.atendente_vinculado));
   if(podeVerErrosGeral) cards.push(await widgetErrosEquipe());
   if(podeVerReaproveitamento) cards.push(await widgetReaproveitamento());
   if(podeVerRotulos) cards.push(await widgetRotulos());
@@ -568,6 +571,7 @@ async function renderWidgets(papel, perfil){
   area.innerHTML = cards.length ? `<div class="grid">${cards.join('')}</div>` : '';
 
   if(podeVerErrosProprios) drawMeusErrosChart(perfil.atendente_vinculado);
+  if(podeVerErrosProprios) ligarWidgetMinhasInclusoes(perfil.atendente_vinculado);
   if(podeVerErrosGeral) drawErrosEquipeChart();
 }
 
@@ -586,6 +590,74 @@ async function drawMeusErrosChart(nome){
     options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
   });
 }
+
+// ---- Minhas Inclusões x Erros (home) ----
+async function widgetMinhasInclusoes(nome){
+  return `<div class="card w6">
+    <div class="card-head"><h2>Minhas Inclusões x Erros</h2><span class="card-icon">🧮</span></div>
+    <p class="card-sub">Acompanhe suas metas e sua % de erro</p>
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <button class="home-period-btn active" id="homeIncPDia" onclick="mudarPeriodoIncHome('dia','${nome}')">Dia</button>
+      <button class="home-period-btn" id="homeIncPSemana" onclick="mudarPeriodoIncHome('semana','${nome}')">Semana</button>
+      <button class="home-period-btn" id="homeIncPMes" onclick="mudarPeriodoIncHome('mes','${nome}')">Mês</button>
+    </div>
+    <div class="kpi-row" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      <div class="kpi"><div class="label" style="font-size:10px;text-transform:uppercase;color:var(--gray);font-weight:600;">Inclusões</div><div class="value" id="homeIncTotal" style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;margin-top:4px;">—</div></div>
+      <div class="kpi"><div class="label" style="font-size:10px;text-transform:uppercase;color:var(--gray);font-weight:600;">Erros</div><div class="value" id="homeIncErros" style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;margin-top:4px;">—</div></div>
+      <div class="kpi"><div class="label" style="font-size:10px;text-transform:uppercase;color:var(--gray);font-weight:600;">% de erro</div><div class="value" id="homeIncPct" style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;margin-top:4px;">—</div></div>
+    </div>
+  </div>`;
+}
+
+let periodoIncHome = 'dia';
+function localDateStrHomeInc(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
+
+function limitesPeriodoIncHome(){
+  const hoje = new Date();
+  if(periodoIncHome === 'dia'){
+    const s = localDateStrHomeInc(hoje);
+    return { inicio: s, fim: s };
+  }
+  if(periodoIncHome === 'semana'){
+    const diaSemana = hoje.getDay();
+    const inicioSemana = new Date(hoje); inicioSemana.setDate(hoje.getDate()-diaSemana);
+    const fimSemana = new Date(inicioSemana); fimSemana.setDate(inicioSemana.getDate()+6);
+    return { inicio: localDateStrHomeInc(inicioSemana), fim: localDateStrHomeInc(fimSemana) };
+  }
+  const ano = hoje.getFullYear(), mes = hoje.getMonth();
+  return { inicio: localDateStrHomeInc(new Date(ano,mes,1)), fim: localDateStrHomeInc(new Date(ano,mes+1,0)) };
+}
+
+async function mudarPeriodoIncHome(periodo, nome){
+  periodoIncHome = periodo;
+  document.getElementById('homeIncPDia').classList.toggle('active', periodo==='dia');
+  document.getElementById('homeIncPSemana').classList.toggle('active', periodo==='semana');
+  document.getElementById('homeIncPMes').classList.toggle('active', periodo==='mes');
+  await ligarWidgetMinhasInclusoes(nome);
+}
+window.mudarPeriodoIncHome = mudarPeriodoIncHome;
+
+async function ligarWidgetMinhasInclusoes(nome){
+  const { inicio, fim } = limitesPeriodoIncHome();
+  const [{ data: inclusoes }, { data: erros }] = await Promise.all([
+    supa.from('inclusoes_diarias').select('quantidade').eq('atendente', nome).gte('data', inicio).lte('data', fim),
+    supa.from('erros_registrados').select('id').eq('atendente', nome).gte('registrado_em', inicio+'T00:00:00').lte('registrado_em', fim+'T23:59:59'),
+  ]);
+  const totalInclusoes = (inclusoes||[]).reduce((s,i)=>s+i.quantidade,0);
+  const totalErros = (erros||[]).length;
+  const pct = totalInclusoes > 0 ? (totalErros/totalInclusoes*100) : (totalErros>0 ? 100 : 0);
+  const cor = pct<=2 ? '#3F7A57' : pct<=5 ? '#C9922B' : '#B4472F';
+
+  const elTotal = document.getElementById('homeIncTotal');
+  const elErros = document.getElementById('homeIncErros');
+  const elPct = document.getElementById('homeIncPct');
+  if(!elTotal) return; // widget pode ter sido trocado de tela
+  elTotal.textContent = totalInclusoes;
+  elErros.textContent = totalErros;
+  elPct.textContent = pct.toFixed(1)+'%';
+  elPct.style.color = cor;
+}
+window.ligarWidgetMinhasInclusoes = ligarWidgetMinhasInclusoes;
 
 async function widgetErrosEquipe(){
   return `<div class="card w6"><div class="card-head"><h2>Erros mais comuns</h2><span class="card-icon">⚠️</span></div><p class="card-sub">Equipe toda, últimos 30 dias</p><canvas id="chartErrosEquipe"></canvas></div>`;
