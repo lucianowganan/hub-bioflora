@@ -524,12 +524,32 @@ function renderAbaPonto(){
       </div>
       <div class="period-row">
         <label>Período: <input type="date" id="periodoInicio"> até <input type="date" id="periodoFim"></label>
+        <span id="periodoLabelHumano" style="font-size:12.5px;color:var(--burgundy);font-weight:700;"></span>
         <button class="btn" id="processBtn" disabled>Processar e salvar</button>
       </div>
       <div class="status-msg" id="statusMsg"></div>
     </div>
     <div id="dashboardArea"></div>
   `;
+
+  // Pré-preenche com o mês passado (é o que normalmente está sendo
+  // enviado) — reduz a chance de mandar a planilha certa pro período
+  // errado por causa de um campo de data esquecido de outra sessão
+  const hoje = new Date();
+  const mesPassadoInicio = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1);
+  const mesPassadoFim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+  document.getElementById('periodoInicio').value = mesPassadoInicio.toISOString().slice(0,10);
+  document.getElementById('periodoFim').value = mesPassadoFim.toISOString().slice(0,10);
+
+  function atualizarLabelHumanoPeriodo(){
+    const v = document.getElementById('periodoInicio').value;
+    const el = document.getElementById('periodoLabelHumano');
+    if(!v){ el.textContent = ''; return; }
+    const d = new Date(v+'T12:00:00');
+    el.textContent = '→ ' + d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+  }
+  document.getElementById('periodoInicio').addEventListener('change', atualizarLabelHumanoPeriodo);
+  atualizarLabelHumanoPeriodo();
 
   if(meuPapelRH === 'gestao') document.getElementById('uploadPanel').style.display = 'none';
   if(meuPapelRH === 'rh') document.getElementById('dashboardArea').style.display = 'none';
@@ -574,6 +594,11 @@ function renderAbaPonto(){
     const dataRef = new Date(inicioInput + 'T00:00:00');
     const inicio = new Date(dataRef.getFullYear(), dataRef.getMonth(), 1).toISOString().slice(0,10);
     const fim = new Date(dataRef.getFullYear(), dataRef.getMonth()+1, 0).toISOString().slice(0,10);
+    const mesHumano = dataRef.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+
+    const { data: jaExiste } = await supa.from('folhas_ponto').select('id').eq('periodo_inicio', inicio).limit(1);
+    const avisoSobrescrever = (jaExiste && jaExiste.length) ? `\n\n⚠️ Já existe uma folha salva pra esse período — os dados atuais dela vão ser SUBSTITUÍDOS pelos dessa planilha.` : '';
+    if(!confirm(`Confirma salvar essa planilha como o período de ${mesHumano}?${avisoSobrescrever}`)) return;
 
     processBtn.disabled = true;
     showStatusPonto('Processando planilha...', 'info');
@@ -667,7 +692,11 @@ function renderDashboardPonto(periodosData){
   const active = latest.registros;
   const area = document.getElementById('dashboardArea');
 
-  let periodOptionsHtml = periodosData.map((p,i)=>`<option value="${i}" ${i===periodosData.length-1?'selected':''}>${p.periodo_inicio}</option>`).join('');
+  let periodOptionsHtml = periodosData.map((p,i)=>{
+    const d = new Date(p.periodo_inicio+'T12:00:00');
+    const label = d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+    return `<option value="${i}" ${i===periodosData.length-1?'selected':''}>${label.charAt(0).toUpperCase()+label.slice(1)}</option>`;
+  }).join('');
 
   const negCount = active.filter(d=>d.saldo_final_min<0).length;
   const graveTotal = active.reduce((a,d)=>a+d.atrasos_grave,0);
@@ -681,6 +710,7 @@ function renderDashboardPonto(periodosData){
         <span>Período exibido:</span>
         <select id="periodoSelect">${periodOptionsHtml}</select>
         <span style="color:var(--gray);font-size:12px">${periodosData.length} período(s) no histórico</span>
+        <button class="btn secondary small" id="btnExcluirPeriodoPonto" onclick="excluirPeriodoPonto()" style="margin-left:auto;color:var(--bad);">Excluir esse período (enviado errado)</button>
       </div>
     </div>
     <div class="ponto-kpi-row" style="grid-template-columns:repeat(5,1fr)">
@@ -706,9 +736,23 @@ function renderDashboardPonto(periodosData){
 
   document.getElementById('periodoSelect').addEventListener('change', (e)=>{
     renderPeriodContentPonto(periodosData[parseInt(e.target.value)].registros);
+    periodoPontoAtualExclusao = periodosData[parseInt(e.target.value)].periodo_inicio;
   });
+  periodoPontoAtualExclusao = latest.periodo_inicio;
   renderPeriodContentPonto(active);
 }
+
+let periodoPontoAtualExclusao = null;
+async function excluirPeriodoPonto(){
+  if(!periodoPontoAtualExclusao) return;
+  const d = new Date(periodoPontoAtualExclusao+'T12:00:00');
+  const mesHumano = d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+  if(!confirm(`Excluir TODOS os registros de ponto do período de ${mesHumano}? Isso apaga a folha inteira desse mês — não dá pra desfazer.`)) return;
+  const { error } = await supa.from('folhas_ponto').delete().eq('periodo_inicio', periodoPontoAtualExclusao);
+  if(error){ alert('Erro ao excluir: '+error.message); return; }
+  await loadDashboardPonto();
+}
+window.excluirPeriodoPonto = excluirPeriodoPonto;
 
 function renderPeriodContentPonto(active){
   const sorted = [...active].sort((a,b)=>a.saldo_final_min-b.saldo_final_min);
