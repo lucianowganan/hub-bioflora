@@ -367,7 +367,7 @@ async function loadDisponiveis(){
 
   document.getElementById('disponiveisTbody').innerHTML = (data && data.length) ? data.map(m => {
     const sit = situacaoValidade(m.validade);
-    const ativosTxt = (m.manipulados_ativos||[]).map(a => `${a.ativos_cadastrados?.codigo}:${a.concentracao}`).join(', ');
+    const ativosTxt = (m.manipulados_ativos||[]).map(a => a.ativos_cadastrados ? `${a.ativos_cadastrados.codigo}:${a.concentracao}` : `(ativo removido):${a.concentracao}`).join(', ');
     return `<tr>
       <td>${m.requisicao}</td>
       <td>${m.forma_farmaceutica||'—'}</td>
@@ -402,7 +402,7 @@ async function loadReaproveitados(){
   if(error){ console.error(error); return; }
 
   document.getElementById('reaproveitadosTbody').innerHTML = (data && data.length) ? data.map(m => {
-    const ativosTxt = (m.manipulados_ativos||[]).map(a => `${a.ativos_cadastrados?.codigo}:${a.concentracao}`).join(', ');
+    const ativosTxt = (m.manipulados_ativos||[]).map(a => a.ativos_cadastrados ? `${a.ativos_cadastrados.codigo}:${a.concentracao}` : `(ativo removido):${a.concentracao}`).join(', ');
     return `<tr>
       <td>${m.requisicao}</td>
       <td class="assinatura-cell">${ativosTxt}</td>

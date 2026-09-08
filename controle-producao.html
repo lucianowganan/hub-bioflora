@@ -83,6 +83,12 @@
   .lab-card .big{font-family:var(--headfont);font-size:32px;font-weight:600;}
   .lab-card .sub{font-size:12px;opacity:.85;}
 
+  .mini-chart-card{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:16px;text-align:center;cursor:pointer;transition:.15s;}
+  .mini-chart-card:hover{border-color:var(--burgundy);}
+  .mini-chart-card.active{border-color:var(--burgundy);background:var(--burgundy-tint);}
+  .mini-chart-icon{font-size:24px;margin-bottom:4px;}
+  .mini-chart-label{font-family:var(--headfont);font-size:12.5px;font-weight:600;color:var(--ink);}
+
   .period-row{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;}
   .period-btn{font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:600;padding:8px 16px;border-radius:20px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--gray);}
   .period-btn.active{background:var(--burgundy);color:#fff;border-color:var(--burgundy);}
@@ -171,22 +177,27 @@
       </div>
     </div>
 
+    <div class="lab-cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px;">
+      <div class="mini-chart-card active" id="miniChartPessoa" onclick="trocarGraficoProd('pessoa')">
+        <div class="mini-chart-icon">👥</div>
+        <div class="mini-chart-label">Por pessoa</div>
+      </div>
+      <div class="mini-chart-card" id="miniChartCapsula" onclick="trocarGraficoProd('capsula')">
+        <div class="mini-chart-icon">💊</div>
+        <div class="mini-chart-label">Cápsula por complexidade</div>
+      </div>
+      <div class="mini-chart-card" id="miniChartDermato" onclick="trocarGraficoProd('dermato')">
+        <div class="mini-chart-icon">🧴</div>
+        <div class="mini-chart-label">Dermato por tipo</div>
+      </div>
+    </div>
+
     <div class="panel">
-      <h2>Por pessoa</h2>
-      <p class="desc">Total produzido (manipulação + pesagem), separado por laboratório</p>
+      <h2 id="graficoProdTitulo">Por pessoa</h2>
+      <p class="desc" id="graficoProdDesc">Total produzido (manipulação + pesagem), separado por laboratório</p>
       <canvas id="chartPorPessoaProd"></canvas>
-    </div>
-
-    <div class="panel">
-      <h2>Cápsula — por complexidade</h2>
-      <p class="desc">Fórmulas pequenas (P), médias (M) e grandes (G)</p>
-      <canvas id="chartComplexidadeCapsula"></canvas>
-    </div>
-
-    <div class="panel">
-      <h2>Dermato — por tipo de fórmula</h2>
-      <p class="desc">Biscoito, pastilha, orotab, filme oral e outros</p>
-      <canvas id="chartComplexidadeDermato"></canvas>
+      <canvas id="chartComplexidadeCapsula" style="display:none"></canvas>
+      <canvas id="chartComplexidadeDermato" style="display:none"></canvas>
     </div>
   </div>
 
@@ -198,17 +209,27 @@
       <div class="quick-form">
         <div class="field"><label>Colaborador</label><input class="colaborador" id="mColaborador" placeholder="Seu nome"></div>
         <div class="field"><label>Área</label>
-          <select class="area" id="mArea" onchange="atualizarComplexidadeOptions('m')">
+          <select class="area" id="mArea" onchange="atualizarAreaManip()">
             <option value="capsula">💊 Cápsula</option>
             <option value="dermato">🧴 Dermato</option>
           </select>
         </div>
-        <div class="field"><label>Complexidade</label><select class="complexidade" id="mComplexidade"></select></div>
+        <div class="field" id="mComplexidadeCapsulaWrap"><label>Complexidade</label><select class="complexidade" id="mComplexidade"></select></div>
+        <div class="field" id="mComplexaCheckWrap" style="display:none">
+          <label>&nbsp;</label>
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px;height:38px;">
+            <input type="checkbox" id="mComplexaCheck" onchange="toggleComplexaDermato()" style="width:auto"> Fórmula complexa?
+          </label>
+        </div>
+        <div class="field" id="mComplexaTipoWrap" style="display:none"><label>Qual tipo</label><select class="complexidade" id="mComplexidadeDermato">
+          <option value="biscoito">Biscoito</option><option value="pastilha">Pastilha</option><option value="orotab">Orotab</option><option value="film_oral">Filme oral</option><option value="outro">Outro</option>
+        </select></div>
         <div class="field" id="mOutroWrap" style="display:none"><label>Qual?</label><input class="complexidade-outro" id="mComplexidadeOutro" placeholder="Descreva"></div>
         <div class="field"><label>Total de fórmulas</label><input class="qtd" id="mQtd" type="number" min="0"></div>
         <div class="field"><label>Data</label><input id="mData" type="date"></div>
         <button class="btn" id="mSalvar">Salvar dia</button>
       </div>
+      <div class="field" style="margin-bottom:16px"><label style="font-size:11px;color:var(--gray);font-weight:600;">Observação (opcional)</label><input id="mObs" style="width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:7px;" placeholder="Alguma observação sobre esse dia?"></div>
       <p class="hint">Se já existir um registro pra esse colaborador, nessa data, área e complexidade, o valor é atualizado (não duplica).</p>
 
       <div class="kpi-row" id="mKpiRow"></div>
@@ -221,7 +242,7 @@
       </div>
 
       <table>
-        <thead><tr><th>Data</th><th>Colaborador</th><th>Área</th><th>Complexidade</th><th>Total</th><th></th></tr></thead>
+        <thead><tr><th>Data</th><th>Colaborador</th><th>Área</th><th>Complexidade</th><th>Total</th><th>Obs.</th><th></th></tr></thead>
         <tbody id="manipTbody"></tbody>
       </table>
       <div class="pagination" id="manipPaginacao"></div>
@@ -232,22 +253,22 @@
   <div id="viewPesagem" style="display:none">
     <div class="panel">
       <h2>Registrar total do dia — Pesagem</h2>
-      <p class="desc">No final do dia, cada colaborador informa quantas pesagens fez, por área e complexidade</p>
+      <p class="desc">No final do dia, cada colaborador informa quantas pesagens fez</p>
       <div class="quick-form">
         <div class="field"><label>Colaborador</label><input class="colaborador" id="pColaborador" placeholder="Seu nome"></div>
         <div class="field"><label>Área</label>
-          <select class="area" id="pArea" onchange="atualizarComplexidadeOptions('p')">
+          <select class="area" id="pArea" onchange="atualizarAreaPesagem()">
             <option value="capsula">💊 Cápsula</option>
             <option value="dermato">🧴 Dermato</option>
           </select>
         </div>
-        <div class="field"><label>Complexidade</label><select class="complexidade" id="pComplexidade"></select></div>
-        <div class="field" id="pOutroWrap" style="display:none"><label>Qual?</label><input class="complexidade-outro" id="pComplexidadeOutro" placeholder="Descreva"></div>
+        <div class="field" id="pComplexidadeCapsulaWrap"><label>Complexidade</label><select class="complexidade" id="pComplexidade"></select></div>
         <div class="field"><label>Total de fórmulas</label><input class="qtd" id="pQtd" type="number" min="0"></div>
         <div class="field"><label>Data</label><input id="pData" type="date"></div>
         <button class="btn" id="pSalvar">Salvar dia</button>
       </div>
-      <p class="hint">Se já existir um registro pra esse colaborador, nessa data, área e complexidade, o valor é atualizado (não duplica).</p>
+      <div class="field" style="margin-bottom:16px"><label style="font-size:11px;color:var(--gray);font-weight:600;">Observação (opcional)</label><input id="pObs" style="width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:7px;" placeholder="Alguma observação sobre esse dia?"></div>
+      <p class="hint">Pesagem de Dermato não precisa de complexidade — é só o total mesmo. Se já existir um registro pra esse colaborador nessa data e área, o valor é atualizado (não duplica).</p>
 
       <div class="kpi-row" id="pKpiRow"></div>
 
@@ -259,7 +280,7 @@
       </div>
 
       <table>
-        <thead><tr><th>Data</th><th>Colaborador</th><th>Área</th><th>Complexidade</th><th>Total</th><th></th></tr></thead>
+        <thead><tr><th>Data</th><th>Colaborador</th><th>Área</th><th>Complexidade</th><th>Total</th><th>Obs.</th><th></th></tr></thead>
         <tbody id="pesagemTbody"></tbody>
       </table>
       <div class="pagination" id="pesagemPaginacao"></div>
@@ -285,16 +306,42 @@ const COMPLEXIDADE_OPCOES = {
 };
 const COMPLEXIDADE_LABEL = {P:'Pequena (P)', M:'Média (M)', G:'Grande (G)', biscoito:'Biscoito', pastilha:'Pastilha', orotab:'Orotab', film_oral:'Filme oral', outro:'Outro'};
 
-function atualizarComplexidadeOptions(prefixo){
-  const area = document.getElementById(prefixo+'Area').value;
-  const sel = document.getElementById(prefixo+'Complexidade');
-  sel.innerHTML = COMPLEXIDADE_OPCOES[area].map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
-  document.getElementById(prefixo+'OutroWrap').style.display = 'none';
-  sel.onchange = () => {
-    document.getElementById(prefixo+'OutroWrap').style.display = sel.value==='outro' ? 'flex' : 'none';
-  };
+function atualizarAreaManip(){
+  const area = document.getElementById('mArea').value;
+  document.getElementById('mComplexaCheck').checked = false;
+  document.getElementById('mComplexaTipoWrap').style.display = 'none';
+  document.getElementById('mOutroWrap').style.display = 'none';
+  if(area === 'capsula'){
+    document.getElementById('mComplexidadeCapsulaWrap').style.display = 'flex';
+    document.getElementById('mComplexaCheckWrap').style.display = 'none';
+    document.getElementById('mComplexidade').innerHTML = COMPLEXIDADE_OPCOES.capsula.map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
+  } else {
+    document.getElementById('mComplexidadeCapsulaWrap').style.display = 'none';
+    document.getElementById('mComplexaCheckWrap').style.display = 'flex';
+  }
 }
-window.atualizarComplexidadeOptions = atualizarComplexidadeOptions;
+window.atualizarAreaManip = atualizarAreaManip;
+
+function toggleComplexaDermato(){
+  const marcado = document.getElementById('mComplexaCheck').checked;
+  document.getElementById('mComplexaTipoWrap').style.display = marcado ? 'flex' : 'none';
+  document.getElementById('mOutroWrap').style.display = (marcado && document.getElementById('mComplexidadeDermato').value==='outro') ? 'flex' : 'none';
+}
+window.toggleComplexaDermato = toggleComplexaDermato;
+document.getElementById('mComplexidadeDermato')?.addEventListener('change', function(){
+  document.getElementById('mOutroWrap').style.display = this.value==='outro' ? 'flex' : 'none';
+});
+
+function atualizarAreaPesagem(){
+  const area = document.getElementById('pArea').value;
+  if(area === 'capsula'){
+    document.getElementById('pComplexidadeCapsulaWrap').style.display = 'flex';
+    document.getElementById('pComplexidade').innerHTML = COMPLEXIDADE_OPCOES.capsula.map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
+  } else {
+    document.getElementById('pComplexidadeCapsulaWrap').style.display = 'none';
+  }
+}
+window.atualizarAreaPesagem = atualizarAreaPesagem;
 
 function switchTab(tab){
   document.getElementById('viewDash').style.display = tab==='dash' ? 'block':'none';
@@ -316,14 +363,21 @@ document.getElementById('mSalvar').addEventListener('click', async ()=>{
   const quantidade = document.getElementById('mQtd').value;
   const data = document.getElementById('mData').value;
   const area = document.getElementById('mArea').value;
-  const complexidade = document.getElementById('mComplexidade').value;
-  const complexidade_outro = complexidade==='outro' ? document.getElementById('mComplexidadeOutro').value.trim() : null;
+  const observacao = document.getElementById('mObs').value.trim() || null;
+  let complexidade = 'padrao', complexidade_outro = null;
+  if(area === 'capsula'){
+    complexidade = document.getElementById('mComplexidade').value;
+  } else if(document.getElementById('mComplexaCheck').checked){
+    complexidade = document.getElementById('mComplexidadeDermato').value;
+    complexidade_outro = complexidade==='outro' ? document.getElementById('mComplexidadeOutro').value.trim() : null;
+  }
   if(!colaborador || quantidade === '' || !data){ alert('Preencha colaborador, total de fórmulas e data.'); return; }
   if(!supa){ alert('Supabase não configurado.'); return; }
   const { error } = await supa.from('registro_manipulacao_diario')
-    .upsert({colaborador, data, quantidade, area, complexidade, complexidade_outro, atualizado_em: new Date().toISOString()}, {onConflict:'colaborador,data,area,complexidade'});
+    .upsert({colaborador, data, quantidade, area, complexidade, complexidade_outro, observacao, atualizado_em: new Date().toISOString()}, {onConflict:'colaborador,data,area,complexidade'});
   if(error){ alert('Erro: '+error.message); return; }
   document.getElementById('mQtd').value='';
+  document.getElementById('mObs').value='';
   loadManip();
 });
 
@@ -376,10 +430,11 @@ function renderManip(){
       <td>${fmtData(r.data)}</td>
       <td>${r.colaborador}</td>
       <td><span class="area-tag ${r.area}">${r.area==='dermato'?'Dermato':'Cápsula'}</span></td>
-      <td>${r.complexidade==='outro' ? (r.complexidade_outro||'Outro') : (COMPLEXIDADE_LABEL[r.complexidade]||'—')}</td>
+      <td>${r.complexidade==='padrao' ? '—' : (r.complexidade==='outro' ? (r.complexidade_outro||'Outro') : (COMPLEXIDADE_LABEL[r.complexidade]||'—'))}</td>
       <td class="qtd-badge">${r.quantidade}</td>
+      <td style="font-size:11.5px;color:var(--gray);max-width:160px;">${r.observacao||''}</td>
       <td><button class="del-btn" onclick="deleteManip('${r.id}')">Remover</button></td>
-    </tr>`).join('') : '<tr><td colspan="6" class="empty-state">Nenhum registro ainda.</td></tr>';
+    </tr>`).join('') : '<tr><td colspan="7" class="empty-state">Nenhum registro ainda.</td></tr>';
 
   renderPaginacao('manipPaginacao', paginaManip, totalPaginas, (p)=>{ paginaManip=p; renderManip(); });
 }
@@ -408,14 +463,15 @@ document.getElementById('pSalvar').addEventListener('click', async ()=>{
   const quantidade = document.getElementById('pQtd').value;
   const data = document.getElementById('pData').value;
   const area = document.getElementById('pArea').value;
-  const complexidade = document.getElementById('pComplexidade').value;
-  const complexidade_outro = complexidade==='outro' ? document.getElementById('pComplexidadeOutro').value.trim() : null;
+  const observacao = document.getElementById('pObs').value.trim() || null;
+  const complexidade = area === 'capsula' ? document.getElementById('pComplexidade').value : 'padrao';
   if(!colaborador || quantidade === '' || !data){ alert('Preencha colaborador, total de fórmulas e data.'); return; }
   if(!supa){ alert('Supabase não configurado.'); return; }
   const { error } = await supa.from('registro_pesagem_diario')
-    .upsert({colaborador, data, quantidade, area, complexidade, complexidade_outro, atualizado_em: new Date().toISOString()}, {onConflict:'colaborador,data,area,complexidade'});
+    .upsert({colaborador, data, quantidade, area, complexidade, complexidade_outro: null, observacao, atualizado_em: new Date().toISOString()}, {onConflict:'colaborador,data,area,complexidade'});
   if(error){ alert('Erro: '+error.message); return; }
   document.getElementById('pQtd').value='';
+  document.getElementById('pObs').value='';
   loadPesagem();
 });
 
@@ -467,10 +523,11 @@ function renderPesagem(){
       <td>${fmtData(r.data)}</td>
       <td>${r.colaborador}</td>
       <td><span class="area-tag ${r.area}">${r.area==='dermato'?'Dermato':'Cápsula'}</span></td>
-      <td>${r.complexidade==='outro' ? (r.complexidade_outro||'Outro') : (COMPLEXIDADE_LABEL[r.complexidade]||'—')}</td>
+      <td>${r.complexidade==='padrao' ? '—' : (COMPLEXIDADE_LABEL[r.complexidade]||'—')}</td>
       <td class="qtd-badge">${r.quantidade}</td>
+      <td style="font-size:11.5px;color:var(--gray);max-width:160px;">${r.observacao||''}</td>
       <td><button class="del-btn" onclick="deletePesagem('${r.id}')">Remover</button></td>
-    </tr>`).join('') : '<tr><td colspan="6" class="empty-state">Nenhum registro ainda.</td></tr>';
+    </tr>`).join('') : '<tr><td colspan="7" class="empty-state">Nenhum registro ainda.</td></tr>';
 
   renderPaginacao('pesagemPaginacao', paginaPesagem, totalPaginas, (p)=>{ paginaPesagem=p; renderPesagem(); });
 }
@@ -507,6 +564,26 @@ function limitesPeriodoProd(){
   const ano = ref.getFullYear(), mes = ref.getMonth();
   return { inicio: localDateStrProd(new Date(ano,mes,1)), fim: localDateStrProd(new Date(ano,mes+1,0)) };
 }
+
+let graficoProdAtivo = 'pessoa';
+const GRAFICO_PROD_INFO = {
+  pessoa: { titulo: 'Por pessoa', desc: 'Total produzido (manipulação + pesagem), separado por laboratório' },
+  capsula: { titulo: 'Cápsula — por complexidade', desc: 'Fórmulas pequenas (P), médias (M) e grandes (G)' },
+  dermato: { titulo: 'Dermato — por tipo de fórmula complexa', desc: 'Só conta o que foi marcado como fórmula complexa — a maioria não é' },
+};
+
+function trocarGraficoProd(qual){
+  graficoProdAtivo = qual;
+  document.getElementById('miniChartPessoa').classList.toggle('active', qual==='pessoa');
+  document.getElementById('miniChartCapsula').classList.toggle('active', qual==='capsula');
+  document.getElementById('miniChartDermato').classList.toggle('active', qual==='dermato');
+  document.getElementById('chartPorPessoaProd').style.display = qual==='pessoa' ? 'block' : 'none';
+  document.getElementById('chartComplexidadeCapsula').style.display = qual==='capsula' ? 'block' : 'none';
+  document.getElementById('chartComplexidadeDermato').style.display = qual==='dermato' ? 'block' : 'none';
+  document.getElementById('graficoProdTitulo').textContent = GRAFICO_PROD_INFO[qual].titulo;
+  document.getElementById('graficoProdDesc').textContent = GRAFICO_PROD_INFO[qual].desc;
+}
+window.trocarGraficoProd = trocarGraficoProd;
 
 async function carregarDashboardProd(){
   if(!supa) return;
@@ -568,8 +645,8 @@ async function carregarDashboardProd(){
 
 async function init(){
   await requireRole(['chefia','laboratorio']);
-  atualizarComplexidadeOptions('m');
-  atualizarComplexidadeOptions('p');
+  atualizarAreaManip();
+  atualizarAreaPesagem();
   document.getElementById('mData').value = localDateStrProd(new Date());
   document.getElementById('pData').value = localDateStrProd(new Date());
   document.getElementById('dataRefProd').value = dataRefProd;
