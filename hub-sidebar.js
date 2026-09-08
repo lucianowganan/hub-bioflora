@@ -172,7 +172,49 @@
           atualizarBadgeChat(t);
         }, 30000);
       }
+
+      // Aviso de reaproveitamento pendente, 2x ao dia (10h e 15h),
+      // só pra conferência — aparece em qualquer página do Hub
+      if(papel === 'conferencia'){
+        verificarAvisoReaproveitamento(supa);
+        setInterval(() => verificarAvisoReaproveitamento(supa), 60000);
+      }
     }catch(e){ /* se der erro, deixa tudo visível — melhor mostrar de mais do que travar a navegação */ }
+  }
+
+  async function verificarAvisoReaproveitamento(supa){
+    const agora = new Date();
+    const hora = agora.getHours();
+    const janela = (hora === 10) ? '10h' : (hora === 15) ? '15h' : null;
+    if(!janela) return;
+
+    const chave = 'reaproveitamento_aviso_' + agora.toISOString().slice(0,10) + '_' + janela;
+    if(localStorage.getItem(chave)) return;
+
+    try{
+      const { data, error } = await supa.from('manipulados_nao_retirados').select('id').eq('status','disponivel').limit(1);
+      if(error || !data || !data.length) return;
+      localStorage.setItem(chave, '1');
+      mostrarPopupReaproveitamento();
+    }catch(e){ /* silencioso — não trava a página por causa de um aviso */ }
+  }
+
+  function mostrarPopupReaproveitamento(){
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:28px;max-width:380px;width:100%;font-family:'Maven Pro',sans-serif;text-align:center;">
+        <div style="font-size:36px;margin-bottom:8px;">♻️</div>
+        <h3 style="font-family:'Space Grotesk',sans-serif;font-size:17px;margin:0 0 8px;color:#8B1A3A;">Tem manipulado pra reaproveitar</h3>
+        <p style="font-size:13.5px;color:#6E6266;margin:0 0 20px;">Existe pelo menos um item disponível pra reaproveitamento parado na fila. Dá uma olhada quando puder.</p>
+        <div style="display:flex;gap:10px;justify-content:center;">
+          <button id="hsAvisoFechar" style="font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 18px;border-radius:8px;border:1px solid #E7DFE0;background:#fff;cursor:pointer;">Depois</button>
+          <a href="reaproveitamento.html" style="font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 18px;border-radius:8px;border:none;background:#8B1A3A;color:#fff;cursor:pointer;text-decoration:none;display:inline-block;">Ver agora</a>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById('hsAvisoFechar').addEventListener('click', () => overlay.remove());
   }
 
   function iniciar(){

@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Controle de Produção — Hub Bioflora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="auth-guard.js"></script>
 <style>
   :root{
@@ -15,36 +16,45 @@
     --good:#3F7A57; --good-tint:#E8F3EC;
     --info:#3E6B93; --info-tint:#E9F0F6;
     --warn:#C9922B; --warn-tint:#FBF1E0;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
-  .wrap{max-width:1000px;margin:0 auto;padding:36px 28px 80px;}
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 28px 80px;}
   header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
   .brand{display:flex;align-items:center;gap:12px;}
   .brand-mark{height:34px;display:flex;align-items:center;}
   .brand-mark svg{height:100%;width:auto;display:block;}
-  .brand-text h1{font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text h1{font-family:var(--headfont);font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
   .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
   .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
   .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn.small{padding:6px 12px;font-size:11.5px;}
 
   .config-banner{background:var(--warn-tint);border:1px solid #EBD8A6;border-radius:10px;padding:14px 18px;font-size:13px;color:#7A5C15;margin-bottom:22px;display:none;}
   .config-banner.show{display:block;}
 
   .tabs{display:flex;gap:8px;margin-bottom:20px;}
-  .tab{font-family:'Maven Pro',sans-serif;font-size:13.5px;font-weight:600;padding:10px 20px;border-radius:9px 9px 0 0;border:1px solid var(--line);border-bottom:none;background:#fff;cursor:pointer;color:var(--gray);}
+  .tab{font-family:var(--headfont);font-size:13.5px;font-weight:600;padding:10px 20px;border-radius:9px 9px 0 0;border:1px solid var(--line);border-bottom:none;background:#fff;cursor:pointer;color:var(--gray);}
   .tab.active{color:var(--burgundy);background:var(--burgundy-tint);}
 
+  .subtabs{display:flex;gap:8px;margin-bottom:18px;}
+  .subtab{font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:600;padding:7px 16px;border-radius:20px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--gray);}
+  .subtab.active{background:var(--burgundy);color:#fff;border-color:var(--burgundy);}
+
   .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
-  .panel h2{font-family:'Fraunces',serif;font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel h2{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 4px;}
   .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
 
   .quick-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px;padding-bottom:18px;border-bottom:1px dashed var(--line);}
   .quick-form .field{display:flex;flex-direction:column;gap:4px;}
   .quick-form label{font-size:11px;color:var(--gray);font-weight:600;}
-  .quick-form input{font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:7px;}
-  .quick-form input.colaborador{width:200px;}
-  .quick-form input.qtd{width:100px;}
+  .quick-form input, .quick-form select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:7px;}
+  .quick-form input.colaborador{width:180px;}
+  .quick-form input.qtd{width:90px;}
+  .quick-form select.area{width:130px;}
+  .quick-form select.complexidade{width:170px;}
+  .quick-form input.complexidade-outro{width:160px;}
 
   .filter-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
   .filter-row select, .filter-row input{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:7px;}
@@ -53,14 +63,34 @@
   thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:600;padding:0 10px 10px;border-bottom:1px solid var(--ink);}
   tbody td{padding:9px 10px;border-bottom:1px solid var(--line);}
   tbody tr:hover{background:var(--burgundy-tint);}
-  .qtd-badge{font-family:'Fraunces',serif;font-weight:600;font-size:15px;}
+  .qtd-badge{font-family:var(--headfont);font-weight:600;font-size:15px;}
   .del-btn{font-family:'Maven Pro',sans-serif;font-size:10.5px;color:var(--gray);border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 9px;cursor:pointer;}
   .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
+  .area-tag{display:inline-block;font-size:9.5px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:20px;}
+  .area-tag.capsula{background:var(--info-tint);color:var(--info);}
+  .area-tag.dermato{background:var(--good-tint);color:var(--good);}
 
   .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
   .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
   .kpi .label{font-size:10.5px;text-transform:uppercase;color:var(--gray);font-weight:600;}
-  .kpi .value{font-family:'Fraunces',serif;font-size:22px;margin-top:4px;font-weight:600;}
+  .kpi .value{font-family:var(--headfont);font-size:22px;margin-top:4px;font-weight:600;}
+
+  .lab-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  .lab-card{border-radius:14px;padding:20px;color:#fff;}
+  .lab-card.capsula{background:linear-gradient(160deg,#3E6B93,#2A4D6D);}
+  .lab-card.dermato{background:linear-gradient(160deg,#3F7A57,#2A5A3E);}
+  .lab-card h3{font-family:var(--headfont);font-size:15px;margin:0 0 6px;}
+  .lab-card .big{font-family:var(--headfont);font-size:32px;font-weight:600;}
+  .lab-card .sub{font-size:12px;opacity:.85;}
+
+  .period-row{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;}
+  .period-btn{font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:600;padding:8px 16px;border-radius:20px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--gray);}
+  .period-btn.active{background:var(--burgundy);color:#fff;border-color:var(--burgundy);}
+
+  .pagination{display:flex;justify-content:center;align-items:center;gap:14px;margin-top:14px;}
+  .pagination button{font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--ink);}
+  .pagination button:disabled{opacity:.4;cursor:default;}
+  .pagination span{font-size:12px;color:var(--gray);}
 
   .hint{font-size:11.5px;color:var(--gray);margin-top:4px;}
 </style>
@@ -73,33 +103,11 @@
       <div class="brand-mark"><svg id="Camada_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 31.3 8.7">
   <defs>
     <style>
-      .st0 {
-        fill: none;
-        stroke: #8B1A3A;
-        stroke-miterlimit: 10;
-        stroke-width: 0px;
-      }
-
-      .st1 {
-        display: none;
-        opacity: .5;
-      }
-
-      .st2 {
-        font-family: Helvetica, Helvetica;
-        font-size: 1.7px;
-        letter-spacing: .3em;
-      }
-
-      .st2, .st3, .st4 {
-        fill: #8B1A3A;
-      }
-
-      .st4 {
-        font-family: ArialMT, Arial;
-        font-size: .5px;
-        letter-spacing: .3em;
-      }
+      .st0 { fill: none; stroke: #8B1A3A; stroke-miterlimit: 10; stroke-width: 0px; }
+      .st1 { display: none; opacity: .5; }
+      .st2 { font-family: Helvetica, Helvetica; font-size: 1.7px; letter-spacing: .3em; }
+      .st2, .st3, .st4 { fill: #8B1A3A; }
+      .st4 { font-family: ArialMT, Arial; font-size: .5px; letter-spacing: .3em; }
     </style>
   </defs>
   <image class="st1" width="1000" height="250" transform="translate(-1 -.4) scale(0)" xlink:href="Bioflora/logo-bioflora-vinho-e-cinza.png"/>
@@ -136,32 +144,87 @@
   </div>
 
   <div class="tabs">
-    <div class="tab active" id="tabManip" onclick="switchTab('manip')">Manipulação</div>
+    <div class="tab active" id="tabDash" onclick="switchTab('dash')">📊 Dashboard</div>
+    <div class="tab" id="tabManip" onclick="switchTab('manip')">Manipulação</div>
     <div class="tab" id="tabPesagem" onclick="switchTab('pesagem')">Pesagem</div>
   </div>
 
+  <!-- DASHBOARD -->
+  <div id="viewDash">
+    <div class="period-row">
+      <button class="period-btn active" id="btnPDiaProd" onclick="mudarPeriodoProd('dia')">Diário</button>
+      <button class="period-btn" id="btnPSemanaProd" onclick="mudarPeriodoProd('semana')">Semanal</button>
+      <button class="period-btn" id="btnPMesProd" onclick="mudarPeriodoProd('mes')">Mensal</button>
+      <input type="date" id="dataRefProd" onchange="dataRefProd=this.value; carregarDashboardProd();">
+    </div>
+
+    <div class="lab-cards">
+      <div class="lab-card capsula">
+        <h3>💊 Cápsula</h3>
+        <div class="big" id="totalCapsulaProd">0</div>
+        <div class="sub">fórmulas no período</div>
+      </div>
+      <div class="lab-card dermato">
+        <h3>🧴 Dermato</h3>
+        <div class="big" id="totalDermatoProd">0</div>
+        <div class="sub">fórmulas no período</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Por pessoa</h2>
+      <p class="desc">Total produzido (manipulação + pesagem), separado por laboratório</p>
+      <canvas id="chartPorPessoaProd"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>Cápsula — por complexidade</h2>
+      <p class="desc">Fórmulas pequenas (P), médias (M) e grandes (G)</p>
+      <canvas id="chartComplexidadeCapsula"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>Dermato — por tipo de fórmula</h2>
+      <p class="desc">Biscoito, pastilha, orotab, filme oral e outros</p>
+      <canvas id="chartComplexidadeDermato"></canvas>
+    </div>
+  </div>
+
   <!-- MANIPULAÇÃO -->
-  <div id="viewManip">
+  <div id="viewManip" style="display:none">
     <div class="panel">
       <h2>Registrar total do dia — Manipulação</h2>
-      <p class="desc">No final do dia, cada colaborador informa quantas fórmulas manipulou ao todo</p>
+      <p class="desc">No final do dia, cada colaborador informa quantas fórmulas manipulou, por área e complexidade</p>
       <div class="quick-form">
-        <div class="field"><label>Colaborador</label><input class="colaborador" id="mColaborador" placeholder="Seu nome" /></div>
-        <div class="field"><label>Total de fórmulas</label><input class="qtd" id="mQtd" type="number" min="0" /></div>
-        <div class="field"><label>Data</label><input id="mData" type="date" /></div>
+        <div class="field"><label>Colaborador</label><input class="colaborador" id="mColaborador" placeholder="Seu nome"></div>
+        <div class="field"><label>Área</label>
+          <select class="area" id="mArea" onchange="atualizarComplexidadeOptions('m')">
+            <option value="capsula">💊 Cápsula</option>
+            <option value="dermato">🧴 Dermato</option>
+          </select>
+        </div>
+        <div class="field"><label>Complexidade</label><select class="complexidade" id="mComplexidade"></select></div>
+        <div class="field" id="mOutroWrap" style="display:none"><label>Qual?</label><input class="complexidade-outro" id="mComplexidadeOutro" placeholder="Descreva"></div>
+        <div class="field"><label>Total de fórmulas</label><input class="qtd" id="mQtd" type="number" min="0"></div>
+        <div class="field"><label>Data</label><input id="mData" type="date"></div>
         <button class="btn" id="mSalvar">Salvar dia</button>
       </div>
-      <p class="hint">Se já existir um registro para esse colaborador nessa data, o valor é atualizado (não duplica).</p>
-      <div class="kpi-row" id="mKpis"></div>
+      <p class="hint">Se já existir um registro pra esse colaborador, nessa data, área e complexidade, o valor é atualizado (não duplica).</p>
+
+      <div class="kpi-row" id="mKpiRow"></div>
+
       <div class="filter-row">
         <select id="mFiltroColab"><option value="">Todos os colaboradores</option></select>
-        <input id="mFiltroData" type="date" />
-        <button class="btn secondary" id="mLimparFiltro" style="padding:6px 14px;font-size:12px">Limpar filtro</button>
+        <select id="mFiltroArea"><option value="">Todas as áreas</option><option value="capsula">💊 Cápsula</option><option value="dermato">🧴 Dermato</option></select>
+        <input type="date" id="mFiltroData">
+        <button class="btn secondary small" onclick="mFiltroColab.value='';mFiltroArea.value='';mFiltroData.value='';paginaManip=1;renderManip();">Limpar filtro</button>
       </div>
+
       <table>
-        <thead><tr><th>Data</th><th>Colaborador</th><th>Total de fórmulas</th><th></th></tr></thead>
-        <tbody id="mTbody"></tbody>
+        <thead><tr><th>Data</th><th>Colaborador</th><th>Área</th><th>Complexidade</th><th>Total</th><th></th></tr></thead>
+        <tbody id="manipTbody"></tbody>
       </table>
+      <div class="pagination" id="manipPaginacao"></div>
     </div>
   </div>
 
@@ -169,24 +232,37 @@
   <div id="viewPesagem" style="display:none">
     <div class="panel">
       <h2>Registrar total do dia — Pesagem</h2>
-      <p class="desc">No final do dia, cada colaborador informa quantas pesagens fez ao todo</p>
+      <p class="desc">No final do dia, cada colaborador informa quantas pesagens fez, por área e complexidade</p>
       <div class="quick-form">
-        <div class="field"><label>Colaborador</label><input class="colaborador" id="pColaborador" placeholder="Seu nome" /></div>
-        <div class="field"><label>Total de pesagens</label><input class="qtd" id="pQtd" type="number" min="0" /></div>
-        <div class="field"><label>Data</label><input id="pData" type="date" /></div>
+        <div class="field"><label>Colaborador</label><input class="colaborador" id="pColaborador" placeholder="Seu nome"></div>
+        <div class="field"><label>Área</label>
+          <select class="area" id="pArea" onchange="atualizarComplexidadeOptions('p')">
+            <option value="capsula">💊 Cápsula</option>
+            <option value="dermato">🧴 Dermato</option>
+          </select>
+        </div>
+        <div class="field"><label>Complexidade</label><select class="complexidade" id="pComplexidade"></select></div>
+        <div class="field" id="pOutroWrap" style="display:none"><label>Qual?</label><input class="complexidade-outro" id="pComplexidadeOutro" placeholder="Descreva"></div>
+        <div class="field"><label>Total de fórmulas</label><input class="qtd" id="pQtd" type="number" min="0"></div>
+        <div class="field"><label>Data</label><input id="pData" type="date"></div>
         <button class="btn" id="pSalvar">Salvar dia</button>
       </div>
-      <p class="hint">Se já existir um registro para esse colaborador nessa data, o valor é atualizado (não duplica).</p>
-      <div class="kpi-row" id="pKpis"></div>
+      <p class="hint">Se já existir um registro pra esse colaborador, nessa data, área e complexidade, o valor é atualizado (não duplica).</p>
+
+      <div class="kpi-row" id="pKpiRow"></div>
+
       <div class="filter-row">
         <select id="pFiltroColab"><option value="">Todos os colaboradores</option></select>
-        <input id="pFiltroData" type="date" />
-        <button class="btn secondary" id="pLimparFiltro" style="padding:6px 14px;font-size:12px">Limpar filtro</button>
+        <select id="pFiltroArea"><option value="">Todas as áreas</option><option value="capsula">💊 Cápsula</option><option value="dermato">🧴 Dermato</option></select>
+        <input type="date" id="pFiltroData">
+        <button class="btn secondary small" onclick="pFiltroColab.value='';pFiltroArea.value='';pFiltroData.value='';paginaPesagem=1;renderPesagem();">Limpar filtro</button>
       </div>
+
       <table>
-        <thead><tr><th>Data</th><th>Colaborador</th><th>Total de pesagens</th><th></th></tr></thead>
-        <tbody id="pTbody"></tbody>
+        <thead><tr><th>Data</th><th>Colaborador</th><th>Área</th><th>Complexidade</th><th>Total</th><th></th></tr></thead>
+        <tbody id="pesagemTbody"></tbody>
       </table>
+      <div class="pagination" id="pesagemPaginacao"></div>
     </div>
   </div>
 
@@ -202,31 +278,50 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY) {
 } else {
   document.getElementById('configBanner').classList.add('show');
 }
-requireRole(['chefia','laboratorio']).catch(()=>{});
 
-const todayStr = new Date().toISOString().slice(0,10);
-document.getElementById('mData').value = todayStr;
-document.getElementById('pData').value = todayStr;
+const COMPLEXIDADE_OPCOES = {
+  capsula: [ {v:'P', l:'Pequena (P)'}, {v:'M', l:'Média (M)'}, {v:'G', l:'Grande (G)'} ],
+  dermato: [ {v:'biscoito', l:'Biscoito'}, {v:'pastilha', l:'Pastilha'}, {v:'orotab', l:'Orotab'}, {v:'film_oral', l:'Filme oral'}, {v:'outro', l:'Outro'} ],
+};
+const COMPLEXIDADE_LABEL = {P:'Pequena (P)', M:'Média (M)', G:'Grande (G)', biscoito:'Biscoito', pastilha:'Pastilha', orotab:'Orotab', film_oral:'Filme oral', outro:'Outro'};
+
+function atualizarComplexidadeOptions(prefixo){
+  const area = document.getElementById(prefixo+'Area').value;
+  const sel = document.getElementById(prefixo+'Complexidade');
+  sel.innerHTML = COMPLEXIDADE_OPCOES[area].map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
+  document.getElementById(prefixo+'OutroWrap').style.display = 'none';
+  sel.onchange = () => {
+    document.getElementById(prefixo+'OutroWrap').style.display = sel.value==='outro' ? 'flex' : 'none';
+  };
+}
+window.atualizarComplexidadeOptions = atualizarComplexidadeOptions;
 
 function switchTab(tab){
+  document.getElementById('viewDash').style.display = tab==='dash' ? 'block':'none';
   document.getElementById('viewManip').style.display = tab==='manip' ? 'block':'none';
   document.getElementById('viewPesagem').style.display = tab==='pesagem' ? 'block':'none';
+  document.getElementById('tabDash').classList.toggle('active', tab==='dash');
   document.getElementById('tabManip').classList.toggle('active', tab==='manip');
   document.getElementById('tabPesagem').classList.toggle('active', tab==='pesagem');
+  if(tab==='dash') carregarDashboardProd();
 }
 window.switchTab = switchTab;
 
 function fmtData(d){ return d ? new Date(d+'T00:00:00').toLocaleDateString('pt-BR') : '—'; }
+function localDateStrProd(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
 
 // ---------- MANIPULAÇÃO ----------
 document.getElementById('mSalvar').addEventListener('click', async ()=>{
   const colaborador = document.getElementById('mColaborador').value.trim();
   const quantidade = document.getElementById('mQtd').value;
   const data = document.getElementById('mData').value;
-  if(!colaborador || quantidade === ''){ alert('Preencha colaborador e total de fórmulas.'); return; }
+  const area = document.getElementById('mArea').value;
+  const complexidade = document.getElementById('mComplexidade').value;
+  const complexidade_outro = complexidade==='outro' ? document.getElementById('mComplexidadeOutro').value.trim() : null;
+  if(!colaborador || quantidade === '' || !data){ alert('Preencha colaborador, total de fórmulas e data.'); return; }
   if(!supa){ alert('Supabase não configurado.'); return; }
   const { error } = await supa.from('registro_manipulacao_diario')
-    .upsert({colaborador, data, quantidade, atualizado_em: new Date().toISOString()}, {onConflict:'colaborador,data'});
+    .upsert({colaborador, data, quantidade, area, complexidade, complexidade_outro, atualizado_em: new Date().toISOString()}, {onConflict:'colaborador,data,area,complexidade'});
   if(error){ alert('Erro: '+error.message); return; }
   document.getElementById('mQtd').value='';
   loadManip();
@@ -240,51 +335,85 @@ async function deleteManip(id){
 window.deleteManip = deleteManip;
 
 let allManip = [];
+let paginaManip = 1;
+const PAGINA_TAMANHO = 10;
+
 async function loadManip(){
   if(!supa) return;
   const { data, error } = await supa.from('registro_manipulacao_diario').select('*').order('data',{ascending:false}).order('colaborador',{ascending:true});
   if(error){ console.error(error); return; }
-  allManip = data;
-  const colabs = [...new Set(data.map(d=>d.colaborador))].sort();
-  const sel = document.getElementById('mFiltroColab');
-  sel.innerHTML = '<option value="">Todos os colaboradores</option>' + colabs.map(c=>`<option value="${c}">${c}</option>`).join('');
+  allManip = data || [];
+
+  const colaboradores = [...new Set(allManip.map(r=>r.colaborador))].sort();
+  document.getElementById('mFiltroColab').innerHTML = '<option value="">Todos os colaboradores</option>' + colaboradores.map(c=>`<option value="${c}">${c}</option>`).join('');
+
   renderManip();
 }
-function renderManip(){
-  const filtroColab = document.getElementById('mFiltroColab').value;
-  const filtroData = document.getElementById('mFiltroData').value;
-  let rows = allManip;
-  if(filtroColab) rows = rows.filter(r=>r.colaborador===filtroColab);
-  if(filtroData) rows = rows.filter(r=>r.data===filtroData);
 
-  const totalFiltro = rows.reduce((a,r)=>a+r.quantidade,0);
-  document.getElementById('mKpis').innerHTML = `
-    <div class="kpi"><div class="label">Total de fórmulas (filtro atual)</div><div class="value">${totalFiltro}</div></div>
+function renderManip(){
+  let rows = allManip;
+  const colab = document.getElementById('mFiltroColab').value;
+  const area = document.getElementById('mFiltroArea').value;
+  const data = document.getElementById('mFiltroData').value;
+  if(colab) rows = rows.filter(r=>r.colaborador===colab);
+  if(area) rows = rows.filter(r=>r.area===area);
+  if(data) rows = rows.filter(r=>r.data===data);
+
+  const todayStr = localDateStrProd(new Date());
+  document.getElementById('mKpiRow').innerHTML = `
+    <div class="kpi"><div class="label">Total de fórmulas (filtro atual)</div><div class="value">${rows.reduce((a,r)=>a+r.quantidade,0)}</div></div>
     <div class="kpi"><div class="label">Colaboradores ativos</div><div class="value">${new Set(allManip.map(r=>r.colaborador)).size}</div></div>
     <div class="kpi"><div class="label">Hoje (todos)</div><div class="value">${allManip.filter(r=>r.data===todayStr).reduce((a,r)=>a+r.quantidade,0)}</div></div>
   `;
-  document.getElementById('mTbody').innerHTML = rows.length ? rows.map(r=>`
-    <tr><td>${fmtData(r.data)}</td><td>${r.colaborador}</td><td class="qtd-badge">${r.quantidade}</td>
-    <td><button class="del-btn" onclick="deleteManip('${r.id}')">Remover</button></td></tr>
-  `).join('') : `<tr><td colspan="4" class="empty-state">Nenhum registro encontrado.</td></tr>`;
+
+  const totalPaginas = Math.max(1, Math.ceil(rows.length / PAGINA_TAMANHO));
+  if(paginaManip > totalPaginas) paginaManip = totalPaginas;
+  const inicio = (paginaManip-1)*PAGINA_TAMANHO;
+  const pagina = rows.slice(inicio, inicio+PAGINA_TAMANHO);
+
+  document.getElementById('manipTbody').innerHTML = pagina.length ? pagina.map(r => `
+    <tr>
+      <td>${fmtData(r.data)}</td>
+      <td>${r.colaborador}</td>
+      <td><span class="area-tag ${r.area}">${r.area==='dermato'?'Dermato':'Cápsula'}</span></td>
+      <td>${r.complexidade==='outro' ? (r.complexidade_outro||'Outro') : (COMPLEXIDADE_LABEL[r.complexidade]||'—')}</td>
+      <td class="qtd-badge">${r.quantidade}</td>
+      <td><button class="del-btn" onclick="deleteManip('${r.id}')">Remover</button></td>
+    </tr>`).join('') : '<tr><td colspan="6" class="empty-state">Nenhum registro ainda.</td></tr>';
+
+  renderPaginacao('manipPaginacao', paginaManip, totalPaginas, (p)=>{ paginaManip=p; renderManip(); });
 }
-document.getElementById('mFiltroColab').addEventListener('change', renderManip);
-document.getElementById('mFiltroData').addEventListener('change', renderManip);
-document.getElementById('mLimparFiltro').addEventListener('click', ()=>{
-  document.getElementById('mFiltroColab').value='';
-  document.getElementById('mFiltroData').value='';
-  renderManip();
-});
+
+function renderPaginacao(containerId, paginaAtual, totalPaginas, onMudar){
+  const el = document.getElementById(containerId);
+  if(totalPaginas <= 1){ el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <button ${paginaAtual<=1?'disabled':''} id="${containerId}Ant">← Anterior</button>
+    <span>Página ${paginaAtual} de ${totalPaginas}</span>
+    <button ${paginaAtual>=totalPaginas?'disabled':''} id="${containerId}Prox">Próxima →</button>
+  `;
+  const btnAnt = document.getElementById(containerId+'Ant');
+  const btnProx = document.getElementById(containerId+'Prox');
+  if(btnAnt) btnAnt.addEventListener('click', ()=>onMudar(paginaAtual-1));
+  if(btnProx) btnProx.addEventListener('click', ()=>onMudar(paginaAtual+1));
+}
+
+document.getElementById('mFiltroColab').addEventListener('change', ()=>{ paginaManip=1; renderManip(); });
+document.getElementById('mFiltroArea').addEventListener('change', ()=>{ paginaManip=1; renderManip(); });
+document.getElementById('mFiltroData').addEventListener('change', ()=>{ paginaManip=1; renderManip(); });
 
 // ---------- PESAGEM ----------
 document.getElementById('pSalvar').addEventListener('click', async ()=>{
   const colaborador = document.getElementById('pColaborador').value.trim();
   const quantidade = document.getElementById('pQtd').value;
   const data = document.getElementById('pData').value;
-  if(!colaborador || quantidade === ''){ alert('Preencha colaborador e total de pesagens.'); return; }
+  const area = document.getElementById('pArea').value;
+  const complexidade = document.getElementById('pComplexidade').value;
+  const complexidade_outro = complexidade==='outro' ? document.getElementById('pComplexidadeOutro').value.trim() : null;
+  if(!colaborador || quantidade === '' || !data){ alert('Preencha colaborador, total de fórmulas e data.'); return; }
   if(!supa){ alert('Supabase não configurado.'); return; }
   const { error } = await supa.from('registro_pesagem_diario')
-    .upsert({colaborador, data, quantidade, atualizado_em: new Date().toISOString()}, {onConflict:'colaborador,data'});
+    .upsert({colaborador, data, quantidade, area, complexidade, complexidade_outro, atualizado_em: new Date().toISOString()}, {onConflict:'colaborador,data,area,complexidade'});
   if(error){ alert('Erro: '+error.message); return; }
   document.getElementById('pQtd').value='';
   loadPesagem();
@@ -298,44 +427,157 @@ async function deletePesagem(id){
 window.deletePesagem = deletePesagem;
 
 let allPesagem = [];
+let paginaPesagem = 1;
+
 async function loadPesagem(){
   if(!supa) return;
   const { data, error } = await supa.from('registro_pesagem_diario').select('*').order('data',{ascending:false}).order('colaborador',{ascending:true});
   if(error){ console.error(error); return; }
-  allPesagem = data;
-  const colabs = [...new Set(data.map(d=>d.colaborador))].sort();
-  const sel = document.getElementById('pFiltroColab');
-  sel.innerHTML = '<option value="">Todos os colaboradores</option>' + colabs.map(c=>`<option value="${c}">${c}</option>`).join('');
+  allPesagem = data || [];
+
+  const colaboradores = [...new Set(allPesagem.map(r=>r.colaborador))].sort();
+  document.getElementById('pFiltroColab').innerHTML = '<option value="">Todos os colaboradores</option>' + colaboradores.map(c=>`<option value="${c}">${c}</option>`).join('');
+
   renderPesagem();
 }
-function renderPesagem(){
-  const filtroColab = document.getElementById('pFiltroColab').value;
-  const filtroData = document.getElementById('pFiltroData').value;
-  let rows = allPesagem;
-  if(filtroColab) rows = rows.filter(r=>r.colaborador===filtroColab);
-  if(filtroData) rows = rows.filter(r=>r.data===filtroData);
 
-  const totalFiltro = rows.reduce((a,r)=>a+r.quantidade,0);
-  document.getElementById('pKpis').innerHTML = `
-    <div class="kpi"><div class="label">Total de pesagens (filtro atual)</div><div class="value">${totalFiltro}</div></div>
+function renderPesagem(){
+  let rows = allPesagem;
+  const colab = document.getElementById('pFiltroColab').value;
+  const area = document.getElementById('pFiltroArea').value;
+  const data = document.getElementById('pFiltroData').value;
+  if(colab) rows = rows.filter(r=>r.colaborador===colab);
+  if(area) rows = rows.filter(r=>r.area===area);
+  if(data) rows = rows.filter(r=>r.data===data);
+
+  const todayStr = localDateStrProd(new Date());
+  document.getElementById('pKpiRow').innerHTML = `
+    <div class="kpi"><div class="label">Total de fórmulas (filtro atual)</div><div class="value">${rows.reduce((a,r)=>a+r.quantidade,0)}</div></div>
     <div class="kpi"><div class="label">Colaboradores ativos</div><div class="value">${new Set(allPesagem.map(r=>r.colaborador)).size}</div></div>
     <div class="kpi"><div class="label">Hoje (todos)</div><div class="value">${allPesagem.filter(r=>r.data===todayStr).reduce((a,r)=>a+r.quantidade,0)}</div></div>
   `;
-  document.getElementById('pTbody').innerHTML = rows.length ? rows.map(r=>`
-    <tr><td>${fmtData(r.data)}</td><td>${r.colaborador}</td><td class="qtd-badge">${r.quantidade}</td>
-    <td><button class="del-btn" onclick="deletePesagem('${r.id}')">Remover</button></td></tr>
-  `).join('') : `<tr><td colspan="4" class="empty-state">Nenhum registro encontrado.</td></tr>`;
-}
-document.getElementById('pFiltroColab').addEventListener('change', renderPesagem);
-document.getElementById('pFiltroData').addEventListener('change', renderPesagem);
-document.getElementById('pLimparFiltro').addEventListener('click', ()=>{
-  document.getElementById('pFiltroColab').value='';
-  document.getElementById('pFiltroData').value='';
-  renderPesagem();
-});
 
-loadManip();
-loadPesagem();
+  const totalPaginas = Math.max(1, Math.ceil(rows.length / PAGINA_TAMANHO));
+  if(paginaPesagem > totalPaginas) paginaPesagem = totalPaginas;
+  const inicio = (paginaPesagem-1)*PAGINA_TAMANHO;
+  const pagina = rows.slice(inicio, inicio+PAGINA_TAMANHO);
+
+  document.getElementById('pesagemTbody').innerHTML = pagina.length ? pagina.map(r => `
+    <tr>
+      <td>${fmtData(r.data)}</td>
+      <td>${r.colaborador}</td>
+      <td><span class="area-tag ${r.area}">${r.area==='dermato'?'Dermato':'Cápsula'}</span></td>
+      <td>${r.complexidade==='outro' ? (r.complexidade_outro||'Outro') : (COMPLEXIDADE_LABEL[r.complexidade]||'—')}</td>
+      <td class="qtd-badge">${r.quantidade}</td>
+      <td><button class="del-btn" onclick="deletePesagem('${r.id}')">Remover</button></td>
+    </tr>`).join('') : '<tr><td colspan="6" class="empty-state">Nenhum registro ainda.</td></tr>';
+
+  renderPaginacao('pesagemPaginacao', paginaPesagem, totalPaginas, (p)=>{ paginaPesagem=p; renderPesagem(); });
+}
+
+document.getElementById('pFiltroColab').addEventListener('change', ()=>{ paginaPesagem=1; renderPesagem(); });
+document.getElementById('pFiltroArea').addEventListener('change', ()=>{ paginaPesagem=1; renderPesagem(); });
+document.getElementById('pFiltroData').addEventListener('change', ()=>{ paginaPesagem=1; renderPesagem(); });
+
+// ---------- DASHBOARD ----------
+let periodoProd = 'dia';
+let dataRefProd = localDateStrProd(new Date());
+let chartPorPessoaInstance = null;
+let chartCapsulaInstance = null;
+let chartDermatoInstance = null;
+
+function mudarPeriodoProd(p){
+  periodoProd = p;
+  document.getElementById('btnPDiaProd').classList.toggle('active', p==='dia');
+  document.getElementById('btnPSemanaProd').classList.toggle('active', p==='semana');
+  document.getElementById('btnPMesProd').classList.toggle('active', p==='mes');
+  carregarDashboardProd();
+}
+window.mudarPeriodoProd = mudarPeriodoProd;
+
+function limitesPeriodoProd(){
+  const ref = new Date(dataRefProd+'T12:00:00');
+  if(periodoProd === 'dia') return { inicio: dataRefProd, fim: dataRefProd };
+  if(periodoProd === 'semana'){
+    const diaSemana = ref.getDay();
+    const inicioSemana = new Date(ref); inicioSemana.setDate(ref.getDate()-diaSemana);
+    const fimSemana = new Date(inicioSemana); fimSemana.setDate(inicioSemana.getDate()+6);
+    return { inicio: localDateStrProd(inicioSemana), fim: localDateStrProd(fimSemana) };
+  }
+  const ano = ref.getFullYear(), mes = ref.getMonth();
+  return { inicio: localDateStrProd(new Date(ano,mes,1)), fim: localDateStrProd(new Date(ano,mes+1,0)) };
+}
+
+async function carregarDashboardProd(){
+  if(!supa) return;
+  const { inicio, fim } = limitesPeriodoProd();
+  const [{ data: manip }, { data: pesagem }] = await Promise.all([
+    supa.from('registro_manipulacao_diario').select('*').gte('data',inicio).lte('data',fim),
+    supa.from('registro_pesagem_diario').select('*').gte('data',inicio).lte('data',fim),
+  ]);
+  const todos = [...(manip||[]), ...(pesagem||[])];
+
+  const totalCapsula = todos.filter(r=>r.area==='capsula').reduce((s,r)=>s+r.quantidade,0);
+  const totalDermato = todos.filter(r=>r.area==='dermato').reduce((s,r)=>s+r.quantidade,0);
+  document.getElementById('totalCapsulaProd').textContent = totalCapsula;
+  document.getElementById('totalDermatoProd').textContent = totalDermato;
+
+  // Por pessoa, separado por área
+  const porPessoa = {};
+  todos.forEach(r => {
+    if(!porPessoa[r.colaborador]) porPessoa[r.colaborador] = {capsula:0, dermato:0};
+    porPessoa[r.colaborador][r.area] += r.quantidade;
+  });
+  const nomes = Object.keys(porPessoa).sort((a,b)=> (porPessoa[b].capsula+porPessoa[b].dermato) - (porPessoa[a].capsula+porPessoa[a].dermato));
+
+  if(chartPorPessoaInstance) chartPorPessoaInstance.destroy();
+  chartPorPessoaInstance = new Chart(document.getElementById('chartPorPessoaProd'), {
+    type: 'bar',
+    data: {
+      labels: nomes,
+      datasets: [
+        { label: 'Cápsula', data: nomes.map(n=>porPessoa[n].capsula), backgroundColor: '#3E6B93', borderRadius:4 },
+        { label: 'Dermato', data: nomes.map(n=>porPessoa[n].dermato), backgroundColor: '#3F7A57', borderRadius:4 },
+      ]
+    },
+    options: { responsive:true, plugins:{legend:{position:'bottom'}}, scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}} }
+  });
+
+  // Cápsula por complexidade
+  const porComplexCapsula = {P:0,M:0,G:0};
+  todos.filter(r=>r.area==='capsula').forEach(r=>{ if(porComplexCapsula[r.complexidade]!==undefined) porComplexCapsula[r.complexidade]+=r.quantidade; });
+  if(chartCapsulaInstance) chartCapsulaInstance.destroy();
+  chartCapsulaInstance = new Chart(document.getElementById('chartComplexidadeCapsula'), {
+    type: 'doughnut',
+    data: { labels:['Pequena (P)','Média (M)','Grande (G)'], datasets:[{ data:[porComplexCapsula.P,porComplexCapsula.M,porComplexCapsula.G], backgroundColor:['#8FB5D6','#3E6B93','#1F3A52'] }] },
+    options: { responsive:true, plugins:{legend:{position:'bottom'}} }
+  });
+
+  // Dermato por tipo
+  const tiposDermato = ['biscoito','pastilha','orotab','film_oral','outro'];
+  const labelsDermato = ['Biscoito','Pastilha','Orotab','Filme oral','Outro'];
+  const porComplexDermato = {biscoito:0,pastilha:0,orotab:0,film_oral:0,outro:0};
+  todos.filter(r=>r.area==='dermato').forEach(r=>{ if(porComplexDermato[r.complexidade]!==undefined) porComplexDermato[r.complexidade]+=r.quantidade; });
+  if(chartDermatoInstance) chartDermatoInstance.destroy();
+  chartDermatoInstance = new Chart(document.getElementById('chartComplexidadeDermato'), {
+    type: 'doughnut',
+    data: { labels:labelsDermato, datasets:[{ data:tiposDermato.map(t=>porComplexDermato[t]), backgroundColor:['#8FCBA3','#5FA97D','#3F7A57','#2A5A3E','#8a7c72'] }] },
+    options: { responsive:true, plugins:{legend:{position:'bottom'}} }
+  });
+}
+
+async function init(){
+  await requireRole(['chefia','laboratorio']);
+  atualizarComplexidadeOptions('m');
+  atualizarComplexidadeOptions('p');
+  document.getElementById('mData').value = localDateStrProd(new Date());
+  document.getElementById('pData').value = localDateStrProd(new Date());
+  document.getElementById('dataRefProd').value = dataRefProd;
+  await carregarDashboardProd();
+  loadManip();
+  loadPesagem();
+}
+init();
 </script>
 <script src="acessibilidade.js?v=3"></script>
 <script src="hub-sidebar.js"></script>

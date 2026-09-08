@@ -173,6 +173,15 @@
     <button class="btn" onclick="salvarNaoRetirado()">Salvar não retirado</button>
   </div>
 
+  <div class="panel" id="painelCatalogoAtivos" style="display:none">
+    <h2>Catálogo de ativos</h2>
+    <p class="desc">Só chefia vê essa lista — exclui ativo cadastrado errado ou de teste. Cuidado: se o ativo já foi usado em algum registro, o histórico continua mostrando o nome antigo.</p>
+    <table>
+      <thead><tr><th>Código</th><th>Nome</th><th>Ação</th></tr></thead>
+      <tbody id="listaCatalogoAtivos"></tbody>
+    </table>
+  </div>
+
   <div class="panel">
     <h2>Disponíveis para reaproveitamento</h2>
     <p class="desc">Ordenado por validade — o que vence primeiro aparece primeiro</p>
@@ -209,16 +218,41 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY) {
 } else {
   document.getElementById('configBanner').classList.add('show');
 }
-requireRole(['chefia','conferencia']).catch(()=>{});
+requireRole(['chefia','conferencia']).catch(()=>{}); // trava de acesso rápida — a checagem real acontece em init()
 
 let ativosCatalogo = [];
+let meuPapelReap = null;
 
 function localDateStr(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
 
 async function loadAtivosCatalogo(){
   const { data } = await supa.from('ativos_cadastrados').select('id,codigo,nome').order('codigo');
   ativosCatalogo = data || [];
+  if(meuPapelReap === 'chefia') renderCatalogoAtivos();
 }
+
+function renderCatalogoAtivos(){
+  document.getElementById('listaCatalogoAtivos').innerHTML = ativosCatalogo.length ? ativosCatalogo.map(a => `
+    <tr>
+      <td>${a.codigo}</td>
+      <td>${a.nome}</td>
+      <td><button class="btn secondary small" onclick="excluirAtivoCatalogo('${a.id}')">Excluir</button></td>
+    </tr>
+  `).join('') : '<tr><td colspan="3" style="color:var(--gray)">Nenhum ativo cadastrado ainda.</td></tr>';
+}
+
+async function excluirAtivoCatalogo(id){
+  if(!confirm('Excluir esse ativo do catálogo? Isso não apaga registros já salvos com ele, só tira da lista de seleção.')) return;
+  const { error } = await supa.from('ativos_cadastrados').delete().eq('id', id);
+  if(error){ alert('Erro ao excluir: '+error.message); return; }
+  await loadAtivosCatalogo();
+  document.querySelectorAll('.ativo-select').forEach(sel=>{
+    const atual = sel.value;
+    sel.innerHTML = `<option value="">Selecione o ativo...</option>` + ativosCatalogo.map(a=>`<option value="${a.id}" data-codigo="${a.codigo}">${a.codigo} — ${a.nome}</option>`).join('');
+    sel.value = atual;
+  });
+}
+window.excluirAtivoCatalogo = excluirAtivoCatalogo;
 
 // ---------- Linhas dinâmicas de ativo no formulário ----------
 function addAtivoRow(){
@@ -390,6 +424,9 @@ async function loadKpis(){
 }
 
 async function init(){
+  const { papel } = await requireRole(['chefia','conferencia']);
+  meuPapelReap = papel;
+  if(papel === 'chefia') document.getElementById('painelCatalogoAtivos').style.display = 'block';
   await loadAtivosCatalogo();
   addAtivoRow();
   await loadKpis();
