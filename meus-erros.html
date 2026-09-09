@@ -194,17 +194,20 @@ function renderFixed(nome){
 // ---------- Período (dia = hoje / mês calendário — não é "30 dias
 // corridos", então já começa zerado sozinho todo dia 1) ----------
 let modoPeriodo = 'mes';
-let mesSelecionadoMeusErros = new Date().toISOString().slice(0,7);
+let mesSelecionadoMeusErros = localDateStrME(new Date()).slice(0,7);
 let nomeAtualDashboard = null;
 
 function periodToggleHtml(){
   return `
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
-      <button class="btn secondary period-btn" id="btnPDia" onclick="mudarPeriodoMeusErros('dia')">Hoje</button>
+      <button class="btn secondary period-btn" id="btnPDia" onclick="mudarPeriodoMeusErros('dia')">Por dia</button>
+      <input type="date" id="seletorDiaMeusErros" style="display:none;font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:7px;" onchange="loadDashboard(nomeAtualDashboard);">
       <button class="btn secondary period-btn active" id="btnPMes" onclick="mudarPeriodoMeusErros('mes')">Ver por mês</button>
       <select id="seletorMesMeusErros" style="font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;" onchange="mesSelecionadoMeusErros=this.value; loadDashboard(nomeAtualDashboard);"></select>
     </div>`;
 }
+
+function localDateStrME(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
 
 function popularMesesMeusErros(){
   const sel = document.getElementById('seletorMesMeusErros');
@@ -213,7 +216,7 @@ function popularMesesMeusErros(){
   const hoje = new Date();
   for(let i=0;i<12;i++){
     const d = new Date(hoje.getFullYear(), hoje.getMonth()-i, 1);
-    const valor = d.toISOString().slice(0,7);
+    const valor = localDateStrME(d).slice(0,7);
     const label = d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
     opcoes.push(`<option value="${valor}">${label.charAt(0).toUpperCase()+label.slice(1)}</option>`);
   }
@@ -231,6 +234,9 @@ window.trocarVisaoSemana = trocarVisaoSemana;
 
 function ligarPeriodToggle(){
   popularMesesMeusErros();
+  const seletorDia = document.getElementById('seletorDiaMeusErros');
+  if(!seletorDia.value) seletorDia.value = localDateStrME(new Date());
+  seletorDia.style.display = modoPeriodo==='dia' ? 'inline-block' : 'none';
   document.getElementById('seletorMesMeusErros').style.display = modoPeriodo==='mes' ? 'inline-block' : 'none';
 }
 
@@ -238,6 +244,7 @@ function mudarPeriodoMeusErros(modo){
   modoPeriodo = modo;
   document.getElementById('btnPDia').classList.toggle('active', modo==='dia');
   document.getElementById('btnPMes').classList.toggle('active', modo==='mes');
+  document.getElementById('seletorDiaMeusErros').style.display = modo==='dia' ? 'inline-block' : 'none';
   document.getElementById('seletorMesMeusErros').style.display = modo==='mes' ? 'inline-block' : 'none';
   loadDashboard(nomeAtualDashboard);
 }
@@ -245,8 +252,10 @@ window.mudarPeriodoMeusErros = mudarPeriodoMeusErros;
 
 function limitesPeriodoMeusErros(){
   if(modoPeriodo === 'dia'){
-    const hoje = new Date().toISOString().slice(0,10);
-    return { inicio: hoje+'T00:00:00', fim: hoje+'T23:59:59', label: 'hoje' };
+    const diaEscolhido = document.getElementById('seletorDiaMeusErros').value || localDateStrME(new Date());
+    const hojeReal = localDateStrME(new Date());
+    const label = diaEscolhido === hojeReal ? 'hoje' : ('em ' + new Date(diaEscolhido+'T12:00:00').toLocaleDateString('pt-BR'));
+    return { inicio: diaEscolhido+'T00:00:00', fim: diaEscolhido+'T23:59:59', label };
   }
   const [ano, mes] = mesSelecionadoMeusErros.split('-').map(Number);
   const inicio = new Date(ano, mes-1, 1, 0,0,0);

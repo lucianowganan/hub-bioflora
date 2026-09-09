@@ -30,13 +30,19 @@
   .quadro-tab.active{background:var(--burgundy);color:#fff;border-color:var(--burgundy);}
 
   .board{display:flex;gap:16px;overflow-x:auto;padding-bottom:20px;align-items:flex-start;}
-  .coluna{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;min-width:270px;max-width:270px;flex-shrink:0;}
-  .coluna-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:0 4px;}
+  .coluna{background:#EAE3DE;border:1px solid var(--line);border-radius:14px;padding:14px;min-width:270px;max-width:270px;flex-shrink:0;transition:background .12s;}
+  .coluna.drag-over{background:#DED4CC;}
+  .coluna-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:0 4px;cursor:grab;}
+  .coluna-head:active{cursor:grabbing;}
   .coluna-head h3{font-family:'Space Grotesk','Maven Pro',sans-serif;font-weight:600;font-size:14px;margin:0;}
-  .coluna-count{font-size:11px;color:var(--gray);background:var(--paper);border-radius:10px;padding:2px 8px;}
+  .coluna-count{font-size:11px;color:var(--gray);background:#fff;border-radius:10px;padding:2px 8px;}
+  .coluna-head.arrastando{opacity:.4;}
+  .coluna-cards{min-height:10px;}
 
-  .card-tarefa{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:9px;cursor:pointer;}
+  .card-tarefa{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:9px;cursor:grab;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .card-tarefa:active{cursor:grabbing;}
   .card-tarefa:hover{border-color:var(--burgundy);}
+  .card-tarefa.arrastando{opacity:.35;}
   .card-tarefa .titulo{font-weight:600;font-size:13.5px;margin-bottom:5px;}
   .card-tarefa .desc-preview{font-size:11.5px;color:var(--gray);margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
   .card-tarefa .meta-row{display:flex;justify-content:space-between;align-items:center;}
@@ -321,15 +327,15 @@ async function carregarBoard(){
   const area = document.getElementById('boardArea');
   area.innerHTML = `<div class="board">
     ${colunasAtivas.map(col => {
-      // Prioridade alta primeiro, depois média, depois baixa. Dentro da
-      // mesma prioridade, mantém a ordem de criação (sort é estável).
-      const doCards = cards.filter(c=>c.coluna_id===col.id)
-        .sort((a,b) => (PESO_PRIORIDADE[a.prioridade]??1) - (PESO_PRIORIDADE[b.prioridade]??1));
+      // Ordem manual (arraste) — quem quiser ordenar por prioridade
+      // arrasta na mão, não reordena mais sozinho.
+      const doCards = cards.filter(c=>c.coluna_id===col.id);
       return `
-      <div class="coluna">
-        <div class="coluna-head"><h3>${col.nome}</h3><div style="display:flex;align-items:center;gap:6px"><span class="coluna-count">${doCards.length}</span><button class="coluna-del" title="Excluir coluna" onclick="excluirColuna('${col.id}', ${doCards.length})">✕</button></div></div>
+      <div class="coluna" data-coluna-id="${col.id}" ondragover="dragOverColuna(event,'${col.id}')" ondrop="dropColuna(event,'${col.id}')">
+        <div class="coluna-head" draggable="true" ondragstart="dragStartColuna(event,'${col.id}')" ondragend="dragEndGenerico(event)"><h3>${col.nome}</h3><div style="display:flex;align-items:center;gap:6px"><span class="coluna-count">${doCards.length}</span><button class="coluna-del" title="Excluir coluna" onclick="excluirColuna('${col.id}', ${doCards.length})">✕</button></div></div>
+        <div class="coluna-cards" data-coluna-id="${col.id}" ondragover="dragOverCardArea(event,'${col.id}')" ondrop="dropCard(event,'${col.id}')">
         ${doCards.map(c => `
-          <div class="card-tarefa" onclick="abrirEdicao('${c.id}')">
+          <div class="card-tarefa" draggable="true" data-card-id="${c.id}" ondragstart="dragStartCard(event,'${c.id}')" ondragover="dragOverCard(event,'${c.id}')" ondragend="dragEndGenerico(event)" onclick="abrirEdicao('${c.id}')">
             <div class="titulo">${c.titulo}</div>
             ${c.descricao ? `<div class="desc-preview">${c.descricao.replace(/</g,'&lt;')}</div>` : ''}
             <div class="meta-row">
@@ -338,12 +344,101 @@ async function carregarBoard(){
             </div>
           </div>
         `).join('')}
+        </div>
         <button class="add-card-btn" onclick="abrirNovoCard('${col.id}')">+ Adicionar card</button>
       </div>`;
     }).join('')}
     <div class="coluna add-coluna"><button onclick="abrirModalColuna()">+ Nova coluna</button></div>
   </div>`;
 }
+
+// ---------- Arrastar colunas ----------
+let colunaArrastada = null;
+function dragStartColuna(ev, colunaId){
+  colunaArrastada = colunaId;
+  ev.currentTarget.classList.add('arrastando');
+  ev.stopPropagation();
+}
+function dragOverColuna(ev, colunaId){
+  if(!colunaArrastada || colunaArrastada === colunaId) return;
+  ev.preventDefault();
+  ev.currentTarget.classList.add('drag-over');
+}
+async function dropColuna(ev, colunaAlvoId){
+  ev.preventDefault();
+  ev.stopPropagation();
+  document.querySelectorAll('.coluna.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  if(!colunaArrastada || colunaArrastada === colunaAlvoId) return;
+
+  const ordemAtual = colunasAtivas.map(c=>c.id);
+  const doIdx = ordemAtual.indexOf(colunaArrastada);
+  const paraIdx = ordemAtual.indexOf(colunaAlvoId);
+  ordemAtual.splice(doIdx, 1);
+  ordemAtual.splice(paraIdx, 0, colunaArrastada);
+
+  await Promise.all(ordemAtual.map((id, i) => supa.from('colunas').update({ ordem: i }).eq('id', id)));
+  colunaArrastada = null;
+  carregarBoard();
+}
+window.dragStartColuna = dragStartColuna;
+window.dragOverColuna = dragOverColuna;
+window.dropColuna = dropColuna;
+
+// ---------- Arrastar cards ----------
+let cardArrastado = null;
+let cardArrastadoColunaOrigem = null;
+function dragStartCard(ev, cardId){
+  cardArrastado = cardId;
+  cardArrastadoColunaOrigem = cardsAtivos.find(c=>c.id===cardId)?.coluna_id;
+  ev.currentTarget.classList.add('arrastando');
+  ev.stopPropagation();
+}
+function dragOverCard(ev, cardId){
+  if(!cardArrastado || cardArrastado === cardId) return;
+  ev.preventDefault();
+  ev.stopPropagation();
+}
+function dragOverCardArea(ev, colunaId){
+  if(!cardArrastado) return;
+  ev.preventDefault();
+}
+async function dropCard(ev, colunaAlvoId){
+  ev.preventDefault();
+  ev.stopPropagation();
+  if(!cardArrastado) return;
+
+  // Se soltou em cima de outro card, usa a posição dele; se soltou na
+  // área vazia da coluna, vai pro final
+  const alvoCardEl = ev.target.closest('.card-tarefa');
+  const cardsDaColunaAlvo = cardsAtivos.filter(c=>c.coluna_id===colunaAlvoId && c.id!==cardArrastado).map(c=>c.id);
+
+  let novaOrdemIds;
+  if(alvoCardEl && alvoCardEl.dataset.cardId !== cardArrastado){
+    const alvoId = alvoCardEl.dataset.cardId;
+    const idx = cardsDaColunaAlvo.indexOf(alvoId);
+    novaOrdemIds = [...cardsDaColunaAlvo];
+    novaOrdemIds.splice(idx, 0, cardArrastado);
+  } else {
+    novaOrdemIds = [...cardsDaColunaAlvo, cardArrastado];
+  }
+
+  const updates = novaOrdemIds.map((id, i) => supa.from('cards_tarefas').update({ ordem: i, coluna_id: colunaAlvoId }).eq('id', id));
+  await Promise.all(updates);
+
+  cardArrastado = null;
+  cardArrastadoColunaOrigem = null;
+  carregarBoard();
+}
+window.dragStartCard = dragStartCard;
+window.dragOverCard = dragOverCard;
+window.dragOverCardArea = dragOverCardArea;
+window.dropCard = dropCard;
+
+function dragEndGenerico(ev){
+  ev.currentTarget.classList.remove('arrastando');
+  document.querySelectorAll('.coluna.drag-over').forEach(el=>el.classList.remove('drag-over'));
+}
+window.dragEndGenerico = dragEndGenerico;
 
 function abrirModalColuna(){
   document.getElementById('colNomeInput').value = '';
