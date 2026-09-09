@@ -86,6 +86,7 @@
   .tag.em_manipulacao{background:var(--info-tint);color:var(--info);}
   .tag.liberado{background:var(--good-tint);color:var(--good);}
   .tag-parcial{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;white-space:nowrap;background:var(--warn-tint);color:#8A6512;margin-top:4px;}
+  .tag-editado{display:inline-block;font-size:8.5px;font-weight:700;padding:1px 7px;border-radius:20px;text-transform:uppercase;white-space:nowrap;background:var(--info-tint);color:var(--info);margin-left:6px;vertical-align:middle;}
   .prio.alta, .prio.urgente{color:var(--bad);font-weight:600;}
   .prio.media{color:var(--gray);}
   .prio.baixa{color:var(--gray);}
@@ -197,6 +198,29 @@
     </table>
   </div>
 
+</div>
+
+<div class="modal-overlay" id="modalEditarOrdem">
+  <div class="modal">
+    <h3>Editar ordem</h3>
+    <div class="form-grid">
+      <div style="grid-column:span 2"><label>Produto</label><input id="editProduto"></div>
+      <div><label>Número da ordem</label><input id="editNumeroOrdem"></div>
+      <div><label>Quantidade</label><input id="editQuantidade"></div>
+      <div><label>Prioridade</label><select id="editPrioridade">
+        <option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option><option value="urgente">Urgente</option>
+      </select></div>
+      <div><label>Laboratório</label><select id="editArea">
+        <option value="capsula">💊 Cápsula</option><option value="dermato">🧴 Dermato</option>
+      </select></div>
+      <div style="grid-column:span 2"><label>Observações</label><input id="editObservacoes"></div>
+    </div>
+    <p style="font-size:11.5px;color:var(--gray);margin-top:4px;">Salvar aqui marca a ordem com o selo "editado", pra deixar rastro de que algo foi ajustado depois de criada.</p>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalEditarOrdem').classList.remove('show')">Cancelar</button>
+      <button class="btn" onclick="salvarEdicaoOrdem()">Salvar</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="modalOverlay">
@@ -405,16 +429,50 @@ function renderRow(o){
     liberado: ''
   };
   return `<tr>
-    <td class="produto">${o.produto}</td>
+    <td class="produto">${o.produto}${o.editado ? '<span class="tag-editado">editado</span>' : ''}</td>
     <td class="ordem-num">${o.numero_ordem || '—'}</td>
     <td>${o.quantidade || '—'}</td>
     <td class="prio ${o.prioridade}">${PRIO_LABELS[o.prioridade]||o.prioridade}</td>
     <td>${prazoTagHtml(o)}</td>
     <td><span class="tag ${o.status}">${STATUS_LABELS[o.status]}</span>${o.liberacao_parcial ? '<br><span class="tag-parcial">Liberação parcial</span>' : ''}</td>
     <td class="trace">${traceHtml(o)}</td>
-    <td><div class="row-actions">${nextActions[o.status]}<button class="del" onclick="deleteOrdem('${o.id}')">Remover</button></div></td>
+    <td><div class="row-actions">${nextActions[o.status]}<button class="btn secondary" style="padding:6px 10px;font-size:11.5px;" onclick="abrirModalEditarOrdem('${o.id}')">Editar</button><button class="del" onclick="deleteOrdem('${o.id}')">Remover</button></div></td>
   </tr>`;
 }
+
+let ordemEmEdicaoId = null;
+function abrirModalEditarOrdem(id){
+  const o = allOrdens.find(x=>x.id===id);
+  if(!o) return;
+  ordemEmEdicaoId = id;
+  document.getElementById('editProduto').value = o.produto || '';
+  document.getElementById('editNumeroOrdem').value = o.numero_ordem || '';
+  document.getElementById('editQuantidade').value = o.quantidade || '';
+  document.getElementById('editPrioridade').value = o.prioridade || 'media';
+  document.getElementById('editArea').value = o.area || 'capsula';
+  document.getElementById('editObservacoes').value = o.observacoes || '';
+  document.getElementById('modalEditarOrdem').classList.add('show');
+}
+window.abrirModalEditarOrdem = abrirModalEditarOrdem;
+
+async function salvarEdicaoOrdem(){
+  const produto = document.getElementById('editProduto').value.trim();
+  if(!produto){ alert('Informe o produto.'); return; }
+  const dados = {
+    produto,
+    numero_ordem: document.getElementById('editNumeroOrdem').value.trim() || null,
+    quantidade: document.getElementById('editQuantidade').value || null,
+    prioridade: document.getElementById('editPrioridade').value,
+    area: document.getElementById('editArea').value,
+    observacoes: document.getElementById('editObservacoes').value.trim() || null,
+    editado: true,
+  };
+  const { error } = await supa.from('ordens_producao').update(dados).eq('id', ordemEmEdicaoId);
+  if(error){ alert('Erro ao salvar: '+error.message); return; }
+  document.getElementById('modalEditarOrdem').classList.remove('show');
+  loadBoard();
+}
+window.salvarEdicaoOrdem = salvarEdicaoOrdem;
 
 async function deleteOrdem(id){
   if(!confirm('Remover esta ordem?')) return;

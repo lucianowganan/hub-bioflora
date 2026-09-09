@@ -597,8 +597,9 @@ function renderAbaPonto(){
     const mesHumano = dataRef.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
 
     const { data: jaExiste } = await supa.from('folhas_ponto').select('id').eq('periodo_inicio', inicio).limit(1);
-    const avisoSobrescrever = (jaExiste && jaExiste.length) ? `\n\n⚠️ Já existe uma folha salva pra esse período — os dados atuais dela vão ser SUBSTITUÍDOS pelos dessa planilha.` : '';
-    if(!confirm(`Confirma salvar essa planilha como o período de ${mesHumano}?${avisoSobrescrever}`)) return;
+    const avisoSobrescrever = (jaExiste && jaExiste.length) ? `\n\n⚠️ Já existe uma folha salva pra esse período. Quem estiver nas duas planilhas (essa e a que já tinha sido enviada) terá o saldo atualizado com o valor dessa nova planilha.` : '';
+    const avisoCondensa = `\n\nOs funcionários dessa planilha serão salvos/atualizados nesse período. Quem já estava salvo antes nesse mesmo período e não está nessa planilha continua exatamente como está — nada é apagado.`;
+    if(!confirm(`Confirma salvar essa planilha como o período de ${mesHumano}?${avisoCondensa}${avisoSobrescrever}`)) return;
 
     processBtn.disabled = true;
     showStatusPonto('Processando planilha...', 'info');
