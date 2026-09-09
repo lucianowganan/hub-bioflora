@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cargos & Permissões — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<script src="permissoes.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC; --bad:#B4472F; --bad-tint:#FBEBE6;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand-text h1{font-family:var(--headfont);font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn.small{padding:6px 12px;font-size:11.5px;}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .panel h2{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+
+  table.matriz{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.matriz th, table.matriz td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;}
+  table.matriz th{font-family:var(--headfont);font-size:11px;font-weight:600;vertical-align:bottom;}
+  table.matriz th.col-cargo{writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);height:110px;text-align:left;white-space:nowrap;padding-bottom:6px;}
+  table.matriz td.col-cargo{text-align:center;}
+  .modulo-row td{background:var(--burgundy-tint);font-weight:700;color:var(--burgundy);font-family:var(--headfont);font-size:12px;padding:8px 10px;}
+  .perm-nome{font-weight:600;}
+  .perm-desc{color:var(--gray);font-size:11px;}
+  input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--burgundy);}
+  .tag-sistema{font-size:9px;text-transform:uppercase;font-weight:700;color:var(--gray);background:var(--paper);border-radius:10px;padding:1px 7px;margin-left:5px;}
+
+  .cargo-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);}
+  .cargo-row:last-child{border-bottom:none;}
+  .cargo-nome{font-weight:700;font-size:13.5px;}
+  .cargo-chave{font-size:11px;color:var(--gray);font-family:monospace;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(36,29,26,.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:14px;padding:24px;max-width:420px;width:100%;}
+  .modal h3{font-family:var(--headfont);margin:0 0 14px;}
+  .field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+  .field label{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;}
+  .field input, .field textarea{font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+  .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
+  .aviso{font-size:12px;color:var(--gray);background:var(--paper);border-radius:8px;padding:10px 14px;margin-bottom:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand-text">
+      <h1>Cargos & Permissões</h1>
+      <p>Farmácia Bioflora — quem pode ver e fazer o quê em cada módulo</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button onclick="logout()" class="btn secondary">Sair</button>
+    </div>
+  </header>
+
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div>
+        <h2 style="margin:0;">Cargos</h2>
+        <p class="desc" style="margin:4px 0 0;">Cargos do sistema não podem ser excluídos (usados em várias regras internas), mas dá pra criar cargos novos livremente.</p>
+      </div>
+      <button class="btn small" onclick="abrirModalCargo()">+ Novo cargo</button>
+    </div>
+    <div id="listaCargos"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Matriz de permissões</h2>
+    <p class="desc">Marca ou desmarca pra liberar/bloquear na hora — não precisa salvar nada, já grava sozinho.</p>
+    <div class="aviso">ℹ️ Essa matriz já controla quais módulos aparecem no Hub pra cada cargo, e alguns ajustes finos específicos (ex: quem aprova férias, quem vê salário). Pra permissões novas dentro de um módulo, ainda preciso codar a checagem — mas a parte de "módulo inteiro" e o que já está listado aqui, dá pra mexer sozinho, sem SQL.</div>
+    <div style="overflow-x:auto;">
+      <table class="matriz" id="tabelaMatriz"></table>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="modalCargo">
+  <div class="modal">
+    <h3>Novo cargo</h3>
+    <div class="field"><label>Nome de exibição</label><input id="cargoNome" placeholder="Ex: Supervisor de Loja" oninput="gerarChaveCargo()"></div>
+    <div class="field"><label>Chave interna (gerada automaticamente)</label><input id="cargoChave" placeholder="ex_supervisor_loja"></div>
+    <div class="field"><label>Descrição (opcional)</label><textarea id="cargoDescricao" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalCargo').classList.remove('show')">Cancelar</button>
+      <button class="btn" onclick="salvarNovoCargo()">Criar cargo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let cargosCache = [];
+let permissoesCache = [];
+let papelPermissoesCache = []; // [{papel_id, permissao_id}]
+
+async function init(){
+  await requireRole(['chefia']);
+  await carregarTudo();
+}
+
+async function carregarTudo(){
+  const [{ data: cargos }, { data: permissoes }, { data: papelPerms }] = await Promise.all([
+    supa.from('papeis').select('*').order('sistema', {ascending:false}).order('nome'),
+    supa.from('permissoes').select('*').order('modulo').order('nome'),
+    supa.from('papel_permissoes').select('papel_id,permissao_id'),
+  ]);
+  cargosCache = cargos || [];
+  permissoesCache = permissoes || [];
+  papelPermissoesCache = papelPerms || [];
+  renderCargos();
+  renderMatriz();
+}
+
+function renderCargos(){
+  document.getElementById('listaCargos').innerHTML = cargosCache.length ? cargosCache.map(c => `
+    <div class="cargo-row">
+      <div>
+        <span class="cargo-nome">${c.nome}</span>${c.sistema ? '<span class="tag-sistema">sistema</span>' : ''}
+        <div class="cargo-chave">${c.chave}</div>
+      </div>
+      ${!c.sistema ? `<button class="btn secondary small" onclick="excluirCargo('${c.id}','${c.nome}')">Excluir</button>` : ''}
+    </div>
+  `).join('') : '<div class="empty-state">Nenhum cargo cadastrado.</div>';
+}
+
+function renderMatriz(){
+  const modulos = [...new Set(permissoesCache.map(p=>p.modulo))];
+  const temPermissaoCheck = (papelId, permissaoId) => papelPermissoesCache.some(pp => pp.papel_id===papelId && pp.permissao_id===permissaoId);
+
+  let html = `<thead><tr><th style="min-width:220px;">Permissão</th>${cargosCache.map(c=>`<th class="col-cargo">${c.nome}</th>`).join('')}</tr></thead><tbody>`;
+  modulos.forEach(modulo => {
+    html += `<tr class="modulo-row"><td colspan="${cargosCache.length+1}">${modulo}</td></tr>`;
+    permissoesCache.filter(p=>p.modulo===modulo).forEach(perm => {
+      html += `<tr>
+        <td><div class="perm-nome">${perm.nome}</div>${perm.descricao?`<div class="perm-desc">${perm.descricao}</div>`:''}</td>
+        ${cargosCache.map(c => `<td class="col-cargo"><input type="checkbox" ${temPermissaoCheck(c.id,perm.id)?'checked':''} onchange="alternarPermissao('${c.id}','${perm.id}',this.checked)"></td>`).join('')}
+      </tr>`;
+    });
+  });
+  html += '</tbody>';
+  document.getElementById('tabelaMatriz').innerHTML = html;
+}
+
+async function alternarPermissao(papelId, permissaoId, ligado){
+  if(ligado){
+    const { error } = await supa.from('papel_permissoes').insert({ papel_id: papelId, permissao_id: permissaoId });
+    if(error){ alert('Erro: '+error.message); return; }
+    papelPermissoesCache.push({ papel_id: papelId, permissao_id: permissaoId });
+  } else {
+    const { error } = await supa.from('papel_permissoes').delete().eq('papel_id', papelId).eq('permissao_id', permissaoId);
+    if(error){ alert('Erro: '+error.message); return; }
+    papelPermissoesCache = papelPermissoesCache.filter(pp => !(pp.papel_id===papelId && pp.permissao_id===permissaoId));
+  }
+}
+window.alternarPermissao = alternarPermissao;
+
+function gerarChaveCargo(){
+  const nome = document.getElementById('cargoNome').value;
+  const chave = nome.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  document.getElementById('cargoChave').value = chave;
+}
+window.gerarChaveCargo = gerarChaveCargo;
+
+function abrirModalCargo(){
+  document.getElementById('cargoNome').value = '';
+  document.getElementById('cargoChave').value = '';
+  document.getElementById('cargoDescricao').value = '';
+  document.getElementById('modalCargo').classList.add('show');
+}
+window.abrirModalCargo = abrirModalCargo;
+
+async function salvarNovoCargo(){
+  const nome = document.getElementById('cargoNome').value.trim();
+  const chave = document.getElementById('cargoChave').value.trim();
+  if(!nome || !chave){ alert('Preencha nome e chave.'); return; }
+  const { error } = await supa.from('papeis').insert({
+    nome, chave, descricao: document.getElementById('cargoDescricao').value.trim() || null, sistema: false
+  });
+  if(error){ alert('Erro ao criar cargo: '+error.message); return; }
+  document.getElementById('modalCargo').classList.remove('show');
+  await carregarTudo();
+}
+window.salvarNovoCargo = salvarNovoCargo;
+
+async function excluirCargo(id, nome){
+  if(!confirm(`Excluir o cargo "${nome}"? Só faz isso se ninguém estiver usando ele — apagar um cargo em uso vai deixar a pessoa sem nenhuma permissão.`)) return;
+  const { error } = await supa.from('papeis').delete().eq('id', id);
+  if(error){ alert('Erro ao excluir: '+error.message); return; }
+  await carregarTudo();
+}
+window.excluirCargo = excluirCargo;
+
+init();
+</script>
+<script src="acessibilidade.js?v=3"></script>
+<script src="hub-sidebar.js"></script>
+</body>
+</html>

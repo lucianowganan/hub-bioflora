@@ -10,23 +10,24 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 
   const MODULOS = [
-    { href: 'index.html', icon: '🏠', label: 'Início', roles: null },
-    { href: 'tarefas.html', icon: '🗂️', label: 'Quadro de Tarefas', roles: null },
-    { href: 'calendario-interno.html', icon: '🗓️', label: 'Calendário Interno', roles: null },
-    { href: 'rh.html', icon: '🗂️', label: 'Central de RH', roles: null },
-    { href: 'visitas-medicas.html', icon: '🩺', label: 'Visitas de Representantes', roles: ['chefia'] },
-    { href: 'cliente-fiel.html', icon: '💳', label: 'Cliente Fiel', roles: ['chefia','recepcao','conferencia','atendente'] },
-    { href: 'rotulos.html', icon: '🏷️', label: 'Controle de Rótulos', roles: ['chefia','recepcao','conferencia','atendente'] },
-    { href: 'producao.html', icon: '🧪', label: 'Ordem de Produção', roles: ['chefia','laboratorio','conferencia','atendente'] },
-    { href: 'controle-producao.html', icon: '📋', label: 'Controle de Produção', roles: ['chefia','laboratorio'] },
-    { href: 'reaproveitamento.html', icon: '♻️', label: 'Reaproveitamento', roles: ['chefia','conferencia'] },
-    { href: 'erros.html', icon: '✍️', label: 'Registro de Erros', roles: ['chefia','conferencia'] },
-    { href: 'inclusoes.html', icon: '🧮', label: 'Inclusões & Performance', roles: ['chefia','conferencia','atendente'] },
-    { href: 'meus-erros.html', icon: '📈', label: 'Meus Erros', roles: null },
-    { href: 'chat.html', icon: '💬', label: 'Chat Interno', roles: null },
-    { href: 'wanessia.html', icon: '🤖', label: 'Wanessia', roles: null },
-    { href: 'vendas-yampi.html', icon: '📊', label: 'Vendas (Yampi)', roles: ['chefia','gestao'] },
-    { href: 'admin.html', icon: '🔐', label: 'Administração', roles: ['chefia'] },
+    { href: 'index.html', icon: '🏠', label: 'Início', perm: null },
+    { href: 'tarefas.html', icon: '🗂️', label: 'Quadro de Tarefas', perm: 'modulo.tarefas' },
+    { href: 'calendario-interno.html', icon: '🗓️', label: 'Calendário Interno', perm: 'modulo.calendario_interno' },
+    { href: 'rh.html', icon: '🗂️', label: 'Central de RH', perm: 'modulo.rh' },
+    { href: 'visitas-medicas.html', icon: '🩺', label: 'Visitas de Representantes', perm: 'modulo.visitas' },
+    { href: 'cliente-fiel.html', icon: '💳', label: 'Cliente Fiel', perm: 'modulo.cliente_fiel' },
+    { href: 'rotulos.html', icon: '🏷️', label: 'Controle de Rótulos', perm: 'modulo.rotulos' },
+    { href: 'producao.html', icon: '🧪', label: 'Ordem de Produção', perm: 'modulo.producao' },
+    { href: 'controle-producao.html', icon: '📋', label: 'Controle de Produção', perm: 'modulo.controle_producao' },
+    { href: 'reaproveitamento.html', icon: '♻️', label: 'Reaproveitamento', perm: 'modulo.reaproveitamento' },
+    { href: 'erros.html', icon: '✍️', label: 'Registro de Erros', perm: 'modulo.erros' },
+    { href: 'inclusoes.html', icon: '🧮', label: 'Inclusões & Performance', perm: 'modulo.inclusoes' },
+    { href: 'meus-erros.html', icon: '📈', label: 'Meus Erros', perm: 'modulo.meus_erros' },
+    { href: 'chat.html', icon: '💬', label: 'Chat Interno', perm: 'modulo.chat' },
+    { href: 'wanessia.html', icon: '🤖', label: 'Wanessia', perm: 'modulo.wanessia' },
+    { href: 'vendas-yampi.html', icon: '📊', label: 'Vendas (Yampi)', perm: 'modulo.vendas' },
+    { href: 'admin.html', icon: '🔐', label: 'Administração', perm: 'modulo.admin' },
+    { href: 'cargos.html', icon: '🛡️', label: 'Cargos & Permissões', perm: 'modulo.admin' },
   ];
 
   function injetarEstilos(){
@@ -77,7 +78,7 @@
     const btn = document.createElement('a');
     btn.href = m.href;
     btn.className = 'hs-btn' + (atual ? ' active' : '');
-    btn.dataset.roles = m.roles ? m.roles.join(',') : '';
+    if(m.perm) btn.dataset.perm = m.perm;
     btn.innerHTML = `${m.icon}<span class="hs-tooltip">${m.label}</span>${m.href==='chat.html' ? '<span class="hs-badge" id="hsBadgeChat"></span>' : ''}`;
     btn.addEventListener('mouseenter', () => {
       const tip = btn.querySelector('.hs-tooltip');
@@ -151,6 +152,17 @@
     badge.classList.toggle('show', total > 0);
   }
 
+  async function buscarMinhasPermissoes(supa, papel){
+    try{
+      const { data, error } = await supa
+        .from('papel_permissoes')
+        .select('permissoes(chave), papeis!inner(chave)')
+        .eq('papeis.chave', papel);
+      if(error || !data) return null; // null = "não deu pra checar" -- mostra tudo, mais seguro que esconder à toa
+      return new Set(data.map(r => r.permissoes?.chave).filter(Boolean));
+    }catch(e){ return null; }
+  }
+
   async function aplicarPermissoes(aside){
     try{
       const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -158,9 +170,11 @@
       if(!session) return;
       const { data: perfil } = await supa.from('perfis').select('papel').eq('id', session.user.id).maybeSingle();
       const papel = perfil?.papel || 'sem_papel';
-      aside.querySelectorAll('.hs-btn[data-roles]').forEach(btn => {
-        const roles = btn.dataset.roles;
-        if(roles && !roles.split(',').includes(papel)) btn.style.display = 'none';
+
+      const minhasPermissoes = await buscarMinhasPermissoes(supa, papel);
+      aside.querySelectorAll('.hs-btn[data-perm]').forEach(btn => {
+        const perm = btn.dataset.perm;
+        if(perm && minhasPermissoes && !minhasPermissoes.has(perm)) btn.style.display = 'none';
       });
 
       // Não mostra o badge de "não lidas" pra quem já está DENTRO do chat

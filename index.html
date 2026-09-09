@@ -222,6 +222,7 @@
     <a href="meus-erros.html" class="side-btn">📈<span class="tooltip">Meus Erros</span></a>
     <a href="chat.html" class="side-btn">💬<span class="tooltip">Chat Interno</span></a>
     <a href="admin.html" class="side-btn" id="sideAdminBtn" style="display:none">🔐<span class="tooltip">Administração</span></a>
+    <a href="cargos.html" class="side-btn" id="sideCargosBtn" style="display:none">🛡️<span class="tooltip">Cargos & Permissões</span></a>
   </nav>
   <div class="bottom">
     <a href="alterar-senha.html" class="side-btn" title="Alterar senha">🔑<span class="tooltip">Alterar senha</span></a>
@@ -274,69 +275,73 @@
 
     <div class="section-title" id="modulesSection">Acesso rápido</div>
     <div class="modules" id="modules">
-      <a class="module-card card-tarefas" href="tarefas.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente,cpd">
+      <a class="module-card card-tarefas" href="tarefas.html" data-perm="modulo.tarefas">
         <div class="stripe"></div><div class="icon">🗂️</div><h3>Quadro de Tarefas</h3>
         <p>Kanban de tarefas e sugestões/ideias.</p>
       </a>
-      <a class="module-card card-calendario-interno" href="calendario-interno.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente,cpd">
+      <a class="module-card card-calendario-interno" href="calendario-interno.html" data-perm="modulo.calendario_interno">
         <div class="stripe"></div><div class="icon">🗓️</div><h3>Calendário Interno</h3>
         <p>Treinamentos, folgas e descansos da equipe.</p>
       </a>
-      <a class="module-card card-rh" href="rh.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente,cpd">
+      <a class="module-card card-rh" href="rh.html" data-perm="modulo.rh">
         <div class="stripe" style="background:#8B1A3A"></div><div class="icon">🗂️</div><h3>Central de RH</h3>
         <p>Colaboradores, ponto, férias, avaliações e relatórios — tudo num só lugar.</p>
       </a>
-      <a class="module-card card-visitas" href="visitas-medicas.html" data-roles="chefia">
+      <a class="module-card card-visitas" href="visitas-medicas.html" data-perm="modulo.visitas">
         <div class="stripe" style="background:#8B1A3A"></div><div class="icon">🩺</div><h3>Visitas de Representantes</h3>
         <p>Agenda de horários e solicitações vindas do link da bio.</p>
       </a>
-      <a class="module-card card-clientefiel" href="cliente-fiel.html" data-roles="chefia,recepcao,conferencia,atendente">
+      <a class="module-card card-clientefiel" href="cliente-fiel.html" data-perm="modulo.cliente_fiel">
         <div class="stripe" style="background:#8B1A3A"></div><div class="icon">💳</div><h3>Cliente Fiel</h3>
         <p>Programa de fidelidade sem cartão físico — pontos, brindes e histórico.</p>
       </a>
-      <a class="module-card card-rotulos" href="rotulos.html" data-roles="chefia,recepcao,conferencia,atendente">
+      <a class="module-card card-rotulos" href="rotulos.html" data-perm="modulo.rotulos">
         <div class="stripe"></div><div class="icon">🏷️</div><h3>Controle de Rótulos</h3>
         <p>A comprar, pedido e chegou.</p>
       </a>
-      <a class="module-card card-producao" href="producao.html" data-roles="chefia,laboratorio,conferencia,atendente">
+      <a class="module-card card-producao" href="producao.html" data-perm="modulo.producao">
         <div class="stripe"></div><div class="icon">🧪</div><h3>Ordem de Produção</h3>
         <p>Rastreabilidade completa até a liberação.</p>
       </a>
-      <a class="module-card card-controle" href="controle-producao.html" data-roles="chefia,laboratorio">
+      <a class="module-card card-controle" href="controle-producao.html" data-perm="modulo.controle_producao">
         <div class="stripe"></div><div class="icon">📋</div><h3>Controle de Produção</h3>
         <p>Total diário de fórmulas e pesagens.</p>
       </a>
-      <a class="module-card card-reaproveitamento" href="reaproveitamento.html" data-roles="chefia,conferencia">
+      <a class="module-card card-reaproveitamento" href="reaproveitamento.html" data-perm="modulo.reaproveitamento">
         <div class="stripe"></div><div class="icon">♻️</div><h3>Reaproveitamento</h3>
         <p>Manipulados não retirados disponíveis para reuso.</p>
       </a>
-      <a class="module-card card-erros" href="erros.html" data-roles="chefia,conferencia">
+      <a class="module-card card-erros" href="erros.html" data-perm="modulo.erros">
         <div class="stripe"></div><div class="icon">📝</div><h3>Registro de Erros</h3>
         <p>Grade de lançamento da conferência.</p>
       </a>
-      <a class="module-card card-inclusoes" href="inclusoes.html" data-roles="chefia,conferencia,atendente">
+      <a class="module-card card-inclusoes" href="inclusoes.html" data-perm="modulo.inclusoes">
         <div class="stripe" style="background:#B4472F"></div><div class="icon">🧮</div><h3>Inclusões & Performance</h3>
         <p>Cruza inclusões diárias com erros — % de erro por atendente.</p>
       </a>
-      <a class="module-card card-meuserros" href="meus-erros.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
+      <a class="module-card card-meuserros" href="meus-erros.html" data-perm="modulo.meus_erros">
         <div class="stripe"></div><div class="icon">📈</div><h3>Meus Erros</h3>
         <p>Seu desempenho individual detalhado.</p>
       </a>
-      <a class="module-card card-chat" href="chat.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente,cpd">
+      <a class="module-card card-chat" href="chat.html" data-perm="modulo.chat">
         <div class="stripe"></div><div class="icon">💬</div><h3>Chat Interno</h3>
         <p>Canais de conversa da equipe, em tempo real.</p>
       </a>
-      <a class="module-card card-wanessia" href="wanessia.html" data-roles="chefia,rh,gestao,laboratorio,recepcao,conferencia,atendente">
+      <a class="module-card card-wanessia" href="wanessia.html" data-perm="modulo.wanessia">
         <div class="stripe" style="background:#6E1430"></div><div class="icon">🤖</div><h3>Wanessia</h3>
         <p>Assistente de normas Anvisa e regimento interno.</p>
       </a>
-      <a class="module-card card-vendas" href="vendas-yampi.html" data-roles="chefia,gestao">
+      <a class="module-card card-vendas" href="vendas-yampi.html" data-perm="modulo.vendas">
         <div class="stripe" style="background:#2F7A5F"></div><div class="icon">📊</div><h3>Vendas (Yampi)</h3>
         <p>Relatório de pedidos e faturamento da loja.</p>
       </a>
-      <a class="module-card card-admin" href="admin.html" data-roles="chefia" style="display:none">
+      <a class="module-card card-admin" href="admin.html" data-perm="modulo.admin" style="display:none">
         <div class="stripe" style="background:var(--ink)"></div><div class="icon">🔐</div><h3>Administração</h3>
         <p>Usuários e permissões.</p>
+      </a>
+      <a class="module-card card-cargos" href="cargos.html" data-perm="modulo.admin" style="display:none">
+        <div class="stripe" style="background:var(--ink)"></div><div class="icon">🛡️</div><h3>Cargos & Permissões</h3>
+        <p>Cria cargos e libera módulos direto pela tela, sem SQL.</p>
       </a>
     </div>
 
@@ -359,6 +364,17 @@ function localDateStr(d){ const off = d.getTimezoneOffset(); return new Date(d.g
 function lastNDaysLocal(n){ const days=[]; const hoje=new Date(localDateStr(new Date())+'T12:00:00'); for(let i=n-1;i>=0;i--){ const d=new Date(hoje); d.setDate(d.getDate()-i); days.push(localDateStr(d)); } return days; }
 function movingAverage7(dailyCounts, days){ return days.map((_,i)=>{ const w=days.slice(Math.max(0,i-6),i+1); return w.reduce((a,d)=>a+(dailyCounts[d]||0),0)/w.length; }); }
 
+async function buscarMinhasPermissoes(papel){
+  try{
+    const { data, error } = await supa
+      .from('papel_permissoes')
+      .select('permissoes(chave), papeis!inner(chave)')
+      .eq('papeis.chave', papel);
+    if(error || !data) return null;
+    return new Set(data.map(r => r.permissoes?.chave).filter(Boolean));
+  }catch(e){ return null; }
+}
+
 async function init(){
   const { data: { session } } = await supa.auth.getSession();
   if(!session){ window.location.href = 'login.html'; return; }
@@ -366,18 +382,21 @@ async function init(){
   const { data: perfil } = await supa.from('perfis').select('papel,nome_exibicao,atendente_vinculado').eq('id', session.user.id).maybeSingle();
   const papel = perfil ? perfil.papel : 'sem_papel';
   const primeiroNome = (perfil?.nome_exibicao || session.user.email).split('@')[0].split('.')[0];
+  const minhasPermissoes = await buscarMinhasPermissoes(papel);
+  const temPerm = (chave) => !minhasPermissoes || minhasPermissoes.has(chave); // sem permissoes carregadas = mostra tudo (fallback seguro)
 
   document.getElementById('whoLabel').textContent = perfil?.nome_exibicao || session.user.email;
   document.getElementById('heroGreeting').textContent = `Bem-vindo(a), ${primeiroNome.charAt(0).toUpperCase()+primeiroNome.slice(1)}`;
   document.getElementById('rolePill').textContent = ROLE_LABELS[papel];
-  if(papel === 'chefia') document.getElementById('sideAdminBtn').style.display = 'flex';
-  if(papel === 'chefia') document.getElementById('sideVisitasBtn').style.display = 'flex';
-  if(['chefia','recepcao','conferencia','atendente'].includes(papel)) document.getElementById('sideRotulosBtn').style.display = 'flex';
-  if(['chefia','laboratorio','conferencia','atendente'].includes(papel)) document.getElementById('sideProducaoBtn').style.display = 'flex';
-  if(['chefia','laboratorio'].includes(papel)) document.getElementById('sideControleBtn').style.display = 'flex';
-  if(['chefia','laboratorio','conferencia'].includes(papel)) document.getElementById('sideReaproveitamentoBtn').style.display = 'flex';
-  if(['chefia','conferencia'].includes(papel)) document.getElementById('sideErrosBtn').style.display = 'flex';
-  if(['chefia','conferencia','atendente'].includes(papel)) document.getElementById('sideInclusoesBtn').style.display = 'flex';
+  if(temPerm('modulo.admin')) document.getElementById('sideAdminBtn').style.display = 'flex';
+  if(temPerm('modulo.admin')) document.getElementById('sideCargosBtn').style.display = 'flex';
+  if(temPerm('modulo.visitas')) document.getElementById('sideVisitasBtn').style.display = 'flex';
+  if(temPerm('modulo.rotulos')) document.getElementById('sideRotulosBtn').style.display = 'flex';
+  if(temPerm('modulo.producao')) document.getElementById('sideProducaoBtn').style.display = 'flex';
+  if(temPerm('modulo.controle_producao')) document.getElementById('sideControleBtn').style.display = 'flex';
+  if(temPerm('modulo.reaproveitamento')) document.getElementById('sideReaproveitamentoBtn').style.display = 'flex';
+  if(temPerm('modulo.erros')) document.getElementById('sideErrosBtn').style.display = 'flex';
+  if(temPerm('modulo.inclusoes')) document.getElementById('sideInclusoesBtn').style.display = 'flex';
 
   if(papel === 'sem_papel'){
     document.getElementById('roleBanner').style.display = 'block';
@@ -389,13 +408,12 @@ async function init(){
   document.getElementById('heroSub').textContent = 'Farmácia Bioflora — painel interno';
 
   document.querySelectorAll('.module-card').forEach(el => {
-    const roles = el.dataset.roles.split(',');
-    el.style.display = roles.includes(papel) ? 'block' : 'none';
+    const perm = el.dataset.perm;
+    el.style.display = temPerm(perm) ? 'block' : 'none';
   });
 
-  document.querySelectorAll('.integ-card[data-roles]').forEach(el => {
-    const roles = el.dataset.roles.split(',');
-    el.style.display = roles.includes(papel) ? 'block' : 'none';
+  document.querySelectorAll('.integ-card[data-perm]').forEach(el => {
+    el.style.display = temPerm(el.dataset.perm) ? 'block' : 'none';
   });
 
   await renderQuickStats(papel);
