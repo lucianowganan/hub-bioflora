@@ -746,11 +746,20 @@ async function widgetFormulasDiaSeguinte(){
   const capsula = data?.capsula ?? 0;
   const dermato = data?.dermato ?? 0;
 
-  return `<div class="card w4"><div class="card-head"><h2>Fórmulas previstas</h2><span class="card-icon">📋</span></div><p class="card-sub">Pra hoje, registrado ontem</p>
-    <div class="mini-list">
-      <div class="mini-list-row"><span class="name">Cápsulas</span><span class="badge info">${capsula}</span></div>
-      <div class="mini-list-row"><span class="name">Dermato</span><span class="badge info">${dermato}</span></div>
-    </div></div>`;
+  return `<div class="card w4">
+    <div class="card-head"><h2>Fórmulas previstas</h2><span class="card-icon">📋</span></div>
+    <p class="card-sub">Pra hoje, registrado ontem</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="background:var(--paper);border-radius:12px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;color:var(--gray);text-transform:uppercase;">Cápsulas</span>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;color:#8B1A3A;">${capsula}</span>
+      </div>
+      <div style="background:var(--paper);border-radius:12px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;color:var(--gray);text-transform:uppercase;">Dermato</span>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;color:#8B1A3A;">${dermato}</span>
+      </div>
+    </div>
+  </div>`;
 }
 
 async function widgetFormulasComplexas(){
@@ -770,7 +779,7 @@ async function widgetFormulasComplexas(){
     vagasPorFormula[r.formula_id] = (vagasPorFormula[r.formula_id]||0) + Math.ceil(r.quantidade / f.unidades_por_vaga);
   });
 
-  return `<div class="card w6">
+  return `<div class="card w8">
     <div class="card-head"><h2>Fórmulas Complexas hoje</h2><span class="card-icon">🧩</span></div>
     <p class="card-sub">Disponibilidade de hoje — <a href="formulas-complexas.html">ver calendário completo</a></p>
     <div>
