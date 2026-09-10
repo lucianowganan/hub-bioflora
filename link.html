@@ -5,9 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Farmácia Bioflora</title>
 <meta name="description" content="Farmácia de manipulação e drogaria em Itajubá, Minas Gerais.">
+<link rel="icon" type="image/png" href="logo-b.png">
+<link rel="apple-touch-icon" href="logo-b.png">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Farmácia Bioflora — Itajubá, MG">
+<meta property="og:description" content="Farmácia de manipulação e drogaria em Itajubá, MG. Encontre o que você precisa em segundos.">
+<meta property="og:image" content="banner-hero.webp">
+<meta property="og:url" content="https://hub.farmaciabioflora.blog.br/link.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Farmácia Bioflora — Itajubá, MG">
+<meta name="twitter:description" content="Farmácia de manipulação e drogaria em Itajubá, MG.">
+<meta name="twitter:image" content="banner-hero.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Google Analytics 4 — troque G-4SE518WVFV pelo Measurement ID real (analytics.google.com) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4SE518WVFV"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-4SE518WVFV');
+</script>
 <style>
   :root{
     --wine:#7a1a35;
@@ -394,58 +415,28 @@
       <span class="bcell-badge fade-in">👆 Clique aqui</span>
       <h4>Produtos com<br>desconto especial</h4>
     </div>
-    <div class="bcell b-wide" style="background:linear-gradient(0deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.15) 60%), url('card-site-menopausa.webp') center/cover no-repeat; color:#fff;" onclick="toggleDetail('hormonal')">
+    <div class="bcell b-wide" style="background:linear-gradient(0deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.15) 60%), url('card-site-menopausa.webp') center/cover no-repeat; color:#fff;" onclick="window.open('https://www.farmaciabioflora.com.br/bem-estar?sort_by=relevance','_blank')">
       <span class="bcell-badge fade-in">👆 Clique aqui</span>
       <h4>Suplemento pra ajudar na menopausa</h4>
     </div>
-    <div class="bcell b-square" style="background:linear-gradient(0deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.15) 60%), url('card-site-skincare.webp') center/cover no-repeat; color:#fff;" onclick="toggleDetail('skincare')">
+    <div class="bcell b-square" style="background:linear-gradient(0deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.15) 60%), url('card-site-skincare.webp') center/cover no-repeat; color:#fff;" onclick="window.open('https://www.farmaciabioflora.com.br/beleza?sort_by=relevance','_blank')">
       <span class="bcell-badge fade-in">👆 Clique aqui</span>
       <h4>Skincare e beleza</h4>
     </div>
-    <div class="bcell b-round" style="background:linear-gradient(0deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.1) 65%), url('card-site-pet.webp') center/cover no-repeat; color:#fff;" onclick="toggleDetail('veterinario')">
+    <div class="bcell b-round" style="background:linear-gradient(0deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.1) 65%), url('card-site-pet.webp') center/cover no-repeat; color:#fff;" onclick="window.open(waLink('Olá! Vim pelo link da bio e tenho interesse em manipulação veterinária para meu pet.'),'_blank')">
       <span class="bcell-badge fade-in">👆 Clique aqui</span>
       <h4>Manipulação para meu pet</h4>
     </div>
-    <div class="bcell b-square2" style="background:linear-gradient(0deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.15) 60%), url('card-site-whatsapp.webp') center/cover no-repeat; color:#fff;" onclick="toggleDetail('receita')">
+    <div class="bcell b-square2" style="background:linear-gradient(0deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.15) 60%), url('card-site-whatsapp.webp') center/cover no-repeat; color:#fff;" onclick="window.open(waLink('Olá! Vim pelo link da bio e gostaria de manipular uma receita.'),'_blank')">
       <span class="bcell-badge fade-in">👆 Clique aqui</span>
       <h4>Manipular minha receita</h4>
     </div>
-    <div class="bcell b-wide2" style="background:linear-gradient(90deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.3) 55%, rgba(36,29,26,0.05) 100%), url('card-site-emagrecimento.webp') center/cover no-repeat; color:#fff;" onclick="toggleDetail('emagrecimento')">
+    <div class="bcell b-wide2" style="background:linear-gradient(90deg, rgba(36,29,26,0.72) 0%, rgba(36,29,26,0.3) 55%, rgba(36,29,26,0.05) 100%), url('card-site-emagrecimento.webp') center/cover no-repeat; color:#fff;" onclick="window.open('https://www.farmaciabioflora.com.br/emagrecimento?sort_by=relevance','_blank')">
       <span class="bcell-badge fade-in">👆 Clique aqui</span>
       <h4 style="font-size:15px;max-width:180px;">Quero perder os quilinhos</h4>
     </div>
   </div>
 
-  <div class="lab-detail" id="detail-hormonal">
-    <div class="lab-detail-inner">
-      <p>Suplementos e fórmulas manipuladas pra apoiar mulheres 40+ na menopausa — equilíbrio hormonal, libido e bem-estar, sempre com acompanhamento farmacêutico.</p>
-      <a class="btn-mini" href="https://wa.me/5535984493997?text=Ol%C3%A1!%20Quero%20saber%20mais%20sobre%20suplementos%20para%20menopausa" target="_blank">Falar com a farmácia →</a>
-    </div>
-  </div>
-  <div class="lab-detail" id="detail-veterinario">
-    <div class="lab-detail-inner">
-      <p>Manipulação Veterinária — fórmulas manipuladas especialmente para cães e gatos, com a qualidade e o cuidado Bioflora.</p>
-      <a class="btn-mini" href="https://wa.me/5535984493997?text=Ol%C3%A1!%20Quero%20saber%20mais%20sobre%20manipula%C3%A7%C3%A3o%20veterin%C3%A1ria" target="_blank">Falar com a farmácia →</a>
-    </div>
-  </div>
-  <div class="lab-detail" id="detail-skincare">
-    <div class="lab-detail-inner">
-      <p>Fórmulas manipuladas de skincare e beleza — cuidados com a pele sob medida pra sua necessidade, com orientação farmacêutica.</p>
-      <a class="btn-mini" href="https://wa.me/5535984493997?text=Ol%C3%A1!%20Quero%20saber%20mais%20sobre%20skincare%20e%20beleza" target="_blank">Falar com a farmácia →</a>
-    </div>
-  </div>
-  <div class="lab-detail" id="detail-receita">
-    <div class="lab-detail-inner">
-      <p>Traga sua receita e a gente manipula com precisão e qualidade farmacêutica — do jeito certo, na dose certa.</p>
-      <a class="btn-mini" href="https://wa.me/5535984493997?text=Ol%C3%A1!%20Quero%20manipular%20uma%20receita" target="_blank">Enviar receita →</a>
-    </div>
-  </div>
-  <div class="lab-detail" id="detail-emagrecimento">
-    <div class="lab-detail-inner">
-      <p>Fórmulas manipuladas de apoio ao emagrecimento e composição corporal, sempre com orientação farmacêutica.</p>
-      <a class="btn-mini" href="https://wa.me/5535984493997?text=Ol%C3%A1!%20Quero%20saber%20sobre%20emagrecimento" target="_blank">Falar com a farmácia →</a>
-    </div>
-  </div>
 
   <!-- WHATSAPP CARDS -->
   <div class="wa-list" style="margin-top:30px;">
@@ -495,13 +486,13 @@
   </div>
   <div class="ig-strip">
     <div class="ig-embed-wrap">
-      <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/bioflorafarmacia/" data-instgrm-version="14" style="margin:0;width:100%;"></blockquote>
+      <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/bioflorafarmacia/p/DUB5UxJEQlw/" data-instgrm-version="14" style="margin:0;width:100%;"></blockquote>
     </div>
     <div class="ig-embed-wrap">
-      <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/bioflorafarmacia/" data-instgrm-version="14" style="margin:0;width:100%;"></blockquote>
+      <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/bioflorafarmacia/reel/DToIKCREZZP/" data-instgrm-version="14" style="margin:0;width:100%;"></blockquote>
     </div>
     <div class="ig-embed-wrap">
-      <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/bioflorafarmacia/" data-instgrm-version="14" style="margin:0;width:100%;"></blockquote>
+      <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/bioflorafarmacia/p/DdBfAjbES0T/" data-instgrm-version="14" style="margin:0;width:100%;"></blockquote>
     </div>
   </div>
   <script async src="//www.instagram.com/embed.js"></script>
@@ -611,8 +602,17 @@ const SB_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
 
+/* Captura utm_source/utm_medium/utm_campaign da URL (ex: ?utm_source=instagram&utm_medium=bio)
+   e anexa em todo evento salvo, pra você cruzar depois de onde veio cada clique/lead. */
+const urlParams = new URLSearchParams(window.location.search);
+const utmParams = {
+  utm_source: urlParams.get('utm_source') || null,
+  utm_medium: urlParams.get('utm_medium') || null,
+  utm_campaign: urlParams.get('utm_campaign') || null,
+};
+
 function track(event, data){
-  sb.from('link_bio_events').insert({ event, data: data || {} })
+  sb.from('link_bio_events').insert({ event, data: {...(data||{}), ...utmParams} })
     .then(({error}) => { if(error) console.warn('track error', error); });
 }
 document.querySelectorAll('.wa-card, .pcard-cta, .social-btn, .visit-btn, .quiz-banner').forEach(el=>{
