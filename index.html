@@ -582,6 +582,7 @@ async function renderWidgets(papel, perfil){
   if(podeVerErrosProprios) cards.push(await widgetMinhasInclusoes(perfil.atendente_vinculado, false));
   if(papel === 'chefia') cards.push(await widgetMinhasInclusoes(null, true));
   if(podeVerErrosGeral) cards.push(await widgetErrosEquipe());
+  if(['chefia','conferencia','atendente'].includes(papel)) cards.push(await widgetFormulasDiaSeguinte());
   if(podeVerReaproveitamento) cards.push(await widgetReaproveitamento());
   if(podeVerRotulos) cards.push(await widgetRotulos());
   if(podeVerOrdens) cards.push(await widgetOrdens());
@@ -726,6 +727,32 @@ function situacaoValidadeHome(validade){
   if(diffDias < 0) return { cls:'bad', label:'Vencido' };
   if(diffDias <= 5) return { cls:'warn', label:`Vence em ${diffDias}d` };
   return { cls:'good', label:`Vence em ${diffDias}d` };
+}
+
+async function widgetFormulasDiaSeguinte(){
+  const hoje = new Date();
+  const ontem = new Date(hoje); ontem.setDate(hoje.getDate()-1);
+  const off = ontem.getTimezoneOffset();
+  const ontemStr = new Date(ontem.getTime()-off*60000).toISOString().slice(0,10);
+
+  const { data } = await supa.from('formulas_dia_seguinte').select('capsula,dermato').eq('data', ontemStr).maybeSingle();
+  const capsula = data?.capsula ?? 0;
+  const dermato = data?.dermato ?? 0;
+
+  return `<div class="card w6">
+    <div class="card-head"><h2>Fórmulas previstas pra hoje</h2><span class="card-icon">📋</span></div>
+    <p class="card-sub">Previsão registrada ontem no módulo de Inclusões</p>
+    <div style="display:flex;gap:14px;">
+      <div style="flex:1;background:var(--paper);border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:600;color:#8B1A3A;">${capsula}</div>
+        <div style="font-size:11px;color:var(--gray);text-transform:uppercase;">Cápsulas</div>
+      </div>
+      <div style="flex:1;background:var(--paper);border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:600;color:#8B1A3A;">${dermato}</div>
+        <div style="font-size:11px;color:var(--gray);text-transform:uppercase;">Dermato</div>
+      </div>
+    </div>
+  </div>`;
 }
 
 async function widgetReaproveitamento(){

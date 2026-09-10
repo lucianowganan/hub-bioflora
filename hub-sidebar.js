@@ -193,7 +193,54 @@
         verificarAvisoReaproveitamento(supa);
         setInterval(() => verificarAvisoReaproveitamento(supa), 60000);
       }
+
+      // Pop-up de previsão de fórmulas pra hoje (registrada ontem) --
+      // pra chefia, conferência e atendente, uma vez por dia, assim
+      // que abrem qualquer página do Hub
+      if(['chefia','conferencia','atendente'].includes(papel)){
+        verificarAvisoFormulasDiaSeguinte(supa);
+      }
     }catch(e){ /* se der erro, deixa tudo visível — melhor mostrar de mais do que travar a navegação */ }
+  }
+
+  async function verificarAvisoFormulasDiaSeguinte(supa){
+    const hojeStr = new Date().toISOString().slice(0,10);
+    const chave = 'formulas_dia_seguinte_popup_' + hojeStr;
+    if(localStorage.getItem(chave)) return;
+
+    try{
+      const ontem = new Date(); ontem.setDate(ontem.getDate()-1);
+      const off = ontem.getTimezoneOffset();
+      const ontemStr = new Date(ontem.getTime()-off*60000).toISOString().slice(0,10);
+      const { data, error } = await supa.from('formulas_dia_seguinte').select('capsula,dermato').eq('data', ontemStr).maybeSingle();
+      if(error || !data || (data.capsula===0 && data.dermato===0)) return;
+      localStorage.setItem(chave, '1');
+      mostrarPopupFormulasDiaSeguinte(data.capsula, data.dermato);
+    }catch(e){ /* silencioso */ }
+  }
+
+  function mostrarPopupFormulasDiaSeguinte(capsula, dermato){
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:28px;max-width:380px;width:100%;font-family:'Maven Pro',sans-serif;text-align:center;">
+        <div style="font-size:36px;margin-bottom:8px;">📋</div>
+        <h3 style="font-family:'Space Grotesk',sans-serif;font-size:17px;margin:0 0 14px;color:#8B1A3A;">Previsão de fórmulas pra hoje</h3>
+        <div style="display:flex;gap:14px;justify-content:center;margin-bottom:20px;">
+          <div style="background:#F7E9EE;border-radius:12px;padding:14px 22px;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;color:#8B1A3A;">${capsula}</div>
+            <div style="font-size:11px;color:#6E6266;text-transform:uppercase;">Cápsulas</div>
+          </div>
+          <div style="background:#F7E9EE;border-radius:12px;padding:14px 22px;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;color:#8B1A3A;">${dermato}</div>
+            <div style="font-size:11px;color:#6E6266;text-transform:uppercase;">Dermato</div>
+          </div>
+        </div>
+        <button id="hsFormulasFechar" style="font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 22px;border-radius:8px;border:none;background:#8B1A3A;color:#fff;cursor:pointer;">Entendi</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById('hsFormulasFechar').addEventListener('click', () => overlay.remove());
   }
 
   async function verificarAvisoReaproveitamento(supa){
