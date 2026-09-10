@@ -771,16 +771,20 @@ async function widgetFormulasComplexas(){
   if(!lista.length) return '';
 
   const idsFormulas = lista.map(f=>f.id);
-  const { data: registros } = await supa.from('formulas_complexas_registro').select('formula_id,quantidade').in('formula_id', idsFormulas).eq('data', hojeStr);
-  const totalPorFormula = {};
-  (registros||[]).forEach(r => { totalPorFormula[r.formula_id] = (totalPorFormula[r.formula_id]||0) + r.quantidade; });
+  const { data: registros } = await supa.from('formulas_complexas_registro').select('formula_id,quantidade').in('formula_id', idsFormulas).eq('data', hojeStr).in('status', ['aprovado','pendente']);
+  const vagasPorFormula = {};
+  (registros||[]).forEach(r => {
+    const f = lista.find(x=>x.id===r.formula_id);
+    if(!f) return;
+    vagasPorFormula[r.formula_id] = (vagasPorFormula[r.formula_id]||0) + Math.ceil(r.quantidade / f.unidades_por_vaga);
+  });
 
   return `<div class="card w6">
     <div class="card-head"><h2>Fórmulas Complexas hoje</h2><span class="card-icon">🧩</span></div>
     <p class="card-sub">Disponibilidade de hoje — <a href="formulas-complexas.html">ver calendário completo</a></p>
     <div>
       ${lista.map(f => {
-        const total = totalPorFormula[f.id] || 0;
+        const total = vagasPorFormula[f.id] || 0;
         const restam = f.limite_diario - total;
         const lotada = restam <= 0;
         return `<div class="mini-list-row">
