@@ -746,20 +746,11 @@ async function widgetFormulasDiaSeguinte(){
   const capsula = data?.capsula ?? 0;
   const dermato = data?.dermato ?? 0;
 
-  return `<div class="card w6">
-    <div class="card-head"><h2>Fórmulas previstas pra hoje</h2><span class="card-icon">📋</span></div>
-    <p class="card-sub">Previsão registrada ontem no módulo de Inclusões</p>
-    <div style="display:flex;gap:14px;">
-      <div style="flex:1;background:var(--paper);border-radius:12px;padding:16px;text-align:center;">
-        <div style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:600;color:#8B1A3A;">${capsula}</div>
-        <div style="font-size:11px;color:var(--gray);text-transform:uppercase;">Cápsulas</div>
-      </div>
-      <div style="flex:1;background:var(--paper);border-radius:12px;padding:16px;text-align:center;">
-        <div style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:600;color:#8B1A3A;">${dermato}</div>
-        <div style="font-size:11px;color:var(--gray);text-transform:uppercase;">Dermato</div>
-      </div>
-    </div>
-  </div>`;
+  return `<div class="card w4"><div class="card-head"><h2>Fórmulas previstas</h2><span class="card-icon">📋</span></div><p class="card-sub">Pra hoje, registrado ontem</p>
+    <div class="mini-list">
+      <div class="mini-list-row"><span class="name">Cápsulas</span><span class="badge info">${capsula}</span></div>
+      <div class="mini-list-row"><span class="name">Dermato</span><span class="badge info">${dermato}</span></div>
+    </div></div>`;
 }
 
 async function widgetFormulasComplexas(){
