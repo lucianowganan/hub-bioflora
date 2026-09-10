@@ -22,6 +22,7 @@
     { href: 'reaproveitamento.html', icon: '♻️', label: 'Reaproveitamento', perm: 'modulo.reaproveitamento' },
     { href: 'erros.html', icon: '✍️', label: 'Registro de Erros', perm: 'modulo.erros' },
     { href: 'inclusoes.html', icon: '🧮', label: 'Inclusões & Performance', perm: 'modulo.inclusoes' },
+    { href: 'formulas-complexas.html', icon: '🧩', label: 'Fórmulas Complexas', perm: 'modulo.formulas_complexas' },
     { href: 'meus-erros.html', icon: '📈', label: 'Meus Erros', perm: 'modulo.meus_erros' },
     { href: 'chat.html', icon: '💬', label: 'Chat Interno', perm: 'modulo.chat' },
     { href: 'wanessia.html', icon: '🤖', label: 'Wanessia', perm: 'modulo.wanessia' },

@@ -95,7 +95,6 @@
 
   <div class="tabs">
     <button class="tab-btn active" data-aba="lancar" onclick="trocarAbaInc('lancar')">📝 Lançar inclusões</button>
-    <button class="tab-btn" data-aba="complexas" onclick="trocarAbaInc('complexas')">🧩 Fórmulas Complexas</button>
     <button class="tab-btn" data-aba="desempenho" id="tabDesempenhoInc" onclick="trocarAbaInc('desempenho')" style="display:none">📊 Desempenho</button>
   </div>
 
@@ -119,30 +118,7 @@
         <div class="field"><label>Cápsulas</label><input type="number" min="0" id="previsaoCapsula" style="width:120px;" onchange="salvarPrevisaoDiaSeguinte()"></div>
         <div class="field"><label>Dermato</label><input type="number" min="0" id="previsaoDermato" style="width:120px;" onchange="salvarPrevisaoDiaSeguinte()"></div>
       </div>
-    </div>
-  </div>
-
-  <!-- FÓRMULAS COMPLEXAS -->
-  <div class="panel" id="painelComplexas">
-    <div class="card">
-      <div class="date-row">
-        <label style="font-size:12.5px;color:var(--gray);font-weight:600;">Ver dia:</label>
-        <input type="date" id="dataComplexas" onchange="dataComplexasAtual=this.value; renderComplexas();">
-        <button class="btn secondary" onclick="irParaHojeComplexas()">Hoje</button>
-      </div>
-      <div id="avisoLotandoComplexas"></div>
-      <div id="listaComplexas"></div>
-    </div>
-
-    <div class="card" id="cardGerenciarComplexas" style="display:none">
-      <h2>Gerenciar catálogo</h2>
-      <p class="desc">Cria, edita ou exclui as fórmulas complexas e o limite diário de cada uma.</p>
-      <div class="date-row" style="margin-bottom:12px;">
-        <div class="field"><label>Nome</label><input id="novaComplexaNome" placeholder="Ex: Biscoito 30un" style="width:220px;"></div>
-        <div class="field"><label>Limite por dia</label><input type="number" min="1" id="novaComplexaLimite" style="width:120px;"></div>
-        <button class="btn" onclick="salvarFormulaComplexa()">+ Adicionar</button>
-      </div>
-      <div id="listaCatalogoComplexas"></div>
+      <p class="desc" style="margin-top:10px;">Pra fórmulas complexas com limite diário, agora tem um módulo próprio: <a href="formulas-complexas.html">Fórmulas Complexas</a>.</p>
     </div>
   </div>
 
@@ -198,10 +174,8 @@ function localDateStrInc(d){
 async function init(){
   const { papel } = await requireRole(['chefia','conferencia','atendente']);
   meuPapelInc = papel;
-  souGerenteComplexas = ['chefia','conferencia'].includes(papel);
   podeVerDesempenhoInc = await temPermissao(supa, papel, 'inclusoes.ver_desempenho');
   if(podeVerDesempenhoInc) document.getElementById('tabDesempenhoInc').style.display = 'inline-block';
-  if(souGerenteComplexas) document.getElementById('cardGerenciarComplexas').style.display = 'block';
 
   const { data: at } = await supa.from('atendentes_erros').select('nome,grupo').order('criado_em');
   atendentesInc = (at||[]).map(a=>a.nome);
@@ -209,23 +183,19 @@ async function init(){
   document.getElementById('dataLancar').value = dataLancarAtual;
   document.getElementById('dataLancar').addEventListener('change', (e)=>{ dataLancarAtual = e.target.value; renderLancar(); });
   document.getElementById('dataReferenciaInc').value = dataReferenciaInc;
-  document.getElementById('dataComplexas').value = dataComplexasAtual;
 
   renderLancar();
 }
 
 let meuPapelInc = null;
 let podeVerDesempenhoInc = false;
-let souGerenteComplexas = false;
 
 function trocarAbaInc(aba){
   if(aba === 'desempenho' && !podeVerDesempenhoInc) return;
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.aba===aba));
   document.getElementById('painelLancar').classList.toggle('active', aba==='lancar');
-  document.getElementById('painelComplexas').classList.toggle('active', aba==='complexas');
   document.getElementById('painelDesempenho').classList.toggle('active', aba==='desempenho');
   if(aba==='desempenho') carregarDesempenho();
-  if(aba==='complexas') renderComplexas();
 }
 window.trocarAbaInc = trocarAbaInc;
 
@@ -382,112 +352,6 @@ function corPct(pct){
   return 'var(--bad)';
 }
 
-// ============================================================
-// FÓRMULAS COMPLEXAS
-// ============================================================
-let dataComplexasAtual = localDateStrInc(new Date());
-let catalogoComplexasCache = [];
-
-function irParaHojeComplexas(){
-  dataComplexasAtual = localDateStrInc(new Date());
-  document.getElementById('dataComplexas').value = dataComplexasAtual;
-  renderComplexas();
-}
-window.irParaHojeComplexas = irParaHojeComplexas;
-
-async function renderComplexas(){
-  const { data: catalogo } = await supa.from('formulas_complexas_catalogo').select('*').eq('ativo', true).order('nome');
-  catalogoComplexasCache = catalogo || [];
-
-  const { data: registros } = await supa.from('formulas_complexas_registro').select('formula_id,quantidade').eq('data', dataComplexasAtual);
-  const totalPorFormula = {};
-  (registros||[]).forEach(r => { totalPorFormula[r.formula_id] = (totalPorFormula[r.formula_id]||0) + r.quantidade; });
-
-  const lotadas = catalogoComplexasCache.filter(f => (totalPorFormula[f.id]||0) >= f.limite_diario);
-  document.getElementById('avisoLotandoComplexas').innerHTML = lotadas.length
-    ? `<div class="aviso-lotando">⚠️ Já lotou hoje: ${lotadas.map(f=>f.nome).join(', ')} — não dá mais pra incluir essas nessa data.</div>`
-    : '';
-
-  document.getElementById('listaComplexas').innerHTML = catalogoComplexasCache.length ? catalogoComplexasCache.map(f => {
-    const total = totalPorFormula[f.id] || 0;
-    const lotada = total >= f.limite_diario;
-    return `
-      <div class="complexa-row ${lotada?'lotada':''}">
-        <div>
-          <span class="complexa-nome">${f.nome}</span>${lotada ? '<span class="complexa-badge-lotada">Lotada</span>' : ''}
-          <div class="complexa-progresso">${total} / ${f.limite_diario} incluídas hoje</div>
-        </div>
-        <div class="complexa-add">
-          ${lotada
-            ? `<span style="font-size:11.5px;color:var(--bad);font-weight:600;">Sem vaga</span>`
-            : `<input type="number" min="1" max="${f.limite_diario-total}" id="qtdComplexa_${f.id}" placeholder="qtd">
-               <button class="btn small" onclick="registrarComplexa('${f.id}', ${f.limite_diario-total})">Incluir</button>`
-          }
-        </div>
-      </div>`;
-  }).join('') : '<div class="empty-state">Nenhuma fórmula complexa cadastrada ainda.</div>';
-
-  if(souGerenteComplexas) renderCatalogoComplexasGerencia();
-}
-window.renderComplexas = renderComplexas;
-
-async function registrarComplexa(formulaId, vagasRestantes){
-  const input = document.getElementById('qtdComplexa_'+formulaId);
-  const quantidade = Number(input.value);
-  if(!quantidade || quantidade < 1){ alert('Informa a quantidade.'); return; }
-  if(quantidade > vagasRestantes){ alert(`Só tem ${vagasRestantes} vaga(s) restante(s) pra essa fórmula hoje.`); return; }
-  const { data: { session } } = await supa.auth.getSession();
-  const { error } = await supa.from('formulas_complexas_registro').insert({
-    formula_id: formulaId, data: dataComplexasAtual, quantidade, registrado_por: session.user.id
-  });
-  if(error){ alert('Erro: '+error.message); return; }
-  renderComplexas();
-}
-window.registrarComplexa = registrarComplexa;
-
-function renderCatalogoComplexasGerencia(){
-  document.getElementById('listaCatalogoComplexas').innerHTML = catalogoComplexasCache.length ? catalogoComplexasCache.map(f => `
-    <div class="catalogo-item">
-      <span>${f.nome} — limite ${f.limite_diario}/dia</span>
-      <div style="display:flex;gap:8px;">
-        <button class="btn secondary small" onclick="editarLimiteComplexa('${f.id}', ${f.limite_diario})">Editar limite</button>
-        <button class="btn secondary small" onclick="excluirFormulaComplexa('${f.id}')" style="color:var(--bad);">Excluir</button>
-      </div>
-    </div>
-  `).join('') : '<div class="empty-state">Nada cadastrado ainda.</div>';
-}
-
-async function salvarFormulaComplexa(){
-  const nome = document.getElementById('novaComplexaNome').value.trim();
-  const limite = Number(document.getElementById('novaComplexaLimite').value);
-  if(!nome || !limite){ alert('Preenche nome e limite.'); return; }
-  const { data: { session } } = await supa.auth.getSession();
-  const { error } = await supa.from('formulas_complexas_catalogo').insert({ nome, limite_diario: limite, criado_por: session.user.id });
-  if(error){ alert('Erro: '+error.message); return; }
-  document.getElementById('novaComplexaNome').value = '';
-  document.getElementById('novaComplexaLimite').value = '';
-  renderComplexas();
-}
-window.salvarFormulaComplexa = salvarFormulaComplexa;
-
-async function editarLimiteComplexa(id, limiteAtual){
-  const novo = prompt('Novo limite diário:', limiteAtual);
-  if(novo === null) return;
-  const limite = Number(novo);
-  if(!limite || limite < 1){ alert('Limite inválido.'); return; }
-  const { error } = await supa.from('formulas_complexas_catalogo').update({ limite_diario: limite }).eq('id', id);
-  if(error){ alert('Erro: '+error.message); return; }
-  renderComplexas();
-}
-window.editarLimiteComplexa = editarLimiteComplexa;
-
-async function excluirFormulaComplexa(id){
-  if(!confirm('Excluir essa fórmula complexa do catálogo? O histórico de registros dela some junto.')) return;
-  const { error } = await supa.from('formulas_complexas_catalogo').delete().eq('id', id);
-  if(error){ alert('Erro: '+error.message); return; }
-  renderComplexas();
-}
-window.excluirFormulaComplexa = excluirFormulaComplexa;
 
 init();
 </script>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fórmulas Complexas — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<script src="permissoes.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC; --bad:#B4472F; --bad-tint:#FBEBE6;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand-text h1{font-family:var(--headfont);font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn.small{padding:6px 12px;font-size:11.5px;}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .panel h2{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+
+  .semana-nav{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+  .semana-nav button{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:8px 14px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;}
+  .semana-nav .rotulo{font-family:var(--headfont);font-weight:600;font-size:13.5px;}
+
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:11px;color:var(--gray);font-weight:600;}
+  .field input{font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;}
+
+  table.cal-formulas{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.cal-formulas th, table.cal-formulas td{border:1px solid var(--line);padding:8px;text-align:center;vertical-align:top;}
+  table.cal-formulas th{background:var(--burgundy-tint);color:var(--burgundy);font-family:var(--headfont);font-size:11.5px;font-weight:600;}
+  table.cal-formulas td.nome-formula{text-align:left;font-weight:700;background:#fff;position:sticky;left:0;}
+  .cel-disponivel{background:var(--good-tint);cursor:pointer;border-radius:8px;padding:8px 4px;}
+  .cel-disponivel:hover{outline:2px solid var(--good);}
+  .cel-disponivel .status{color:var(--good);font-weight:700;font-size:11.5px;}
+  .cel-disponivel .restam{font-size:10.5px;color:var(--gray);margin-top:2px;}
+  .cel-lotada{background:var(--bad-tint);border-radius:8px;padding:8px 4px;}
+  .cel-lotada .status{color:var(--bad);font-weight:700;font-size:11.5px;text-decoration:line-through;}
+  .cel-feriado{background:#F1ECEA;color:var(--gray);font-size:11px;border-radius:8px;padding:8px 4px;}
+
+  .quick-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;}
+  .catalogo-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .catalogo-item:last-child{border-bottom:none;}
+  .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand-text">
+      <h1>Fórmulas Complexas</h1>
+      <p>Farmácia Bioflora — limite diário de fórmulas mais trabalhosas</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button onclick="logout()" class="btn secondary">Sair</button>
+    </div>
+  </header>
+
+  <div class="panel">
+    <div class="semana-nav">
+      <button onclick="mudarSemana(-1)">← Semana anterior</button>
+      <span class="rotulo" id="rotuloSemana"></span>
+      <button onclick="mudarSemana(1)">Próxima semana →</button>
+      <button class="btn secondary small" onclick="irParaSemanaAtual()">Semana atual</button>
+    </div>
+    <p class="desc">Verde = ainda tem vaga (clica pra registrar quantas você vai incluir). Vermelho riscado = já lotou nesse dia.</p>
+    <div style="overflow-x:auto;">
+      <table class="cal-formulas" id="tabelaCalFormulas"></table>
+    </div>
+  </div>
+
+  <div class="panel" id="cardGerenciarComplexas" style="display:none">
+    <h2>Gerenciar catálogo</h2>
+    <p class="desc">Cria, edita ou exclui as fórmulas complexas e o limite diário de cada uma.</p>
+    <div class="quick-form">
+      <div class="field"><label>Nome</label><input id="novaComplexaNome" placeholder="Ex: Biscoito 30un" style="width:220px;"></div>
+      <div class="field"><label>Limite por dia</label><input type="number" min="1" id="novaComplexaLimite" style="width:120px;"></div>
+      <button class="btn" onclick="salvarFormulaComplexa()">+ Adicionar</button>
+    </div>
+    <div id="listaCatalogoComplexas"></div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let souGerenteComplexas = false;
+let catalogoComplexasCache = [];
+let semanaInicio = inicioDaSemana(new Date());
+
+function localDateStrFC(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
+function inicioDaSemana(d){
+  const diaSemana = d.getDay(); // 0=domingo
+  const seg = new Date(d);
+  seg.setDate(d.getDate() - (diaSemana===0 ? 6 : diaSemana-1)); // volta pra segunda
+  seg.setHours(0,0,0,0);
+  return seg;
+}
+
+async function init(){
+  const { papel } = await requireRole(['chefia','conferencia','atendente']);
+  souGerenteComplexas = ['chefia','conferencia'].includes(papel);
+  if(souGerenteComplexas) document.getElementById('cardGerenciarComplexas').style.display = 'block';
+  await renderCalendario();
+}
+
+function mudarSemana(delta){
+  const nova = new Date(semanaInicio);
+  nova.setDate(nova.getDate() + delta*7);
+  semanaInicio = nova;
+  renderCalendario();
+}
+window.mudarSemana = mudarSemana;
+
+function irParaSemanaAtual(){
+  semanaInicio = inicioDaSemana(new Date());
+  renderCalendario();
+}
+window.irParaSemanaAtual = irParaSemanaAtual;
+
+async function renderCalendario(){
+  const { data: catalogo } = await supa.from('formulas_complexas_catalogo').select('*').eq('ativo', true).order('nome');
+  catalogoComplexasCache = catalogo || [];
+
+  const dias = [];
+  for(let i=0;i<7;i++){ const d = new Date(semanaInicio); d.setDate(semanaInicio.getDate()+i); dias.push(d); }
+  const inicioStr = localDateStrFC(dias[0]);
+  const fimStr = localDateStrFC(dias[6]);
+  document.getElementById('rotuloSemana').textContent = `${dias[0].toLocaleDateString('pt-BR')} a ${dias[6].toLocaleDateString('pt-BR')}`;
+
+  const idsFormulas = catalogoComplexasCache.map(f=>f.id);
+  let registros = [];
+  if(idsFormulas.length){
+    const { data } = await supa.from('formulas_complexas_registro').select('formula_id,data,quantidade').in('formula_id', idsFormulas).gte('data', inicioStr).lte('data', fimStr);
+    registros = data || [];
+  }
+  const totalPorFormulaData = {};
+  registros.forEach(r => {
+    const chave = r.formula_id+'_'+r.data;
+    totalPorFormulaData[chave] = (totalPorFormulaData[chave]||0) + r.quantidade;
+  });
+
+  const DIAS_SEMANA = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+
+  let html = `<thead><tr><th style="text-align:left;min-width:160px;">Fórmula</th>${dias.map((d,i)=>`<th>${DIAS_SEMANA[i]}<br>${d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</th>`).join('')}</tr></thead><tbody>`;
+
+  if(!catalogoComplexasCache.length){
+    html += `<tr><td colspan="8" class="empty-state">Nenhuma fórmula complexa cadastrada ainda.</td></tr>`;
+  } else {
+    catalogoComplexasCache.forEach(f => {
+      html += `<tr><td class="nome-formula">${f.nome}<div style="font-size:10px;color:var(--gray);font-weight:400;">limite ${f.limite_diario}/dia</div></td>`;
+      dias.forEach(d => {
+        const dataStr = localDateStrFC(d);
+        const total = totalPorFormulaData[f.id+'_'+dataStr] || 0;
+        const restam = f.limite_diario - total;
+        if(restam <= 0){
+          html += `<td><div class="cel-lotada"><div class="status">Lotada</div></div></td>`;
+        } else {
+          html += `<td><div class="cel-disponivel" onclick="registrarComplexa('${f.id}','${dataStr}',${restam},'${f.nome.replace(/'/g,"\\'")}')">
+            <div class="status">Disponível</div>
+            <div class="restam">restam ${restam}</div>
+          </div></td>`;
+        }
+      });
+      html += '</tr>';
+    });
+  }
+  html += '</tbody>';
+  document.getElementById('tabelaCalFormulas').innerHTML = html;
+
+  if(souGerenteComplexas) renderCatalogoComplexasGerencia();
+}
+
+async function registrarComplexa(formulaId, dataStr, vagasRestantes, nomeFormula){
+  const valor = prompt(`Quantas fórmulas de "${nomeFormula}" você vai incluir em ${new Date(dataStr+'T12:00:00').toLocaleDateString('pt-BR')}? (restam ${vagasRestantes} vaga(s))`);
+  if(valor === null) return;
+  const quantidade = Number(valor);
+  if(!quantidade || quantidade < 1){ alert('Quantidade inválida.'); return; }
+  if(quantidade > vagasRestantes){ alert(`Só tem ${vagasRestantes} vaga(s) restante(s) nesse dia.`); return; }
+  const { data: { session } } = await supa.auth.getSession();
+  const { error } = await supa.from('formulas_complexas_registro').insert({
+    formula_id: formulaId, data: dataStr, quantidade, registrado_por: session.user.id
+  });
+  if(error){ alert('Erro: '+error.message); return; }
+  renderCalendario();
+}
+window.registrarComplexa = registrarComplexa;
+
+function renderCatalogoComplexasGerencia(){
+  document.getElementById('listaCatalogoComplexas').innerHTML = catalogoComplexasCache.length ? catalogoComplexasCache.map(f => `
+    <div class="catalogo-item">
+      <span>${f.nome} — limite ${f.limite_diario}/dia</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn secondary small" onclick="editarLimiteComplexa('${f.id}', ${f.limite_diario})">Editar limite</button>
+        <button class="btn secondary small" onclick="excluirFormulaComplexa('${f.id}')" style="color:var(--bad);">Excluir</button>
+      </div>
+    </div>
+  `).join('') : '<div class="empty-state">Nada cadastrado ainda.</div>';
+}
+
+async function salvarFormulaComplexa(){
+  const nome = document.getElementById('novaComplexaNome').value.trim();
+  const limite = Number(document.getElementById('novaComplexaLimite').value);
+  if(!nome || !limite){ alert('Preenche nome e limite.'); return; }
+  const { data: { session } } = await supa.auth.getSession();
+  const { error } = await supa.from('formulas_complexas_catalogo').insert({ nome, limite_diario: limite, criado_por: session.user.id });
+  if(error){ alert('Erro: '+error.message); return; }
+  document.getElementById('novaComplexaNome').value = '';
+  document.getElementById('novaComplexaLimite').value = '';
+  renderCalendario();
+}
+window.salvarFormulaComplexa = salvarFormulaComplexa;
+
+async function editarLimiteComplexa(id, limiteAtual){
+  const novo = prompt('Novo limite diário:', limiteAtual);
+  if(novo === null) return;
+  const limite = Number(novo);
+  if(!limite || limite < 1){ alert('Limite inválido.'); return; }
+  const { error } = await supa.from('formulas_complexas_catalogo').update({ limite_diario: limite }).eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  renderCalendario();
+}
+window.editarLimiteComplexa = editarLimiteComplexa;
+
+async function excluirFormulaComplexa(id){
+  if(!confirm('Excluir essa fórmula complexa do catálogo? O histórico de registros dela some junto.')) return;
+  const { error } = await supa.from('formulas_complexas_catalogo').delete().eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  renderCalendario();
+}
+window.excluirFormulaComplexa = excluirFormulaComplexa;
+
+init();
+</script>
+<script src="acessibilidade.js?v=3"></script>
+<script src="hub-sidebar.js"></script>
+</body>
+</html>

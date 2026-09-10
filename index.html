@@ -219,6 +219,7 @@
     <a href="reaproveitamento.html" class="side-btn" id="sideReaproveitamentoBtn" style="display:none">♻️<span class="tooltip">Reaproveitamento</span></a>
     <a href="erros.html" class="side-btn" id="sideErrosBtn" style="display:none">✍️<span class="tooltip">Registro de Erros</span></a>
     <a href="inclusoes.html" class="side-btn" id="sideInclusoesBtn" style="display:none">🧮<span class="tooltip">Inclusões & Performance</span></a>
+    <a href="formulas-complexas.html" class="side-btn" id="sideFormulasComplexasBtn" style="display:none">🧩<span class="tooltip">Fórmulas Complexas</span></a>
     <a href="meus-erros.html" class="side-btn">📈<span class="tooltip">Meus Erros</span></a>
     <a href="chat.html" class="side-btn">💬<span class="tooltip">Chat Interno</span></a>
     <a href="admin.html" class="side-btn" id="sideAdminBtn" style="display:none">🔐<span class="tooltip">Administração</span></a>
@@ -319,6 +320,10 @@
         <div class="stripe" style="background:#B4472F"></div><div class="icon">🧮</div><h3>Inclusões & Performance</h3>
         <p>Cruza inclusões diárias com erros — % de erro por atendente.</p>
       </a>
+      <a class="module-card card-formulas-complexas" href="formulas-complexas.html" data-perm="modulo.formulas_complexas">
+        <div class="stripe" style="background:#B4472F"></div><div class="icon">🧩</div><h3>Fórmulas Complexas</h3>
+        <p>Calendário de limite diário — quantas ainda cabem em cada dia.</p>
+      </a>
       <a class="module-card card-meuserros" href="meus-erros.html" data-perm="modulo.meus_erros">
         <div class="stripe"></div><div class="icon">📈</div><h3>Meus Erros</h3>
         <p>Seu desempenho individual detalhado.</p>
@@ -397,6 +402,7 @@ async function init(){
   if(temPerm('modulo.reaproveitamento')) document.getElementById('sideReaproveitamentoBtn').style.display = 'flex';
   if(temPerm('modulo.erros')) document.getElementById('sideErrosBtn').style.display = 'flex';
   if(temPerm('modulo.inclusoes')) document.getElementById('sideInclusoesBtn').style.display = 'flex';
+  if(temPerm('modulo.formulas_complexas')) document.getElementById('sideFormulasComplexasBtn').style.display = 'flex';
 
   if(papel === 'sem_papel'){
     document.getElementById('roleBanner').style.display = 'block';
@@ -583,6 +589,7 @@ async function renderWidgets(papel, perfil){
   if(papel === 'chefia') cards.push(await widgetMinhasInclusoes(null, true));
   if(podeVerErrosGeral) cards.push(await widgetErrosEquipe());
   if(['chefia','conferencia','atendente'].includes(papel)) cards.push(await widgetFormulasDiaSeguinte());
+  if(['chefia','conferencia','atendente'].includes(papel)) cards.push(await widgetFormulasComplexas());
   if(podeVerReaproveitamento) cards.push(await widgetReaproveitamento());
   if(podeVerRotulos) cards.push(await widgetRotulos());
   if(podeVerOrdens) cards.push(await widgetOrdens());
@@ -751,6 +758,36 @@ async function widgetFormulasDiaSeguinte(){
         <div style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:600;color:#8B1A3A;">${dermato}</div>
         <div style="font-size:11px;color:var(--gray);text-transform:uppercase;">Dermato</div>
       </div>
+    </div>
+  </div>`;
+}
+
+async function widgetFormulasComplexas(){
+  const off = new Date().getTimezoneOffset();
+  const hojeStr = new Date(Date.now()-off*60000).toISOString().slice(0,10);
+
+  const { data: catalogo } = await supa.from('formulas_complexas_catalogo').select('*').eq('ativo', true).order('nome');
+  const lista = catalogo || [];
+  if(!lista.length) return '';
+
+  const idsFormulas = lista.map(f=>f.id);
+  const { data: registros } = await supa.from('formulas_complexas_registro').select('formula_id,quantidade').in('formula_id', idsFormulas).eq('data', hojeStr);
+  const totalPorFormula = {};
+  (registros||[]).forEach(r => { totalPorFormula[r.formula_id] = (totalPorFormula[r.formula_id]||0) + r.quantidade; });
+
+  return `<div class="card w6">
+    <div class="card-head"><h2>Fórmulas Complexas hoje</h2><span class="card-icon">🧩</span></div>
+    <p class="card-sub">Disponibilidade de hoje — <a href="formulas-complexas.html">ver calendário completo</a></p>
+    <div>
+      ${lista.map(f => {
+        const total = totalPorFormula[f.id] || 0;
+        const restam = f.limite_diario - total;
+        const lotada = restam <= 0;
+        return `<div class="mini-list-row">
+          <span class="name" style="${lotada?'text-decoration:line-through;color:var(--gray);':''}">${f.nome}</span>
+          <span class="badge ${lotada?'bad':'good'}">${lotada?'Lotada':'restam '+restam}</span>
+        </div>`;
+      }).join('')}
     </div>
   </div>`;
 }
