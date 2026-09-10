@@ -32,9 +32,14 @@
 
   table.matriz{width:100%;border-collapse:collapse;font-size:12.5px;}
   table.matriz th, table.matriz td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;}
-  table.matriz th{font-family:var(--headfont);font-size:11px;font-weight:600;vertical-align:bottom;}
+  table.matriz th{font-family:var(--headfont);font-size:11px;font-weight:600;vertical-align:bottom;background:#fff;}
+  table.matriz thead{position:sticky;top:0;z-index:5;box-shadow:0 2px 4px rgba(0,0,0,.06);}
   table.matriz th.col-cargo{writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);height:110px;text-align:left;white-space:nowrap;padding-bottom:6px;}
   table.matriz td.col-cargo{text-align:center;}
+  table.matriz tr.linha-hover td{background:var(--burgundy-tint) !important;}
+  table.matriz th.coluna-hover, table.matriz td.coluna-hover{background:var(--burgundy-tint) !important;}
+  table.matriz td.col-cargo.cel-hover{background:var(--burgundy) !important;}
+  table.matriz td.col-cargo.cel-hover input{accent-color:#fff;}
   .modulo-row td{background:var(--burgundy-tint);font-weight:700;color:var(--burgundy);font-family:var(--headfont);font-size:12px;padding:8px 10px;}
   .perm-nome{font-weight:600;}
   .perm-desc{color:var(--gray);font-size:11px;}
@@ -45,6 +50,17 @@
   .cargo-row:last-child{border-bottom:none;}
   .cargo-nome{font-weight:700;font-size:13.5px;}
   .cargo-chave{font-size:11px;color:var(--gray);font-family:monospace;}
+  .cargo-acordeao{border-bottom:1px solid var(--line);}
+  .cargo-acordeao:last-child{border-bottom:none;}
+  .cargo-acordeao .cargo-row{border-bottom:none;padding:12px 8px;border-radius:8px;}
+  .cargo-acordeao .cargo-row:hover{background:var(--paper);}
+  .cargo-acordeao.aberto .cargo-row{background:var(--burgundy-tint);}
+  .acordeao-seta{display:inline-block;width:14px;color:var(--burgundy);font-size:11px;}
+  .cargo-permissoes-painel{padding:6px 8px 18px 30px;}
+  .cargo-modulo-titulo{font-family:var(--headfont);font-size:11.5px;font-weight:700;color:var(--burgundy);text-transform:uppercase;letter-spacing:.03em;margin:14px 0 6px;}
+  .cargo-perm-linha{display:flex;align-items:flex-start;gap:10px;padding:7px 8px;border-radius:8px;cursor:pointer;}
+  .cargo-perm-linha:hover{background:var(--paper);}
+  .cargo-perm-linha input{margin-top:2px;flex-shrink:0;}
 
   .modal-overlay{position:fixed;inset:0;background:rgba(36,29,26,.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px;}
   .modal-overlay.show{display:flex;}
@@ -87,7 +103,7 @@
     <h2>Matriz de permissões</h2>
     <p class="desc">Marca ou desmarca pra liberar/bloquear na hora — não precisa salvar nada, já grava sozinho.</p>
     <div class="aviso">ℹ️ Essa matriz já controla quais módulos aparecem no Hub pra cada cargo, e alguns ajustes finos específicos (ex: quem aprova férias, quem vê salário). Pra permissões novas dentro de um módulo, ainda preciso codar a checagem — mas a parte de "módulo inteiro" e o que já está listado aqui, dá pra mexer sozinho, sem SQL.</div>
-    <div style="overflow-x:auto;">
+    <div style="overflow:auto;max-height:70vh;">
       <table class="matriz" id="tabelaMatriz"></table>
     </div>
   </div>
@@ -134,35 +150,73 @@ async function carregarTudo(){
   renderMatriz();
 }
 
+let cargoExpandidoId = null;
+
 function renderCargos(){
-  document.getElementById('listaCargos').innerHTML = cargosCache.length ? cargosCache.map(c => `
-    <div class="cargo-row">
-      <div>
-        <span class="cargo-nome">${c.nome}</span>${c.sistema ? '<span class="tag-sistema">sistema</span>' : ''}
-        <div class="cargo-chave">${c.chave}</div>
+  const temPermissaoCheck = (papelId, permissaoId) => papelPermissoesCache.some(pp => pp.papel_id===papelId && pp.permissao_id===permissaoId);
+  const modulos = [...new Set(permissoesCache.map(p=>p.modulo))];
+
+  document.getElementById('listaCargos').innerHTML = cargosCache.length ? cargosCache.map(c => {
+    const aberto = cargoExpandidoId === c.id;
+    return `
+    <div class="cargo-acordeao ${aberto?'aberto':''}">
+      <div class="cargo-row" onclick="alternarCargoAberto('${c.id}')" style="cursor:pointer;">
+        <div>
+          <span class="acordeao-seta">${aberto?'▾':'▸'}</span>
+          <span class="cargo-nome">${c.nome}</span>${c.sistema ? '<span class="tag-sistema">sistema</span>' : ''}
+          <div class="cargo-chave">${c.chave}</div>
+        </div>
+        ${!c.sistema ? `<button class="btn secondary small" onclick="event.stopPropagation();excluirCargo('${c.id}','${c.nome}')">Excluir</button>` : ''}
       </div>
-      ${!c.sistema ? `<button class="btn secondary small" onclick="excluirCargo('${c.id}','${c.nome}')">Excluir</button>` : ''}
+      ${aberto ? `
+        <div class="cargo-permissoes-painel">
+          ${modulos.map(modulo => `
+            <div class="cargo-modulo-titulo">${modulo}</div>
+            ${permissoesCache.filter(p=>p.modulo===modulo).map(perm => `
+              <label class="cargo-perm-linha">
+                <input type="checkbox" ${temPermissaoCheck(c.id,perm.id)?'checked':''} onchange="alternarPermissao('${c.id}','${perm.id}',this.checked)">
+                <div>
+                  <div class="perm-nome">${perm.nome}</div>
+                  ${perm.descricao?`<div class="perm-desc">${perm.descricao}</div>`:''}
+                </div>
+              </label>
+            `).join('')}
+          `).join('')}
+        </div>
+      ` : ''}
     </div>
-  `).join('') : '<div class="empty-state">Nenhum cargo cadastrado.</div>';
+  `;
+  }).join('') : '<div class="empty-state">Nenhum cargo cadastrado.</div>';
 }
+
+function alternarCargoAberto(id){
+  cargoExpandidoId = cargoExpandidoId === id ? null : id;
+  renderCargos();
+}
+window.alternarCargoAberto = alternarCargoAberto;
 
 function renderMatriz(){
   const modulos = [...new Set(permissoesCache.map(p=>p.modulo))];
   const temPermissaoCheck = (papelId, permissaoId) => papelPermissoesCache.some(pp => pp.papel_id===papelId && pp.permissao_id===permissaoId);
 
-  let html = `<thead><tr><th style="min-width:220px;">Permissão</th>${cargosCache.map(c=>`<th class="col-cargo">${c.nome}</th>`).join('')}</tr></thead><tbody>`;
+  let html = `<thead><tr><th style="min-width:220px;">Permissão</th>${cargosCache.map((c,i)=>`<th class="col-cargo" data-col="${i}" onmouseenter="hoverColuna(${i},true)" onmouseleave="hoverColuna(${i},false)">${c.nome}</th>`).join('')}</tr></thead><tbody>`;
   modulos.forEach(modulo => {
     html += `<tr class="modulo-row"><td colspan="${cargosCache.length+1}">${modulo}</td></tr>`;
     permissoesCache.filter(p=>p.modulo===modulo).forEach(perm => {
-      html += `<tr>
+      html += `<tr onmouseenter="this.classList.add('linha-hover')" onmouseleave="this.classList.remove('linha-hover')">
         <td><div class="perm-nome">${perm.nome}</div>${perm.descricao?`<div class="perm-desc">${perm.descricao}</div>`:''}</td>
-        ${cargosCache.map(c => `<td class="col-cargo"><input type="checkbox" ${temPermissaoCheck(c.id,perm.id)?'checked':''} onchange="alternarPermissao('${c.id}','${perm.id}',this.checked)"></td>`).join('')}
+        ${cargosCache.map((c,i) => `<td class="col-cargo" data-col="${i}" onmouseenter="hoverColuna(${i},true)" onmouseleave="hoverColuna(${i},false)"><input type="checkbox" ${temPermissaoCheck(c.id,perm.id)?'checked':''} onchange="alternarPermissao('${c.id}','${perm.id}',this.checked)"></td>`).join('')}
       </tr>`;
     });
   });
   html += '</tbody>';
   document.getElementById('tabelaMatriz').innerHTML = html;
 }
+
+function hoverColuna(i, ligado){
+  document.querySelectorAll(`#tabelaMatriz [data-col="${i}"]`).forEach(el => el.classList.toggle('coluna-hover', ligado));
+}
+window.hoverColuna = hoverColuna;
 
 async function alternarPermissao(papelId, permissaoId, ligado){
   if(ligado){
