@@ -206,7 +206,7 @@
   .aval-filtro-btn.active{background:var(--burgundy);color:#fff;border-color:var(--burgundy);}
   .aval-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
   .aval-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;}
-  .aval-tipo-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:20px;}
+  .aval-tipo-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:var(--paper);color:var(--gray);}
   .aval-tipo-tag.avaliacao{background:var(--info-tint);color:var(--info);}
   .aval-tipo-tag.ocorrencia{background:var(--warn-tint);color:#8A6512;}
   .aval-tipo-tag.advertencia{background:var(--bad-tint);color:var(--bad);}
@@ -319,6 +319,20 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modalTipoAval">
+  <div class="modal" style="max-width:400px">
+    <h3>Criar tipo de avaliação</h3>
+    <p class="desc">Cria um tipo novo além dos padrões (Avaliação, Ocorrência, Advertência, RNC, Meta). Usa o mesmo formato de título + descrição.</p>
+    <div class="form-grid">
+      <div style="grid-column:span 2"><label>Nome do tipo</label><input id="novoTipoAvalNome" placeholder="Ex: Elogio, Treinamento, Feedback 360"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalTipoAval').classList.remove('show')">Cancelar</button>
+      <button class="btn" onclick="salvarNovoTipoAval()">Criar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalAval">
   <div class="modal">
     <h3 id="modalAvalTitulo">Novo registro</h3>
@@ -329,6 +343,8 @@
         <option value="advertencia">Advertência</option>
         <option value="rnc">RNC (não conformidade)</option>
         <option value="meta">Meta</option>
+        <option disabled>──────────</option>
+        <option value="__criar_novo__">+ Criar tipo novo...</option>
       </select></div>
       <div><label>Colaborador</label><input id="avColaborador" placeholder="Nome" list="colaboradoresParaAval"></div>
       <datalist id="colaboradoresParaAval"></datalist>
@@ -1425,9 +1441,19 @@ document.addEventListener('input', (e) => {
 // ============================================================
 let avaliacoesCache = [];
 let filtroTipoAval = null;
-const TIPO_AVAL_LABEL = {avaliacao:'Avaliação', ocorrencia:'Ocorrência', advertencia:'Advertência', rnc:'RNC', meta:'Meta'};
+const TIPO_AVAL_LABEL_FIXO = {avaliacao:'Avaliação', ocorrencia:'Ocorrência', advertencia:'Advertência', rnc:'RNC', meta:'Meta'};
+let TIPO_AVAL_LABEL = {...TIPO_AVAL_LABEL_FIXO};
+let tiposAvalCustomCache = [];
+
+async function carregarTiposAvalCustom(){
+  const { data } = await supa.from('avaliacoes_rh_tipos_customizados').select('*').order('nome');
+  tiposAvalCustomCache = data || [];
+  TIPO_AVAL_LABEL = {...TIPO_AVAL_LABEL_FIXO};
+  tiposAvalCustomCache.forEach(t => { TIPO_AVAL_LABEL[t.chave] = t.nome; });
+}
 
 async function renderAbaAvaliacoes(){
+  await carregarTiposAvalCustom();
   const { data } = await supa.from('avaliacoes_rh').select('*').order('data', {ascending:false});
   avaliacoesCache = data || [];
 
@@ -1462,6 +1488,7 @@ async function renderAbaAvaliacoes(){
         <button class="aval-filtro-btn ${!filtroTipoAval?'active':''}" onclick="filtrarAval(null)">Todos</button>
         ${Object.entries(TIPO_AVAL_LABEL).map(([k,l])=>`<button class="aval-filtro-btn ${filtroTipoAval===k?'active':''}" onclick="filtrarAval('${k}')">${l}</button>`).join('')}
       </div>
+      <button class="btn secondary" onclick="abrirModalTipoAval()">+ Criar tipo</button>
       <button class="btn dark" onclick="abrirModalAval()">+ Novo registro</button>
     </div>
 
@@ -1553,6 +1580,7 @@ function renderGridAvaliacoes(){
 
 function abrirModalAval(){
   document.getElementById('modalAvalTitulo').textContent = 'Novo registro';
+  popularSelectTiposAval();
   document.getElementById('avTipo').value = 'avaliacao';
   document.getElementById('avColaborador').value = '';
   document.getElementById('avPeriodo').value = '';
@@ -1569,14 +1597,57 @@ function abrirModalAval(){
 }
 window.abrirModalAval = abrirModalAval;
 
+function popularSelectTiposAval(){
+  const sel = document.getElementById('avTipo');
+  document.querySelectorAll('.opcao-tipo-custom').forEach(el=>el.remove());
+  const separador = sel.querySelector('option[disabled]');
+  tiposAvalCustomCache.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.chave;
+    opt.textContent = t.nome;
+    opt.className = 'opcao-tipo-custom';
+    sel.insertBefore(opt, separador);
+  });
+}
+
 function toggleCamposAval(){
   const tipo = document.getElementById('avTipo').value;
+  if(tipo === '__criar_novo__'){
+    document.getElementById('avTipo').value = 'avaliacao';
+    abrirModalTipoAval();
+    toggleCamposAval();
+    return;
+  }
   document.getElementById('camposAvaliacaoPeriodica').style.display = tipo==='avaliacao' ? 'grid' : 'none';
   document.getElementById('camposNotas').style.display = tipo==='avaliacao' ? 'block' : 'none';
   document.getElementById('campoTitulo').style.display = tipo==='avaliacao' ? 'none' : 'grid';
   document.getElementById('campoStatusMeta').style.display = tipo==='meta' ? 'grid' : 'none';
 }
 window.toggleCamposAval = toggleCamposAval;
+
+function abrirModalTipoAval(){
+  document.getElementById('novoTipoAvalNome').value = '';
+  document.getElementById('modalTipoAval').classList.add('show');
+}
+window.abrirModalTipoAval = abrirModalTipoAval;
+
+async function salvarNovoTipoAval(){
+  const nome = document.getElementById('novoTipoAvalNome').value.trim();
+  if(!nome){ alert('Digite um nome pra esse tipo.'); return; }
+  const chave = 'custom_' + nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  const { data: { session } } = await supa.auth.getSession();
+  const { error } = await supa.from('avaliacoes_rh_tipos_customizados').insert({ chave, nome, criado_por: session.user.id });
+  if(error){ alert('Erro ao criar tipo: '+error.message); return; }
+  document.getElementById('modalTipoAval').classList.remove('show');
+  await carregarTiposAvalCustom();
+  popularSelectTiposAval();
+  document.getElementById('avTipo').value = chave;
+  toggleCamposAval();
+  // Se o modal de avaliação nem estava aberto (veio direto da barra de
+  // filtros), reabre a lista pra já mostrar o filtro novo
+  if(!document.getElementById('modalAval').classList.contains('show')) renderAbaAvaliacoes();
+}
+window.salvarNovoTipoAval = salvarNovoTipoAval;
 
 async function salvarAvaliacao(){
   const colaborador_nome = document.getElementById('avColaborador').value.trim();
