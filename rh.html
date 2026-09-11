@@ -81,6 +81,13 @@
   .modal h3{font-family:var(--headfont);margin:0 0 16px;font-size:17px;}
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
   .form-grid label{font-size:11px;color:var(--gray);font-weight:600;display:block;margin-bottom:4px;}
+  .toggle-switch{position:relative;display:inline-block;flex-shrink:0;}
+  .toggle-switch input{position:absolute;opacity:0;width:0;height:0;}
+  .toggle-track{display:block;width:38px;height:20px;border-radius:12px;background:var(--line);transition:.15s;}
+  .toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s;}
+  .toggle-switch input:checked + .toggle-track{background:var(--burgundy);}
+  .toggle-switch input:checked + .toggle-track .toggle-thumb{transform:translateX(18px);}
+  .colab-avatar-img{width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;}
   .form-grid input, .form-grid select, .form-grid textarea{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:7px;}
   .form-grid textarea{resize:vertical;min-height:60px;font-family:inherit;}
   .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
@@ -263,6 +270,9 @@
       <div><label>Departamento</label><input id="cDepartamento" placeholder="Ex: Recepção" list="departamentosExistentes" /><datalist id="departamentosExistentes"></datalist></div>
       <div><label>E-mail pessoal</label><input id="cEmail" type="email" placeholder="email@exemplo.com" /></div>
       <div><label>Telefone</label><input id="cTelefone" placeholder="(35) 99999-9999" /></div>
+      <div><label>CPF</label><input id="cCpf" placeholder="000.000.000-00" /></div>
+      <div><label>RG</label><input id="cRg" placeholder="00.000.000-0" /></div>
+      <div><label>Data de nascimento</label><input id="cNascimento" type="date" /></div>
       <div><label>Status</label><select id="cStatus">
         <option value="ativo" selected>Ativo</option>
         <option value="ferias">Férias</option>
@@ -271,13 +281,14 @@
       </select></div>
       <div><label>Data de admissão</label><input id="cAdmissao" type="date" /></div>
       <div><label>PIS</label><input id="cPis" placeholder="000.00000.00-0" /></div>
+      <div style="grid-column:span 2"><label>Escala de horário</label><input id="cEscala" placeholder="Ex: 08h-12h | 13h-17h" /></div>
       <div id="campoSalarioColab" style="display:none"><label>Salário</label><input id="cSalario" type="number" step="0.01" placeholder="0,00" /></div>
       <div style="grid-column:span 2"><label>Observações</label><textarea id="cObs" placeholder="Anotações internas..."></textarea></div>
     </div>
     <div style="background:var(--paper);border-radius:9px;padding:12px 14px;margin-bottom:6px;">
-      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;cursor:pointer;">
-        <input type="checkbox" id="cPrecisaEmail" style="width:auto" onchange="toggleStatusEmailBioflora()">
-        Essa pessoa precisa de um e-mail @farmaciabioflora?
+      <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:600;cursor:pointer;">
+        Precisa de um e-mail @farmaciabioflora?
+        <span class="toggle-switch"><input type="checkbox" id="cPrecisaEmail" onchange="toggleStatusEmailBioflora()"><span class="toggle-track"><span class="toggle-thumb"></span></span></span>
       </label>
       <div id="statusEmailBiofloraArea" style="display:none;margin-top:8px;">
         <label style="font-size:11px;color:var(--gray);font-weight:600;">Status</label>
@@ -292,7 +303,8 @@
       <button class="btn" onclick="salvarColaborador()">Salvar</button>
     </div>
     <div id="areaDocumentosColab" style="display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:16px;">
-      <h3 style="font-size:14px;">Documentos</h3>
+      <h3 style="font-size:14px;">Foto e documentos</h3>
+      <p class="desc" style="margin-top:-6px;">Manda a foto de perfil primeiro — o resto dos documentos pode ser depois, com calma.</p>
       <div id="listaDocumentosColab" style="margin-bottom:10px;"></div>
       <label style="font-size:11px;color:var(--gray);font-weight:600;">Tipo de documento</label>
       <select id="tipoDocColab" style="width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;margin-bottom:8px;">
@@ -301,7 +313,7 @@
         <option value="carteira_trabalho">Cópia da carteira de trabalho</option>
         <option value="outro">Outro</option>
       </select>
-      <input type="file" id="arquivoDocColab" style="width:100%;font-size:12.5px;">
+      <input type="file" id="arquivoDocColab" accept="image/*,.pdf" style="width:100%;font-size:12.5px;">
       <button class="btn secondary" style="margin-top:8px;width:100%;" onclick="enviarDocumentoColab()">Enviar documento</button>
     </div>
   </div>
@@ -807,6 +819,22 @@ async function carregarColaboradores(){
   const { data: cores } = await supa.from('setores_config').select('*');
   setoresCoresCache = {};
   (cores||[]).forEach(s => { setoresCoresCache[s.nome] = s.cor; });
+
+  await carregarFotosColab();
+}
+
+let fotosColabCache = {};
+async function carregarFotosColab(){
+  const { data: fotosDocs } = await supa.from('colaborador_documentos').select('colaborador_id,arquivo_url,enviado_em').eq('tipo', 'foto').order('enviado_em', {ascending:false});
+  const maisRecentePorColab = {};
+  (fotosDocs||[]).forEach(d => { if(!maisRecentePorColab[d.colaborador_id]) maisRecentePorColab[d.colaborador_id] = d.arquivo_url; });
+
+  const entradas = Object.entries(maisRecentePorColab);
+  const urls = await Promise.all(entradas.map(([, caminho]) => supa.storage.from('colaboradores-docs').createSignedUrl(caminho, 600)));
+  fotosColabCache = {};
+  entradas.forEach(([colabId], i) => {
+    if(urls[i]?.data?.signedUrl) fotosColabCache[colabId] = urls[i].data.signedUrl;
+  });
 }
 
 function corDoSetor(nome){
@@ -861,7 +889,7 @@ function renderGridColaboradores(lista){
   document.getElementById('colabGrid').innerHTML = lista.length ? lista.map(c => `
     <div class="colab-card" style="border-left:4px solid ${corDoSetor(c.departamento)}">
       <div class="colab-card-top">
-        <div class="colab-avatar">${iniciais(c.nome_completo)}</div>
+        ${fotosColabCache[c.id] ? `<img class="colab-avatar-img" src="${fotosColabCache[c.id]}" alt="${c.nome_completo}">` : `<div class="colab-avatar">${iniciais(c.nome_completo)}</div>`}
         <span class="colab-status ${c.status}">${STATUS_LABELS[c.status]}</span>
       </div>
       <h3 class="colab-nome">${c.nome_completo}</h3>
@@ -887,9 +915,13 @@ function abrirModalColab(id){
   document.getElementById('cDepartamento').value = c?.departamento || '';
   document.getElementById('cEmail').value = c?.email || '';
   document.getElementById('cTelefone').value = c?.telefone || '';
+  document.getElementById('cCpf').value = c?.cpf || '';
+  document.getElementById('cRg').value = c?.rg || '';
+  document.getElementById('cNascimento').value = c?.data_nascimento || '';
   document.getElementById('cStatus').value = c?.status || 'ativo';
   document.getElementById('cAdmissao').value = c?.data_admissao || '';
   document.getElementById('cPis').value = c?.pis || '';
+  document.getElementById('cEscala').value = c?.escala_horario || '';
   document.getElementById('campoSalarioColab').style.display = meuPapelRH === 'chefia' ? 'block' : 'none';
   document.getElementById('cSalario').value = c?.salario || '';
   document.getElementById('cObs').value = c?.observacoes || '';
@@ -900,6 +932,10 @@ function abrirModalColab(id){
   const listaDeptos = [...new Set(todosColaboradores.map(x=>x.departamento).filter(Boolean))];
   document.getElementById('departamentosExistentes').innerHTML = listaDeptos.map(d=>`<option value="${d}">`).join('');
 
+  // A foto e os documentos só podem ser enviados depois que o
+  // colaborador já existe no banco (o arquivo precisa de um ID pra
+  // se vincular) -- em colaborador novo, essa área só aparece depois
+  // do primeiro "Salvar", sem fechar o formulário
   const areaDocs = document.getElementById('areaDocumentosColab');
   if(id){
     areaDocs.style.display = 'block';
@@ -935,9 +971,13 @@ async function salvarColaborador(){
     departamento: document.getElementById('cDepartamento').value.trim() || null,
     email: document.getElementById('cEmail').value.trim() || null,
     telefone: document.getElementById('cTelefone').value.trim() || null,
+    cpf: document.getElementById('cCpf').value.trim() || null,
+    rg: document.getElementById('cRg').value.trim() || null,
+    data_nascimento: document.getElementById('cNascimento').value || null,
     status: document.getElementById('cStatus').value,
     data_admissao: document.getElementById('cAdmissao').value || null,
     pis: document.getElementById('cPis').value.trim() || null,
+    escala_horario: document.getElementById('cEscala').value.trim() || null,
     ...(meuPapelRH === 'chefia' ? { salario: document.getElementById('cSalario').value || null } : {}),
     observacoes: document.getElementById('cObs').value.trim() || null,
     precisa_email_bioflora: precisaEmail,
@@ -947,13 +987,22 @@ async function salvarColaborador(){
   if(colabEmEdicaoId){
     const { error } = await supa.from('colaboradores').update(dados).eq('id', colabEmEdicaoId);
     if(error){ alert('Erro ao salvar: '+error.message); return; }
+    fecharModalColab();
   } else {
     const { data: { session } } = await supa.auth.getSession();
-    const { error } = await supa.from('colaboradores').insert({ ...dados, criado_por: session.user.id });
+    const { data, error } = await supa.from('colaboradores').insert({ ...dados, criado_por: session.user.id }).select().single();
     if(error){ alert('Erro ao criar: '+error.message); return; }
+    // Não fecha o modal ainda -- deixa a pessoa já mandar a foto na
+    // hora, sem precisar abrir de novo depois
+    colabEmEdicaoId = data.id;
+    document.getElementById('modalColabTitulo').textContent = 'Editar colaborador';
+    document.getElementById('areaDocumentosColab').style.display = 'block';
+    await carregarColaboradores();
+    carregarDocumentosColab(data.id);
+    renderColaboradores();
+    return;
   }
 
-  fecharModalColab();
   await carregarColaboradores();
   renderColaboradores();
 }
@@ -1009,6 +1058,10 @@ async function enviarDocumentoColab(){
 
   document.getElementById('arquivoDocColab').value = '';
   await carregarDocumentosColab(colabEmEdicaoId);
+  if(tipo === 'foto'){
+    await carregarFotosColab();
+    renderColaboradores();
+  }
 }
 window.enviarDocumentoColab = enviarDocumentoColab;
 
@@ -1026,6 +1079,7 @@ window.excluirDocumentoColab = excluirDocumentoColab;
 function abrirConfigSetores(){
   const setores = [...new Set(todosColaboradores.map(c=>c.departamento).filter(Boolean))];
   if(!setores.length){ alert('Cadastre colaboradores com departamento preenchido primeiro.'); return; }
+  setoresParaConfigCache = setores;
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay show';
@@ -1034,24 +1088,27 @@ function abrirConfigSetores(){
     <div class="modal">
       <h3>Cor por setor</h3>
       <p class="desc" style="margin-bottom:14px;">Usada nos cards de colaborador e no calendário de férias.</p>
-      ${setores.map(s => `
+      ${setores.map((s,i) => `
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);">
           <span style="font-size:13px;">${s}</span>
-          <input type="color" value="${setoresCoresCache[s]||'#8B1A3A'}" id="cor_${s.replace(/[^a-zA-Z0-9]/g,'_')}" style="width:44px;height:30px;border:none;cursor:pointer;">
+          <input type="color" value="${setoresCoresCache[s]||'#8B1A3A'}" id="cor_setor_${i}" style="width:44px;height:30px;border:none;cursor:pointer;">
         </div>`).join('')}
       <div class="modal-actions">
         <button class="btn secondary" onclick="document.getElementById('overlaySetores').remove()">Cancelar</button>
-        <button class="btn" onclick="salvarConfigSetores(${JSON.stringify(setores)})">Salvar</button>
+        <button class="btn" onclick="salvarConfigSetores()">Salvar</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
 }
 window.abrirConfigSetores = abrirConfigSetores;
 
-async function salvarConfigSetores(setores){
-  for(const s of setores){
-    const cor = document.getElementById('cor_'+s.replace(/[^a-zA-Z0-9]/g,'_')).value;
-    await supa.from('setores_config').upsert({ nome: s, cor });
+let setoresParaConfigCache = [];
+
+async function salvarConfigSetores(){
+  for(let i=0; i<setoresParaConfigCache.length; i++){
+    const cor = document.getElementById('cor_setor_'+i).value;
+    const { error } = await supa.from('setores_config').upsert({ nome: setoresParaConfigCache[i], cor }, { onConflict: 'nome' });
+    if(error){ alert('Erro ao salvar cor de "'+setoresParaConfigCache[i]+'": '+error.message); return; }
   }
   document.getElementById('overlaySetores').remove();
   await carregarColaboradores();
