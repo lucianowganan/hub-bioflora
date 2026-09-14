@@ -826,6 +826,7 @@ function iniciais(nome){
 }
 
 let setoresCoresCache = {};
+let salariosCache = {};
 
 async function carregarColaboradores(){
   const { data, error } = await supa.from('colaboradores').select('*').order('nome_completo');
@@ -835,6 +836,12 @@ async function carregarColaboradores(){
   const { data: cores } = await supa.from('setores_config').select('*');
   setoresCoresCache = {};
   (cores||[]).forEach(s => { setoresCoresCache[s.nome] = s.cor; });
+
+  salariosCache = {};
+  if(meuPapelRH === 'chefia'){
+    const { data: salarios } = await supa.from('colaboradores_salarios').select('colaborador_id,salario');
+    (salarios||[]).forEach(s => { salariosCache[s.colaborador_id] = s.salario; });
+  }
 
   await carregarFotosColab();
 }
@@ -939,7 +946,7 @@ function abrirModalColab(id){
   document.getElementById('cPis').value = c?.pis || '';
   document.getElementById('cEscala').value = c?.escala_horario || '';
   document.getElementById('campoSalarioColab').style.display = meuPapelRH === 'chefia' ? 'block' : 'none';
-  document.getElementById('cSalario').value = c?.salario || '';
+  document.getElementById('cSalario').value = (c ? salariosCache[c.id] : '') || '';
   document.getElementById('cObs').value = c?.observacoes || '';
   document.getElementById('cPrecisaEmail').checked = c?.precisa_email_bioflora || false;
   document.getElementById('cStatusEmail').value = c?.email_bioflora_status === 'criado' ? 'criado' : 'pendente';
@@ -994,20 +1001,30 @@ async function salvarColaborador(){
     data_admissao: document.getElementById('cAdmissao').value || null,
     pis: document.getElementById('cPis').value.trim() || null,
     escala_horario: document.getElementById('cEscala').value.trim() || null,
-    ...(meuPapelRH === 'chefia' ? { salario: document.getElementById('cSalario').value || null } : {}),
     observacoes: document.getElementById('cObs').value.trim() || null,
     precisa_email_bioflora: precisaEmail,
     email_bioflora_status: precisaEmail ? document.getElementById('cStatusEmail').value : 'nao_solicitado',
   };
 
+  const { data: { session } } = await supa.auth.getSession();
+
+  async function salvarSalarioSeChefia(colaboradorId){
+    if(meuPapelRH !== 'chefia') return;
+    const valor = document.getElementById('cSalario').value;
+    await supa.from('colaboradores_salarios').upsert({
+      colaborador_id: colaboradorId, salario: valor || null, atualizado_por: session.user.id, atualizado_em: new Date().toISOString()
+    }, { onConflict: 'colaborador_id' });
+  }
+
   if(colabEmEdicaoId){
     const { error } = await supa.from('colaboradores').update(dados).eq('id', colabEmEdicaoId);
     if(error){ alert('Erro ao salvar: '+error.message); return; }
+    await salvarSalarioSeChefia(colabEmEdicaoId);
     fecharModalColab();
   } else {
-    const { data: { session } } = await supa.auth.getSession();
     const { data, error } = await supa.from('colaboradores').insert({ ...dados, criado_por: session.user.id }).select().single();
     if(error){ alert('Erro ao criar: '+error.message); return; }
+    await salvarSalarioSeChefia(data.id);
     // Não fecha o modal ainda -- deixa a pessoa já mandar a foto na
     // hora, sem precisar abrir de novo depois
     colabEmEdicaoId = data.id;
@@ -1696,7 +1713,7 @@ async function renderAbaRelatorios(){
   const { data: ferias } = await supa.from('ferias_solicitacoes').select('*').eq('status','aprovada').order('data_inicio');
 
   const ativos = todosColaboradores.filter(c=>c.status==='ativo');
-  const custoFolha = ativos.reduce((soma,c)=>soma + (Number(c.salario)||0), 0);
+  const custoFolha = ativos.reduce((soma,c)=>soma + (Number(salariosCache[c.id])||0), 0);
   const hojeStr = new Date().toISOString().slice(0,10);
   const proximasFerias = (ferias||[]).filter(f=>f.data_fim >= hojeStr).slice(0,6);
 
@@ -1770,10 +1787,11 @@ function renderGraficoPerformanceDept(avaliacoes){
 function renderGraficoSalarial(ativos){
   const porDepto = {};
   ativos.forEach(c => {
-    if(!c.salario) return;
+    const salario = salariosCache[c.id];
+    if(!salario) return;
     const depto = c.departamento || 'Não definido';
     if(!porDepto[depto]) porDepto[depto] = [];
-    porDepto[depto].push(Number(c.salario));
+    porDepto[depto].push(Number(salario));
   });
   const deptos = Object.keys(porDepto);
 

@@ -148,6 +148,9 @@ async function init(){
   const { data: atendentesList } = await supa.from('atendentes_erros').select('nome').order('nome');
   const atendentes = (atendentesList||[]).map(a=>a.nome);
 
+  const { data: colaboradoresList } = await supa.from('colaboradores').select('id,nome_completo').order('nome_completo');
+  const colaboradores = colaboradoresList || [];
+
   const { data: avisos } = await supa.from('avisos_popup').select('*').order('criado_em', {ascending:false});
   const { data: confirmacoes } = await supa.from('avisos_popup_visualizacoes').select('aviso_id, usuario_id, visualizado_em');
   const { data: votos } = await supa.from('avisos_popup_votos').select('aviso_id, usuario_id, opcao, votado_em');
@@ -210,7 +213,7 @@ async function init(){
       <h2>Usuários cadastrados</h2>
       <p class="desc">Defina o papel de cada pessoa e, se ela participar da conferência, vincule ao nome dela na planilha de erros</p>
       <table>
-        <thead><tr><th>Email</th><th>Papel atual</th><th>Alterar</th><th>Vincular a atendente (erros)</th><th>Senha</th></tr></thead>
+        <thead><tr><th>Email</th><th>Papel atual</th><th>Alterar</th><th>Vincular a atendente (erros)</th><th>Vincular a colaborador (chat)</th><th>Senha</th></tr></thead>
         <tbody id="tbody">
           ${perfis.map(p => `
             <tr>
@@ -228,6 +231,12 @@ async function init(){
                 </select>
               </td>
               <td>
+                <select onchange="updateVinculoColaborador('${p.id}', this.value)">
+                  <option value="">— nenhum —</option>
+                  ${colaboradores.map(c => `<option value="${c.id}" ${c.id===p.colaborador_vinculado?'selected':''}>${c.nome_completo}</option>`).join('')}
+                </select>
+              </td>
+              <td>
                 <button class="btn-reset-senha" onclick="redefinirSenha('${p.id}', '${(p.nome_exibicao||'').replace(/'/g,"\\'")}')">Redefinir senha</button>
               </td>
             </tr>`).join('')}
@@ -242,7 +251,8 @@ async function init(){
         <strong>Conferência</strong>: rótulos, ordens de produção e a grade completa de erros ·
         <strong>Atendente</strong>: rótulos, ordens de produção e o próprio desempenho em "Meus erros" ·
         <strong>Sem papel</strong>: nenhum módulo até ser definido<br><br>
-        O vínculo com atendente é usado na tela "Meus erros" — cada pessoa vinculada só vê o próprio desempenho lá.
+        O vínculo com atendente é usado na tela "Meus erros" — cada pessoa vinculada só vê o próprio desempenho lá.<br>
+        O vínculo com colaborador é usado no Chat Interno — mostra o primeiro nome da pessoa (ou primeiro+segundo se tiver mais de uma com o mesmo primeiro nome) em vez do e-mail.
       </div>
     </div>`;
 }
@@ -260,6 +270,13 @@ async function updateVinculo(id, atendente_vinculado){
   init();
 }
 window.updateVinculo = updateVinculo;
+
+async function updateVinculoColaborador(id, colaborador_vinculado){
+  const { error } = await supa.from('perfis').update({colaborador_vinculado: colaborador_vinculado || null}).eq('id', id);
+  if(error){ alert('Erro ao vincular: ' + error.message); return; }
+  init();
+}
+window.updateVinculoColaborador = updateVinculoColaborador;
 
 async function redefinirSenha(userId, nomeExibicao){
   const novaSenha = prompt(`Nova senha para ${nomeExibicao || 'este usuário'} (mínimo 6 caracteres):`);

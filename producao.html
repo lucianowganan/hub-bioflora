@@ -258,6 +258,12 @@
 
 <script>
 const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+// Padrão do Hub: primeira letra do que a pessoa digitou/assinou
+// sempre maiúscula (produto, solicitante, quem manipulou/liberou)
+function capitalizarPrimeira(texto){
+  if(!texto) return texto;
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -329,7 +335,7 @@ async function atualizarListaProdutos(){
 }
 
 document.getElementById('saveCard').addEventListener('click', async ()=>{
-  const produto = document.getElementById('fProduto').value.trim();
+  const produto = capitalizarPrimeira(document.getElementById('fProduto').value.trim());
   if(!produto){ alert('Informe o nome do produto.'); return; }
   const area = document.getElementById('fArea').value;
 
@@ -371,7 +377,7 @@ function pedirConfirmacaoDuplicidade(ordemExistente){
 
 async function salvarOrdens(produto, linhas, area){
   const prioridade = document.getElementById('fPrioridade').value;
-  const solicitado_por = document.getElementById('fSolicitante').value.trim() || null;
+  const solicitado_por = capitalizarPrimeira(document.getElementById('fSolicitante').value.trim()) || null;
   const observacoes = document.getElementById('fObs').value.trim() || null;
   const hoje = new Date().toISOString().slice(0,10);
 
@@ -456,7 +462,7 @@ function abrirModalEditarOrdem(id){
 window.abrirModalEditarOrdem = abrirModalEditarOrdem;
 
 async function salvarEdicaoOrdem(){
-  const produto = document.getElementById('editProduto').value.trim();
+  const produto = capitalizarPrimeira(document.getElementById('editProduto').value.trim());
   if(!produto){ alert('Informe o produto.'); return; }
   const dados = {
     produto,
@@ -537,7 +543,7 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
   if(targetStatus === 'em_manipulacao'){
     const update = {
       data_entrada_lab: document.getElementById('mDataEntrada').value || null,
-      responsavel_manipulacao: document.getElementById('mRespManip').value.trim() || null
+      responsavel_manipulacao: capitalizarPrimeira(document.getElementById('mRespManip').value.trim()) || null
     };
     const { error } = await supa.from('ordens_producao').update(update).eq('id', id);
     if(error){ alert('Erro: '+error.message); return; }
@@ -548,7 +554,7 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
 
   if(targetStatus === 'liberado'){
     const data_liberacao = document.getElementById('mDataLiberacao').value || null;
-    const responsavel_liberacao = document.getElementById('mRespLiberacao').value.trim() || null;
+    const responsavel_liberacao = capitalizarPrimeira(document.getElementById('mRespLiberacao').value.trim()) || null;
     const parcial = document.querySelector('input[name="mTipoLiberacao"]:checked').value === 'parcial';
 
     if(!parcial){

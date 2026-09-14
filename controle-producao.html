@@ -291,6 +291,10 @@
 
 <script>
 const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+function capitalizarPrimeira(texto){
+  if(!texto) return texto;
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 
 let supa = null;
@@ -355,11 +359,10 @@ function switchTab(tab){
 window.switchTab = switchTab;
 
 function fmtData(d){ return d ? new Date(d+'T00:00:00').toLocaleDateString('pt-BR') : '—'; }
-function localDateStrProd(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
 
 // ---------- MANIPULAÇÃO ----------
 document.getElementById('mSalvar').addEventListener('click', async ()=>{
-  const colaborador = document.getElementById('mColaborador').value.trim();
+  const colaborador = capitalizarPrimeira(document.getElementById('mColaborador').value.trim());
   const quantidade = document.getElementById('mQtd').value;
   const data = document.getElementById('mData').value;
   const area = document.getElementById('mArea').value;
@@ -455,11 +458,10 @@ function renderPaginacao(containerId, paginaAtual, totalPaginas, onMudar){
 
 document.getElementById('mFiltroColab').addEventListener('change', ()=>{ paginaManip=1; renderManip(); });
 document.getElementById('mFiltroArea').addEventListener('change', ()=>{ paginaManip=1; renderManip(); });
-document.getElementById('mFiltroData').addEventListener('change', ()=>{ paginaManip=1; renderManip(); });
 
 // ---------- PESAGEM ----------
 document.getElementById('pSalvar').addEventListener('click', async ()=>{
-  const colaborador = document.getElementById('pColaborador').value.trim();
+  const colaborador = capitalizarPrimeira(document.getElementById('pColaborador').value.trim());
   const quantidade = document.getElementById('pQtd').value;
   const data = document.getElementById('pData').value;
   const area = document.getElementById('pArea').value;

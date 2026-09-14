@@ -110,6 +110,17 @@
   .input-area button.enviar{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:0 22px;height:44px;border-radius:10px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;flex-shrink:0;}
   .empty-state{text-align:center;color:var(--gray);font-size:13px;margin:auto;}
   .anexo-preview{font-size:11.5px;color:var(--gray);padding:0 22px 8px;}
+  .reply-banner{display:flex;align-items:center;gap:10px;padding:8px 22px;background:var(--paper);border-top:1px solid var(--line);}
+  .reply-banner-linha{width:3px;align-self:stretch;background:var(--burgundy);border-radius:2px;}
+  .reply-banner-texto{flex:1;min-width:0;}
+  .reply-banner-nome{font-size:11.5px;font-weight:700;color:var(--burgundy);}
+  .reply-banner-preview{font-size:12px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .reply-banner-fechar{background:none;border:none;color:var(--gray);cursor:pointer;font-size:15px;padding:2px 6px;}
+  .msg-reply-quote{border-left:3px solid var(--burgundy);background:rgba(139,26,58,.06);border-radius:6px;padding:5px 9px;margin-bottom:5px;cursor:pointer;}
+  .msg-reply-quote-nome{font-size:11px;font-weight:700;color:var(--burgundy);}
+  .msg-reply-quote-texto{font-size:11.5px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .reply-btn{background:none;border:none;color:inherit;opacity:.6;cursor:pointer;font-size:13px;line-height:1;}
+  .reply-btn:hover{opacity:1;}
   .anexo-preview button{background:none;border:none;color:var(--bad);cursor:pointer;text-decoration:underline;font-size:11px;margin-left:6px;}
 
   /* Modais internos (substituem prompt/confirm do navegador) */
@@ -168,6 +179,14 @@
     </div>
     <div class="digitando-indicador" id="digitandoIndicador" style="display:none"></div>
     <div class="anexo-preview" id="anexoPreview" style="display:none"></div>
+    <div class="reply-banner" id="replyBanner" style="display:none">
+      <div class="reply-banner-linha"></div>
+      <div class="reply-banner-texto">
+        <div class="reply-banner-nome" id="replyBannerNome"></div>
+        <div class="reply-banner-preview" id="replyBannerPreview"></div>
+      </div>
+      <button class="reply-banner-fechar" onclick="cancelarResposta()" title="Cancelar resposta">✕</button>
+    </div>
     <div class="input-area" id="inputArea" style="display:none">
       <button class="anexo-btn" onclick="document.getElementById('anexoInput').click()" title="Anexar imagem ou vídeo">📎</button>
       <input type="file" id="anexoInput" accept="image/*,video/*,audio/*,application/pdf" style="display:none" onchange="anexoSelecionado(this)">
@@ -264,14 +283,49 @@ let contadorNaoLidosCanais = {}; // canal_id -> quantidade
 let leituraCanais = {}; // canal_id -> Date da última leitura
 let subscricaoGlobal = null;
 
+async function aplicarNomesDeColaboradores(perfis){
+  const vinculados = perfis.filter(p => p.colaborador_vinculado);
+  if(!vinculados.length) return;
+
+  const ids = vinculados.map(p => p.colaborador_vinculado);
+  const { data: colaboradores } = await supa.from('colaboradores').select('id,nome_completo').in('id', ids);
+  const colabPorId = {};
+  (colaboradores||[]).forEach(c => { colabPorId[c.id] = c.nome_completo; });
+
+  // Conta quantas vezes cada primeiro nome aparece entre TODOS os
+  // colaboradores vinculados, pra saber quando precisa desambiguar
+  // com o segundo nome também
+  const primeirosNomes = {};
+  vinculados.forEach(p => {
+    const nomeCompleto = colabPorId[p.colaborador_vinculado];
+    if(!nomeCompleto) return;
+    const primeiro = nomeCompleto.trim().split(/\s+/)[0];
+    primeirosNomes[primeiro] = (primeirosNomes[primeiro]||0) + 1;
+  });
+
+  vinculados.forEach(p => {
+    const nomeCompleto = colabPorId[p.colaborador_vinculado];
+    if(!nomeCompleto) return;
+    const partes = nomeCompleto.trim().split(/\s+/);
+    const primeiro = partes[0];
+    const precisaDesambiguar = primeirosNomes[primeiro] > 1 && partes.length > 1;
+    nomesPorId[p.id] = precisaDesambiguar ? `${primeiro} ${partes[1]}` : primeiro;
+  });
+}
+
 async function init(){
   const { session, papel } = await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente','cpd']);
   meuUserId = session.user.id;
   meuPapel = papel;
 
-  const { data: perfis } = await supa.from('perfis').select('id,nome_exibicao,papel');
+  const { data: perfis } = await supa.from('perfis').select('id,nome_exibicao,papel,colaborador_vinculado');
   perfisTodos = (perfis||[]).filter(p => p.id !== meuUserId);
   (perfis||[]).forEach(p => { nomesPorId[p.id] = p.nome_exibicao || 'Alguém'; papelPorId[p.id] = p.papel; });
+
+  // Quem tem colaborador vinculado ganha o nome de verdade (primeiro
+  // nome, ou primeiro+segundo se tiver mais de uma pessoa com o mesmo
+  // primeiro nome) em vez do e-mail
+  await aplicarNomesDeColaboradores(perfis||[]);
 
   document.getElementById('msgInput').addEventListener('keydown', (e) => {
     if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); enviarMensagem(); }
@@ -688,6 +742,7 @@ function fecharConversa(){
 
 async function abrirCanal(canalId){
   document.getElementById('digitandoIndicador').style.display = 'none';
+  cancelarResposta();
   modoAtual = 'canal';
   alvoAtivoId = canalId;
   const canal = canais.find(c=>c.id===canalId);
@@ -706,6 +761,7 @@ window.abrirCanal = abrirCanal;
 
 async function abrirDm(userId){
   document.getElementById('digitandoIndicador').style.display = 'none';
+  cancelarResposta();
   modoAtual = 'dm';
   alvoAtivoId = userId;
   document.getElementById('canalNome').textContent = nomesPorId[userId] || 'Conversa';
@@ -792,6 +848,8 @@ function renderListaMensagens(lista, tipo){
 
 async function carregarMensagensCanal(){
   const { data } = await supa.from('mensagens_chat').select('*').eq('canal_id', alvoAtivoId).order('criado_em');
+  mensagensCarregadasPorId = {};
+  indexarMensagensCarregadas(data||[]);
   await carregarReacoesPara((data||[]).map(m=>m.id), 'canal');
   const area = document.getElementById('mensagensArea');
   area.innerHTML = (data||[]).length ? renderListaMensagens(data, 'canal') : '<div class="empty-state">Nenhuma mensagem ainda. Manda a primeira!</div>';
@@ -815,9 +873,11 @@ async function carregarMensagensDm(){
   const { data } = await supa.from('dm_mensagens').select('*')
     .or(`and(remetente_id.eq.${meuUserId},destinatario_id.eq.${alvoAtivoId}),and(remetente_id.eq.${alvoAtivoId},destinatario_id.eq.${meuUserId})`)
     .order('criado_em');
+  mensagensCarregadasPorId = {};
+  const comAutor = (data||[]).map(m => ({...m, autor_id: m.remetente_id}));
+  indexarMensagensCarregadas(comAutor);
   await carregarReacoesPara((data||[]).map(m=>m.id), 'dm');
   const area = document.getElementById('mensagensArea');
-  const comAutor = (data||[]).map(m => ({...m, autor_id: m.remetente_id}));
   area.innerHTML = comAutor.length ? renderListaMensagens(comAutor, 'dm') : '<div class="empty-state">Nenhuma mensagem ainda. Manda a primeira!</div>';
   area.scrollTop = area.scrollHeight;
 
@@ -851,6 +911,7 @@ function assinarTempoRealDm(){
 
 function inserirMensagemNaTela(m, tipo){
   if(document.getElementById('msg_'+m.id)) return;
+  mensagensCarregadasPorId[m.id] = { autor_id: m.autor_id, conteudo: m.conteudo };
   const area = document.getElementById('mensagensArea');
   const vazio = area.querySelector('.empty-state');
   if(vazio) vazio.remove();
@@ -869,6 +930,33 @@ function formatarTextoMensagem(texto){
   seguro = seguro.replace(/~([^~\n]+)~/g, '<del>$1</del>');
   return seguro;
 }
+
+let mensagensCarregadasPorId = {}; // id -> {autor_id, conteudo}
+let mensagemRespondendoId = null;
+let mensagemRespondendoTipo = null;
+
+function indexarMensagensCarregadas(lista){
+  lista.forEach(m => { mensagensCarregadasPorId[m.id] = { autor_id: m.autor_id, conteudo: m.conteudo }; });
+}
+
+function responderMensagem(id, tipo){
+  const original = mensagensCarregadasPorId[id];
+  if(!original) return;
+  mensagemRespondendoId = id;
+  mensagemRespondendoTipo = tipo;
+  document.getElementById('replyBannerNome').textContent = nomesPorId[original.autor_id] || 'Alguém';
+  document.getElementById('replyBannerPreview').textContent = original.conteudo || '📎 Anexo';
+  document.getElementById('replyBanner').style.display = 'flex';
+  document.getElementById('msgInput').focus();
+}
+window.responderMensagem = responderMensagem;
+
+function cancelarResposta(){
+  mensagemRespondendoId = null;
+  mensagemRespondendoTipo = null;
+  document.getElementById('replyBanner').style.display = 'none';
+}
+window.cancelarResposta = cancelarResposta;
 
 function renderMensagem(m, tipo, agrupada){
   const nome = nomesPorId[m.autor_id] || 'Alguém';
@@ -893,6 +981,17 @@ function renderMensagem(m, tipo, agrupada){
   const minhaReacao = reacoesMsg.find(r=>r.usuario_id===meuUserId)?.reacao;
   const botaoExcluir = (minha||meuPapel==='chefia') ? `<button class="msg-del" onclick="excluirMensagem('${m.id}','${tipo}')">excluir</button>` : '';
 
+  let citacaoHtml = '';
+  if(m.resposta_a_id){
+    const original = mensagensCarregadasPorId[m.resposta_a_id];
+    const nomeOriginal = original ? (nomesPorId[original.autor_id] || 'Alguém') : 'Mensagem';
+    const textoOriginal = original ? (original.conteudo || '📎 Anexo') : 'não disponível';
+    citacaoHtml = `<div class="msg-reply-quote" onclick="document.getElementById('msg_${m.resposta_a_id}')?.scrollIntoView({behavior:'smooth',block:'center'})">
+      <div class="msg-reply-quote-nome">${nomeOriginal}</div>
+      <div class="msg-reply-quote-texto">${(textoOriginal||'').replace(/</g,'&lt;')}</div>
+    </div>`;
+  }
+
   // Mensagens gigantes (mais de ~800 caracteres) começam cortadas,
   // com botão pra expandir — não deixa uma mensagem tomar a tela toda
   const textoLongo = m.conteudo && m.conteudo.length > 800;
@@ -903,10 +1002,12 @@ function renderMensagem(m, tipo, agrupada){
       ${agrupada ? `<div class="msg-avatar-spacer"><span class="msg-hora-hover">${hora}</span></div>` : `<div class="msg-avatar">${iniciais(nome)}</div>`}
       <div class="msg-body">
         ${agrupada ? '' : `<div class="msg-meta"><strong>${nome}</strong> · ${hora}${botaoExcluir}</div>`}
+        ${citacaoHtml}
         ${m.conteudo ? `<div class="msg-texto ${textoLongo?'truncada':''}" id="${idTexto}">${formatarTextoMensagem(m.conteudo)}</div>
         ${textoLongo ? `<button class="msg-expandir-btn" onclick="expandirMensagem('${idTexto}', this)">Ver mensagem completa</button>` : ''}` : ''}
         ${anexoHtml}
         <div class="msg-reacoes ${(checkCount||xCount)?'tem-reacao':''}">
+          <button class="reply-btn" onclick="responderMensagem('${m.id}','${tipo}')" title="Responder">↩</button>
           <button class="reacao-btn ${minhaReacao==='check'?'on':''}" onclick="reagir('${m.id}','${tipo}','check')">✅ ${checkCount||''}</button>
           <button class="reacao-btn ${minhaReacao==='x'?'on':''}" onclick="reagir('${m.id}','${tipo}','x')">❌ ${xCount||''}</button>
           ${agrupada ? botaoExcluir : ''}
@@ -1002,12 +1103,15 @@ async function enviarMensagem(){
   input.value = ''; input.style.height='auto';
   cancelarAnexo();
 
+  const respostaId = (mensagemRespondendoTipo === modoAtual) ? mensagemRespondendoId : null;
+  cancelarResposta();
+
   if(modoAtual === 'canal'){
-    const { error } = await supa.from('mensagens_chat').insert({ canal_id: alvoAtivoId, autor_id: meuUserId, conteudo: conteudo||null, anexo_url, anexo_tipo });
+    const { error } = await supa.from('mensagens_chat').insert({ canal_id: alvoAtivoId, autor_id: meuUserId, conteudo: conteudo||null, anexo_url, anexo_tipo, resposta_a_id: respostaId });
     if(error){ alert('Erro ao enviar: ' + error.message); return; }
     await carregarMensagensCanal();
   } else {
-    const { error } = await supa.from('dm_mensagens').insert({ remetente_id: meuUserId, destinatario_id: alvoAtivoId, conteudo: conteudo||null, anexo_url, anexo_tipo });
+    const { error } = await supa.from('dm_mensagens').insert({ remetente_id: meuUserId, destinatario_id: alvoAtivoId, conteudo: conteudo||null, anexo_url, anexo_tipo, resposta_a_id: respostaId });
     if(error){ alert('Erro ao enviar: ' + error.message); return; }
     await carregarMensagensDm();
     await carregarConversasDm();
