@@ -29,6 +29,11 @@
     transition:width .16s ease;
   }
   .sidebar:hover{width:250px;overflow-y:auto;}
+  .sidebar.editando{width:250px !important;overflow-y:auto;}
+  .side-arrastavel{cursor:grab;}
+  .side-arrastavel:active{cursor:grabbing;}
+  .side-arrastando{opacity:.35;}
+  .side-drag-over{outline:2px dashed rgba(255,255,255,.6);}
   .sidebar::-webkit-scrollbar{width:0;}
   .sidebar .mark-row{display:flex;align-items:center;gap:12px;padding:0 16px;margin-bottom:20px;flex-shrink:0;}
   .sidebar .mark{width:38px;height:38px;min-width:38px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -225,32 +230,8 @@
 </svg></div>
   <span class="mark-nome">Hub Bioflora</span>
   </div>
-  <nav>
-    <a href="index.html" class="side-btn active"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-6h4v6"/></svg><span class="tooltip">Início</span></a>
-    <a href="tarefas.html" class="side-btn"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="4.5" height="16" rx="1"/><rect x="9.75" y="4" width="4.5" height="10" rx="1"/><rect x="15.5" y="4" width="4.5" height="13" rx="1"/></svg><span class="tooltip">Quadro de Tarefas</span></a>
-    <a href="calendario-interno.html" class="side-btn"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17"/><path d="M8 3v3.2M16 3v3.2"/><path d="M7.5 13h2M11 13h2M14.5 13h2M7.5 16.5h2M11 16.5h2"/></svg><span class="tooltip">Calendário Interno</span></a>
-    <a href="rh.html" class="side-btn" id="sideRHBtn"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2"/><circle cx="17" cy="9" r="2.3"/><path d="M15.2 14.5c2.6.2 4.6 2.2 4.8 5"/></svg><span class="tooltip">Central de RH</span></a>
-    <a href="visitas-medicas.html" class="side-btn" id="sideVisitasBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v6a4 4 0 0 0 8 0V4"/><path d="M6 4H4.5M14 4h1.5"/><path d="M10 14v2.5a4.5 4.5 0 0 0 9 0V15"/><circle cx="19.3" cy="12.7" r="1.7"/></svg><span class="tooltip">Visitas de Representantes</span></a>
-    <a href="cliente-fiel.html" class="side-btn" id="sideClienteFielBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="12.5" rx="2"/><path d="M3.5 10h17"/><path d="M6.5 14.5h4"/></svg><span class="tooltip">Cliente Fiel</span></a>
-    <a href="rotulos.html" class="side-btn" id="sideRotulosBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 4H6a2 2 0 0 0-2 2v5.5L13.5 21 21 13.5 11.5 4Z"/><circle cx="8.3" cy="8.3" r="1.4"/></svg><span class="tooltip">Controle de Rótulos</span></a>
-    <a href="producao.html" class="side-btn" id="sideProducaoBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5h4"/><path d="M10.5 3.5v5.3L5.8 17a2.5 2.5 0 0 0 2.2 3.7h8a2.5 2.5 0 0 0 2.2-3.7l-4.7-8.2V3.5"/><path d="M8 15h8"/></svg><span class="tooltip">Ordem de Produção</span></a>
-    <a href="controle-producao.html" class="side-btn" id="sideControleBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4.5" width="14" height="16" rx="2"/><rect x="9" y="3" width="6" height="3" rx="1"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4.5"/></svg><span class="tooltip">Controle de Produção</span></a>
-    <a href="reaproveitamento.html" class="side-btn" id="sideReaproveitamentoBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4.5 6.7 9.2m0 0 3 1.7m-3-1.7-1 3.3"/><path d="M14.5 4.5h3.4a2 2 0 0 1 1.7 1L21.5 9"/><path d="M17.5 19.5h-3.9m0 0 1.9-3m-1.9 3 1.9 3"/><path d="M5.8 15.3l-1.7 3a2 2 0 0 0 0 2l1.9 3.2"/><path d="M18.2 15.3l1.7 3-1.5 2.6"/></svg><span class="tooltip">Reaproveitamento</span></a>
-    <a href="erros.html" class="side-btn" id="sideErrosBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4.2L15.5 5.3a1.7 1.7 0 0 1 2.4 0l.8.8a1.7 1.7 0 0 1 0 2.4L8.2 19 4 20Z"/><path d="M13.7 7.1l3.2 3.2"/></svg><span class="tooltip">Registro de Erros</span></a>
-    <a href="inclusoes.html" class="side-btn" id="sideInclusoesBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20V10M11 20V4M17.5 20v-7"/><path d="M3.5 20.5h17.5"/></svg><span class="tooltip">Inclusões & Performance</span></a>
-    <a href="calendario-editorial.html" class="side-btn" id="sideCalendarioEditorialBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17"/><path d="M8 3v3.2M16 3v3.2"/><path d="M7.5 13h2M11 13h2M14.5 13h2M7.5 16.5h2M11 16.5h2"/></svg><span class="tooltip">Calendário Editorial</span></a>
-    <a href="formulas-complexas.html" class="side-btn" id="sideFormulasComplexasBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5h3.3a1.6 1.6 0 0 1 1.6 1.9 1.6 1.6 0 0 0 1.9 1.9h1.7a1.5 1.5 0 0 1 1.5 1.5V13a1.6 1.6 0 0 0-1.9-1.6 1.6 1.6 0 0 0 0 3.2A1.6 1.6 0 0 1 19 16.2v2.3a1.5 1.5 0 0 1-1.5 1.5h-2.3a1.6 1.6 0 0 0 1.6-1.9 1.6 1.6 0 0 0-3.2 0 1.6 1.6 0 0 0 1.6 1.9H5.5A1.5 1.5 0 0 1 4 18.5v-2.3a1.6 1.6 0 0 1 1.9-1.6 1.6 1.6 0 0 0 0-3.2A1.6 1.6 0 0 1 4 9.8V7.5A1.5 1.5 0 0 1 5.5 6h2.3A1.6 1.6 0 0 1 9 4.5Z"/></svg><span class="tooltip">Fórmulas Complexas</span></a>
-    <a href="meus-erros.html" class="side-btn"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5 9.5 11l3.5 3.5L20 7"/><path d="M15 7h5v5"/></svg><span class="tooltip">Meus Erros</span></a>
-    <a href="chat.html" class="side-btn"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v10.5H9.2L5 20V16H4V5.5Z"/><path d="M7.5 9h9M7.5 12.3h6"/></svg><span class="tooltip">Chat Interno</span></a>
-    <a href="wanessia.html" class="side-btn" id="sideWanessiaBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="9" width="14" height="10.5" rx="2.5"/><path d="M12 5.5v3.5"/><circle cx="12" cy="4" r="1.2"/><circle cx="9" cy="14" r="1.3"/><circle cx="15" cy="14" r="1.3"/><path d="M3.3 12v4M20.7 12v4"/></svg><span class="tooltip">Wanessia</span></a>
-    <a href="vendas-yampi.html" class="side-btn" id="sideVendasBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h1.8l1 11.3A2 2 0 0 0 9.8 18h7.4a2 2 0 0 0 2-1.7L20.3 9H7.1"/><circle cx="10" cy="21" r="1.3"/><circle cx="17.5" cy="21" r="1.3"/></svg><span class="tooltip">Vendas (Yampi)</span></a>
-    <a href="admin.html" class="side-btn" id="sideAdminBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 5 6v5.5c0 4.7 3 8 7 9 4-1 7-4.3 7-9V6l-7-2.5Z"/></svg><span class="tooltip">Administração</span></a>
-    <a href="cargos.html" class="side-btn" id="sideCargosBtn" style="display:none"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 5 6v5.5c0 4.7 3 8 7 9 4-1 7-4.3 7-9V6l-7-2.5Z"/><path d="M9 12l2 2 4-4"/></svg><span class="tooltip">Cargos & Permissões</span></a>
-  </nav>
-  <div class="bottom">
-    <a href="alterar-senha.html" class="side-btn" title="Alterar senha"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="3.3"/><path d="M10.3 12.7 18 5m0 0h-3.2M18 5v3.2M14.7 8.3l2 2"/></svg><span class="tooltip">Alterar senha</span></a>
-    <button class="side-btn" onclick="logout()" title="Sair"><svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 20H5.5a1.5 1.5 0 0 1-1.5-1.5v-13A1.5 1.5 0 0 1 5.5 4h4"/><path d="M15.5 16.5 20 12l-4.5-4.5"/><path d="M20 12H9.5"/></svg><span class="tooltip">Sair</span></button>
-  </div>
+  <nav id="sideNav"></nav>
+  <div class="bottom" id="sideBottom"></div>
 </div>
 
 <div class="main">
@@ -366,6 +347,10 @@
         <div class="stripe" style="background:#2F7A5F"></div><div class="icon">📊</div><h3>Vendas (Yampi)</h3>
         <p>Relatório de pedidos e faturamento da loja.</p>
       </a>
+      <a class="module-card card-email-marketing" href="email-marketing.html" data-perm="modulo.email_marketing">
+        <div class="stripe" style="background:#2F7A5F"></div><div class="icon">✉️</div><h3>Email Marketing</h3>
+        <p>Dispara campanha pra base do Cliente Fiel, via Brevo.</p>
+      </a>
       <a class="module-card card-admin" href="admin.html" data-perm="modulo.admin" style="display:none">
         <div class="stripe" style="background:var(--ink)"></div><div class="icon">🔐</div><h3>Administração</h3>
         <p>Usuários e permissões.</p>
@@ -406,6 +391,161 @@ async function buscarMinhasPermissoes(papel){
   }catch(e){ return null; }
 }
 
+const SIDE_ICONES = {
+  home: '<path d="M4 11.5 12 4l8 7.5"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-6h4v6"/>',
+  kanban: '<rect x="4" y="4" width="4.5" height="16" rx="1"/><rect x="9.75" y="4" width="4.5" height="10" rx="1"/><rect x="15.5" y="4" width="4.5" height="13" rx="1"/>',
+  calendario: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17"/><path d="M8 3v3.2M16 3v3.2"/><path d="M7.5 13h2M11 13h2M14.5 13h2M7.5 16.5h2M11 16.5h2"/>',
+  pessoas: '<circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2"/><circle cx="17" cy="9" r="2.3"/><path d="M15.2 14.5c2.6.2 4.6 2.2 4.8 5"/>',
+  estetoscopio: '<path d="M6 4v6a4 4 0 0 0 8 0V4"/><path d="M6 4H4.5M14 4h1.5"/><path d="M10 14v2.5a4.5 4.5 0 0 0 9 0V15"/><circle cx="19.3" cy="12.7" r="1.7"/>',
+  cartao: '<rect x="3.5" y="6" width="17" height="12.5" rx="2"/><path d="M3.5 10h17"/><path d="M6.5 14.5h4"/>',
+  etiqueta: '<path d="M11.5 4H6a2 2 0 0 0-2 2v5.5L13.5 21 21 13.5 11.5 4Z"/><circle cx="8.3" cy="8.3" r="1.4"/>',
+  frasco: '<path d="M10 3.5h4"/><path d="M10.5 3.5v5.3L5.8 17a2.5 2.5 0 0 0 2.2 3.7h8a2.5 2.5 0 0 0 2.2-3.7l-4.7-8.2V3.5"/><path d="M8 15h8"/>',
+  prancheta: '<rect x="5" y="4.5" width="14" height="16" rx="2"/><rect x="9" y="3" width="6" height="3" rx="1"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4.5"/>',
+  reciclar: '<path d="M9.5 4.5 6.7 9.2m0 0 3 1.7m-3-1.7-1 3.3"/><path d="M14.5 4.5h3.4a2 2 0 0 1 1.7 1L21.5 9"/><path d="M17.5 19.5h-3.9m0 0 1.9-3m-1.9 3 1.9 3"/><path d="M5.8 15.3l-1.7 3a2 2 0 0 0 0 2l1.9 3.2"/><path d="M18.2 15.3l1.7 3-1.5 2.6"/>',
+  lapis: '<path d="M4 20l1-4.2L15.5 5.3a1.7 1.7 0 0 1 2.4 0l.8.8a1.7 1.7 0 0 1 0 2.4L8.2 19 4 20Z"/><path d="M13.7 7.1l3.2 3.2"/>',
+  grafico: '<path d="M4.5 20V10M11 20V4M17.5 20v-7"/><path d="M3.5 20.5h17.5"/>',
+  puzzle: '<path d="M9 4.5h3.3a1.6 1.6 0 0 1 1.6 1.9 1.6 1.6 0 0 0 1.9 1.9h1.7a1.5 1.5 0 0 1 1.5 1.5V13a1.6 1.6 0 0 0-1.9-1.6 1.6 1.6 0 0 0 0 3.2A1.6 1.6 0 0 1 19 16.2v2.3a1.5 1.5 0 0 1-1.5 1.5h-2.3a1.6 1.6 0 0 0 1.6-1.9 1.6 1.6 0 0 0-3.2 0 1.6 1.6 0 0 0 1.6 1.9H5.5A1.5 1.5 0 0 1 4 18.5v-2.3a1.6 1.6 0 0 1 1.9-1.6 1.6 1.6 0 0 0 0-3.2A1.6 1.6 0 0 1 4 9.8V7.5A1.5 1.5 0 0 1 5.5 6h2.3A1.6 1.6 0 0 1 9 4.5Z"/>',
+  tendencia: '<path d="M4 16.5 9.5 11l3.5 3.5L20 7"/><path d="M15 7h5v5"/>',
+  chat: '<path d="M4 5.5h16v10.5H9.2L5 20V16H4V5.5Z"/><path d="M7.5 9h9M7.5 12.3h6"/>',
+  robo: '<rect x="5" y="9" width="14" height="10.5" rx="2.5"/><path d="M12 5.5v3.5"/><circle cx="12" cy="4" r="1.2"/><circle cx="9" cy="14" r="1.3"/><circle cx="15" cy="14" r="1.3"/><path d="M3.3 12v4M20.7 12v4"/>',
+  vendas: '<path d="M5 5h1.8l1 11.3A2 2 0 0 0 9.8 18h7.4a2 2 0 0 0 2-1.7L20.3 9H7.1"/><circle cx="10" cy="21" r="1.3"/><circle cx="17.5" cy="21" r="1.3"/>',
+  email: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4.5 7 12 12.5 19.5 7"/>',
+  escudo: '<path d="M12 3.5 5 6v5.5c0 4.7 3 8 7 9 4-1 7-4.3 7-9V6l-7-2.5Z"/>',
+  escudoCheck: '<path d="M12 3.5 5 6v5.5c0 4.7 3 8 7 9 4-1 7-4.3 7-9V6l-7-2.5Z"/><path d="M9 12l2 2 4-4"/>',
+  chave: '<circle cx="8" cy="15" r="3.3"/><path d="M10.3 12.7 18 5m0 0h-3.2M18 5v3.2M14.7 8.3l2 2"/>',
+  sair: '<path d="M9.5 20H5.5a1.5 1.5 0 0 1-1.5-1.5v-13A1.5 1.5 0 0 1 5.5 4h4"/><path d="M15.5 16.5 20 12l-4.5-4.5"/><path d="M20 12H9.5"/>',
+  editar: '<path d="M4 20l1-4.2L15.5 5.3a1.7 1.7 0 0 1 2.4 0l.8.8a1.7 1.7 0 0 1 0 2.4L8.2 19 4 20Z"/><path d="M13.7 7.1l3.2 3.2"/>',
+  check: '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>',
+  arrastar: '<circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/>',
+};
+function sideSvg(nome){ return `<svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${SIDE_ICONES[nome]}</svg>`; }
+
+const SIDE_MODULOS = [
+  { href:'index.html', icone:'home', label:'Início', perm:null },
+  { href:'tarefas.html', icone:'kanban', label:'Quadro de Tarefas', perm:null },
+  { href:'calendario-interno.html', icone:'calendario', label:'Calendário Interno', perm:null },
+  { href:'rh.html', icone:'pessoas', label:'Central de RH', perm:null },
+  { href:'visitas-medicas.html', icone:'estetoscopio', label:'Visitas de Representantes', perm:'modulo.visitas' },
+  { href:'cliente-fiel.html', icone:'cartao', label:'Cliente Fiel', perm:'modulo.cliente_fiel' },
+  { href:'rotulos.html', icone:'etiqueta', label:'Controle de Rótulos', perm:'modulo.rotulos' },
+  { href:'producao.html', icone:'frasco', label:'Ordem de Produção', perm:'modulo.producao' },
+  { href:'controle-producao.html', icone:'prancheta', label:'Controle de Produção', perm:'modulo.controle_producao' },
+  { href:'reaproveitamento.html', icone:'reciclar', label:'Reaproveitamento', perm:'modulo.reaproveitamento' },
+  { href:'erros.html', icone:'lapis', label:'Registro de Erros', perm:'modulo.erros' },
+  { href:'inclusoes.html', icone:'grafico', label:'Inclusões & Performance', perm:'modulo.inclusoes' },
+  { href:'calendario-editorial.html', icone:'calendario', label:'Calendário Editorial', perm:'modulo.calendario_editorial' },
+  { href:'formulas-complexas.html', icone:'puzzle', label:'Fórmulas Complexas', perm:'modulo.formulas_complexas' },
+  { href:'meus-erros.html', icone:'tendencia', label:'Meus Erros', perm:null },
+  { href:'chat.html', icone:'chat', label:'Chat Interno', perm:null },
+  { href:'wanessia.html', icone:'robo', label:'Wanessia', perm:'modulo.wanessia' },
+  { href:'vendas-yampi.html', icone:'vendas', label:'Vendas (Yampi)', perm:'modulo.vendas' },
+  { href:'email-marketing.html', icone:'email', label:'Email Marketing', perm:'modulo.email_marketing' },
+  { href:'admin.html', icone:'escudo', label:'Administração', perm:'modulo.admin' },
+  { href:'cargos.html', icone:'escudoCheck', label:'Cargos & Permissões', perm:'modulo.admin' },
+];
+
+let sideModoEdicao = false;
+let sideOrdemPersonalizada = null;
+let sideItemArrastadoHref = null;
+let sideTemPermRef = null;
+let sideUserIdRef = null;
+
+function paginaAtualIndex(){ return location.pathname.split('/').pop() || 'index.html'; }
+
+function sideModulosVisiveisOrdenados(){
+  const visiveis = SIDE_MODULOS.filter(m => !m.perm || (sideTemPermRef && sideTemPermRef(m.perm)));
+  if(!sideOrdemPersonalizada || !sideOrdemPersonalizada.length) return visiveis;
+  const porHref = {};
+  visiveis.forEach(m => { porHref[m.href] = m; });
+  const ordenados = [];
+  sideOrdemPersonalizada.forEach(href => { if(porHref[href]){ ordenados.push(porHref[href]); delete porHref[href]; } });
+  Object.values(porHref).forEach(m => ordenados.push(m));
+  return ordenados;
+}
+
+function montarSideBotao(m){
+  const atual = paginaAtualIndex() === m.href;
+  const btn = document.createElement('a');
+  btn.href = m.href;
+  btn.className = 'side-btn' + (atual ? ' active' : '');
+  btn.innerHTML = `${sideSvg(m.icone)}<span class="tooltip">${m.label}</span>${sideModoEdicao ? sideSvg('arrastar') : ''}`;
+  return btn;
+}
+
+function renderSideNav(){
+  const nav = document.getElementById('sideNav');
+  const lista = sideModulosVisiveisOrdenados();
+  nav.innerHTML = '';
+  lista.forEach(m => {
+    const btn = montarSideBotao(m);
+    if(sideModoEdicao){
+      btn.draggable = true;
+      btn.classList.add('side-arrastavel');
+      btn.addEventListener('click', (e)=> e.preventDefault());
+      btn.addEventListener('dragstart', ()=>{ sideItemArrastadoHref = m.href; btn.classList.add('side-arrastando'); });
+      btn.addEventListener('dragend', ()=> btn.classList.remove('side-arrastando'));
+      btn.addEventListener('dragover', (e)=>{ e.preventDefault(); btn.classList.add('side-drag-over'); });
+      btn.addEventListener('dragleave', ()=> btn.classList.remove('side-drag-over'));
+      btn.addEventListener('drop', (e)=>{
+        e.preventDefault();
+        btn.classList.remove('side-drag-over');
+        if(!sideItemArrastadoHref || sideItemArrastadoHref === m.href) return;
+        const atualOrdem = lista.map(x=>x.href);
+        const doIdx = atualOrdem.indexOf(sideItemArrastadoHref);
+        const paraIdx = atualOrdem.indexOf(m.href);
+        atualOrdem.splice(doIdx,1);
+        atualOrdem.splice(paraIdx,0,sideItemArrastadoHref);
+        sideOrdemPersonalizada = atualOrdem;
+        renderSideNav();
+        salvarOrdemSidebarIndex(atualOrdem);
+      });
+    }
+    nav.appendChild(btn);
+  });
+}
+
+async function salvarOrdemSidebarIndex(ordem){
+  if(!sideUserIdRef) return;
+  try{
+    await supa.from('preferencias_hub').upsert(
+      { user_id: sideUserIdRef, sidebar_ordem: ordem, atualizado_em: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+  }catch(e){ /* silencioso */ }
+}
+
+function toggleSideModoEdicao(){
+  sideModoEdicao = !sideModoEdicao;
+  document.querySelector('.sidebar').classList.toggle('editando', sideModoEdicao);
+  const btn = document.getElementById('sideBtnEditarOrdem');
+  if(btn) btn.innerHTML = sideModoEdicao ? `${sideSvg('check')}<span class="tooltip">Concluir</span>` : `${sideSvg('editar')}<span class="tooltip">Reorganizar</span>`;
+  renderSideNav();
+}
+window.toggleSideModoEdicao = toggleSideModoEdicao;
+
+function renderSideBottom(){
+  const bottom = document.getElementById('sideBottom');
+  bottom.innerHTML = '';
+  const editarBtn = document.createElement('button');
+  editarBtn.className = 'side-btn';
+  editarBtn.id = 'sideBtnEditarOrdem';
+  editarBtn.innerHTML = `${sideSvg('editar')}<span class="tooltip">Reorganizar</span>`;
+  editarBtn.addEventListener('click', toggleSideModoEdicao);
+  const senhaBtn = document.createElement('a');
+  senhaBtn.href = 'alterar-senha.html';
+  senhaBtn.className = 'side-btn';
+  senhaBtn.title = 'Alterar senha';
+  senhaBtn.innerHTML = `${sideSvg('chave')}<span class="tooltip">Alterar senha</span>`;
+  const sairBtn = document.createElement('button');
+  sairBtn.className = 'side-btn';
+  sairBtn.title = 'Sair';
+  sairBtn.innerHTML = `${sideSvg('sair')}<span class="tooltip">Sair</span>`;
+  sairBtn.addEventListener('click', logout);
+  bottom.appendChild(editarBtn);
+  bottom.appendChild(senhaBtn);
+  bottom.appendChild(sairBtn);
+}
+
 async function init(){
   const { data: { session } } = await supa.auth.getSession();
   if(!session){ window.location.href = 'login.html'; return; }
@@ -419,20 +559,15 @@ async function init(){
   document.getElementById('whoLabel').textContent = perfil?.nome_exibicao || session.user.email;
   document.getElementById('heroGreeting').textContent = `Bem-vindo(a), ${primeiroNome.charAt(0).toUpperCase()+primeiroNome.slice(1)}`;
   document.getElementById('rolePill').textContent = ROLE_LABELS[papel];
-  if(temPerm('modulo.admin')) document.getElementById('sideAdminBtn').style.display = 'flex';
-  if(temPerm('modulo.admin')) document.getElementById('sideCargosBtn').style.display = 'flex';
-  if(temPerm('modulo.cliente_fiel')) document.getElementById('sideClienteFielBtn').style.display = 'flex';
-  if(temPerm('modulo.wanessia')) document.getElementById('sideWanessiaBtn').style.display = 'flex';
-  if(temPerm('modulo.vendas')) document.getElementById('sideVendasBtn').style.display = 'flex';
-  if(temPerm('modulo.visitas')) document.getElementById('sideVisitasBtn').style.display = 'flex';
-  if(temPerm('modulo.rotulos')) document.getElementById('sideRotulosBtn').style.display = 'flex';
-  if(temPerm('modulo.producao')) document.getElementById('sideProducaoBtn').style.display = 'flex';
-  if(temPerm('modulo.controle_producao')) document.getElementById('sideControleBtn').style.display = 'flex';
-  if(temPerm('modulo.reaproveitamento')) document.getElementById('sideReaproveitamentoBtn').style.display = 'flex';
-  if(temPerm('modulo.erros')) document.getElementById('sideErrosBtn').style.display = 'flex';
-  if(temPerm('modulo.inclusoes')) document.getElementById('sideInclusoesBtn').style.display = 'flex';
-  if(temPerm('modulo.calendario_editorial')) document.getElementById('sideCalendarioEditorialBtn').style.display = 'flex';
-  if(temPerm('modulo.formulas_complexas')) document.getElementById('sideFormulasComplexasBtn').style.display = 'flex';
+
+  sideTemPermRef = temPerm;
+  sideUserIdRef = session.user.id;
+  try{
+    const { data: pref } = await supa.from('preferencias_hub').select('sidebar_ordem').eq('user_id', session.user.id).maybeSingle();
+    sideOrdemPersonalizada = pref?.sidebar_ordem || null;
+  }catch(e){ sideOrdemPersonalizada = null; }
+  renderSideNav();
+  renderSideBottom();
 
   if(papel === 'sem_papel'){
     document.getElementById('roleBanner').style.display = 'block';

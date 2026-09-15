@@ -420,8 +420,8 @@ function traceHtml(o){
   let lines = [];
   if(o.solicitado_por) lines.push(`<strong>Solicitado por:</strong> ${o.solicitado_por}`);
   if(o.data_ordem_criada) lines.push(`<strong>Ordem criada:</strong> ${fmtDate(o.data_ordem_criada)}`);
-  if(o.data_entrada_lab) lines.push(`<strong>Entrada no lab:</strong> ${fmtDate(o.data_entrada_lab)}${o.responsavel_manipulacao ? ' — manipulado por '+o.responsavel_manipulacao : ''}`);
-  if(o.data_liberacao) lines.push(`<strong>Liberado (CQ):</strong> ${fmtDate(o.data_liberacao)}${o.responsavel_liberacao ? ' — por '+o.responsavel_liberacao : ''}`);
+  if(o.data_entrada_lab) lines.push(`<strong>Entrada no lab:</strong> ${fmtDate(o.data_entrada_lab)}${o.responsavel_entrada_lab ? ' — registrado por '+o.responsavel_entrada_lab : ''}`);
+  if(o.data_liberacao) lines.push(`<strong>Liberado (CQ):</strong> ${fmtDate(o.data_liberacao)}${o.responsavel_manipulacao ? ' — manipulado por '+o.responsavel_manipulacao : ''}${o.responsavel_liberacao ? ', liberado por '+o.responsavel_liberacao : ''}`);
   if(o.liberacao_parcial && o.status === 'liberado') lines.push(`<em>Liberação parcial: ${o.quantidade_liberada||'?'} potes — ${o.motivo_liberacao_parcial||'sem motivo informado'}</em>`);
   if(o.liberacao_parcial && o.status !== 'liberado') lines.push(`<em>Restante de uma liberação parcial — o resto dessa ordem já saiu</em>`);
   if(o.observacoes) lines.push(`<em>${o.observacoes}</em>`);
@@ -507,13 +507,14 @@ function openModal(id, targetStatus){
     fields = `
       <div class="form-grid">
         <div><label>Data de entrada no lab</label><input id="mDataEntrada" type="date" value="${new Date().toISOString().slice(0,10)}" /></div>
-        <div><label>Responsável (manipulação)</label><input id="mRespManip" placeholder="Nome" /></div>
+        <div><label>Quem deu entrada</label><input id="mRespEntrada" placeholder="Nome de quem está registrando" /></div>
       </div>`;
   } else if(targetStatus === 'liberado'){
     fields = `
       <div class="form-grid">
         <div><label>Data de liberação</label><input id="mDataLiberacao" type="date" value="${new Date().toISOString().slice(0,10)}" /></div>
-        <div><label>Responsável (CQ)</label><input id="mRespLiberacao" placeholder="Nome" /></div>
+        <div><label>Quem manipulou</label><input id="mRespManip" placeholder="Nome" /></div>
+        <div><label>Quem liberou (CQ)</label><input id="mRespLiberacao" placeholder="Nome" /></div>
       </div>
       <label style="font-size:11px;color:var(--gray);font-weight:600;display:block;margin:10px 0 4px;">Tipo de liberação</label>
       <div class="radio-row"><input type="radio" name="mTipoLiberacao" value="total" checked onchange="toggleLiberacaoParcial()"> Total — saiu tudo que essa ordem previa</div>
@@ -543,7 +544,7 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
   if(targetStatus === 'em_manipulacao'){
     const update = {
       data_entrada_lab: document.getElementById('mDataEntrada').value || null,
-      responsavel_manipulacao: capitalizarPrimeira(document.getElementById('mRespManip').value.trim()) || null
+      responsavel_entrada_lab: capitalizarPrimeira(document.getElementById('mRespEntrada').value.trim()) || null
     };
     const { error } = await supa.from('ordens_producao').update(update).eq('id', id);
     if(error){ alert('Erro: '+error.message); return; }
@@ -554,11 +555,12 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
 
   if(targetStatus === 'liberado'){
     const data_liberacao = document.getElementById('mDataLiberacao').value || null;
+    const responsavel_manipulacao = capitalizarPrimeira(document.getElementById('mRespManip').value.trim()) || null;
     const responsavel_liberacao = capitalizarPrimeira(document.getElementById('mRespLiberacao').value.trim()) || null;
     const parcial = document.querySelector('input[name="mTipoLiberacao"]:checked').value === 'parcial';
 
     if(!parcial){
-      const { error } = await supa.from('ordens_producao').update({ data_liberacao, responsavel_liberacao, liberacao_parcial: false }).eq('id', id);
+      const { error } = await supa.from('ordens_producao').update({ data_liberacao, responsavel_manipulacao, responsavel_liberacao, liberacao_parcial: false }).eq('id', id);
       if(error){ alert('Erro: '+error.message); return; }
       modalOverlay.classList.remove('show');
       loadBoard();
@@ -579,7 +581,7 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
 
     // 1. A ordem original passa a representar só a parte liberada
     const { error: erroUpdate } = await supa.from('ordens_producao').update({
-      data_liberacao, responsavel_liberacao,
+      data_liberacao, responsavel_manipulacao, responsavel_liberacao,
       liberacao_parcial: true, quantidade_liberada: qtdLiberada, motivo_liberacao_parcial: motivo,
       quantidade: qtdLiberada
     }).eq('id', id);
@@ -597,7 +599,7 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
         observacoes: ordemOriginal.observacoes,
         data_ordem_criada: ordemOriginal.data_ordem_criada,
         data_entrada_lab: ordemOriginal.data_entrada_lab,
-        responsavel_manipulacao: ordemOriginal.responsavel_manipulacao,
+        responsavel_entrada_lab: ordemOriginal.responsavel_entrada_lab,
         status: 'em_manipulacao',
         liberacao_parcial: true,
         ordem_origem_id: id

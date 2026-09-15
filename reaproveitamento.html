@@ -173,19 +173,11 @@
     <button class="btn" onclick="salvarNaoRetirado()">Salvar não retirado</button>
   </div>
 
-  <div class="panel" id="painelCatalogoAtivos" style="display:none">
-    <h2>Catálogo de ativos</h2>
-    <p class="desc">Só chefia vê essa lista — exclui ativo cadastrado errado ou de teste. Cuidado: se o ativo já foi usado em algum registro, o histórico continua mostrando o nome antigo.</p>
-    <table>
-      <thead><tr><th>Código</th><th>Nome</th><th>Ação</th></tr></thead>
-      <tbody id="listaCatalogoAtivos"></tbody>
-    </table>
-  </div>
-
   <div class="panel">
     <h2>Disponíveis para reaproveitamento</h2>
     <p class="desc">Ordenado por validade — o que vence primeiro aparece primeiro</p>
     <div class="filter-row">
+      <input id="buscaDisponiveis" placeholder="🔍 Buscar por medicamento, código do ativo ou requisição..." style="flex:1;min-width:240px;font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;" oninput="filtrarDisponiveis()">
       <button class="btn secondary small" onclick="loadDisponiveis()">Atualizar lista</button>
     </div>
     <table>
@@ -195,6 +187,16 @@
       </tr></thead>
       <tbody id="disponiveisTbody"></tbody>
     </table>
+  </div>
+
+  <div class="panel" id="painelCatalogoAtivos" style="display:none">
+    <h2>Catálogo de ativos</h2>
+    <p class="desc">Só chefia vê essa lista — exclui ativo cadastrado errado ou de teste. Cuidado: se o ativo já foi usado em algum registro, o histórico continua mostrando o nome antigo.</p>
+    <table>
+      <thead><tr><th>Código</th><th>Nome</th><th>Ação</th></tr></thead>
+      <tbody id="listaCatalogoAtivos"></tbody>
+    </table>
+    <button class="btn secondary small" id="btnVerMaisAtivos" onclick="alternarListaCompletaAtivos()" style="margin-top:10px;display:none;"></button>
   </div>
 
   <div class="panel">
@@ -222,6 +224,8 @@ requireRole(['chefia','conferencia']).catch(()=>{}); // trava de acesso rápida 
 
 let ativosCatalogo = [];
 let meuPapelReap = null;
+let listaAtivosExpandida = false;
+const LIMITE_ATIVOS_FECHADO = 5;
 
 function localDateStr(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
 
@@ -232,14 +236,29 @@ async function loadAtivosCatalogo(){
 }
 
 function renderCatalogoAtivos(){
-  document.getElementById('listaCatalogoAtivos').innerHTML = ativosCatalogo.length ? ativosCatalogo.map(a => `
+  const mostrar = listaAtivosExpandida ? ativosCatalogo : ativosCatalogo.slice(0, LIMITE_ATIVOS_FECHADO);
+  document.getElementById('listaCatalogoAtivos').innerHTML = mostrar.length ? mostrar.map(a => `
     <tr>
       <td>${a.codigo}</td>
       <td>${a.nome}</td>
       <td><button class="btn secondary small" onclick="excluirAtivoCatalogo('${a.id}')">Excluir</button></td>
     </tr>
   `).join('') : '<tr><td colspan="3" style="color:var(--gray)">Nenhum ativo cadastrado ainda.</td></tr>';
+
+  const btn = document.getElementById('btnVerMaisAtivos');
+  if(ativosCatalogo.length > LIMITE_ATIVOS_FECHADO){
+    btn.style.display = 'inline-block';
+    btn.textContent = listaAtivosExpandida ? 'Ver menos' : `Ver mais (${ativosCatalogo.length - LIMITE_ATIVOS_FECHADO})`;
+  } else {
+    btn.style.display = 'none';
+  }
 }
+
+function alternarListaCompletaAtivos(){
+  listaAtivosExpandida = !listaAtivosExpandida;
+  renderCatalogoAtivos();
+}
+window.alternarListaCompletaAtivos = alternarListaCompletaAtivos;
 
 async function excluirAtivoCatalogo(id){
   if(!confirm('Excluir esse ativo do catálogo? Isso não apaga registros já salvos com ele, só tira da lista de seleção.')) return;
@@ -358,13 +377,31 @@ function situacaoValidade(validade){
   return { cls:'ok', label:`Vence em ${diffDias}d` };
 }
 
+let disponiveisCache = [];
+
 async function loadDisponiveis(){
   const { data, error } = await supa.from('manipulados_nao_retirados')
     .select('id,requisicao,forma_farmaceutica,quantidade,data_manipulacao,validade,assinatura,manipulados_ativos(concentracao,ativos_cadastrados(codigo,nome))')
     .eq('status','disponivel')
     .order('validade', {ascending:true, nullsFirst:false});
   if(error){ console.error(error); return; }
+  disponiveisCache = data || [];
+  filtrarDisponiveis();
+}
 
+function filtrarDisponiveis(){
+  const termo = document.getElementById('buscaDisponiveis').value.trim().toLowerCase();
+  const filtrados = !termo ? disponiveisCache : disponiveisCache.filter(m => {
+    const ativosTxt = (m.manipulados_ativos||[]).map(a => `${a.ativos_cadastrados?.codigo||''} ${a.ativos_cadastrados?.nome||''}`).join(' ').toLowerCase();
+    return (m.requisicao||'').toLowerCase().includes(termo)
+      || (m.forma_farmaceutica||'').toLowerCase().includes(termo)
+      || ativosTxt.includes(termo);
+  });
+  renderDisponiveis(filtrados);
+}
+window.filtrarDisponiveis = filtrarDisponiveis;
+
+function renderDisponiveis(data){
   document.getElementById('disponiveisTbody').innerHTML = (data && data.length) ? data.map(m => {
     const sit = situacaoValidade(m.validade);
     const ativosTxt = (m.manipulados_ativos||[]).map(a => a.ativos_cadastrados ? `${a.ativos_cadastrados.codigo}:${a.concentracao}` : `(ativo removido):${a.concentracao}`).join(', ');
@@ -378,7 +415,7 @@ async function loadDisponiveis(){
       <td><span class="badge ${sit.cls}">${sit.label}</span></td>
       <td><button class="btn secondary small" onclick="marcarReaproveitado('${m.id}')">Marcar reaproveitado</button></td>
     </tr>`;
-  }).join('') : `<tr><td colspan="8" class="empty-state">Nenhum item disponível no momento.</td></tr>`;
+  }).join('') : `<tr><td colspan="8" class="empty-state">Nenhum item encontrado.</td></tr>`;
 }
 
 async function marcarReaproveitado(id){

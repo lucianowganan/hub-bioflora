@@ -39,6 +39,9 @@
     escudoCheck: '<path d="M12 3.5 5 6v5.5c0 4.7 3 8 7 9 4-1 7-4.3 7-9V6l-7-2.5Z"/><path d="M9 12l2 2 4-4"/>',
     chave: '<circle cx="8" cy="15" r="3.3"/><path d="M10.3 12.7 18 5m0 0h-3.2M18 5v3.2M14.7 8.3l2 2"/>',
     sair: '<path d="M9.5 20H5.5a1.5 1.5 0 0 1-1.5-1.5v-13A1.5 1.5 0 0 1 5.5 4h4"/><path d="M15.5 16.5 20 12l-4.5-4.5"/><path d="M20 12H9.5"/>',
+    editar: '<path d="M4 20l1-4.2L15.5 5.3a1.7 1.7 0 0 1 2.4 0l.8.8a1.7 1.7 0 0 1 0 2.4L8.2 19 4 20Z"/><path d="M13.7 7.1l3.2 3.2"/>',
+    check: '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>',
+    arrastar: '<circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/>',
   };
 
   function svg(nomeIcone){
@@ -76,6 +79,7 @@
         display:flex;flex-direction:column;align-items:stretch;padding:20px 0;z-index:200;overflow:hidden;
         transition:width .16s ease;}
       .hub-sidebar:hover{width:250px;overflow-y:auto;}
+      .hub-sidebar.hs-editando{width:250px !important;overflow-y:auto;}
       .hub-sidebar::-webkit-scrollbar{width:0;}
       .hub-sidebar .hs-mark-row{display:flex;align-items:center;gap:12px;padding:0 16px;margin-bottom:20px;flex-shrink:0;}
       .hub-sidebar .hs-mark{width:38px;height:38px;min-width:38px;border-radius:10px;background:rgba(255,255,255,.12);
@@ -99,6 +103,10 @@
         min-width:16px;height:16px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 3px;
         font-family:'Maven Pro',sans-serif;line-height:1;}
       .hs-badge.show{display:flex;}
+      .hs-arrastavel{cursor:grab;}
+      .hs-arrastavel:active{cursor:grabbing;}
+      .hs-arrastando{opacity:.35;}
+      .hs-drag-over{outline:2px dashed rgba(255,255,255,.6);}
       .hub-sidebar .hs-bottom{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
 
       @media (max-width:720px){
@@ -123,14 +131,86 @@
     return location.pathname.split('/').pop() || 'index.html';
   }
 
+  let modoEdicaoSidebar = false;
+  let ordemPersonalizada = null; // array de hrefs, vindo do banco (ou null se nunca customizou)
+  let itemArrastadoHref = null;
+  let navRefEl = null;
+  let supaRefGlobal = null;
+  let userIdRefGlobal = null;
+  let minhasPermissoesRefGlobal = null;
+
   function montarBotao(m){
     const atual = paginaAtual() === m.href;
     const btn = document.createElement('a');
     btn.href = m.href;
     btn.className = 'hs-btn' + (atual ? ' active' : '');
     if(m.perm) btn.dataset.perm = m.perm;
-    btn.innerHTML = `${svg(m.icone)}<span class="hs-label">${m.label}</span>${m.href==='chat.html' ? '<span class="hs-badge" id="hsBadgeChat"></span>' : ''}`;
+    btn.innerHTML = `${svg(m.icone)}<span class="hs-label">${m.label}</span>${m.href==='chat.html' ? '<span class="hs-badge" id="hsBadgeChat"></span>' : ''}${modoEdicaoSidebar ? svg('arrastar') : ''}`;
     return btn;
+  }
+
+  function modulosVisiveisOrdenados(){
+    const visiveis = MODULOS.filter(m => !m.perm || !minhasPermissoesRefGlobal || minhasPermissoesRefGlobal.has(m.perm));
+    if(!ordemPersonalizada || !ordemPersonalizada.length) return visiveis;
+    const porHref = {};
+    visiveis.forEach(m => { porHref[m.href] = m; });
+    const ordenados = [];
+    ordemPersonalizada.forEach(href => { if(porHref[href]){ ordenados.push(porHref[href]); delete porHref[href]; } });
+    Object.values(porHref).forEach(m => ordenados.push(m)); // módulo novo, ainda não tá na ordem salva -- vai pro final
+    return ordenados;
+  }
+
+  function renderNav(){
+    if(!navRefEl) return;
+    const lista = modulosVisiveisOrdenados();
+    navRefEl.innerHTML = '';
+    lista.forEach(m => {
+      const btn = montarBotao(m);
+      if(modoEdicaoSidebar){
+        btn.draggable = true;
+        btn.classList.add('hs-arrastavel');
+        btn.addEventListener('click', (e)=> e.preventDefault()); // não navega enquanto tá reorganizando
+        btn.addEventListener('dragstart', ()=>{ itemArrastadoHref = m.href; btn.classList.add('hs-arrastando'); });
+        btn.addEventListener('dragend', ()=>{ btn.classList.remove('hs-arrastando'); });
+        btn.addEventListener('dragover', (e)=>{ e.preventDefault(); btn.classList.add('hs-drag-over'); });
+        btn.addEventListener('dragleave', ()=> btn.classList.remove('hs-drag-over'));
+        btn.addEventListener('drop', (e)=>{
+          e.preventDefault();
+          btn.classList.remove('hs-drag-over');
+          if(!itemArrastadoHref || itemArrastadoHref === m.href) return;
+          const atual = lista.map(x=>x.href);
+          const doIdx = atual.indexOf(itemArrastadoHref);
+          const paraIdx = atual.indexOf(m.href);
+          atual.splice(doIdx,1);
+          atual.splice(paraIdx,0,itemArrastadoHref);
+          ordemPersonalizada = atual;
+          renderNav();
+          salvarOrdemSidebar(atual);
+        });
+      }
+      navRefEl.appendChild(btn);
+    });
+  }
+
+  async function salvarOrdemSidebar(ordem){
+    if(!supaRefGlobal || !userIdRefGlobal) return;
+    try{
+      await supaRefGlobal.from('preferencias_hub').upsert(
+        { user_id: userIdRefGlobal, sidebar_ordem: ordem, atualizado_em: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      );
+    }catch(e){ /* silencioso -- reordenar é conveniência, não trava a navegação se falhar */ }
+  }
+
+  function toggleModoEdicaoSidebar(){
+    modoEdicaoSidebar = !modoEdicaoSidebar;
+    const aside = document.querySelector('.hub-sidebar');
+    if(aside) aside.classList.toggle('hs-editando', modoEdicaoSidebar);
+    const btnEditar = document.getElementById('hsBtnEditarOrdem');
+    if(btnEditar) btnEditar.innerHTML = modoEdicaoSidebar
+      ? `${svg('check')}<span class="hs-label">Concluir</span>`
+      : `${svg('editar')}<span class="hs-label">Reorganizar</span>`;
+    renderNav();
   }
 
   function injetarSidebar(){
@@ -143,11 +223,16 @@
     aside.appendChild(markRow);
 
     const nav = document.createElement('nav');
-    MODULOS.forEach(m => nav.appendChild(montarBotao(m)));
+    navRefEl = nav;
     aside.appendChild(nav);
 
     const bottom = document.createElement('div');
     bottom.className = 'hs-bottom';
+    const editarBtn = document.createElement('button');
+    editarBtn.className = 'hs-btn';
+    editarBtn.id = 'hsBtnEditarOrdem';
+    editarBtn.innerHTML = `${svg('editar')}<span class="hs-label">Reorganizar</span>`;
+    editarBtn.addEventListener('click', toggleModoEdicaoSidebar);
     const senhaBtn = document.createElement('a');
     senhaBtn.href = 'alterar-senha.html';
     senhaBtn.className = 'hs-btn';
@@ -160,6 +245,7 @@
       await supa.auth.signOut();
       window.location.href = 'login.html';
     });
+    bottom.appendChild(editarBtn);
     bottom.appendChild(senhaBtn);
     bottom.appendChild(sairBtn);
     aside.appendChild(bottom);
@@ -216,10 +302,16 @@
       const papel = perfil?.papel || 'sem_papel';
 
       const minhasPermissoes = await buscarMinhasPermissoes(supa, papel);
-      aside.querySelectorAll('.hs-btn[data-perm]').forEach(btn => {
-        const perm = btn.dataset.perm;
-        if(perm && minhasPermissoes && !minhasPermissoes.has(perm)) btn.style.display = 'none';
-      });
+      minhasPermissoesRefGlobal = minhasPermissoes;
+      supaRefGlobal = supa;
+      userIdRefGlobal = session.user.id;
+
+      try{
+        const { data: pref } = await supa.from('preferencias_hub').select('sidebar_ordem').eq('user_id', session.user.id).maybeSingle();
+        ordemPersonalizada = pref?.sidebar_ordem || null;
+      }catch(e){ ordemPersonalizada = null; }
+
+      renderNav();
 
       // Não mostra o badge de "não lidas" pra quem já está DENTRO do chat
       if(paginaAtual() !== 'chat.html'){
