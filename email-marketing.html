@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Email Marketing — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<script src="permissoes.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC; --bad:#B4472F; --bad-tint:#FBEBE6;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand-text h1{font-family:var(--headfont);font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn.small{padding:6px 12px;font-size:11.5px;}
+  .btn:disabled{opacity:.5;cursor:default;}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .panel h2{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+
+  .field{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;}
+  .field label{font-size:11px;color:var(--gray);font-weight:600;text-transform:uppercase;}
+  .field input, .field textarea{font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;}
+  .field textarea{font-family:monospace;font-size:12.5px;min-height:220px;resize:vertical;}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+  .kpi{background:var(--paper);border-radius:10px;padding:12px 16px;}
+  .kpi .label{font-size:10.5px;color:var(--gray);text-transform:uppercase;font-weight:600;}
+  .kpi .value{font-family:var(--headfont);font-size:22px;font-weight:600;margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  thead th{text-align:left;font-size:10.5px;text-transform:uppercase;color:var(--gray);font-weight:600;padding:0 10px 8px;border-bottom:1px solid var(--ink);}
+  tbody td{padding:8px 10px;border-bottom:1px solid var(--line);}
+  .tag-status{font-size:9.5px;font-weight:700;text-transform:uppercase;padding:2px 9px;border-radius:20px;}
+  .tag-status.rascunho{background:var(--paper);color:var(--gray);}
+  .tag-status.enviando{background:#FBF1E0;color:#8A6512;}
+  .tag-status.enviado{background:var(--good-tint);color:var(--good);}
+  .tag-status.erro{background:var(--bad-tint);color:var(--bad);}
+  .empty-state{text-align:center;padding:24px;color:var(--gray);font-size:12.5px;}
+  .aviso-config{background:#FBF1E0;color:#8A6512;border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:16px;}
+  .progresso-envio{font-size:12.5px;color:var(--gray);margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand-text">
+      <h1>Email Marketing</h1>
+      <p>Farmácia Bioflora — envia pra base de clientes com e-mail, via Brevo</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button onclick="logout()" class="btn secondary">Sair</button>
+    </div>
+  </header>
+
+  <div class="panel">
+    <h2>Nova campanha</h2>
+    <p class="desc">Envia pra todo mundo do Cliente Fiel que tem e-mail cadastrado. O corpo aceita HTML simples (parágrafos, negrito, links).</p>
+    <div id="resumoContatos" class="kpi-row"></div>
+    <div class="field"><label>Assunto</label><input id="campAssunto" placeholder="Ex: Novidade da semana na Bioflora"></div>
+    <div class="field"><label>Corpo do e-mail (HTML)</label><textarea id="campCorpo" placeholder="&lt;p&gt;Olá!&lt;/p&gt;&lt;p&gt;Essa semana...&lt;/p&gt;"></textarea></div>
+    <button class="btn" id="btnEnviar" onclick="enviarCampanha()">Enviar campanha</button>
+    <div class="progresso-envio" id="progressoEnvio"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Histórico de campanhas</h2>
+    <div id="listaCampanhas"></div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let contatosComEmail = [];
+
+async function init(){
+  await requireRole(['chefia','gestao']);
+  await carregarContatos();
+  await carregarCampanhas();
+}
+
+async function carregarContatos(){
+  const { data, error } = await supa.from('clientes_fidelidade').select('nome,email').not('email','is',null).neq('email','');
+  if(error){
+    document.getElementById('resumoContatos').innerHTML = `<div class="kpi" style="grid-column:span 3;"><div class="label">Erro ao carregar contatos</div><div style="font-size:12.5px;color:var(--bad);margin-top:4px;">${error.message} — os nomes de coluna podem ser diferentes do esperado (nome, email) na tabela clientes_fidelidade.</div></div>`;
+    return;
+  }
+  contatosComEmail = data || [];
+  document.getElementById('resumoContatos').innerHTML = `
+    <div class="kpi"><div class="label">Contatos com e-mail</div><div class="value">${contatosComEmail.length}</div></div>
+  `;
+}
+
+async function carregarCampanhas(){
+  const { data } = await supa.from('email_campanhas').select('*').order('criado_em', {ascending:false});
+  const campanhas = data || [];
+  document.getElementById('listaCampanhas').innerHTML = campanhas.length ? `
+    <table>
+      <thead><tr><th>Assunto</th><th>Status</th><th>Destinatários</th><th>Sucesso</th><th>Falha</th><th>Enviado em</th></tr></thead>
+      <tbody>
+        ${campanhas.map(c => `<tr>
+          <td>${c.assunto}</td>
+          <td><span class="tag-status ${c.status}">${c.status}</span></td>
+          <td>${c.total_destinatarios}</td>
+          <td>${c.total_sucesso}</td>
+          <td>${c.total_falha}</td>
+          <td>${c.enviado_em ? new Date(c.enviado_em).toLocaleString('pt-BR') : '—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  ` : '<div class="empty-state">Nenhuma campanha enviada ainda.</div>';
+}
+
+async function enviarCampanha(){
+  const assunto = document.getElementById('campAssunto').value.trim();
+  const corpoHtml = document.getElementById('campCorpo').value.trim();
+  const progresso = document.getElementById('progressoEnvio');
+
+  if(!assunto || !corpoHtml){ alert('Preenche assunto e corpo do e-mail.'); return; }
+  if(!contatosComEmail.length){ alert('Não tem nenhum contato com e-mail cadastrado no Cliente Fiel ainda.'); return; }
+  if(!confirm(`Confirma enviar esse e-mail pra ${contatosComEmail.length} contato(s)?`)) return;
+
+  const btn = document.getElementById('btnEnviar');
+  btn.disabled = true;
+
+  const { data: { session } } = await supa.auth.getSession();
+
+  const { data: campanha, error: erroCampanha } = await supa.from('email_campanhas').insert({
+    assunto, corpo_html: corpoHtml, status: 'enviando',
+    total_destinatarios: contatosComEmail.length, criado_por: session.user.id
+  }).select().single();
+  if(erroCampanha){ alert('Erro ao criar campanha: '+erroCampanha.message); btn.disabled = false; return; }
+
+  let sucesso = 0, falha = 0;
+  for(let i=0; i<contatosComEmail.length; i++){
+    const contato = contatosComEmail[i];
+    progresso.textContent = `Enviando ${i+1} de ${contatosComEmail.length}...`;
+
+    try{
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/brevo-proxy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+        body: JSON.stringify({ destinatarioEmail: contato.email, destinatarioNome: contato.nome, assunto, corpoHtml }),
+      });
+      const resultado = await resp.json();
+      if(resp.ok && resultado.sucesso){
+        sucesso++;
+        await supa.from('email_campanha_envios').insert({ campanha_id: campanha.id, email: contato.email, nome: contato.nome, status: 'enviado', enviado_em: new Date().toISOString() });
+      } else {
+        falha++;
+        await supa.from('email_campanha_envios').insert({ campanha_id: campanha.id, email: contato.email, nome: contato.nome, status: 'falha', erro: resultado.error || 'Erro desconhecido' });
+      }
+    }catch(e){
+      falha++;
+      await supa.from('email_campanha_envios').insert({ campanha_id: campanha.id, email: contato.email, nome: contato.nome, status: 'falha', erro: String(e) });
+    }
+  }
+
+  await supa.from('email_campanhas').update({
+    status: falha === contatosComEmail.length ? 'erro' : 'enviado',
+    total_sucesso: sucesso, total_falha: falha, enviado_em: new Date().toISOString()
+  }).eq('id', campanha.id);
+
+  progresso.textContent = `Concluído: ${sucesso} enviado(s), ${falha} falha(s).`;
+  btn.disabled = false;
+  document.getElementById('campAssunto').value = '';
+  document.getElementById('campCorpo').value = '';
+  await carregarCampanhas();
+}
+window.enviarCampanha = enviarCampanha;
+
+init();
+</script>
+<script src="acessibilidade.js?v=3"></script>
+<script>(function(){var s=document.createElement("script");s.src="hub-sidebar.js?t="+Date.now();document.body.appendChild(s);})();</script>
+</body>
+</html>
