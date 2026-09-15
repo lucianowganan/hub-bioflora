@@ -219,6 +219,7 @@
     <a href="reaproveitamento.html" class="side-btn" id="sideReaproveitamentoBtn" style="display:none">♻️<span class="tooltip">Reaproveitamento</span></a>
     <a href="erros.html" class="side-btn" id="sideErrosBtn" style="display:none">✍️<span class="tooltip">Registro de Erros</span></a>
     <a href="inclusoes.html" class="side-btn" id="sideInclusoesBtn" style="display:none">🧮<span class="tooltip">Inclusões & Performance</span></a>
+    <a href="calendario-editorial.html" class="side-btn" id="sideCalendarioEditorialBtn" style="display:none">📅<span class="tooltip">Calendário Editorial</span></a>
     <a href="formulas-complexas.html" class="side-btn" id="sideFormulasComplexasBtn" style="display:none">🧩<span class="tooltip">Fórmulas Complexas</span></a>
     <a href="meus-erros.html" class="side-btn">📈<span class="tooltip">Meus Erros</span></a>
     <a href="chat.html" class="side-btn">💬<span class="tooltip">Chat Interno</span></a>
@@ -320,6 +321,10 @@
         <div class="stripe" style="background:#B4472F"></div><div class="icon">🧮</div><h3>Inclusões & Performance</h3>
         <p>Cruza inclusões diárias com erros — % de erro por atendente.</p>
       </a>
+      <a class="module-card card-calendario-editorial" href="calendario-editorial.html" data-perm="modulo.calendario_editorial">
+        <div class="stripe" style="background:#3E6B93"></div><div class="icon">📅</div><h3>Calendário Editorial</h3>
+        <p>O que grava, o que fala e o que posta em cada dia.</p>
+      </a>
       <a class="module-card card-formulas-complexas" href="formulas-complexas.html" data-perm="modulo.formulas_complexas">
         <div class="stripe" style="background:#B4472F"></div><div class="icon">🧩</div><h3>Fórmulas Complexas</h3>
         <p>Calendário de limite diário — quantas ainda cabem em cada dia.</p>
@@ -402,6 +407,7 @@ async function init(){
   if(temPerm('modulo.reaproveitamento')) document.getElementById('sideReaproveitamentoBtn').style.display = 'flex';
   if(temPerm('modulo.erros')) document.getElementById('sideErrosBtn').style.display = 'flex';
   if(temPerm('modulo.inclusoes')) document.getElementById('sideInclusoesBtn').style.display = 'flex';
+  if(temPerm('modulo.calendario_editorial')) document.getElementById('sideCalendarioEditorialBtn').style.display = 'flex';
   if(temPerm('modulo.formulas_complexas')) document.getElementById('sideFormulasComplexasBtn').style.display = 'flex';
 
   if(papel === 'sem_papel'){
@@ -590,6 +596,7 @@ async function renderWidgets(papel, perfil){
   if(podeVerErrosGeral) cards.push(await widgetErrosEquipe());
   if(['chefia','conferencia','atendente'].includes(papel)) cards.push(await widgetFormulasDiaSeguinte());
   if(['chefia','conferencia','atendente'].includes(papel)) cards.push(await widgetFormulasComplexas());
+  if(['chefia','gestao','conferencia','atendente'].includes(papel)) cards.push(await widgetCalendarioEditorialHoje());
   if(podeVerReaproveitamento) cards.push(await widgetReaproveitamento());
   if(podeVerRotulos) cards.push(await widgetRotulos());
   if(podeVerOrdens) cards.push(await widgetOrdens());
@@ -792,6 +799,43 @@ async function widgetFormulasComplexas(){
           <span class="badge ${lotada?'bad':'good'}">${lotada?'Lotada':'restam '+restam}</span>
         </div>`;
       }).join('')}
+    </div>
+  </div>`;
+}
+
+async function widgetCalendarioEditorialHoje(){
+  const off = new Date().getTimezoneOffset();
+  const hojeStr = new Date(Date.now()-off*60000).toISOString().slice(0,10);
+
+  const [{ data: posts }, { data: stories }] = await Promise.all([
+    supa.from('calendario_posts').select('*').eq('data', hojeStr),
+    supa.from('calendario_stories').select('*').eq('data', hojeStr),
+  ]);
+
+  if(!(posts||[]).length && !(stories||[]).length) return '';
+
+  return `<div class="card w12">
+    <div class="card-head"><h2>Hoje no conteúdo</h2><span class="card-icon">📅</span></div>
+    <p class="card-sub">O que grava, fala e posta hoje — <a href="calendario-editorial.html">ver calendário completo</a></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        ${(posts||[]).map(p => `
+          <div style="background:var(--paper);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
+            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--info);margin-bottom:4px;">📸 Post${p.pilar_editorial ? ' — '+p.pilar_editorial : ''}</div>
+            ${p.ideia_pauta ? `<div style="font-size:13px;font-weight:600;margin-bottom:3px;">${p.ideia_pauta}</div>` : ''}
+            ${p.formato ? `<div style="font-size:11.5px;color:var(--gray);">${p.formato}</div>` : ''}
+          </div>
+        `).join('') || '<div style="font-size:12.5px;color:var(--gray);">Nenhum post planejado pra hoje.</div>'}
+      </div>
+      <div>
+        ${(stories||[]).map(s => `
+          <div style="background:var(--paper);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
+            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--good);margin-bottom:4px;">💬 Stories</div>
+            ${s.produto_pressao ? `<div style="font-size:13px;font-weight:600;margin-bottom:3px;">${s.produto_pressao}</div>` : ''}
+            ${s.oferta_cta ? `<div style="font-size:11.5px;color:var(--gray);">CTA: ${s.oferta_cta}</div>` : ''}
+          </div>
+        `).join('') || '<div style="font-size:12.5px;color:var(--gray);">Nenhuma pauta de Stories pra hoje.</div>'}
+      </div>
     </div>
   </div>`;
 }

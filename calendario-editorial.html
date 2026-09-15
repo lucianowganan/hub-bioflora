@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendário Editorial — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="auth-guard.js"></script>
+<script src="permissoes.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC; --info:#3E6B93; --info-tint:#E9F0F6;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand-text h1{font-family:var(--headfont);font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn.small{padding:6px 12px;font-size:11.5px;}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .panel h2{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+
+  .mes-nav{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+  .mes-nav button{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:8px 14px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;}
+  .mes-nav .rotulo{font-family:var(--headfont);font-weight:600;font-size:15px;text-transform:capitalize;min-width:160px;}
+
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-weekday{text-align:center;font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;padding:4px 0 8px;}
+  .cal-dia{border:1px solid var(--line);border-radius:10px;padding:8px 6px;min-height:76px;cursor:pointer;background:#fff;}
+  .cal-dia:hover{border-color:var(--burgundy);}
+  .cal-dia.vazio{background:transparent;border-color:transparent;cursor:default;}
+  .cal-dia.hoje{border-color:var(--burgundy);background:var(--burgundy-tint);}
+  .cal-dia.selecionado{outline:2px solid var(--burgundy);}
+  .cal-dia .num{font-family:var(--headfont);font-size:12.5px;font-weight:600;}
+  .cal-dia .badges{display:flex;gap:3px;margin-top:6px;flex-wrap:wrap;}
+  .cal-badge{font-size:9.5px;padding:2px 5px;border-radius:5px;}
+  .cal-badge.post{background:var(--info-tint);color:var(--info);}
+  .cal-badge.story{background:var(--good-tint);color:var(--good);}
+
+  .detalhe-card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px;}
+  .detalhe-card h4{font-family:var(--headfont);font-size:13px;margin:0 0 8px;}
+  .detalhe-linha{font-size:12.5px;margin-bottom:5px;}
+  .detalhe-linha strong{color:var(--gray);font-weight:600;}
+  .tag-status{display:inline-block;font-size:9.5px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:20px;background:var(--paper);color:var(--gray);}
+  .empty-state{text-align:center;padding:24px;color:var(--gray);font-size:12.5px;}
+
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:11px;color:var(--gray);font-weight:600;}
+  .status-msg{font-size:12.5px;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand-text">
+      <h1>Calendário Editorial</h1>
+      <p>Farmácia Bioflora — o que grava, o que fala, o que posta</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button onclick="logout()" class="btn secondary">Sair</button>
+    </div>
+  </header>
+
+  <div class="panel" id="painelImportar" style="display:none">
+    <h2>Importar planilha</h2>
+    <p class="desc">Sobe o .xlsx do calendário (abas "Calendário Posts" e "Calendário Stories") pra atualizar tudo de uma vez. Isso <strong>substitui</strong> os dias que vierem na planilha — não precisa apagar nada na mão antes.</p>
+    <input type="file" id="arquivoCalendario" accept=".xlsx">
+    <button class="btn" onclick="importarPlanilha()" style="margin-left:10px;">Importar</button>
+    <div class="status-msg" id="statusImportacao"></div>
+  </div>
+
+  <div class="panel">
+    <div class="mes-nav">
+      <button onclick="mudarMes(-1)">← Mês anterior</button>
+      <span class="rotulo" id="rotuloMes"></span>
+      <button onclick="mudarMes(1)">Próximo mês →</button>
+      <button class="btn secondary small" onclick="irParaMesAtual()">Hoje</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+  <div class="panel" id="painelDetalhe">
+    <h2 id="tituloDetalhe">Selecione um dia</h2>
+    <div id="conteudoDetalhe"><div class="empty-state">Clica num dia do calendário pra ver o que está planejado.</div></div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let mesAtual = new Date(); mesAtual.setDate(1);
+let postsCache = {}; // data -> [posts]
+let storiesCache = {}; // data -> [stories]
+let diaSelecionado = null;
+let souGerenteCalendario = false;
+
+function localDateStrCE(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
+
+async function init(){
+  const { papel } = await requireRole(['chefia','gestao','conferencia','atendente']);
+  souGerenteCalendario = ['chefia','gestao'].includes(papel);
+  if(souGerenteCalendario) document.getElementById('painelImportar').style.display = 'block';
+  await carregarMes();
+}
+
+function mudarMes(delta){
+  mesAtual.setMonth(mesAtual.getMonth()+delta);
+  carregarMes();
+}
+window.mudarMes = mudarMes;
+
+function irParaMesAtual(){
+  mesAtual = new Date(); mesAtual.setDate(1);
+  carregarMes();
+}
+window.irParaMesAtual = irParaMesAtual;
+
+async function carregarMes(){
+  const ano = mesAtual.getFullYear(), mes = mesAtual.getMonth();
+  const inicioStr = localDateStrCE(new Date(ano, mes, 1));
+  const fimStr = localDateStrCE(new Date(ano, mes+1, 0));
+
+  const [{ data: posts }, { data: stories }] = await Promise.all([
+    supa.from('calendario_posts').select('*').gte('data', inicioStr).lte('data', fimStr).order('data'),
+    supa.from('calendario_stories').select('*').gte('data', inicioStr).lte('data', fimStr).order('data'),
+  ]);
+
+  postsCache = {}; (posts||[]).forEach(p => { (postsCache[p.data] = postsCache[p.data]||[]).push(p); });
+  storiesCache = {}; (stories||[]).forEach(s => { (storiesCache[s.data] = storiesCache[s.data]||[]).push(s); });
+
+  renderCalendario();
+}
+
+function renderCalendario(){
+  const ano = mesAtual.getFullYear(), mes = mesAtual.getMonth();
+  document.getElementById('rotuloMes').textContent = mesAtual.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes+1, 0).getDate();
+  const hojeStr = localDateStrCE(new Date());
+
+  const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  let html = DIAS_SEMANA.map(d=>`<div class="cal-weekday">${d}</div>`).join('');
+
+  for(let i=0; i<primeiroDiaSemana; i++) html += '<div class="cal-dia vazio"></div>';
+
+  for(let dia=1; dia<=totalDias; dia++){
+    const dataStr = localDateStrCE(new Date(ano, mes, dia));
+    const temPost = postsCache[dataStr]?.length > 0;
+    const temStory = storiesCache[dataStr]?.length > 0;
+    const classes = ['cal-dia'];
+    if(dataStr === hojeStr) classes.push('hoje');
+    if(dataStr === diaSelecionado) classes.push('selecionado');
+    html += `<div class="${classes.join(' ')}" onclick="selecionarDia('${dataStr}')">
+      <div class="num">${dia}</div>
+      <div class="badges">
+        ${temPost ? '<span class="cal-badge post">📸 post</span>' : ''}
+        ${temStory ? '<span class="cal-badge story">💬 stories</span>' : ''}
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function selecionarDia(dataStr){
+  diaSelecionado = dataStr;
+  renderCalendario();
+  renderDetalhe(dataStr);
+}
+window.selecionarDia = selecionarDia;
+
+function renderDetalhe(dataStr){
+  const dataFmt = new Date(dataStr+'T12:00:00').toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+  document.getElementById('tituloDetalhe').textContent = dataFmt.charAt(0).toUpperCase()+dataFmt.slice(1);
+
+  const posts = postsCache[dataStr] || [];
+  const stories = storiesCache[dataStr] || [];
+
+  let html = '';
+  posts.forEach(p => {
+    html += `<div class="detalhe-card">
+      <h4>📸 Post ${p.pilar_editorial ? '— '+p.pilar_editorial : ''}</h4>
+      ${p.ideia_pauta ? `<div class="detalhe-linha"><strong>Pauta:</strong> ${p.ideia_pauta}</div>` : ''}
+      ${p.formato ? `<div class="detalhe-linha"><strong>Formato:</strong> ${p.formato}</div>` : ''}
+      ${p.produto_relacionado ? `<div class="detalhe-linha"><strong>Produto:</strong> ${p.produto_relacionado}</div>` : ''}
+      ${p.campanha_vinculada ? `<div class="detalhe-linha"><strong>Campanha:</strong> ${p.campanha_vinculada}</div>` : ''}
+      ${p.cta ? `<div class="detalhe-linha"><strong>CTA:</strong> ${p.cta}</div>` : ''}
+      ${p.observacoes ? `<div class="detalhe-linha"><strong>Obs:</strong> ${p.observacoes}</div>` : ''}
+      ${p.status_producao ? `<span class="tag-status">${p.status_producao}</span>` : ''}
+    </div>`;
+  });
+
+  stories.forEach(s => {
+    html += `<div class="detalhe-card">
+      <h4>💬 Stories</h4>
+      ${s.produto_pressao ? `<div class="detalhe-linha"><strong>Produto/foco:</strong> ${s.produto_pressao}</div>` : ''}
+      ${s.bastidor_rotina ? `<div class="detalhe-linha"><strong>Bastidor:</strong> ${s.bastidor_rotina}</div>` : ''}
+      ${s.interacao ? `<div class="detalhe-linha"><strong>Interação:</strong> ${s.interacao}</div>` : ''}
+      ${s.faq_objecao ? `<div class="detalhe-linha"><strong>FAQ/Objeção:</strong> ${s.faq_objecao}</div>` : ''}
+      ${s.oferta_cta ? `<div class="detalhe-linha"><strong>Oferta/CTA:</strong> ${s.oferta_cta}</div>` : ''}
+      ${s.prova_autoridade ? `<div class="detalhe-linha"><strong>Prova/Autoridade:</strong> ${s.prova_autoridade}</div>` : ''}
+      ${s.responsavel ? `<div class="detalhe-linha"><strong>Responsável:</strong> ${s.responsavel}</div>` : ''}
+      ${s.observacoes ? `<div class="detalhe-linha"><strong>Obs:</strong> ${s.observacoes}</div>` : ''}
+    </div>`;
+  });
+
+  document.getElementById('conteudoDetalhe').innerHTML = html || '<div class="empty-state">Nada planejado pra esse dia.</div>';
+}
+
+// ---------- Importação da planilha ----------
+function parseDataCelula(v){
+  if(v === null || v === undefined || v === '') return null;
+  if(typeof v === 'number'){
+    const d = XLSX.SSF.parse_date_code(v);
+    if(!d) return null;
+    return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+  }
+  const s = String(v).trim();
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  return null;
+}
+
+function acharLinhaCabecalho(linhas, primeiraColuna){
+  for(let i=0; i<linhas.length; i++){
+    if(linhas[i] && String(linhas[i][0]||'').trim() === primeiraColuna) return i;
+  }
+  return -1;
+}
+
+function extrairLinhasDaPlanilha(sheet, primeiraColuna, mapaColunas){
+  const linhas = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: null });
+  const idxCabecalho = acharLinhaCabecalho(linhas, primeiraColuna);
+  if(idxCabecalho === -1) return [];
+
+  const cabecalho = linhas[idxCabecalho].map(h => String(h||'').trim());
+  const indices = {};
+  Object.entries(mapaColunas).forEach(([campo, nomeColuna]) => {
+    indices[campo] = cabecalho.indexOf(nomeColuna);
+  });
+
+  const resultado = [];
+  for(let i=idxCabecalho+1; i<linhas.length; i++){
+    const linha = linhas[i];
+    if(!linha || linha.every(c => c===null || c==='')) continue;
+    const dataStr = parseDataCelula(linha[indices.data]);
+    if(!dataStr) continue;
+    const obj = { data: dataStr };
+    Object.entries(indices).forEach(([campo, idx]) => {
+      if(campo === 'data' || idx === -1) return;
+      const valor = linha[idx];
+      obj[campo] = (valor === null || valor === '') ? null : String(valor).trim();
+    });
+    resultado.push(obj);
+  }
+  return resultado;
+}
+
+async function importarPlanilha(){
+  const arquivo = document.getElementById('arquivoCalendario').files[0];
+  const status = document.getElementById('statusImportacao');
+  if(!arquivo){ status.textContent = 'Escolhe o arquivo primeiro.'; status.style.color = 'var(--burgundy)'; return; }
+
+  status.textContent = 'Lendo planilha...'; status.style.color = 'var(--gray)';
+
+  const buffer = await arquivo.arrayBuffer();
+  const workbook = XLSX.read(buffer, { type: 'array', cellDates: false });
+
+  const abaPosts = workbook.Sheets['Calendário Posts'];
+  const abaStories = workbook.Sheets['Calendário Stories'];
+  if(!abaPosts && !abaStories){
+    status.textContent = 'Não encontrei as abas "Calendário Posts" nem "Calendário Stories" nesse arquivo.';
+    status.style.color = 'var(--burgundy)';
+    return;
+  }
+
+  const posts = abaPosts ? extrairLinhasDaPlanilha(abaPosts, 'Data', {
+    data: 'Data', dia_semana: 'Dia', pilar_editorial: 'Pilar Editorial', relacao_produto: 'Relação com Produto',
+    campanha_vinculada: 'Campanha vinculada', produto_relacionado: 'Produto relacionado', objetivo: 'Objetivo',
+    formato: 'Formato', ideia_pauta: 'Ideia / Pauta', cta: 'CTA', tipo: 'Tipo',
+    status_producao: 'Status produção', observacoes: 'Observações'
+  }) : [];
+
+  const stories = abaStories ? extrairLinhasDaPlanilha(abaStories, 'Data', {
+    data: 'Data', dia_semana: 'Dia', produto_pressao: 'Produto / Pressão comercial', bastidor_rotina: 'Bastidor / Rotina',
+    interacao: 'Interação', faq_objecao: 'FAQ / Objeção', oferta_cta: 'Oferta / CTA',
+    prova_autoridade: 'Prova / Autoridade', responsavel: 'Responsável', observacoes: 'Observações'
+  }) : [];
+
+  if(!posts.length && !stories.length){
+    status.textContent = 'Não encontrei nenhuma linha com data válida nas abas do calendário.';
+    status.style.color = 'var(--burgundy)';
+    return;
+  }
+
+  const datasPosts = [...new Set(posts.map(p=>p.data))];
+  const datasStories = [...new Set(stories.map(s=>s.data))];
+  if(!confirm(`Isso vai substituir:\n- ${posts.length} post(s) em ${datasPosts.length} dia(s)\n- ${stories.length} stories em ${datasStories.length} dia(s)\n\nConfirma a importação?`)) return;
+
+  status.textContent = 'Importando...'; status.style.color = 'var(--gray)';
+  const { data: { session } } = await supa.auth.getSession();
+
+  if(datasPosts.length) await supa.from('calendario_posts').delete().in('data', datasPosts);
+  if(posts.length){
+    const { error } = await supa.from('calendario_posts').insert(posts.map(p => ({ ...p, importado_por: session.user.id })));
+    if(error){ status.textContent = 'Erro ao importar posts: '+error.message; status.style.color = 'var(--burgundy)'; return; }
+  }
+
+  if(datasStories.length) await supa.from('calendario_stories').delete().in('data', datasStories);
+  if(stories.length){
+    const { error } = await supa.from('calendario_stories').insert(stories.map(s => ({ ...s, importado_por: session.user.id })));
+    if(error){ status.textContent = 'Erro ao importar stories: '+error.message; status.style.color = 'var(--burgundy)'; return; }
+  }
+
+  status.textContent = `Importado! ${posts.length} post(s) e ${stories.length} stories atualizados.`;
+  status.style.color = 'var(--good)';
+  document.getElementById('arquivoCalendario').value = '';
+  await carregarMes();
+  if(diaSelecionado) renderDetalhe(diaSelecionado);
+}
+window.importarPlanilha = importarPlanilha;
+
+init();
+</script>
+<script src="acessibilidade.js?v=3"></script>
+<script src="hub-sidebar.js"></script>
+</body>
+</html>
