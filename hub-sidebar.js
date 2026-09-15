@@ -202,7 +202,47 @@
       if(['chefia','conferencia','atendente'].includes(papel)){
         verificarAvisoFormulasDiaSeguinte(supa);
       }
+
+      // Avisos do Calendário Editorial (criados pela chefia pra uma
+      // data específica) -- mesmo público do módulo, uma vez por dia
+      if(['chefia','gestao','conferencia','atendente'].includes(papel)){
+        verificarAvisosCalendarioEditorial(supa);
+      }
     }catch(e){ /* se der erro, deixa tudo visível — melhor mostrar de mais do que travar a navegação */ }
+  }
+
+  function localDateStrHS(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
+
+  async function verificarAvisosCalendarioEditorial(supa){
+    const hojeStr = localDateStrHS(new Date());
+    const chave = 'calendario_avisos_popup_' + hojeStr;
+    if(localStorage.getItem(chave)) return;
+
+    try{
+      const { data, error } = await supa.from('calendario_avisos').select('mensagem').eq('data', hojeStr);
+      if(error || !data || !data.length) return;
+      localStorage.setItem(chave, '1');
+      mostrarPopupAvisosCalendario(data.map(a=>a.mensagem));
+    }catch(e){ /* silencioso */ }
+  }
+
+  function mostrarPopupAvisosCalendario(mensagens){
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:28px;max-width:400px;width:100%;font-family:'Maven Pro',sans-serif;">
+        <div style="font-size:36px;margin-bottom:8px;text-align:center;">📣</div>
+        <h3 style="font-family:'Space Grotesk',sans-serif;font-size:17px;margin:0 0 14px;color:#8B1A3A;text-align:center;">Aviso de hoje</h3>
+        <div style="margin-bottom:20px;">
+          ${mensagens.map(m => `<div style="background:#F7E9EE;border-radius:10px;padding:12px 14px;margin-bottom:8px;font-size:13.5px;color:#2A2224;">${m}</div>`).join('')}
+        </div>
+        <div style="text-align:center;">
+          <button id="hsAvisoCalFechar" style="font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 22px;border-radius:8px;border:none;background:#8B1A3A;color:#fff;cursor:pointer;">Entendi</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById('hsAvisoCalFechar').addEventListener('click', () => overlay.remove());
   }
 
   async function verificarAvisoFormulasDiaSeguinte(supa){
