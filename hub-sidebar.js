@@ -1,6 +1,10 @@
 // hub-sidebar.js — Hub Bioflora
 // Barra lateral com todos os módulos, igual em toda página do Hub.
-// Uso: <script src="hub-sidebar.js"></script> antes de </body>.
+// Uso: <script src="hub-sidebar.js?v=2"></script> antes de </body>.
+// IMPORTANTE: toda vez que esse arquivo mudar, sobe o número da
+// versão (?v=2 → ?v=3...) em TODAS as páginas que o incluem --
+// senão o navegador de quem já visitou o Hub serve a cópia antiga do
+// cache e a mudança não aparece sem um refresh forçado.
 // Detecta a página atual pela URL e destaca o ícone correspondente.
 // Totalmente auto-contido (CSS + HTML próprios) — não depende de
 // nenhuma variável ou classe já existente na página que o inclui.
