@@ -103,6 +103,14 @@
   .insight-card h3{font-family:var(--headfont);font-size:14.5px;margin:0 0 12px;}
   .insights-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   @media (max-width:800px){ .insights-grid{grid-template-columns:1fr;} }
+
+  .icon-svg{width:17px;height:17px;vertical-align:-3px;margin-right:5px;display:inline-block;}
+  .busca-com-icone{position:relative;flex:1;min-width:240px;}
+  .busca-com-icone .icon-svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);margin:0;color:var(--gray);}
+  .busca-com-icone input{width:100%;padding-left:36px !important;}
+  .badge.late{background:var(--burgundy-tint);color:var(--burgundy);}
+  .destaque-card.verde-garantido{border-color:var(--good);}
+  .destaques-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;}
 </style>
 </head>
 <body>
@@ -202,6 +210,11 @@
     <label style="font-size:11px;color:var(--gray);font-weight:700;display:block;margin-bottom:8px;">Ativos e concentrações</label>
     <div class="ativos-box" id="ativosBox"></div>
     <button class="btn secondary small" onclick="addAtivoRow()">+ Adicionar ativo</button>
+    <div class="add-inline" style="margin-top:10px">
+      <input id="novoAtivoCodigoInline" placeholder="Código do ativo novo" style="max-width:140px" />
+      <input id="novoAtivoNomeInline" placeholder="Nome do ativo novo" style="max-width:220px" />
+      <button class="btn secondary small" onclick="addAtivoCatalogo('novoAtivoCodigoInline','novoAtivoNomeInline')">+ Cadastrar ativo no catálogo</button>
+    </div>
 
     <div class="assinatura-preview" id="assinaturaPreview">Assinatura: —</div>
 
@@ -209,8 +222,12 @@
   </div>
 
   <div class="panel" id="painelDestaques" style="display:none">
-    <h2>🎲 Destaques de hoje</h2>
-    <p class="desc">Sorteio diário — muda todo dia, pra ninguém esquecer que isso tá parado aí</p>
+    <div class="destaques-head">
+      <div>
+        <h2><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="8.5" cy="8.5" r=".9" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r=".9" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r=".9" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r=".9" fill="currentColor" stroke="none"/></svg>Destaques de hoje</h2>
+      </div>
+      <button class="btn secondary small" onclick="renderDestaques(true)">Alterar</button>
+    </div>
     <div class="destaques-row" id="destaquesRow"></div>
   </div>
 
@@ -220,7 +237,7 @@
     <button class="tab-principal-btn" data-tab="porCategoria" onclick="trocarAbaPrincipal('porCategoria')">Por categoria</button>
     <button class="tab-principal-btn" data-tab="catalogo" id="tabBtnCatalogo" style="display:none" onclick="trocarAbaPrincipal('catalogo')">Catálogo de ativos</button>
     <button class="tab-principal-btn" data-tab="reaproveitados" onclick="trocarAbaPrincipal('reaproveitados')">Reaproveitados</button>
-    <button class="tab-principal-btn" data-tab="insights" onclick="trocarAbaPrincipal('insights')">📊 Insights</button>
+    <button class="tab-principal-btn" data-tab="insights" onclick="trocarAbaPrincipal('insights')"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20V10M11 20V4M17.5 20v-7"/><path d="M3.5 20.5h17.5"/></svg>Insights</button>
   </div>
 
   <div class="tab-conteudo" id="tabDisponiveis">
@@ -228,7 +245,10 @@
       <h2>Disponíveis para reaproveitamento</h2>
       <p class="desc">Os que ainda não venceram aparecem primeiro; dentro de cada grupo, os manipulados há mais tempo vêm primeiro</p>
       <div class="filter-row">
-        <input id="buscaDisponiveis" placeholder="🔍 Buscar por medicamento, ativo ou requisição..." style="flex:1;min-width:240px;font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;" oninput="filtrarDisponiveis()">
+        <div class="busca-com-icone">
+        <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5l-4.3-4.3"/></svg>
+        <input id="buscaDisponiveis" placeholder="Buscar por medicamento, ativo ou requisição..." style="font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;" oninput="filtrarDisponiveis()">
+      </div>
         <button class="btn secondary small" onclick="loadDisponiveis()">Atualizar lista</button>
       </div>
       <table>
@@ -270,7 +290,7 @@
       <div class="add-inline">
         <input id="novoAtivoCodigo" placeholder="Código do ativo novo" style="max-width:140px" />
         <input id="novoAtivoNome" placeholder="Nome do ativo novo" style="max-width:220px" />
-        <button class="btn secondary small" onclick="addAtivoCatalogo()">+ Cadastrar ativo no catálogo</button>
+        <button class="btn secondary small" onclick="addAtivoCatalogo('novoAtivoCodigo','novoAtivoNome')">+ Cadastrar ativo no catálogo</button>
       </div>
       <table style="margin-top:14px;">
         <thead><tr><th>Código</th><th>Nome</th><th>Ação</th></tr></thead>
@@ -294,8 +314,7 @@
 
   <div class="tab-conteudo" id="tabInsights" style="display:none">
     <div class="panel">
-      <h2>📊 Insights</h2>
-      <p class="desc">Padrões de tudo que já passou por não retirado (não só o disponível agora) — pra entender o porquê e evitar de novo</p>
+      <h2><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20V10M11 20V4M17.5 20v-7"/><path d="M3.5 20.5h17.5"/></svg>Insights</h2>
     </div>
     <div class="insights-grid">
       <div class="insight-card"><h3>Ativos mais frequentes em não retirados</h3><canvas id="chartAtivosFrequentes"></canvas></div>
@@ -415,7 +434,7 @@ function ligarAutocompleteAtivo(row){
     ).slice(0, 30);
     sugestoesBox.innerHTML = encontrados.length
       ? encontrados.map(a => `<div class="ativo-sugestao-item" data-id="${a.id}" data-codigo="${a.codigo}" data-nome="${a.nome.replace(/"/g,'&quot;')}"><span class="cod">${a.codigo}</span>${a.nome}</div>`).join('')
-      : `<div class="ativo-sugestao-vazia">Nenhum ativo encontrado — cadastra ele na aba "Catálogo de ativos"</div>`;
+      : `<div class="ativo-sugestao-vazia">Nenhum ativo encontrado — cadastra ele aí embaixo em "+ Cadastrar ativo no catálogo"</div>`;
     sugestoesBox.classList.add('show');
   }
 
@@ -476,14 +495,14 @@ async function buscarCategoriaPorAssinatura(assinatura){
   }
 }
 
-async function addAtivoCatalogo(){
-  const codigo = document.getElementById('novoAtivoCodigo').value.trim();
-  const nome = document.getElementById('novoAtivoNome').value.trim();
+async function addAtivoCatalogo(idCodigo, idNome){
+  const codigo = document.getElementById(idCodigo).value.trim();
+  const nome = document.getElementById(idNome).value.trim();
   if(!codigo || !nome){ alert('Preencha código e nome do ativo.'); return; }
   const { error } = await supa.from('ativos_cadastrados').insert({codigo, nome});
   if(error){ alert('Erro: '+error.message); return; }
-  document.getElementById('novoAtivoCodigo').value = '';
-  document.getElementById('novoAtivoNome').value = '';
+  document.getElementById(idCodigo).value = '';
+  document.getElementById(idNome).value = '';
   await loadAtivosCatalogo();
 }
 window.addAtivoCatalogo = addAtivoCatalogo;
@@ -642,29 +661,44 @@ function hashSeed(str){
   return Math.abs(h);
 }
 
-function renderDestaques(){
+let seedDestaquesManual = null;
+
+function renderDestaques(forcarNovoSorteio){
   const painel = document.getElementById('painelDestaques');
   const disponiveisMesmo = disponiveisCache.filter(m => !situacaoValidade(m.validade).vencido);
   if(!disponiveisMesmo.length){ painel.style.display = 'none'; return; }
 
-  const seed = hashSeed(localDateStr(new Date()));
+  if(forcarNovoSorteio === true) seedDestaquesManual = Math.floor(Math.random()*1e9);
+  const seed = seedDestaquesManual !== null ? seedDestaquesManual : hashSeed(localDateStr(new Date()));
+
   const ordenadosPorSeed = [...disponiveisMesmo].sort((a,b) => {
     const ha = hashSeed(seed + a.id), hb = hashSeed(seed + b.id);
     return ha - hb;
   });
   const quantidade = Math.min(disponiveisMesmo.length, disponiveisMesmo.length >= 4 ? 4 : 3);
-  const escolhidos = ordenadosPorSeed.slice(0, quantidade);
+  let escolhidos = ordenadosPorSeed.slice(0, quantidade);
+
+  // Regra: sempre tem que ter pelo menos um item "verde" (bem longe
+  // de vencer) entre os destaques
+  const temVerde = escolhidos.some(m => situacaoValidade(m.validade).cls === 'ok');
+  if(!temVerde){
+    const candidatoVerde = ordenadosPorSeed.find(m => situacaoValidade(m.validade).cls === 'ok');
+    if(candidatoVerde) escolhidos[escolhidos.length-1] = candidatoVerde;
+  }
 
   painel.style.display = 'block';
-  document.getElementById('destaquesRow').innerHTML = escolhidos.map(m => `
+  document.getElementById('destaquesRow').innerHTML = escolhidos.map(m => {
+    const sit = situacaoValidade(m.validade);
+    return `
     <div class="destaque-card">
-      <div class="req">Requisição ${m.requisicao}</div>
+      <div class="req">Requisição ${m.requisicao} <span class="badge ${sit.cls}" style="margin-left:6px;">${sit.label}</span></div>
       <div class="form">${m.forma_farmaceutica || 'Manipulado'}</div>
       <div class="info">${formatarAtivosPorNome(m.manipulados_ativos)}</div>
       <div class="info" style="margin-top:4px;">Manipulado em ${m.data_manipulacao||'—'}${m.categoria ? ' · '+m.categoria : ''}</div>
     </div>
-  `).join('');
+  `;}).join('');
 }
+window.renderDestaques = renderDestaques;
 
 async function marcarReaproveitado(id){
   const requisicaoDestino = prompt('Nº da requisição que está reaproveitando este manipulado:');
