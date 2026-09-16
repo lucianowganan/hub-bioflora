@@ -174,6 +174,13 @@
       <div><label>Validade</label><input id="fValidade" type="date" /></div>
       <div><label>Motivo</label><input id="fMotivo" placeholder="Ex: cliente não retirou" /></div>
     </div>
+    <div class="form-grid two">
+      <div>
+        <label>Categoria <span style="font-weight:400;text-transform:none;">(da fórmula toda, ex: Saúde, Beleza)</span></label>
+        <input id="fCategoria" placeholder="Preenche sozinho se essa combinação já foi usada antes" />
+      </div>
+      <div></div>
+    </div>
 
     <label style="font-size:11px;color:var(--gray);font-weight:700;display:block;margin-bottom:8px;">Ativos e concentrações</label>
     <div class="ativos-box" id="ativosBox"></div>
@@ -181,7 +188,6 @@
     <div class="add-inline" style="margin-top:10px">
       <input id="novoAtivoCodigo" placeholder="Código do ativo novo" style="max-width:140px" />
       <input id="novoAtivoNome" placeholder="Nome do ativo novo" style="max-width:220px" />
-      <input id="novoAtivoCategoria" placeholder="Categoria (ex: Beleza)" style="max-width:160px" />
       <button class="btn secondary small" onclick="addAtivoCatalogo()">+ Cadastrar ativo no catálogo</button>
     </div>
 
@@ -200,7 +206,7 @@
     <table>
       <thead><tr>
         <th>Requisição</th><th>Forma</th><th>Qtd</th><th>Manipulado em</th><th>Validade</th>
-        <th>Ativos</th><th>Situação</th><th>Ação</th>
+        <th>Ativos</th><th>Categoria</th><th>Situação</th><th>Ação</th>
       </tr></thead>
       <tbody id="disponiveisTbody"></tbody>
     </table>
@@ -228,7 +234,7 @@
     <h2>Catálogo de ativos</h2>
     <p class="desc">Só chefia vê essa lista — exclui ativo cadastrado errado ou de teste. Cuidado: se o ativo já foi usado em algum registro, o histórico continua mostrando o nome antigo.</p>
     <table>
-      <thead><tr><th>Código</th><th>Nome</th><th>Categoria</th><th>Ação</th></tr></thead>
+      <thead><tr><th>Código</th><th>Nome</th><th>Ação</th></tr></thead>
       <tbody id="listaCatalogoAtivos"></tbody>
     </table>
     <button class="btn secondary small" id="btnVerMaisAtivos" onclick="alternarListaCompletaAtivos()" style="margin-top:10px;display:none;"></button>
@@ -265,7 +271,7 @@ const LIMITE_ATIVOS_FECHADO = 5;
 function localDateStr(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
 
 async function loadAtivosCatalogo(){
-  const { data } = await supa.from('ativos_cadastrados').select('id,codigo,nome,categoria').order('codigo');
+  const { data } = await supa.from('ativos_cadastrados').select('id,codigo,nome').order('codigo');
   ativosCatalogo = data || [];
   if(meuPapelReap === 'chefia') renderCatalogoAtivos();
 }
@@ -276,10 +282,9 @@ function renderCatalogoAtivos(){
     <tr>
       <td>${a.codigo}</td>
       <td>${a.nome}</td>
-      <td>${a.categoria ? `<span class="tag-categoria">${a.categoria}</span>` : '<span style="color:var(--gray);font-size:11.5px;">— não definida</span>'}</td>
-      <td style="display:flex;gap:6px;"><button class="btn secondary small" onclick="editarCategoriaAtivo('${a.id}','${(a.categoria||'').replace(/'/g,"\\'")}')">Categoria</button><button class="btn secondary small" onclick="excluirAtivoCatalogo('${a.id}')">Excluir</button></td>
+      <td><button class="btn secondary small" onclick="excluirAtivoCatalogo('${a.id}')">Excluir</button></td>
     </tr>
-  `).join('') : '<tr><td colspan="4" style="color:var(--gray)">Nenhum ativo cadastrado ainda.</td></tr>';
+  `).join('') : '<tr><td colspan="3" style="color:var(--gray)">Nenhum ativo cadastrado ainda.</td></tr>';
 
   const btn = document.getElementById('btnVerMaisAtivos');
   if(ativosCatalogo.length > LIMITE_ATIVOS_FECHADO){
@@ -303,15 +308,6 @@ async function excluirAtivoCatalogo(id){
   await loadAtivosCatalogo();
 }
 window.excluirAtivoCatalogo = excluirAtivoCatalogo;
-
-async function editarCategoriaAtivo(id, categoriaAtual){
-  const nova = prompt('Categoria do ativo (ex: Beleza, Saúde, Emagrecimento):', categoriaAtual || '');
-  if(nova === null) return;
-  const { error } = await supa.from('ativos_cadastrados').update({ categoria: nova.trim() || null }).eq('id', id);
-  if(error){ alert('Erro: '+error.message); return; }
-  await loadAtivosCatalogo();
-}
-window.editarCategoriaAtivo = editarCategoriaAtivo;
 
 // ---------- Linhas dinâmicas de ativo no formulário (com busca) ----------
 function addAtivoRow(){
@@ -375,20 +371,45 @@ function updateAssinaturaPreview(){
   }).filter(Boolean).sort();
   const assinatura = partes.join('+');
   document.getElementById('assinaturaPreview').textContent = 'Assinatura: ' + (assinatura || '—');
+  buscarCategoriaPorAssinatura(assinatura);
   return assinatura;
 }
 window.updateAssinaturaPreview = updateAssinaturaPreview;
 
+let ultimaAssinaturaBuscada = null;
+async function buscarCategoriaPorAssinatura(assinatura){
+  const campoCategoria = document.getElementById('fCategoria');
+  if(!assinatura){ ultimaAssinaturaBuscada = null; return; }
+  if(assinatura === ultimaAssinaturaBuscada) return;
+  ultimaAssinaturaBuscada = assinatura;
+  // Se a pessoa já escreveu uma categoria na mão, não sobrescreve
+  if(campoCategoria.value.trim() && campoCategoria.dataset.preenchidoAuto !== 'true') return;
+
+  const { data } = await supa.from('manipulados_nao_retirados')
+    .select('categoria')
+    .eq('assinatura', assinatura)
+    .not('categoria', 'is', null)
+    .order('data_manipulacao', {ascending:false})
+    .limit(1)
+    .maybeSingle();
+
+  if(data?.categoria){
+    campoCategoria.value = data.categoria;
+    campoCategoria.dataset.preenchidoAuto = 'true';
+  } else if(campoCategoria.dataset.preenchidoAuto === 'true'){
+    campoCategoria.value = '';
+    delete campoCategoria.dataset.preenchidoAuto;
+  }
+}
+
 async function addAtivoCatalogo(){
   const codigo = document.getElementById('novoAtivoCodigo').value.trim();
   const nome = document.getElementById('novoAtivoNome').value.trim();
-  const categoria = document.getElementById('novoAtivoCategoria').value.trim() || null;
   if(!codigo || !nome){ alert('Preencha código e nome do ativo.'); return; }
-  const { error } = await supa.from('ativos_cadastrados').insert({codigo, nome, categoria});
+  const { error } = await supa.from('ativos_cadastrados').insert({codigo, nome});
   if(error){ alert('Erro: '+error.message); return; }
   document.getElementById('novoAtivoCodigo').value = '';
   document.getElementById('novoAtivoNome').value = '';
-  document.getElementById('novoAtivoCategoria').value = '';
   await loadAtivosCatalogo();
 }
 window.addAtivoCatalogo = addAtivoCatalogo;
@@ -401,6 +422,7 @@ async function salvarNaoRetirado(){
   const dataManip = document.getElementById('fDataManip').value || null;
   const validade = document.getElementById('fValidade').value || null;
   const motivo = document.getElementById('fMotivo').value.trim();
+  const categoria = document.getElementById('fCategoria').value.trim() || null;
   const assinatura = updateAssinaturaPreview();
 
   const ativoRows = [...document.querySelectorAll('.ativo-row')].map(r => {
@@ -414,7 +436,7 @@ async function salvarNaoRetirado(){
 
   const { data: inserted, error } = await supa.from('manipulados_nao_retirados').insert({
     requisicao, forma_farmaceutica: forma, quantidade, data_manipulacao: dataManip,
-    validade, motivo, assinatura
+    validade, motivo, assinatura, categoria
   }).select().single();
   if(error){ alert('Erro ao salvar: '+error.message); return; }
 
@@ -428,6 +450,8 @@ async function salvarNaoRetirado(){
   document.getElementById('fDataManip').value = '';
   document.getElementById('fValidade').value = '';
   document.getElementById('fMotivo').value = '';
+  document.getElementById('fCategoria').value = '';
+  delete document.getElementById('fCategoria').dataset.preenchidoAuto;
   document.getElementById('ativosBox').innerHTML = '';
   updateAssinaturaPreview();
 
@@ -475,10 +499,8 @@ function renderPorAtivo(){
 function renderPorCategoria(){
   const contagem = {};
   disponiveisCache.forEach(m => {
-    (m.manipulados_ativos||[]).forEach(a => {
-      const cat = a.ativos_cadastrados?.categoria || 'Sem categoria';
-      contagem[cat] = (contagem[cat]||0) + 1;
-    });
+    const cat = m.categoria || 'Sem categoria';
+    contagem[cat] = (contagem[cat]||0) + 1;
   });
   const categorias = Object.keys(contagem).sort((a,b)=>contagem[b]-contagem[a]);
   document.getElementById('listaPorCategoria').innerHTML = categorias.length ? categorias.map(cat => `
@@ -488,7 +510,7 @@ function renderPorCategoria(){
 
 async function loadDisponiveis(){
   const { data, error } = await supa.from('manipulados_nao_retirados')
-    .select('id,requisicao,forma_farmaceutica,quantidade,data_manipulacao,validade,assinatura,manipulados_ativos(concentracao,ativos_cadastrados(codigo,nome,categoria))')
+    .select('id,requisicao,forma_farmaceutica,quantidade,data_manipulacao,validade,assinatura,categoria,manipulados_ativos(concentracao,ativos_cadastrados(codigo,nome))')
     .eq('status','disponivel')
     .order('validade', {ascending:true, nullsFirst:false});
   if(error){ console.error(error); return; }
@@ -504,6 +526,7 @@ function filtrarDisponiveis(){
     const ativosTxt = (m.manipulados_ativos||[]).map(a => `${a.ativos_cadastrados?.codigo||''} ${a.ativos_cadastrados?.nome||''}`).join(' ').toLowerCase();
     return (m.requisicao||'').toLowerCase().includes(termo)
       || (m.forma_farmaceutica||'').toLowerCase().includes(termo)
+      || (m.categoria||'').toLowerCase().includes(termo)
       || ativosTxt.includes(termo);
   });
   renderDisponiveis(filtrados);
@@ -521,10 +544,11 @@ function renderDisponiveis(data){
       <td>${m.data_manipulacao||'—'}</td>
       <td>${m.validade||'—'}</td>
       <td class="assinatura-cell">${ativosTxt}</td>
+      <td>${m.categoria ? `<span class="tag-categoria">${m.categoria}</span>` : '—'}</td>
       <td><span class="badge ${sit.cls}">${sit.label}</span></td>
       <td><button class="btn secondary small" onclick="marcarReaproveitado('${m.id}')">Marcar reaproveitado</button></td>
     </tr>`;
-  }).join('') : `<tr><td colspan="8" class="empty-state">Nenhum item encontrado.</td></tr>`;
+  }).join('') : `<tr><td colspan="9" class="empty-state">Nenhum item encontrado.</td></tr>`;
 }
 
 async function marcarReaproveitado(id){
@@ -573,6 +597,7 @@ async function init(){
   const { papel } = await requireRole(['chefia','conferencia']);
   meuPapelReap = papel;
   if(papel === 'chefia') document.getElementById('painelCatalogoAtivos').style.display = 'block';
+  document.getElementById('fCategoria').addEventListener('input', (e) => { delete e.target.dataset.preenchidoAuto; });
   await loadAtivosCatalogo();
   addAtivoRow();
   await loadKpis();
