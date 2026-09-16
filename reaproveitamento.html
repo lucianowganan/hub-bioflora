@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="auth-guard.js"></script>
 <style>
   :root{
@@ -86,6 +87,22 @@
   .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
   .filter-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
   .filter-row select{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:6px 10px;border:1.5px solid var(--line);border-radius:7px;}
+
+  .tabs-principais{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:0;}
+  .tab-principal-btn{font-family:var(--headfont);font-size:13.5px;font-weight:600;padding:10px 18px;border-radius:9px 9px 0 0;border:1.5px solid var(--line);border-bottom:none;background:#fff;cursor:pointer;color:var(--gray);margin-bottom:-2px;}
+  .tab-principal-btn.active{color:var(--burgundy);background:var(--burgundy-tint);border-color:var(--ink);}
+  .ver-mais-btn{margin-top:10px;}
+
+  .destaques-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+  .destaque-card{background:linear-gradient(160deg,#fff,var(--burgundy-tint));border:1.5px solid var(--burgundy);border-radius:12px;padding:14px 16px;}
+  .destaque-card .req{font-family:var(--headfont);font-size:11px;color:var(--burgundy);font-weight:700;text-transform:uppercase;}
+  .destaque-card .form{font-weight:700;font-size:13.5px;margin:4px 0 6px;}
+  .destaque-card .info{font-size:11.5px;color:var(--gray);}
+
+  .insight-card{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;}
+  .insight-card h3{font-family:var(--headfont);font-size:14.5px;margin:0 0 12px;}
+  .insights-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:800px){ .insights-grid{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -185,68 +202,107 @@
     <label style="font-size:11px;color:var(--gray);font-weight:700;display:block;margin-bottom:8px;">Ativos e concentrações</label>
     <div class="ativos-box" id="ativosBox"></div>
     <button class="btn secondary small" onclick="addAtivoRow()">+ Adicionar ativo</button>
-    <div class="add-inline" style="margin-top:10px">
-      <input id="novoAtivoCodigo" placeholder="Código do ativo novo" style="max-width:140px" />
-      <input id="novoAtivoNome" placeholder="Nome do ativo novo" style="max-width:220px" />
-      <button class="btn secondary small" onclick="addAtivoCatalogo()">+ Cadastrar ativo no catálogo</button>
-    </div>
 
     <div class="assinatura-preview" id="assinaturaPreview">Assinatura: —</div>
 
     <button class="btn" onclick="salvarNaoRetirado()">Salvar não retirado</button>
   </div>
 
-  <div class="panel">
-    <h2>Disponíveis para reaproveitamento</h2>
-    <p class="desc">Ordenado por validade — o que vence primeiro aparece primeiro</p>
-    <div class="filter-row">
-      <input id="buscaDisponiveis" placeholder="🔍 Buscar por medicamento, código do ativo ou requisição..." style="flex:1;min-width:240px;font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;" oninput="filtrarDisponiveis()">
-      <button class="btn secondary small" onclick="loadDisponiveis()">Atualizar lista</button>
-    </div>
-    <table>
-      <thead><tr>
-        <th>Requisição</th><th>Forma</th><th>Qtd</th><th>Manipulado em</th><th>Validade</th>
-        <th>Ativos</th><th>Categoria</th><th>Situação</th><th>Ação</th>
-      </tr></thead>
-      <tbody id="disponiveisTbody"></tbody>
-    </table>
+  <div class="panel" id="painelDestaques" style="display:none">
+    <h2>🎲 Destaques de hoje</h2>
+    <p class="desc">Sorteio diário — muda todo dia, pra ninguém esquecer que isso tá parado aí</p>
+    <div class="destaques-row" id="destaquesRow"></div>
   </div>
 
-  <div class="panel">
-    <h2>Outras visões</h2>
-    <p class="desc">Formas diferentes de olhar pro mesmo estoque disponível pra reaproveitar</p>
-    <div class="tabs-secundarias">
-      <button class="tab-sec-btn active" data-view="porAtivo" onclick="trocarVisaoSecundaria('porAtivo')">Por ativo</button>
-      <button class="tab-sec-btn" data-view="porCategoria" onclick="trocarVisaoSecundaria('porCategoria')">Por categoria</button>
+  <div class="tabs-principais">
+    <button class="tab-principal-btn active" data-tab="disponiveis" onclick="trocarAbaPrincipal('disponiveis')">Disponíveis</button>
+    <button class="tab-principal-btn" data-tab="porAtivo" onclick="trocarAbaPrincipal('porAtivo')">Por ativo</button>
+    <button class="tab-principal-btn" data-tab="porCategoria" onclick="trocarAbaPrincipal('porCategoria')">Por categoria</button>
+    <button class="tab-principal-btn" data-tab="catalogo" id="tabBtnCatalogo" style="display:none" onclick="trocarAbaPrincipal('catalogo')">Catálogo de ativos</button>
+    <button class="tab-principal-btn" data-tab="reaproveitados" onclick="trocarAbaPrincipal('reaproveitados')">Reaproveitados</button>
+    <button class="tab-principal-btn" data-tab="insights" onclick="trocarAbaPrincipal('insights')">📊 Insights</button>
+  </div>
+
+  <div class="tab-conteudo" id="tabDisponiveis">
+    <div class="panel">
+      <h2>Disponíveis para reaproveitamento</h2>
+      <p class="desc">Os que ainda não venceram aparecem primeiro; dentro de cada grupo, os manipulados há mais tempo vêm primeiro</p>
+      <div class="filter-row">
+        <input id="buscaDisponiveis" placeholder="🔍 Buscar por medicamento, ativo ou requisição..." style="flex:1;min-width:240px;font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;" oninput="filtrarDisponiveis()">
+        <button class="btn secondary small" onclick="loadDisponiveis()">Atualizar lista</button>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Requisição</th><th>Forma</th><th>Qtd</th><th>Manipulado em</th><th>Validade</th>
+          <th>Ativos</th><th>Categoria</th><th>Situação</th><th>Ação</th>
+        </tr></thead>
+        <tbody id="disponiveisTbody"></tbody>
+      </table>
+      <button class="btn secondary small ver-mais-btn" id="btnVerMaisDisponiveis" onclick="alternarExpandir('disponiveis')" style="display:none;"></button>
     </div>
-    <div id="viewPorAtivo">
+  </div>
+
+  <div class="tab-conteudo" id="tabPorAtivo" style="display:none">
+    <div class="panel">
+      <h2>Por ativo</h2>
+      <p class="desc">Uma linha por ativo dentro de cada manipulado disponível</p>
       <table>
         <thead><tr><th>Requisição</th><th>Ativo</th><th>Qtd. cápsulas</th></tr></thead>
         <tbody id="tbodyPorAtivo"></tbody>
       </table>
+      <button class="btn secondary small ver-mais-btn" id="btnVerMaisPorAtivo" onclick="alternarExpandir('porAtivo')" style="display:none;"></button>
     </div>
-    <div id="viewPorCategoria" style="display:none">
+  </div>
+
+  <div class="tab-conteudo" id="tabPorCategoria" style="display:none">
+    <div class="panel">
+      <h2>Por categoria</h2>
+      <p class="desc">Quantos manipulados disponíveis existem em cada categoria</p>
       <div id="listaPorCategoria"></div>
+      <button class="btn secondary small ver-mais-btn" id="btnVerMaisPorCategoria" onclick="alternarExpandir('porCategoria')" style="display:none;"></button>
     </div>
   </div>
 
-  <div class="panel" id="painelCatalogoAtivos" style="display:none">
-    <h2>Catálogo de ativos</h2>
-    <p class="desc">Só chefia vê essa lista — exclui ativo cadastrado errado ou de teste. Cuidado: se o ativo já foi usado em algum registro, o histórico continua mostrando o nome antigo.</p>
-    <table>
-      <thead><tr><th>Código</th><th>Nome</th><th>Ação</th></tr></thead>
-      <tbody id="listaCatalogoAtivos"></tbody>
-    </table>
-    <button class="btn secondary small" id="btnVerMaisAtivos" onclick="alternarListaCompletaAtivos()" style="margin-top:10px;display:none;"></button>
+  <div class="tab-conteudo" id="tabCatalogo" style="display:none">
+    <div class="panel">
+      <h2>Catálogo de ativos</h2>
+      <p class="desc">Só chefia vê essa lista — exclui ativo cadastrado errado ou de teste. Cuidado: se o ativo já foi usado em algum registro, o histórico continua mostrando o nome antigo.</p>
+      <div class="add-inline">
+        <input id="novoAtivoCodigo" placeholder="Código do ativo novo" style="max-width:140px" />
+        <input id="novoAtivoNome" placeholder="Nome do ativo novo" style="max-width:220px" />
+        <button class="btn secondary small" onclick="addAtivoCatalogo()">+ Cadastrar ativo no catálogo</button>
+      </div>
+      <table style="margin-top:14px;">
+        <thead><tr><th>Código</th><th>Nome</th><th>Ação</th></tr></thead>
+        <tbody id="listaCatalogoAtivos"></tbody>
+      </table>
+      <button class="btn secondary small ver-mais-btn" id="btnVerMaisAtivos" onclick="alternarExpandir('ativos')" style="display:none;"></button>
+    </div>
   </div>
 
-  <div class="panel">
-    <h2>Reaproveitados</h2>
-    <p class="desc">Histórico do que já foi usado em vez de manipular do zero</p>
-    <table>
-      <thead><tr><th>Requisição original</th><th>Ativos</th><th>Reaproveitado para</th><th>Data</th></tr></thead>
-      <tbody id="reaproveitadosTbody"></tbody>
-    </table>
+  <div class="tab-conteudo" id="tabReaproveitados" style="display:none">
+    <div class="panel">
+      <h2>Reaproveitados</h2>
+      <p class="desc">Histórico do que já foi usado em vez de manipular do zero</p>
+      <table>
+        <thead><tr><th>Requisição original</th><th>Ativos</th><th>Reaproveitado para</th><th>Data</th></tr></thead>
+        <tbody id="reaproveitadosTbody"></tbody>
+      </table>
+      <button class="btn secondary small ver-mais-btn" id="btnVerMaisReaproveitados" onclick="alternarExpandir('reaproveitados')" style="display:none;"></button>
+    </div>
+  </div>
+
+  <div class="tab-conteudo" id="tabInsights" style="display:none">
+    <div class="panel">
+      <h2>📊 Insights</h2>
+      <p class="desc">Padrões de tudo que já passou por não retirado (não só o disponível agora) — pra entender o porquê e evitar de novo</p>
+    </div>
+    <div class="insights-grid">
+      <div class="insight-card"><h3>Ativos mais frequentes em não retirados</h3><canvas id="chartAtivosFrequentes"></canvas></div>
+      <div class="insight-card"><h3>Categorias mais comuns</h3><canvas id="chartCategoriasFrequentes"></canvas></div>
+      <div class="insight-card"><h3>Meses com mais cadastros</h3><canvas id="chartPorMes"></canvas></div>
+      <div class="insight-card"><h3>Situação atual de tudo já cadastrado</h3><canvas id="chartStatusGeral"></canvas></div>
+    </div>
   </div>
 
 </div>
@@ -265,10 +321,42 @@ requireRole(['chefia','conferencia']).catch(()=>{}); // trava de acesso rápida 
 
 let ativosCatalogo = [];
 let meuPapelReap = null;
-let listaAtivosExpandida = false;
-const LIMITE_ATIVOS_FECHADO = 5;
+const LIMITE_LISTA_FECHADA = 5;
+let estadosExpandidos = { disponiveis:false, porAtivo:false, porCategoria:false, ativos:false, reaproveitados:false };
+
+function alternarExpandir(key){
+  estadosExpandidos[key] = !estadosExpandidos[key];
+  if(key==='disponiveis') filtrarDisponiveis();
+  else if(key==='porAtivo') renderPorAtivo();
+  else if(key==='porCategoria') renderPorCategoria();
+  else if(key==='ativos') renderCatalogoAtivos();
+  else if(key==='reaproveitados') renderReaproveitados();
+}
+window.alternarExpandir = alternarExpandir;
+
+function aplicarLimiteEBotao(itens, key, botaoId){
+  const mostrar = estadosExpandidos[key] ? itens : itens.slice(0, LIMITE_LISTA_FECHADA);
+  const btn = document.getElementById(botaoId);
+  if(itens.length > LIMITE_LISTA_FECHADA){
+    btn.style.display = 'inline-block';
+    btn.textContent = estadosExpandidos[key] ? 'Ver menos' : `Ver mais (${itens.length - LIMITE_LISTA_FECHADA})`;
+  } else {
+    btn.style.display = 'none';
+  }
+  return mostrar;
+}
 
 function localDateStr(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
+
+// ---------- Abas principais ----------
+function trocarAbaPrincipal(tab){
+  document.querySelectorAll('.tab-principal-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  ['disponiveis','porAtivo','porCategoria','catalogo','reaproveitados','insights'].forEach(t => {
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).style.display = (t===tab) ? 'block' : 'none';
+  });
+  if(tab === 'insights') carregarInsights();
+}
+window.trocarAbaPrincipal = trocarAbaPrincipal;
 
 async function loadAtivosCatalogo(){
   const { data } = await supa.from('ativos_cadastrados').select('id,codigo,nome').order('codigo');
@@ -277,7 +365,7 @@ async function loadAtivosCatalogo(){
 }
 
 function renderCatalogoAtivos(){
-  const mostrar = listaAtivosExpandida ? ativosCatalogo : ativosCatalogo.slice(0, LIMITE_ATIVOS_FECHADO);
+  const mostrar = aplicarLimiteEBotao(ativosCatalogo, 'ativos', 'btnVerMaisAtivos');
   document.getElementById('listaCatalogoAtivos').innerHTML = mostrar.length ? mostrar.map(a => `
     <tr>
       <td>${a.codigo}</td>
@@ -285,21 +373,7 @@ function renderCatalogoAtivos(){
       <td><button class="btn secondary small" onclick="excluirAtivoCatalogo('${a.id}')">Excluir</button></td>
     </tr>
   `).join('') : '<tr><td colspan="3" style="color:var(--gray)">Nenhum ativo cadastrado ainda.</td></tr>';
-
-  const btn = document.getElementById('btnVerMaisAtivos');
-  if(ativosCatalogo.length > LIMITE_ATIVOS_FECHADO){
-    btn.style.display = 'inline-block';
-    btn.textContent = listaAtivosExpandida ? 'Ver menos' : `Ver mais (${ativosCatalogo.length - LIMITE_ATIVOS_FECHADO})`;
-  } else {
-    btn.style.display = 'none';
-  }
 }
-
-function alternarListaCompletaAtivos(){
-  listaAtivosExpandida = !listaAtivosExpandida;
-  renderCatalogoAtivos();
-}
-window.alternarListaCompletaAtivos = alternarListaCompletaAtivos;
 
 async function excluirAtivoCatalogo(id){
   if(!confirm('Excluir esse ativo do catálogo? Isso não apaga registros já salvos com ele, só tira da lista de seleção.')) return;
@@ -341,7 +415,7 @@ function ligarAutocompleteAtivo(row){
     ).slice(0, 30);
     sugestoesBox.innerHTML = encontrados.length
       ? encontrados.map(a => `<div class="ativo-sugestao-item" data-id="${a.id}" data-codigo="${a.codigo}" data-nome="${a.nome.replace(/"/g,'&quot;')}"><span class="cod">${a.codigo}</span>${a.nome}</div>`).join('')
-      : `<div class="ativo-sugestao-vazia">Nenhum ativo encontrado — cadastra ele aí embaixo em "+ Cadastrar ativo no catálogo"</div>`;
+      : `<div class="ativo-sugestao-vazia">Nenhum ativo encontrado — cadastra ele na aba "Catálogo de ativos"</div>`;
     sugestoesBox.classList.add('show');
   }
 
@@ -462,23 +536,16 @@ window.salvarNaoRetirado = salvarNaoRetirado;
 
 // ---------- Listas ----------
 function situacaoValidade(validade){
-  if(!validade) return { cls:'ok', label:'Sem validade informada' };
+  if(!validade) return { cls:'ok', label:'Sem validade informada', vencido:false };
   const hoje = new Date(localDateStr(new Date()));
   const dataVal = new Date(validade+'T00:00:00');
   const diffDias = Math.round((dataVal - hoje) / 86400000);
-  if(diffDias < 0) return { cls:'late', label:'Vencido' };
-  if(diffDias <= 5) return { cls:'soon', label:`Vence em ${diffDias}d` };
-  return { cls:'ok', label:`Vence em ${diffDias}d` };
+  if(diffDias < 0) return { cls:'late', label:'Vencido', vencido:true };
+  if(diffDias <= 5) return { cls:'soon', label:`Vence em ${diffDias}d`, vencido:false };
+  return { cls:'ok', label:`Vence em ${diffDias}d`, vencido:false };
 }
 
 let disponiveisCache = [];
-
-function trocarVisaoSecundaria(view){
-  document.querySelectorAll('.tab-sec-btn').forEach(b => b.classList.toggle('active', b.dataset.view===view));
-  document.getElementById('viewPorAtivo').style.display = view==='porAtivo' ? 'block' : 'none';
-  document.getElementById('viewPorCategoria').style.display = view==='porCategoria' ? 'block' : 'none';
-}
-window.trocarVisaoSecundaria = trocarVisaoSecundaria;
 
 function renderPorAtivo(){
   const linhas = [];
@@ -491,7 +558,8 @@ function renderPorAtivo(){
       });
     });
   });
-  document.getElementById('tbodyPorAtivo').innerHTML = linhas.length ? linhas.map(l => `
+  const mostrar = aplicarLimiteEBotao(linhas, 'porAtivo', 'btnVerMaisPorAtivo');
+  document.getElementById('tbodyPorAtivo').innerHTML = mostrar.length ? mostrar.map(l => `
     <tr><td>${l.requisicao}</td><td>${l.nome}</td><td>${l.quantidade}</td></tr>
   `).join('') : '<tr><td colspan="3" class="empty-state">Nenhum item disponível no momento.</td></tr>';
 }
@@ -503,21 +571,33 @@ function renderPorCategoria(){
     contagem[cat] = (contagem[cat]||0) + 1;
   });
   const categorias = Object.keys(contagem).sort((a,b)=>contagem[b]-contagem[a]);
-  document.getElementById('listaPorCategoria').innerHTML = categorias.length ? categorias.map(cat => `
+  const mostrar = aplicarLimiteEBotao(categorias, 'porCategoria', 'btnVerMaisPorCategoria');
+  document.getElementById('listaPorCategoria').innerHTML = mostrar.length ? mostrar.map(cat => `
     <div class="categoria-row"><span class="categoria-nome">${cat}</span><span class="categoria-count">${contagem[cat]}</span></div>
   `).join('') : '<div class="empty-state">Nenhum item disponível no momento.</div>';
+}
+
+// Não vencidos primeiro; dentro de cada grupo, manipulado há mais
+// tempo (data de manipulação mais antiga) aparece primeiro
+function ordenarPorVencimentoEData(lista){
+  return [...lista].sort((a,b) => {
+    const aVencido = situacaoValidade(a.validade).vencido ? 1 : 0;
+    const bVencido = situacaoValidade(b.validade).vencido ? 1 : 0;
+    if(aVencido !== bVencido) return aVencido - bVencido;
+    return (a.data_manipulacao||'9999-99-99').localeCompare(b.data_manipulacao||'9999-99-99');
+  });
 }
 
 async function loadDisponiveis(){
   const { data, error } = await supa.from('manipulados_nao_retirados')
     .select('id,requisicao,forma_farmaceutica,quantidade,data_manipulacao,validade,assinatura,categoria,manipulados_ativos(concentracao,ativos_cadastrados(codigo,nome))')
-    .eq('status','disponivel')
-    .order('validade', {ascending:true, nullsFirst:false});
+    .eq('status','disponivel');
   if(error){ console.error(error); return; }
-  disponiveisCache = data || [];
+  disponiveisCache = ordenarPorVencimentoEData(data||[]);
   filtrarDisponiveis();
   renderPorAtivo();
   renderPorCategoria();
+  renderDestaques();
 }
 
 function filtrarDisponiveis(){
@@ -533,22 +613,57 @@ function filtrarDisponiveis(){
 }
 window.filtrarDisponiveis = filtrarDisponiveis;
 
+function formatarAtivosPorNome(manipuladosAtivos){
+  return (manipuladosAtivos||[]).map(a => a.ativos_cadastrados ? `${a.ativos_cadastrados.nome} ${a.concentracao}` : `(ativo removido) ${a.concentracao}`).join(' + ');
+}
+
 function renderDisponiveis(data){
-  document.getElementById('disponiveisTbody').innerHTML = (data && data.length) ? data.map(m => {
+  const mostrar = aplicarLimiteEBotao(data, 'disponiveis', 'btnVerMaisDisponiveis');
+  document.getElementById('disponiveisTbody').innerHTML = (mostrar && mostrar.length) ? mostrar.map(m => {
     const sit = situacaoValidade(m.validade);
-    const ativosTxt = (m.manipulados_ativos||[]).map(a => a.ativos_cadastrados ? `${a.ativos_cadastrados.codigo}:${a.concentracao}` : `(ativo removido):${a.concentracao}`).join(', ');
     return `<tr>
       <td>${m.requisicao}</td>
       <td>${m.forma_farmaceutica||'—'}</td>
       <td>${m.quantidade||'—'}</td>
       <td>${m.data_manipulacao||'—'}</td>
       <td>${m.validade||'—'}</td>
-      <td class="assinatura-cell">${ativosTxt}</td>
+      <td class="assinatura-cell">${formatarAtivosPorNome(m.manipulados_ativos)}</td>
       <td>${m.categoria ? `<span class="tag-categoria">${m.categoria}</span>` : '—'}</td>
       <td><span class="badge ${sit.cls}">${sit.label}</span></td>
       <td><button class="btn secondary small" onclick="marcarReaproveitado('${m.id}')">Marcar reaproveitado</button></td>
     </tr>`;
   }).join('') : `<tr><td colspan="9" class="empty-state">Nenhum item encontrado.</td></tr>`;
+}
+
+// ---------- Destaques do dia (sorteio determinístico, muda por dia) ----------
+function hashSeed(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) | 0; }
+  return Math.abs(h);
+}
+
+function renderDestaques(){
+  const painel = document.getElementById('painelDestaques');
+  const disponiveisMesmo = disponiveisCache.filter(m => !situacaoValidade(m.validade).vencido);
+  if(!disponiveisMesmo.length){ painel.style.display = 'none'; return; }
+
+  const seed = hashSeed(localDateStr(new Date()));
+  const ordenadosPorSeed = [...disponiveisMesmo].sort((a,b) => {
+    const ha = hashSeed(seed + a.id), hb = hashSeed(seed + b.id);
+    return ha - hb;
+  });
+  const quantidade = Math.min(disponiveisMesmo.length, disponiveisMesmo.length >= 4 ? 4 : 3);
+  const escolhidos = ordenadosPorSeed.slice(0, quantidade);
+
+  painel.style.display = 'block';
+  document.getElementById('destaquesRow').innerHTML = escolhidos.map(m => `
+    <div class="destaque-card">
+      <div class="req">Requisição ${m.requisicao}</div>
+      <div class="form">${m.forma_farmaceutica || 'Manipulado'}</div>
+      <div class="info">${formatarAtivosPorNome(m.manipulados_ativos)}</div>
+      <div class="info" style="margin-top:4px;">Manipulado em ${m.data_manipulacao||'—'}${m.categoria ? ' · '+m.categoria : ''}</div>
+    </div>
+  `).join('');
 }
 
 async function marcarReaproveitado(id){
@@ -564,22 +679,28 @@ async function marcarReaproveitado(id){
 }
 window.marcarReaproveitado = marcarReaproveitado;
 
+let reaproveitadosCache = [];
+
 async function loadReaproveitados(){
   const { data, error } = await supa.from('manipulados_nao_retirados')
-    .select('requisicao,reaproveitado_para_requisicao,reaproveitado_em,manipulados_ativos(concentracao,ativos_cadastrados(codigo))')
+    .select('requisicao,reaproveitado_para_requisicao,reaproveitado_em,manipulados_ativos(concentracao,ativos_cadastrados(nome))')
     .eq('status','reaproveitado')
     .order('reaproveitado_em', {ascending:false});
   if(error){ console.error(error); return; }
+  reaproveitadosCache = data || [];
+  renderReaproveitados();
+}
 
-  document.getElementById('reaproveitadosTbody').innerHTML = (data && data.length) ? data.map(m => {
-    const ativosTxt = (m.manipulados_ativos||[]).map(a => a.ativos_cadastrados ? `${a.ativos_cadastrados.codigo}:${a.concentracao}` : `(ativo removido):${a.concentracao}`).join(', ');
-    return `<tr>
+function renderReaproveitados(){
+  const mostrar = aplicarLimiteEBotao(reaproveitadosCache, 'reaproveitados', 'btnVerMaisReaproveitados');
+  document.getElementById('reaproveitadosTbody').innerHTML = mostrar.length ? mostrar.map(m => `
+    <tr>
       <td>${m.requisicao}</td>
-      <td class="assinatura-cell">${ativosTxt}</td>
+      <td class="assinatura-cell">${formatarAtivosPorNome(m.manipulados_ativos)}</td>
       <td>${m.reaproveitado_para_requisicao||'—'}</td>
       <td>${m.reaproveitado_em ? new Date(m.reaproveitado_em).toLocaleDateString('pt-BR') : '—'}</td>
-    </tr>`;
-  }).join('') : `<tr><td colspan="4" class="empty-state">Nenhum reaproveitamento registrado ainda.</td></tr>`;
+    </tr>
+  `).join('') : `<tr><td colspan="4" class="empty-state">Nenhum reaproveitamento registrado ainda.</td></tr>`;
 }
 
 async function loadKpis(){
@@ -593,10 +714,82 @@ async function loadKpis(){
   `;
 }
 
+// ---------- Insights ----------
+let chartsInsights = {};
+let insightsCarregados = false;
+
+async function carregarInsights(){
+  if(insightsCarregados) return;
+  insightsCarregados = true;
+
+  const { data, error } = await supa.from('manipulados_nao_retirados')
+    .select('status,data_manipulacao,categoria,manipulados_ativos(ativos_cadastrados(nome))');
+  if(error){ console.error(error); return; }
+  const tudo = data || [];
+
+  // Ativos mais frequentes
+  const contagemAtivos = {};
+  tudo.forEach(m => (m.manipulados_ativos||[]).forEach(a => {
+    const nome = a.ativos_cadastrados?.nome;
+    if(!nome) return;
+    contagemAtivos[nome] = (contagemAtivos[nome]||0) + 1;
+  }));
+  const topAtivos = Object.entries(contagemAtivos).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  // Categorias mais comuns
+  const contagemCategorias = {};
+  tudo.forEach(m => { const c = m.categoria || 'Sem categoria'; contagemCategorias[c] = (contagemCategorias[c]||0)+1; });
+  const topCategorias = Object.entries(contagemCategorias).sort((a,b)=>b[1]-a[1]);
+
+  // Por mês (de data_manipulacao)
+  const contagemMeses = {};
+  tudo.forEach(m => {
+    if(!m.data_manipulacao) return;
+    const chave = m.data_manipulacao.slice(0,7);
+    contagemMeses[chave] = (contagemMeses[chave]||0) + 1;
+  });
+  const mesesOrdenados = Object.keys(contagemMeses).sort();
+
+  // Status geral
+  const contagemStatus = {};
+  tudo.forEach(m => { contagemStatus[m.status] = (contagemStatus[m.status]||0) + 1; });
+  const LABEL_STATUS = { disponivel: 'Disponível', reaproveitado: 'Reaproveitado' };
+
+  const paleta = ['#8B1A3A','#3E6B93','#3F7A57','#C9922B','#6E4A8C','#B4472F','#2A5A3E','#8A6512','#5E1027','#1F3A52'];
+
+  if(chartsInsights.ativos) chartsInsights.ativos.destroy();
+  chartsInsights.ativos = new Chart(document.getElementById('chartAtivosFrequentes'), {
+    type: 'bar',
+    data: { labels: topAtivos.map(a=>a[0]), datasets: [{ data: topAtivos.map(a=>a[1]), backgroundColor: '#8B1A3A', borderRadius: 4 }] },
+    options: { indexAxis: 'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true,ticks:{precision:0}}} }
+  });
+
+  if(chartsInsights.categorias) chartsInsights.categorias.destroy();
+  chartsInsights.categorias = new Chart(document.getElementById('chartCategoriasFrequentes'), {
+    type: 'doughnut',
+    data: { labels: topCategorias.map(c=>c[0]), datasets: [{ data: topCategorias.map(c=>c[1]), backgroundColor: paleta }] },
+    options: { responsive:true, plugins:{legend:{position:'bottom'}} }
+  });
+
+  if(chartsInsights.meses) chartsInsights.meses.destroy();
+  chartsInsights.meses = new Chart(document.getElementById('chartPorMes'), {
+    type: 'bar',
+    data: { labels: mesesOrdenados.map(m=>{ const [a,mm]=m.split('-'); return new Date(a,mm-1,1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}); }), datasets: [{ data: mesesOrdenados.map(m=>contagemMeses[m]), backgroundColor: '#3E6B93', borderRadius: 4 }] },
+    options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
+  });
+
+  if(chartsInsights.status) chartsInsights.status.destroy();
+  chartsInsights.status = new Chart(document.getElementById('chartStatusGeral'), {
+    type: 'pie',
+    data: { labels: Object.keys(contagemStatus).map(s=>LABEL_STATUS[s]||s), datasets: [{ data: Object.values(contagemStatus), backgroundColor: ['#3F7A57','#3E6B93','#C9922B'] }] },
+    options: { responsive:true, plugins:{legend:{position:'bottom'}} }
+  });
+}
+
 async function init(){
   const { papel } = await requireRole(['chefia','conferencia']);
   meuPapelReap = papel;
-  if(papel === 'chefia') document.getElementById('painelCatalogoAtivos').style.display = 'block';
+  if(papel === 'chefia') document.getElementById('tabBtnCatalogo').style.display = 'inline-block';
   document.getElementById('fCategoria').addEventListener('input', (e) => { delete e.target.dataset.preenchidoAuto; });
   await loadAtivosCatalogo();
   addAtivoRow();
