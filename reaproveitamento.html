@@ -49,6 +49,22 @@
 
   .ativos-box{border:1.5px dashed var(--line);border-radius:10px;padding:14px;margin-bottom:14px;}
   .ativo-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .ativo-autocomplete{position:relative;flex:1;}
+  .ativo-busca{width:100%;}
+  .ativo-sugestoes{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.1);max-height:220px;overflow-y:auto;z-index:50;display:none;}
+  .ativo-sugestoes.show{display:block;}
+  .ativo-sugestao-item{padding:8px 12px;font-size:13px;cursor:pointer;}
+  .ativo-sugestao-item:hover, .ativo-sugestao-item.ativa{background:var(--paper);}
+  .ativo-sugestao-item .cod{font-weight:700;color:var(--burgundy);margin-right:6px;}
+  .ativo-sugestao-vazia{padding:10px 12px;font-size:12.5px;color:var(--gray);}
+  .tag-categoria{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--burgundy-tint);color:var(--burgundy);}
+  .tabs-secundarias{display:flex;gap:8px;margin-bottom:14px;}
+  .tab-sec-btn{font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:600;padding:8px 16px;border-radius:20px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--gray);}
+  .tab-sec-btn.active{background:var(--burgundy);color:#fff;border-color:var(--burgundy);}
+  .categoria-row{display:flex;justify-content:space-between;align-items:center;padding:11px 4px;border-bottom:1px solid var(--line);}
+  .categoria-row:last-child{border-bottom:none;}
+  .categoria-nome{font-weight:700;font-size:13.5px;}
+  .categoria-count{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;color:var(--burgundy);}
   .ativo-row select{flex:2;} .ativo-row input{flex:1;}
   .ativo-row button{flex-shrink:0;}
   .del-ativo-btn{background:#fff;border:1.5px solid var(--line);border-radius:6px;color:var(--bad);cursor:pointer;width:30px;height:30px;font-size:16px;}
@@ -165,6 +181,7 @@
     <div class="add-inline" style="margin-top:10px">
       <input id="novoAtivoCodigo" placeholder="Código do ativo novo" style="max-width:140px" />
       <input id="novoAtivoNome" placeholder="Nome do ativo novo" style="max-width:220px" />
+      <input id="novoAtivoCategoria" placeholder="Categoria (ex: Beleza)" style="max-width:160px" />
       <button class="btn secondary small" onclick="addAtivoCatalogo()">+ Cadastrar ativo no catálogo</button>
     </div>
 
@@ -189,11 +206,29 @@
     </table>
   </div>
 
+  <div class="panel">
+    <h2>Outras visões</h2>
+    <p class="desc">Formas diferentes de olhar pro mesmo estoque disponível pra reaproveitar</p>
+    <div class="tabs-secundarias">
+      <button class="tab-sec-btn active" data-view="porAtivo" onclick="trocarVisaoSecundaria('porAtivo')">Por ativo</button>
+      <button class="tab-sec-btn" data-view="porCategoria" onclick="trocarVisaoSecundaria('porCategoria')">Por categoria</button>
+    </div>
+    <div id="viewPorAtivo">
+      <table>
+        <thead><tr><th>Requisição</th><th>Ativo</th><th>Qtd. cápsulas</th></tr></thead>
+        <tbody id="tbodyPorAtivo"></tbody>
+      </table>
+    </div>
+    <div id="viewPorCategoria" style="display:none">
+      <div id="listaPorCategoria"></div>
+    </div>
+  </div>
+
   <div class="panel" id="painelCatalogoAtivos" style="display:none">
     <h2>Catálogo de ativos</h2>
     <p class="desc">Só chefia vê essa lista — exclui ativo cadastrado errado ou de teste. Cuidado: se o ativo já foi usado em algum registro, o histórico continua mostrando o nome antigo.</p>
     <table>
-      <thead><tr><th>Código</th><th>Nome</th><th>Ação</th></tr></thead>
+      <thead><tr><th>Código</th><th>Nome</th><th>Categoria</th><th>Ação</th></tr></thead>
       <tbody id="listaCatalogoAtivos"></tbody>
     </table>
     <button class="btn secondary small" id="btnVerMaisAtivos" onclick="alternarListaCompletaAtivos()" style="margin-top:10px;display:none;"></button>
@@ -230,7 +265,7 @@ const LIMITE_ATIVOS_FECHADO = 5;
 function localDateStr(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
 
 async function loadAtivosCatalogo(){
-  const { data } = await supa.from('ativos_cadastrados').select('id,codigo,nome').order('codigo');
+  const { data } = await supa.from('ativos_cadastrados').select('id,codigo,nome,categoria').order('codigo');
   ativosCatalogo = data || [];
   if(meuPapelReap === 'chefia') renderCatalogoAtivos();
 }
@@ -241,9 +276,10 @@ function renderCatalogoAtivos(){
     <tr>
       <td>${a.codigo}</td>
       <td>${a.nome}</td>
-      <td><button class="btn secondary small" onclick="excluirAtivoCatalogo('${a.id}')">Excluir</button></td>
+      <td>${a.categoria ? `<span class="tag-categoria">${a.categoria}</span>` : '<span style="color:var(--gray);font-size:11.5px;">— não definida</span>'}</td>
+      <td style="display:flex;gap:6px;"><button class="btn secondary small" onclick="editarCategoriaAtivo('${a.id}','${(a.categoria||'').replace(/'/g,"\\'")}')">Categoria</button><button class="btn secondary small" onclick="excluirAtivoCatalogo('${a.id}')">Excluir</button></td>
     </tr>
-  `).join('') : '<tr><td colspan="3" style="color:var(--gray)">Nenhum ativo cadastrado ainda.</td></tr>';
+  `).join('') : '<tr><td colspan="4" style="color:var(--gray)">Nenhum ativo cadastrado ainda.</td></tr>';
 
   const btn = document.getElementById('btnVerMaisAtivos');
   if(ativosCatalogo.length > LIMITE_ATIVOS_FECHADO){
@@ -265,37 +301,75 @@ async function excluirAtivoCatalogo(id){
   const { error } = await supa.from('ativos_cadastrados').delete().eq('id', id);
   if(error){ alert('Erro ao excluir: '+error.message); return; }
   await loadAtivosCatalogo();
-  document.querySelectorAll('.ativo-select').forEach(sel=>{
-    const atual = sel.value;
-    sel.innerHTML = `<option value="">Selecione o ativo...</option>` + ativosCatalogo.map(a=>`<option value="${a.id}" data-codigo="${a.codigo}">${a.codigo} — ${a.nome}</option>`).join('');
-    sel.value = atual;
-  });
 }
 window.excluirAtivoCatalogo = excluirAtivoCatalogo;
 
-// ---------- Linhas dinâmicas de ativo no formulário ----------
+async function editarCategoriaAtivo(id, categoriaAtual){
+  const nova = prompt('Categoria do ativo (ex: Beleza, Saúde, Emagrecimento):', categoriaAtual || '');
+  if(nova === null) return;
+  const { error } = await supa.from('ativos_cadastrados').update({ categoria: nova.trim() || null }).eq('id', id);
+  if(error){ alert('Erro: '+error.message); return; }
+  await loadAtivosCatalogo();
+}
+window.editarCategoriaAtivo = editarCategoriaAtivo;
+
+// ---------- Linhas dinâmicas de ativo no formulário (com busca) ----------
 function addAtivoRow(){
   const box = document.getElementById('ativosBox');
   const row = document.createElement('div');
   row.className = 'ativo-row';
   row.innerHTML = `
-    <select class="ativo-select" onchange="updateAssinaturaPreview()">
-      <option value="">Selecione o ativo...</option>
-      ${ativosCatalogo.map(a=>`<option value="${a.id}" data-codigo="${a.codigo}">${a.codigo} — ${a.nome}</option>`).join('')}
-    </select>
+    <div class="ativo-autocomplete">
+      <input class="ativo-busca" placeholder="Digite o código ou nome do ativo..." autocomplete="off">
+      <input type="hidden" class="ativo-id">
+      <div class="ativo-sugestoes"></div>
+    </div>
     <input class="ativo-conc" placeholder="Concentração (ex: 500mg)" oninput="updateAssinaturaPreview()" />
     <button class="del-ativo-btn" onclick="this.parentElement.remove(); updateAssinaturaPreview();">×</button>
   `;
   box.appendChild(row);
+  ligarAutocompleteAtivo(row);
 }
 window.addAtivoRow = addAtivoRow;
+
+function ligarAutocompleteAtivo(row){
+  const busca = row.querySelector('.ativo-busca');
+  const hiddenId = row.querySelector('.ativo-id');
+  const sugestoesBox = row.querySelector('.ativo-sugestoes');
+
+  function renderSugestoes(){
+    const termo = busca.value.trim().toLowerCase();
+    if(!termo){ sugestoesBox.classList.remove('show'); return; }
+    const encontrados = ativosCatalogo.filter(a =>
+      a.codigo.toLowerCase().includes(termo) || a.nome.toLowerCase().includes(termo)
+    ).slice(0, 30);
+    sugestoesBox.innerHTML = encontrados.length
+      ? encontrados.map(a => `<div class="ativo-sugestao-item" data-id="${a.id}" data-codigo="${a.codigo}" data-nome="${a.nome.replace(/"/g,'&quot;')}"><span class="cod">${a.codigo}</span>${a.nome}</div>`).join('')
+      : `<div class="ativo-sugestao-vazia">Nenhum ativo encontrado — cadastra ele aí embaixo em "+ Cadastrar ativo no catálogo"</div>`;
+    sugestoesBox.classList.add('show');
+  }
+
+  busca.addEventListener('input', () => { hiddenId.value=''; hiddenId.removeAttribute('data-codigo'); renderSugestoes(); updateAssinaturaPreview(); });
+  busca.addEventListener('focus', renderSugestoes);
+  busca.addEventListener('blur', () => setTimeout(()=> sugestoesBox.classList.remove('show'), 150));
+
+  sugestoesBox.addEventListener('mousedown', (e) => {
+    const item = e.target.closest('.ativo-sugestao-item');
+    if(!item) return;
+    busca.value = `${item.dataset.codigo} — ${item.dataset.nome}`;
+    hiddenId.value = item.dataset.id;
+    hiddenId.setAttribute('data-codigo', item.dataset.codigo);
+    sugestoesBox.classList.remove('show');
+    updateAssinaturaPreview();
+  });
+}
 
 function updateAssinaturaPreview(){
   const rows = [...document.querySelectorAll('.ativo-row')];
   const partes = rows.map(r => {
-    const sel = r.querySelector('.ativo-select');
+    const hiddenId = r.querySelector('.ativo-id');
     const conc = r.querySelector('.ativo-conc').value.trim();
-    const codigo = sel.selectedOptions[0]?.dataset.codigo;
+    const codigo = hiddenId?.dataset.codigo;
     if(!codigo || !conc) return null;
     return `${codigo}:${conc}`;
   }).filter(Boolean).sort();
@@ -308,18 +382,14 @@ window.updateAssinaturaPreview = updateAssinaturaPreview;
 async function addAtivoCatalogo(){
   const codigo = document.getElementById('novoAtivoCodigo').value.trim();
   const nome = document.getElementById('novoAtivoNome').value.trim();
+  const categoria = document.getElementById('novoAtivoCategoria').value.trim() || null;
   if(!codigo || !nome){ alert('Preencha código e nome do ativo.'); return; }
-  const { error } = await supa.from('ativos_cadastrados').insert({codigo, nome});
+  const { error } = await supa.from('ativos_cadastrados').insert({codigo, nome, categoria});
   if(error){ alert('Erro: '+error.message); return; }
   document.getElementById('novoAtivoCodigo').value = '';
   document.getElementById('novoAtivoNome').value = '';
+  document.getElementById('novoAtivoCategoria').value = '';
   await loadAtivosCatalogo();
-  // atualiza as opções dos selects já existentes na tela
-  document.querySelectorAll('.ativo-select').forEach(sel=>{
-    const atual = sel.value;
-    sel.innerHTML = `<option value="">Selecione o ativo...</option>` + ativosCatalogo.map(a=>`<option value="${a.id}" data-codigo="${a.codigo}">${a.codigo} — ${a.nome}</option>`).join('');
-    sel.value = atual;
-  });
 }
 window.addAtivoCatalogo = addAtivoCatalogo;
 
@@ -334,9 +404,9 @@ async function salvarNaoRetirado(){
   const assinatura = updateAssinaturaPreview();
 
   const ativoRows = [...document.querySelectorAll('.ativo-row')].map(r => {
-    const sel = r.querySelector('.ativo-select');
+    const hiddenId = r.querySelector('.ativo-id');
     const conc = r.querySelector('.ativo-conc').value.trim();
-    return { ativo_id: sel.value, concentracao: conc };
+    return { ativo_id: hiddenId.value, concentracao: conc };
   }).filter(a => a.ativo_id && a.concentracao);
 
   if(!requisicao){ alert('Informe a requisição.'); return; }
@@ -379,14 +449,53 @@ function situacaoValidade(validade){
 
 let disponiveisCache = [];
 
+function trocarVisaoSecundaria(view){
+  document.querySelectorAll('.tab-sec-btn').forEach(b => b.classList.toggle('active', b.dataset.view===view));
+  document.getElementById('viewPorAtivo').style.display = view==='porAtivo' ? 'block' : 'none';
+  document.getElementById('viewPorCategoria').style.display = view==='porCategoria' ? 'block' : 'none';
+}
+window.trocarVisaoSecundaria = trocarVisaoSecundaria;
+
+function renderPorAtivo(){
+  const linhas = [];
+  disponiveisCache.forEach(m => {
+    (m.manipulados_ativos||[]).forEach(a => {
+      linhas.push({
+        requisicao: m.requisicao,
+        nome: a.ativos_cadastrados?.nome || '(ativo removido)',
+        quantidade: m.quantidade || '—',
+      });
+    });
+  });
+  document.getElementById('tbodyPorAtivo').innerHTML = linhas.length ? linhas.map(l => `
+    <tr><td>${l.requisicao}</td><td>${l.nome}</td><td>${l.quantidade}</td></tr>
+  `).join('') : '<tr><td colspan="3" class="empty-state">Nenhum item disponível no momento.</td></tr>';
+}
+
+function renderPorCategoria(){
+  const contagem = {};
+  disponiveisCache.forEach(m => {
+    (m.manipulados_ativos||[]).forEach(a => {
+      const cat = a.ativos_cadastrados?.categoria || 'Sem categoria';
+      contagem[cat] = (contagem[cat]||0) + 1;
+    });
+  });
+  const categorias = Object.keys(contagem).sort((a,b)=>contagem[b]-contagem[a]);
+  document.getElementById('listaPorCategoria').innerHTML = categorias.length ? categorias.map(cat => `
+    <div class="categoria-row"><span class="categoria-nome">${cat}</span><span class="categoria-count">${contagem[cat]}</span></div>
+  `).join('') : '<div class="empty-state">Nenhum item disponível no momento.</div>';
+}
+
 async function loadDisponiveis(){
   const { data, error } = await supa.from('manipulados_nao_retirados')
-    .select('id,requisicao,forma_farmaceutica,quantidade,data_manipulacao,validade,assinatura,manipulados_ativos(concentracao,ativos_cadastrados(codigo,nome))')
+    .select('id,requisicao,forma_farmaceutica,quantidade,data_manipulacao,validade,assinatura,manipulados_ativos(concentracao,ativos_cadastrados(codigo,nome,categoria))')
     .eq('status','disponivel')
     .order('validade', {ascending:true, nullsFirst:false});
   if(error){ console.error(error); return; }
   disponiveisCache = data || [];
   filtrarDisponiveis();
+  renderPorAtivo();
+  renderPorCategoria();
 }
 
 function filtrarDisponiveis(){
