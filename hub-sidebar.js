@@ -35,6 +35,7 @@
     robo: '<rect x="5" y="9" width="14" height="10.5" rx="2.5"/><path d="M12 5.5v3.5"/><circle cx="12" cy="4" r="1.2"/><circle cx="9" cy="14" r="1.3"/><circle cx="15" cy="14" r="1.3"/><path d="M3.3 12v4M20.7 12v4"/>',
     vendas: '<path d="M5 5h1.8l1 11.3A2 2 0 0 0 9.8 18h7.4a2 2 0 0 0 2-1.7L20.3 9H7.1"/><circle cx="10" cy="21" r="1.3"/><circle cx="17.5" cy="21" r="1.3"/>',
     email: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4.5 7 12 12.5 19.5 7"/>',
+    caixa: '<path d="M3.5 8.5 12 4l8.5 4.5v9L12 22l-8.5-4.5Z"/><path d="M3.5 8.5 12 13l8.5-4.5"/><path d="M12 13v9"/>',
     escudo: '<path d="M12 3.5 5 6v5.5c0 4.7 3 8 7 9 4-1 7-4.3 7-9V6l-7-2.5Z"/>',
     escudoCheck: '<path d="M12 3.5 5 6v5.5c0 4.7 3 8 7 9 4-1 7-4.3 7-9V6l-7-2.5Z"/><path d="M9 12l2 2 4-4"/>',
     chave: '<circle cx="8" cy="15" r="3.3"/><path d="M10.3 12.7 18 5m0 0h-3.2M18 5v3.2M14.7 8.3l2 2"/>',
@@ -68,6 +69,7 @@
     { href: 'wanessia.html', icone: 'robo', label: 'Wanessia', perm: 'modulo.wanessia' },
     { href: 'vendas-yampi.html', icone: 'vendas', label: 'Vendas (Yampi)', perm: 'modulo.vendas' },
     { href: 'email-marketing.html', icone: 'email', label: 'Email Marketing', perm: 'modulo.email_marketing' },
+    { href: 'embalagens.html', icone: 'caixa', label: 'Controle de Embalagens', perm: 'modulo.embalagens' },
     { href: 'admin.html', icone: 'escudo', label: 'Administração', perm: 'modulo.admin' },
     { href: 'cargos.html', icone: 'escudoCheck', label: 'Cargos & Permissões', perm: 'modulo.admin' },
   ];

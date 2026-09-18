@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle de Embalagens — Hub Bioflora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<style>
+  :root{
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
+    --good:#3F7A57; --good-tint:#E8F3EC; --bad:#B4472F; --bad-tint:#FBEBE6;
+    --warn:#C9922B; --warn-tint:#FBF1E0;
+    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1280px;margin:0 auto;padding:36px 28px 80px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+  .brand-text h1{font-family:var(--headfont);font-weight:600;font-size:22px;margin:0;letter-spacing:-0.01em;}
+  .brand-text p{margin:2px 0 0;font-size:12.5px;color:var(--gray);}
+  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
+  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn.small{padding:6px 12px;font-size:11.5px;}
+  .btn.danger{background:var(--bad);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .kpi .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);font-weight:700;}
+  .kpi .value{font-family:var(--headfont);font-size:24px;margin-top:4px;font-weight:600;}
+  .progress-bar{height:7px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:12px;}
+  .progress-bar > div{height:100%;background:var(--burgundy);}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
+  .panel h2{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
+
+  .tabs-principais{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;border-bottom:2px solid var(--ink);}
+  .tab-principal-btn{font-family:var(--headfont);font-size:13.5px;font-weight:600;padding:10px 18px;border-radius:9px 9px 0 0;border:1px solid var(--line);border-bottom:none;background:#fff;cursor:pointer;color:var(--gray);margin-bottom:-2px;}
+  .tab-principal-btn.active{color:var(--burgundy);background:var(--burgundy-tint);border-color:var(--ink);}
+
+  .filter-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+  .filter-row input, .filter-row select{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;}
+  .filter-row input[type=search]{flex:1;min-width:220px;}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);font-weight:700;padding:0 8px 10px;border-bottom:2px solid var(--ink);white-space:nowrap;}
+  tbody td{padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tbody tr:hover{background:var(--paper);}
+  tr.linha-verificada{background:var(--good-tint);}
+  tr.linha-ignorada{background:var(--paper);color:var(--gray);}
+  tr.linha-prioritaria-pendente{background:var(--warn-tint);}
+  select, input.mini{font-family:'Maven Pro',sans-serif;font-size:12px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;}
+  .badge{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;white-space:nowrap;}
+  .badge.pri{background:var(--warn-tint);color:#8A6512;}
+  .badge.ok{background:var(--good-tint);color:var(--good);}
+  .badge.ignorado{background:var(--line);color:var(--gray);}
+  .badge.pendente{background:var(--burgundy-tint);color:var(--burgundy);}
+  .linklike{color:var(--burgundy);cursor:pointer;font-size:11.5px;text-decoration:underline;}
+  .pager{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:14px;font-size:12.5px;}
+  .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
+
+  .chip-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
+  .chip{background:var(--burgundy-tint);color:var(--burgundy);padding:3px 8px;border-radius:999px;font-size:11px;display:flex;align-items:center;gap:5px;}
+  .chip button{background:none;border:none;color:var(--burgundy);cursor:pointer;font-size:13px;line-height:1;padding:0;}
+  .sinonimo-add{display:flex;gap:4px;margin-top:6px;}
+  .sinonimo-add input{flex:1;font-size:11.5px;padding:4px 7px;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(42,34,36,.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:14px;padding:24px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;}
+  .modal h3{font-family:var(--headfont);margin:0 0 14px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+  .edit-field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+  .edit-field label{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;}
+  .edit-field input, .edit-field textarea{font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;}
+
+  .timer-display{font-family:var(--headfont);font-size:40px;font-weight:600;text-align:center;font-variant-numeric:tabular-nums;}
+  canvas{max-width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand-text">
+      <h1>Controle de Embalagens</h1>
+      <p>Farmácia Bioflora — triagem e inventário de embalagens e componentes</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
+      <button onclick="logout()" class="btn secondary">Sair</button>
+    </div>
+  </header>
+
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="tabs-principais">
+    <button class="tab-principal-btn active" data-tab="triagem" onclick="trocarAbaPrincipal('triagem')">1. Triagem</button>
+    <button class="tab-principal-btn" data-tab="compostas" onclick="trocarAbaPrincipal('compostas')">2. Embalagens compostas</button>
+    <button class="tab-principal-btn" data-tab="estoque" onclick="trocarAbaPrincipal('estoque')">3. Estoque (inventário)</button>
+    <button class="tab-principal-btn" data-tab="dashboard" onclick="trocarAbaPrincipal('dashboard')">4. Cronômetro</button>
+  </div>
+
+  <!-- TAB TRIAGEM -->
+  <div class="tab-conteudo" id="tabTriagem">
+    <div class="panel">
+      <div class="filter-row">
+        <input type="search" id="triBusca" placeholder="Buscar por nome ou código..." oninput="triPage=0;renderTriagem()">
+        <select id="triFiltroStatus" onchange="triPage=0;renderTriagem()">
+          <option value="todos">Todos os status</option>
+          <option value="pendente">Pendentes</option>
+          <option value="verificado">Verificados</option>
+          <option value="ignorado">Ignorados</option>
+        </select>
+        <select id="triFiltroPrioridade" onchange="triPage=0;renderTriagem()">
+          <option value="todos">Prioridade: todas</option>
+          <option value="sim">Só prioritários</option>
+          <option value="nao">Só não-prioritários</option>
+        </select>
+        <select id="triFiltroTipo" onchange="triPage=0;renderTriagem()">
+          <option value="todos">Tipo: todos</option>
+          <option value="componente">Componente de embalagem</option>
+          <option value="simples">Embalagem simples</option>
+          <option value="composta">Embalagem composta</option>
+          <option value="nenhum">Não é embalagem</option>
+          <option value="indefinido">Ainda não classificado</option>
+        </select>
+        <button class="btn secondary small" onclick="novaEmbalagemCompostaModal()">+ Nova embalagem composta</button>
+        <button class="btn small" onclick="abrirModalNovoMaterial()">+ Adicionar embalagem/material</button>
+      </div>
+      <div style="max-height:62vh;overflow:auto;border:1px solid var(--line);border-radius:10px;">
+        <table>
+          <thead><tr>
+            <th style="width:60px">Verif.</th><th style="width:80px">Código</th><th>Nome</th>
+            <th style="width:100px">Prioridade</th><th style="width:170px">Tipo</th><th style="width:110px">Status</th>
+            <th style="width:60px">Excluir?</th><th style="width:70px">Ações</th>
+          </tr></thead>
+          <tbody id="triTbody"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="triPager"></div>
+    </div>
+  </div>
+
+  <!-- TAB COMPOSTAS -->
+  <div class="tab-conteudo" id="tabCompostas" style="display:none">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <h2 style="margin:0;">Embalagens compostas cadastradas</h2>
+        <button class="btn small" onclick="novaEmbalagemCompostaModal()">+ Nova embalagem composta</button>
+      </div>
+      <p class="desc">Uma embalagem composta é formada por vários materiais (componentes) e corresponde a um código de produto no sistema.</p>
+      <div id="compostasList"></div>
+    </div>
+  </div>
+
+  <!-- TAB ESTOQUE -->
+  <div class="tab-conteudo" id="tabEstoque" style="display:none">
+    <div class="panel">
+      <h2>Inventário de estoque</h2>
+      <p class="desc">Contagem física de embalagens simples e componentes de embalagem. Registre também os nomes que cada uma recebe nas notas fiscais de fornecedores diferentes. Ao informar a quantidade, o item já fica marcado como checado.</p>
+      <div class="filter-row">
+        <input type="search" id="estBusca" placeholder="Buscar componente..." oninput="estPage=0;renderEstoque()">
+        <select id="estFiltro" onchange="estPage=0;renderEstoque()">
+          <option value="todos">Todos</option>
+          <option value="pendente">Ainda não checados</option>
+          <option value="checado">Já checados</option>
+        </select>
+      </div>
+      <div style="max-height:62vh;overflow:auto;border:1px solid var(--line);border-radius:10px;">
+        <table>
+          <thead><tr><th style="width:80px">Código</th><th>Nome / Sinônimos de fabricante</th><th style="width:150px">Quantidade</th></tr></thead>
+          <tbody id="estTbody"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="estPager"></div>
+    </div>
+  </div>
+
+  <!-- TAB DASHBOARD -->
+  <div class="tab-conteudo" id="tabDashboard" style="display:none">
+    <div class="panel">
+      <h2>Cronômetro de triagem</h2>
+      <div class="timer-display" id="timerDisplay">00:00:00</div>
+      <div style="text-align:center;margin-top:12px;">
+        <button class="btn" id="timerToggleBtn" onclick="toggleTimer()">Iniciar</button>
+        <span class="desc" id="timerStatus" style="margin-left:10px;">Parado</span>
+      </div>
+      <p class="desc" style="margin-top:14px;">Tempo total acumulado: <b id="tempoTotalAcumulado">0h 0min</b></p>
+    </div>
+    <div class="panel">
+      <h2>Progresso (%) × tempo (horas)</h2>
+      <div style="position:relative;height:300px;"><canvas id="progressChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Sessões registradas</h2>
+      <table>
+        <thead><tr><th>Início</th><th>Fim</th><th>Duração</th><th>Itens verificados</th></tr></thead>
+        <tbody id="sessoesTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal: embalagem composta -->
+<div class="modal-overlay" id="modalComposta">
+  <div class="modal">
+    <h3 id="modalCompostaTitulo">Nova embalagem composta</h3>
+    <div class="edit-field"><label>Nome</label><input id="mcNome" placeholder="Ex: FRASCO DE XAROPE 30 ML" oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="edit-field"><label>Código do produto associado</label><input id="mcCodigo" placeholder="Ex: 5678"></div>
+    <div class="edit-field">
+      <label>Buscar e adicionar componente</label>
+      <input id="mcBuscaComponente" placeholder="Digite nome ou código..." oninput="buscarComponenteModal()">
+      <div id="mcResultados" style="max-height:140px;overflow:auto;margin-top:6px;font-size:12px;"></div>
+    </div>
+    <div class="edit-field"><label>Componentes selecionados</label><div class="chip-list" id="mcChips"></div></div>
+    <div class="modal-actions">
+      <button class="btn danger" id="mcExcluirBtn" style="display:none" onclick="excluirEmbalagemComposta()">Excluir</button>
+      <button class="btn secondary" onclick="fecharModalComposta()">Cancelar</button>
+      <button class="btn" onclick="salvarEmbalagemComposta()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: editar material -->
+<div class="modal-overlay" id="modalMaterial">
+  <div class="modal">
+    <h3>Editar material</h3>
+    <div class="edit-field"><label>Código</label><input id="mmCodigo"></div>
+    <div class="edit-field"><label>Nome</label><input id="mmNome" oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="edit-field"><label>Observação</label><textarea id="mmObs" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModalMaterial()">Cancelar</button>
+      <button class="btn" onclick="salvarMaterial()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: novo material -->
+<div class="modal-overlay" id="modalNovoMaterial">
+  <div class="modal">
+    <h3>Adicionar embalagem/material</h3>
+    <div class="edit-field"><label>Código</label><input id="nmCodigo" placeholder="Ex: 24700"></div>
+    <div class="edit-field"><label>Nome</label><input id="nmNome" placeholder="Ex: FR PET AMBAR 100ML" oninput="this.value=this.value.toUpperCase()"></div>
+    <p class="desc">Entra na lista já como pendente, pra classificar normalmente (Componente / Simples / Embalagem composta / Não é embalagem).</p>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="fecharModalNovoMaterial()">Cancelar</button>
+      <button class="btn" onclick="salvarNovoMaterial()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let materiais = [];
+let embalagensCompostas = [];
+let sessoesTempo = [];
+
+function porCodigo(codigo){ return materiais.find(m => m.codigo === codigo); }
+
+function tipoDoMaterial(m){
+  if(m.classificacao === 'composta') return 'composta';
+  const derivada = embalagensCompostas.find(e => e.codigo_produto_formula === m.codigo);
+  if(derivada) return 'composta';
+  return m.classificacao || 'indefinido';
+}
+
+// ---------- Abas ----------
+function trocarAbaPrincipal(tab){
+  document.querySelectorAll('.tab-principal-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  ['triagem','compostas','estoque','dashboard'].forEach(t => {
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).style.display = (t===tab) ? 'block' : 'none';
+  });
+  if(tab==='compostas') renderCompostas();
+  if(tab==='estoque') renderEstoque();
+  if(tab==='dashboard') renderDashboard();
+}
+window.trocarAbaPrincipal = trocarAbaPrincipal;
+
+function renderKpis(){
+  const total = materiais.length;
+  const verificados = materiais.filter(m=>m.status==='verificado').length;
+  const ignorados = materiais.filter(m=>m.status==='ignorado').length;
+  const pendentes = total - verificados - ignorados;
+  document.getElementById('kpiRow').innerHTML = `
+    <div class="kpi"><div class="label">Total de materiais</div><div class="value">${total}</div></div>
+    <div class="kpi"><div class="label">Verificados</div><div class="value">${verificados}</div></div>
+    <div class="kpi"><div class="label">Ignorados</div><div class="value">${ignorados}</div></div>
+    <div class="kpi"><div class="label">Pendentes</div><div class="value">${pendentes}</div></div>
+  `;
+}
+
+// ---------- TRIAGEM ----------
+let triPage = 0;
+const TRI_PAGE_SIZE = 40;
+
+function renderTriagem(){
+  const busca = document.getElementById('triBusca').value.trim().toLowerCase();
+  const fStatus = document.getElementById('triFiltroStatus').value;
+  const fPrio = document.getElementById('triFiltroPrioridade').value;
+  const fTipo = document.getElementById('triFiltroTipo').value;
+
+  let lista = materiais.filter(m => {
+    if(busca && !(m.nome.toLowerCase().includes(busca) || m.codigo.includes(busca))) return false;
+    if(fStatus!=='todos' && m.status!==fStatus) return false;
+    if(fPrio==='sim' && !m.prioritario) return false;
+    if(fPrio==='nao' && m.prioritario) return false;
+    if(fTipo!=='todos' && tipoDoMaterial(m)!==fTipo) return false;
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(lista.length/TRI_PAGE_SIZE));
+  if(triPage >= totalPages) triPage = totalPages-1;
+  if(triPage < 0) triPage = 0;
+  const pageItems = lista.slice(triPage*TRI_PAGE_SIZE, (triPage+1)*TRI_PAGE_SIZE);
+
+  const TIPO_LABEL = {componente:'Componente', simples:'Emb. simples', composta:'Emb. composta', nenhum:'Não é embalagem', indefinido:'—'};
+
+  document.getElementById('triTbody').innerHTML = pageItems.length ? pageItems.map(m => {
+    const tipo = tipoDoMaterial(m);
+    let rowClass = '';
+    if(m.status==='verificado') rowClass = 'linha-verificada';
+    else if(m.status==='ignorado') rowClass = 'linha-ignorada';
+    else if(m.prioritario) rowClass = 'linha-prioritaria-pendente';
+    const tachado = m.sinalizado_para_exclusao ? 'text-decoration:line-through;opacity:.6;' : '';
+    return `<tr class="${rowClass}" style="${tachado}">
+      <td><input type="checkbox" ${m.status==='verificado'?'checked':''} onchange="marcarVerificado('${m.codigo}', this.checked)"></td>
+      <td>${m.codigo}</td>
+      <td>${m.nome}</td>
+      <td>${m.prioritario ? '<span class="badge pri">Mais usado</span>' : ''}</td>
+      <td>
+        ${tipo==='composta' && embalagensCompostas.find(e=>e.codigo_produto_formula===m.codigo)
+          ? '<span class="badge ok">Emb. composta</span>'
+          : `<select onchange="definirTipo('${m.codigo}', this.value)">
+              <option value="indefinido" ${tipo==='indefinido'?'selected':''}>Classificar...</option>
+              <option value="componente" ${tipo==='componente'?'selected':''}>Componente de embalagem</option>
+              <option value="simples" ${tipo==='simples'?'selected':''}>Embalagem simples</option>
+              <option value="composta" ${tipo==='composta'?'selected':''}>Embalagem composta</option>
+              <option value="nenhum" ${tipo==='nenhum'?'selected':''}>Não é embalagem</option>
+            </select>`
+        }
+      </td>
+      <td><span class="badge ${m.status==='verificado'?'ok':(m.status==='ignorado'?'ignorado':'pendente')}">${m.status}</span></td>
+      <td style="text-align:center;"><input type="checkbox" title="Sinalizar para exclusão" ${m.sinalizado_para_exclusao?'checked':''} onchange="sinalizarExclusao('${m.codigo}', this.checked)"></td>
+      <td>
+        <a class="linklike" onclick="abrirModalMaterial('${m.codigo}')">Editar</a><br>
+        <a class="linklike" onclick="marcarIgnorado('${m.codigo}')">${m.status==='ignorado'?'Reabrir':'Ignorar'}</a>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="8" class="empty-state">Nenhum material encontrado com esses filtros.</td></tr>`;
+
+  renderKpis();
+
+  document.getElementById('triPager').innerHTML = `
+    <button class="btn secondary small" ${triPage===0?'disabled':''} onclick="triPage--;renderTriagem()">‹ Anterior</button>
+    <span>Página ${triPage+1} de ${totalPages} (${lista.length} itens)</span>
+    <button class="btn secondary small" ${triPage>=totalPages-1?'disabled':''} onclick="triPage++;renderTriagem()">Próxima ›</button>
+  `;
+}
+window.renderTriagem = renderTriagem;
+
+async function atualizarMaterial(codigo, campos){
+  const m = porCodigo(codigo);
+  if(!m) return;
+  Object.assign(m, campos);
+  const { error } = await supa.from('embalagens_materiais').update({...campos, atualizado_em: new Date().toISOString()}).eq('codigo', codigo);
+  if(error){ alert('Erro ao salvar: '+error.message); }
+}
+
+function marcarVerificado(codigo, checked){
+  atualizarMaterial(codigo, { status: checked ? 'verificado' : 'pendente' });
+  renderTriagem();
+}
+window.marcarVerificado = marcarVerificado;
+
+function marcarIgnorado(codigo){
+  const m = porCodigo(codigo);
+  atualizarMaterial(codigo, { status: m.status==='ignorado' ? 'pendente' : 'ignorado' });
+  renderTriagem();
+}
+window.marcarIgnorado = marcarIgnorado;
+
+function sinalizarExclusao(codigo, checked){
+  atualizarMaterial(codigo, { sinalizado_para_exclusao: checked });
+  renderTriagem();
+}
+window.sinalizarExclusao = sinalizarExclusao;
+
+function definirTipo(codigo, valor){
+  atualizarMaterial(codigo, { classificacao: valor==='indefinido' ? null : valor });
+  renderTriagem();
+}
+window.definirTipo = definirTipo;
+
+// ---------- Modal material ----------
+let materialEditando = null;
+function abrirModalMaterial(codigo){
+  materialEditando = codigo;
+  const m = porCodigo(codigo);
+  document.getElementById('mmCodigo').value = m.codigo;
+  document.getElementById('mmNome').value = m.nome;
+  document.getElementById('mmObs').value = m.observacao || '';
+  document.getElementById('modalMaterial').classList.add('show');
+}
+window.abrirModalMaterial = abrirModalMaterial;
+
+function fecharModalMaterial(){
+  document.getElementById('modalMaterial').classList.remove('show');
+  materialEditando = null;
+}
+window.fecharModalMaterial = fecharModalMaterial;
+
+async function salvarMaterial(){
+  const m = porCodigo(materialEditando);
+  if(!m) return;
+  const novoCodigo = document.getElementById('mmCodigo').value.trim();
+  const novoNome = document.getElementById('mmNome').value.trim().toUpperCase();
+  const novaObs = document.getElementById('mmObs').value;
+  if(!novoCodigo || !novoNome){ alert('Preencha código e nome.'); return; }
+  if(novoCodigo !== m.codigo && porCodigo(novoCodigo)){ alert('Já existe um material com esse código.'); return; }
+
+  const codigoAntigo = m.codigo;
+  const { error } = await supa.from('embalagens_materiais').update({
+    codigo: novoCodigo, nome: novoNome, observacao: novaObs, atualizado_em: new Date().toISOString()
+  }).eq('codigo', codigoAntigo);
+  if(error){ alert('Erro: '+error.message); return; }
+
+  m.codigo = novoCodigo; m.nome = novoNome; m.observacao = novaObs;
+
+  // atualiza referências em embalagens compostas, se o código mudou
+  if(novoCodigo !== codigoAntigo){
+    for(const e of embalagensCompostas){
+      let mudou = false;
+      if(e.codigo_produto_formula === codigoAntigo){ e.codigo_produto_formula = novoCodigo; mudou = true; }
+      if(e.componentes.includes(codigoAntigo)){ e.componentes = e.componentes.map(c => c===codigoAntigo ? novoCodigo : c); mudou = true; }
+      if(mudou) await supa.from('embalagens_compostas').update({ codigo_produto_formula: e.codigo_produto_formula, componentes: e.componentes }).eq('id', e.id);
+    }
+  }
+
+  fecharModalMaterial();
+  renderTriagem();
+}
+window.salvarMaterial = salvarMaterial;
+
+// ---------- Modal novo material ----------
+function abrirModalNovoMaterial(){
+  document.getElementById('nmCodigo').value = '';
+  document.getElementById('nmNome').value = '';
+  document.getElementById('modalNovoMaterial').classList.add('show');
+}
+window.abrirModalNovoMaterial = abrirModalNovoMaterial;
+
+function fecharModalNovoMaterial(){
+  document.getElementById('modalNovoMaterial').classList.remove('show');
+}
+window.fecharModalNovoMaterial = fecharModalNovoMaterial;
+
+async function salvarNovoMaterial(){
+  const codigo = document.getElementById('nmCodigo').value.trim();
+  const nome = document.getElementById('nmNome').value.trim().toUpperCase();
+  if(!codigo || !nome){ alert('Preencha código e nome.'); return; }
+  if(porCodigo(codigo)){ alert('Já existe um material com esse código.'); return; }
+
+  const { data, error } = await supa.from('embalagens_materiais').insert({
+    codigo, nome, prioritario: false, status: 'pendente', classificacao: null
+  }).select().single();
+  if(error){ alert('Erro ao adicionar: '+error.message); return; }
+
+  materiais.push(data);
+  fecharModalNovoMaterial();
+  triPage = 0;
+  renderTriagem();
+}
+window.salvarNovoMaterial = salvarNovoMaterial;
+
+// ---------- EMBALAGENS COMPOSTAS ----------
+let compostaEditandoId = null;
+let compostaComponentesTemp = [];
+
+function novaEmbalagemCompostaModal(){
+  compostaEditandoId = null;
+  compostaComponentesTemp = [];
+  document.getElementById('modalCompostaTitulo').textContent = 'Nova embalagem composta';
+  document.getElementById('mcNome').value = '';
+  document.getElementById('mcCodigo').value = '';
+  document.getElementById('mcBuscaComponente').value = '';
+  document.getElementById('mcResultados').innerHTML = '';
+  document.getElementById('mcExcluirBtn').style.display = 'none';
+  renderChipsComponentes();
+  document.getElementById('modalComposta').classList.add('show');
+}
+window.novaEmbalagemCompostaModal = novaEmbalagemCompostaModal;
+
+function editarEmbalagemComposta(id){
+  const e = embalagensCompostas.find(x=>x.id===id);
+  if(!e) return;
+  compostaEditandoId = id;
+  compostaComponentesTemp = [...e.componentes];
+  document.getElementById('modalCompostaTitulo').textContent = 'Editar embalagem composta';
+  document.getElementById('mcNome').value = e.nome;
+  document.getElementById('mcCodigo').value = e.codigo_produto_formula;
+  document.getElementById('mcBuscaComponente').value = '';
+  document.getElementById('mcResultados').innerHTML = '';
+  document.getElementById('mcExcluirBtn').style.display = 'inline-block';
+  renderChipsComponentes();
+  document.getElementById('modalComposta').classList.add('show');
+}
+window.editarEmbalagemComposta = editarEmbalagemComposta;
+
+function fecharModalComposta(){ document.getElementById('modalComposta').classList.remove('show'); }
+window.fecharModalComposta = fecharModalComposta;
+
+function buscarComponenteModal(){
+  const q = document.getElementById('mcBuscaComponente').value.trim().toLowerCase();
+  const div = document.getElementById('mcResultados');
+  if(!q){ div.innerHTML=''; return; }
+  const resultados = materiais.filter(m => (m.nome.toLowerCase().includes(q) || m.codigo.includes(q)) && !compostaComponentesTemp.includes(m.codigo)).slice(0,15);
+  div.innerHTML = resultados.map(m => `<div style="padding:4px 2px;cursor:pointer;" onclick="adicionarComponenteTemp('${m.codigo}')"><b>${m.codigo}</b> — ${m.nome}</div>`).join('') || 'Nenhum resultado.';
+}
+window.buscarComponenteModal = buscarComponenteModal;
+
+function adicionarComponenteTemp(codigo){
+  if(!compostaComponentesTemp.includes(codigo)) compostaComponentesTemp.push(codigo);
+  document.getElementById('mcBuscaComponente').value = '';
+  document.getElementById('mcResultados').innerHTML = '';
+  renderChipsComponentes();
+}
+window.adicionarComponenteTemp = adicionarComponenteTemp;
+
+function removerComponenteTemp(codigo){
+  compostaComponentesTemp = compostaComponentesTemp.filter(c=>c!==codigo);
+  renderChipsComponentes();
+}
+window.removerComponenteTemp = removerComponenteTemp;
+
+function renderChipsComponentes(){
+  const div = document.getElementById('mcChips');
+  const ordenados = [...compostaComponentesTemp].sort((a,b)=>{
+    const ma=porCodigo(a), mb=porCodigo(b);
+    return (ma?ma.nome:'').localeCompare(mb?mb.nome:'', 'pt-BR');
+  });
+  div.innerHTML = ordenados.map(c=>{
+    const m = porCodigo(c);
+    return `<span class="chip">${c} - ${m?m.nome:'(código não encontrado)'} <button onclick="removerComponenteTemp('${c}')">×</button></span>`;
+  }).join('') || '<span class="desc">Nenhum componente adicionado ainda.</span>';
+}
+
+async function salvarEmbalagemComposta(){
+  const nome = document.getElementById('mcNome').value.trim().toUpperCase();
+  const codigo = document.getElementById('mcCodigo').value.trim();
+  if(!nome || !codigo){ alert('Preencha nome e código do produto.'); return; }
+  if(!compostaComponentesTemp.length){ alert('Adicione ao menos um componente.'); return; }
+
+  const duplicado = embalagensCompostas.some(e => e.codigo_produto_formula===codigo && e.id!==compostaEditandoId);
+  if(duplicado){ alert('Já existe uma embalagem composta com esse código de produto.'); return; }
+
+  if(compostaEditandoId === null){
+    const { data, error } = await supa.from('embalagens_compostas').insert({ nome, codigo_produto_formula: codigo, componentes: compostaComponentesTemp }).select().single();
+    if(error){ alert('Erro: '+error.message); return; }
+    embalagensCompostas.push(data);
+  } else {
+    const { error } = await supa.from('embalagens_compostas').update({ nome, codigo_produto_formula: codigo, componentes: compostaComponentesTemp }).eq('id', compostaEditandoId);
+    if(error){ alert('Erro: '+error.message); return; }
+    const e = embalagensCompostas.find(x=>x.id===compostaEditandoId);
+    Object.assign(e, { nome, codigo_produto_formula: codigo, componentes: compostaComponentesTemp });
+  }
+
+  // Se o código não existir como material, cria um registro pra ele
+  if(!porCodigo(codigo)){
+    const { data: novoMat, error: errMat } = await supa.from('embalagens_materiais').insert({
+      codigo, nome, prioritario: false, status: 'verificado', classificacao: 'composta',
+      observacao: 'Embalagem composta (fórmula padrão)'
+    }).select().single();
+    if(!errMat) materiais.push(novoMat);
+  }
+
+  fecharModalComposta();
+  renderCompostas();
+  renderTriagem();
+}
+window.salvarEmbalagemComposta = salvarEmbalagemComposta;
+
+async function excluirEmbalagemComposta(){
+  if(compostaEditandoId === null) return;
+  if(!confirm('Excluir esta embalagem composta? Os materiais componentes não serão excluídos.')) return;
+  const { error } = await supa.from('embalagens_compostas').delete().eq('id', compostaEditandoId);
+  if(error){ alert('Erro: '+error.message); return; }
+  embalagensCompostas = embalagensCompostas.filter(e=>e.id!==compostaEditandoId);
+  fecharModalComposta();
+  renderCompostas();
+  renderTriagem();
+}
+window.excluirEmbalagemComposta = excluirEmbalagemComposta;
+
+function renderCompostas(){
+  const div = document.getElementById('compostasList');
+  if(!embalagensCompostas.length){ div.innerHTML = '<div class="empty-state">Nenhuma embalagem composta cadastrada ainda.</div>'; return; }
+  div.innerHTML = embalagensCompostas.map(e => {
+    const ordenados = [...e.componentes].sort((a,b)=>{
+      const ma=porCodigo(a), mb=porCodigo(b);
+      return (ma?ma.nome:'').localeCompare(mb?mb.nome:'', 'pt-BR');
+    });
+    const comps = ordenados.map(c => { const m=porCodigo(c); return `<li>${c} — ${m?m.nome:'<i>código não encontrado</i>'}</li>`; }).join('');
+    return `<div class="panel" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;">
+        <div><b>${e.nome}</b> <span class="desc">(código do produto: ${e.codigo_produto_formula})</span></div>
+        <a class="linklike" onclick="editarEmbalagemComposta('${e.id}')">Editar</a>
+      </div>
+      <ul style="margin:8px 0 0 18px;font-size:12.5px;">${comps}</ul>
+    </div>`;
+  }).join('');
+}
+window.renderCompostas = renderCompostas;
+
+// ---------- ESTOQUE (inventário) ----------
+let estPage = 0;
+const EST_PAGE_SIZE = 40;
+
+function componentesParaInventario(){
+  return materiais.filter(m => { const t = tipoDoMaterial(m); return t==='componente' || t==='simples'; });
+}
+
+function renderEstoque(){
+  const componentes = componentesParaInventario();
+  const total = componentes.length;
+  const checados = componentes.filter(m => m.quantidade_inventario !== null && m.quantidade_inventario !== undefined).length;
+
+  const busca = document.getElementById('estBusca').value.trim().toLowerCase();
+  const filtro = document.getElementById('estFiltro').value;
+  let lista = componentes.filter(m => {
+    if(busca && !(m.nome.toLowerCase().includes(busca) || m.codigo.includes(busca) || (m.sinonimos||[]).some(s=>s.toLowerCase().includes(busca)))) return false;
+    const temQtd = m.quantidade_inventario !== null && m.quantidade_inventario !== undefined;
+    if(filtro==='pendente' && temQtd) return false;
+    if(filtro==='checado' && !temQtd) return false;
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(lista.length/EST_PAGE_SIZE));
+  if(estPage >= totalPages) estPage = totalPages-1;
+  if(estPage < 0) estPage = 0;
+  const pageItems = lista.slice(estPage*EST_PAGE_SIZE, (estPage+1)*EST_PAGE_SIZE);
+
+  document.getElementById('estTbody').innerHTML = pageItems.length ? pageItems.map(m => `
+    <tr>
+      <td>${m.codigo}</td>
+      <td>
+        <div>${m.nome}</div>
+        <div class="chip-list">${(m.sinonimos||[]).map(s => `<span class="chip">${s} <button onclick="removerSinonimo('${m.codigo}','${s.replace(/'/g,"\\'")}')">×</button></span>`).join('')}</div>
+        <div class="sinonimo-add">
+          <input class="mini" id="sin-${m.codigo}" placeholder="+ nome do fabricante...">
+          <button class="btn secondary small" onclick="adicionarSinonimo('${m.codigo}')">Add</button>
+        </div>
+      </td>
+      <td><input class="mini" type="number" step="any" style="width:100%;" value="${m.quantidade_inventario ?? ''}" placeholder="Qtd." onchange="definirQuantidade('${m.codigo}', this.value)"></td>
+    </tr>
+  `).join('') : `<tr><td colspan="3" class="empty-state">Nenhum componente ou embalagem simples encontrado com esses filtros.</td></tr>`;
+
+  document.getElementById('estPager').innerHTML = `
+    <button class="btn secondary small" ${estPage===0?'disabled':''} onclick="estPage--;renderEstoque()">‹ Anterior</button>
+    <span>Página ${estPage+1} de ${totalPages} — ${checados}/${total} checados (${lista.length} na lista)</span>
+    <button class="btn secondary small" ${estPage>=totalPages-1?'disabled':''} onclick="estPage++;renderEstoque()">Próxima ›</button>
+  `;
+}
+window.renderEstoque = renderEstoque;
+
+async function definirQuantidade(codigo, valor){
+  const num = valor === '' ? null : Number(valor);
+  await atualizarMaterial(codigo, { quantidade_inventario: num });
+  renderEstoque();
+}
+window.definirQuantidade = definirQuantidade;
+
+async function adicionarSinonimo(codigo){
+  const input = document.getElementById('sin-'+codigo);
+  const valor = input.value.trim().toUpperCase();
+  if(!valor) return;
+  const m = porCodigo(codigo);
+  const novos = [...new Set([...(m.sinonimos||[]), valor])];
+  await atualizarMaterial(codigo, { sinonimos: novos });
+  input.value = '';
+  renderEstoque();
+}
+window.adicionarSinonimo = adicionarSinonimo;
+
+async function removerSinonimo(codigo, valor){
+  const m = porCodigo(codigo);
+  const novos = (m.sinonimos||[]).filter(s => s !== valor);
+  await atualizarMaterial(codigo, { sinonimos: novos });
+  renderEstoque();
+}
+window.removerSinonimo = removerSinonimo;
+
+// ---------- CRONÔMETRO / DASHBOARD ----------
+let timerRunning = false, timerStart = null, timerInterval = null, itensInicioSessao = 0;
+
+function contarProcessados(){ return materiais.filter(m=>m.status==='verificado'||m.status==='ignorado').length; }
+
+function toggleTimer(){
+  if(!timerRunning){
+    timerRunning = true;
+    timerStart = Date.now();
+    itensInicioSessao = contarProcessados();
+    document.getElementById('timerToggleBtn').textContent = 'Pausar';
+    document.getElementById('timerStatus').textContent = 'Em andamento...';
+    timerInterval = setInterval(atualizarTimerDisplay, 1000);
+  } else {
+    timerRunning = false;
+    clearInterval(timerInterval);
+    const fim = Date.now();
+    const duracaoSeg = Math.round((fim-timerStart)/1000);
+    const sessao = { inicio: new Date(timerStart).toISOString(), fim: new Date(fim).toISOString(), duracao_segundos: duracaoSeg, itens_verificados_inicio: itensInicioSessao, itens_verificados_fim: contarProcessados() };
+    supa.from('embalagens_sessoes_tempo').insert(sessao).select().single().then(({data,error})=>{
+      if(!error){ sessoesTempo.push(data); renderDashboard(); }
+    });
+    document.getElementById('timerToggleBtn').textContent = 'Iniciar';
+    document.getElementById('timerStatus').textContent = 'Parado';
+  }
+}
+window.toggleTimer = toggleTimer;
+
+function atualizarTimerDisplay(){
+  document.getElementById('timerDisplay').textContent = formatarDuracao(Date.now()-timerStart);
+}
+function formatarDuracao(ms){
+  const s = Math.floor(ms/1000);
+  return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+
+let chartInstance = null;
+function desenharGrafico(pontos){
+  const canvas = document.getElementById('progressChart');
+  const wrapper = canvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+  const width = wrapper.clientWidth || 600, height = wrapper.clientHeight || 300;
+  canvas.width = Math.round(width*dpr); canvas.height = Math.round(height*dpr);
+  canvas.style.width = width+'px'; canvas.style.height = height+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,width,height);
+  const pad = {left:48,right:16,top:14,bottom:30};
+  const plotW = Math.max(10,width-pad.left-pad.right), plotH = Math.max(10,height-pad.top-pad.bottom);
+  const maxX = Math.max(1, ...pontos.map(p=>p.x), 1);
+  const xPix = x => pad.left + (x/maxX)*plotW;
+  const yPix = y => pad.top + (1-y/100)*plotH;
+  ctx.strokeStyle = '#E7DFE0'; ctx.fillStyle = '#6E6266'; ctx.font = '11px Maven Pro, Arial, sans-serif'; ctx.textAlign='right'; ctx.textBaseline='middle';
+  [0,25,50,75,100].forEach(v=>{ const y=yPix(v); ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(width-pad.right,y); ctx.stroke(); ctx.fillText(v+'%', pad.left-8, y); });
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for(let i=0;i<=5;i++){ const xv=(maxX/5)*i; ctx.fillText(xv.toFixed(1)+'h', xPix(xv), height-pad.bottom+8); }
+  if(!pontos.length) return;
+  ctx.beginPath(); ctx.moveTo(xPix(pontos[0].x), yPix(0));
+  pontos.forEach(p=>ctx.lineTo(xPix(p.x), yPix(p.y)));
+  ctx.lineTo(xPix(pontos[pontos.length-1].x), yPix(0)); ctx.closePath();
+  ctx.fillStyle='rgba(139,26,58,0.12)'; ctx.fill();
+  ctx.beginPath(); pontos.forEach((p,i)=>{ const x=xPix(p.x),y=yPix(p.y); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+  ctx.strokeStyle='#8B1A3A'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='#8B1A3A'; pontos.forEach(p=>{ ctx.beginPath(); ctx.arc(xPix(p.x),yPix(p.y),4,0,Math.PI*2); ctx.fill(); });
+}
+
+function renderDashboard(){
+  const totalSeg = sessoesTempo.reduce((acc,s)=>acc+s.duracao_segundos,0);
+  const totalHoras = totalSeg/3600;
+  document.getElementById('tempoTotalAcumulado').textContent = `${Math.floor(totalHoras)}h ${Math.round((totalHoras%1)*60)}min`;
+
+  document.getElementById('sessoesTbody').innerHTML = sessoesTempo.map(s => `
+    <tr><td>${new Date(s.inicio).toLocaleString('pt-BR')}</td><td>${new Date(s.fim).toLocaleString('pt-BR')}</td>
+    <td>${formatarDuracao(s.duracao_segundos*1000)}</td><td>${s.itens_verificados_fim - s.itens_verificados_inicio}</td></tr>
+  `).join('') || '<tr><td colspan="4" class="empty-state">Nenhuma sessão registrada ainda.</td></tr>';
+
+  const total = materiais.length || 1;
+  let horasAcum = 0;
+  const pontos = [{x:0, y: Math.round((sessoesTempo[0]?sessoesTempo[0].itens_verificados_inicio:contarProcessados())/total*10000)/100}];
+  sessoesTempo.forEach(s => { horasAcum += s.duracao_segundos/3600; pontos.push({x: Math.round(horasAcum*100)/100, y: Math.round(s.itens_verificados_fim/total*10000)/100}); });
+  desenharGrafico(pontos);
+}
+window.renderDashboard = renderDashboard;
+
+window.addEventListener('resize', () => { if(document.getElementById('tabDashboard').style.display !== 'none') renderDashboard(); });
+
+// ---------- INIT ----------
+async function init(){
+  await requireRole(['chefia','conferencia']);
+
+  const [{ data: mats, error: e1 }, { data: comps, error: e2 }, { data: sess, error: e3 }] = await Promise.all([
+    supa.from('embalagens_materiais').select('*').order('nome'),
+    supa.from('embalagens_compostas').select('*'),
+    supa.from('embalagens_sessoes_tempo').select('*').order('inicio'),
+  ]);
+  if(e1){ alert('Erro ao carregar materiais: '+e1.message); return; }
+  materiais = mats || [];
+  embalagensCompostas = comps || [];
+  sessoesTempo = sess || [];
+
+  renderTriagem();
+}
+init();
+</script>
+<script src="acessibilidade.js?v=3"></script>
+<script>(function(){var s=document.createElement("script");s.src="hub-sidebar.js?t="+Date.now();document.body.appendChild(s);})();</script>
+</body>
+</html>
