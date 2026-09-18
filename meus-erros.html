@@ -232,6 +232,54 @@ function trocarVisaoSemana(visao){
 }
 window.trocarVisaoSemana = trocarVisaoSemana;
 
+let ultimoDatasetErros = [];
+let periodoSemanaAtual = 'geral';
+
+function calcularPorDiaSemana(){
+  const porDiaSemana = [0,0,0,0,0,0,0];
+  let lista = ultimoDatasetErros;
+  if(periodoSemanaAtual === 'semana'){
+    const hoje = new Date();
+    const diaSemanaHoje = hoje.getDay();
+    const inicioSemana = new Date(hoje); inicioSemana.setDate(hoje.getDate() - diaSemanaHoje);
+    inicioSemana.setHours(0,0,0,0);
+    lista = ultimoDatasetErros.filter(r => new Date(r.registrado_em) >= inicioSemana);
+  } else if(periodoSemanaAtual === 'mes'){
+    const hoje = new Date();
+    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    lista = ultimoDatasetErros.filter(r => new Date(r.registrado_em) >= inicioMes);
+  }
+  lista.forEach(r => { const d = new Date(r.registrado_em); porDiaSemana[d.getDay()]++; });
+  return porDiaSemana;
+}
+
+function mudarPeriodoSemana(periodo){
+  periodoSemanaAtual = periodo;
+  document.getElementById('btnSemPerSemana').classList.toggle('active', periodo==='semana');
+  document.getElementById('btnSemPerMes').classList.toggle('active', periodo==='mes');
+  document.getElementById('btnSemPerGeral').classList.toggle('active', periodo==='geral');
+  document.getElementById('descSemana').textContent = periodo==='semana' ? 'Em quais dias os erros mais acontecem, essa semana'
+    : periodo==='mes' ? 'Em quais dias os erros mais acontecem, esse mês' : 'Em quais dias os erros mais acontecem, todo o histórico';
+
+  const porDiaSemana = calcularPorDiaSemana();
+  const optsSemInteiro = { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1, precision:0}}} };
+
+  if(chartSemanaPizza) chartSemanaPizza.destroy();
+  chartSemanaPizza = new Chart(document.getElementById('chartSemanaPizza'), {
+    type:'pie',
+    data:{ labels: DIAS_SEMANA, datasets:[{ data: porDiaSemana, backgroundColor: CORES_SEMANA }]},
+    options:{ responsive:true, plugins:{legend:{display:true, position:'bottom', labels:{boxWidth:11, font:{size:10.5}}}} }
+  });
+
+  if(chartSemanaBarra) chartSemanaBarra.destroy();
+  chartSemanaBarra = new Chart(document.getElementById('chartSemanaBarra'), {
+    type:'bar',
+    data:{ labels: DIAS_SEMANA.map(d=>d.slice(0,3)), datasets:[{ data: porDiaSemana, backgroundColor: CORES_SEMANA }]},
+    options: optsSemInteiro
+  });
+}
+window.mudarPeriodoSemana = mudarPeriodoSemana;
+
 function ligarPeriodToggle(){
   popularMesesMeusErros();
   const seletorDia = document.getElementById('seletorDiaMeusErros');
@@ -276,8 +324,13 @@ async function loadDashboard(nome){
   const days60 = lastNDays(60);
   const dailyCounts = {};
   data.forEach(r => { const k = r.registrado_em.slice(0,10); dailyCounts[k] = (dailyCounts[k]||0)+1; });
+
+  // "Equipe" nunca deve incluir os próprios erros de quem está olhando
+  const equipeSemMim = {};
+  days60.forEach(dia => { equipeSemMim[dia] = Math.max(0, (equipeDiaria[dia]||0) - (dailyCounts[dia]||0)); });
+
   const ma = movingAverage7(dailyCounts, days60);
-  const maEquipe = movingAverage7(equipeDiaria, days60);
+  const maEquipe = movingAverage7(equipeSemMim, days60);
 
   const { inicio, fim, label } = limitesPeriodoMeusErros();
   const recentes = data.filter(d => d.registrado_em >= inicio && d.registrado_em <= fim);
@@ -306,9 +359,9 @@ async function loadDashboard(nome){
     return new Date(ano, mes-1, 1).toLocaleDateString('pt-BR', {month:'short', year:'2-digit'});
   });
 
-  // Distribuição por dia da semana (todo o histórico do atendente)
-  const porDiaSemana = [0,0,0,0,0,0,0];
-  data.forEach(r => { const d = new Date(r.registrado_em); porDiaSemana[d.getDay()]++; });
+  // Distribuição por dia da semana passa a ser calculada em
+  // calcularPorDiaSemana(), com filtro de período (semana/mês/geral)
+  ultimoDatasetErros = data;
 
   document.getElementById('dashArea').innerHTML = `
     <div class="panel" style="border-color:${corPctPessoal};">
@@ -326,8 +379,8 @@ async function loadDashboard(nome){
       <div class="kpi"><div class="label">Erro mais frequente</div><div class="value" style="font-size:16px">${tipoMaisFrequente}</div></div>
     </div>
     <div class="panel">
-      <h2>Tendência — média móvel de 7 dias</h2>
-      <p class="desc">Evolução dos últimos 60 dias</p>
+      <h2>Tendência de erros (últimos 60 dias)</h2>
+      <p class="desc">Cada ponto é a média dos 7 dias anteriores — não é o total do dia, é a tendência recente</p>
       <canvas id="chartTendencia"></canvas>
     </div>
     <div class="panel">
@@ -336,8 +389,8 @@ async function loadDashboard(nome){
       <canvas id="chartRanking"></canvas>
     </div>
     <div class="panel">
-      <h2>Você vs. a equipe</h2>
-      <p class="desc">Média móvel de 7 dias — total da equipe é a soma de todos os atendentes, últimos 60 dias</p>
+      <h2>Você vs. a equipe (últimos 60 dias)</h2>
+      <p class="desc">Cada ponto é a média dos 7 dias anteriores. "Equipe" é o resto da equipe, sem contar os seus próprios erros</p>
       <canvas id="chartComparacao"></canvas>
     </div>
     <div class="panel">
@@ -347,8 +400,12 @@ async function loadDashboard(nome){
     </div>
     <div class="panel">
       <h2>Distribuição por dia da semana</h2>
-      <p class="desc">Em quais dias os erros mais acontecem, todo o histórico</p>
-      <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <p class="desc" id="descSemana">Em quais dias os erros mais acontecem</p>
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <button class="btn secondary period-btn" id="btnSemPerSemana" onclick="mudarPeriodoSemana('semana')">Semana atual</button>
+        <button class="btn secondary period-btn" id="btnSemPerMes" onclick="mudarPeriodoSemana('mes')">Mês atual</button>
+        <button class="btn secondary period-btn active" id="btnSemPerGeral" onclick="mudarPeriodoSemana('geral')">Geral</button>
+        <span style="flex:1"></span>
         <button class="btn secondary period-btn active" id="btnSemanaPizza" onclick="trocarVisaoSemana('pizza')">Pizza</button>
         <button class="btn secondary period-btn" id="btnSemanaBarra" onclick="trocarVisaoSemana('barra')">Barras</button>
       </div>
@@ -361,14 +418,14 @@ async function loadDashboard(nome){
   chartTendencia = new Chart(document.getElementById('chartTendencia'), {
     type:'line',
     data:{ labels: days60.map(d=>d.slice(5)), datasets:[{ data:ma, borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.3, fill:true, pointRadius:0 }]},
-    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1, precision:0}}} }
   });
 
   if(chartRanking) chartRanking.destroy();
   chartRanking = new Chart(document.getElementById('chartRanking'), {
     type:'bar',
     data:{ labels: ranking.map(r=>r[0]), datasets:[{ data: ranking.map(r=>r[1]), backgroundColor:'#8B1A3A' }]},
-    options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
+    options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, ticks:{stepSize:1, precision:0}}} }
   });
 
   if(chartComparacao) chartComparacao.destroy();
@@ -376,31 +433,19 @@ async function loadDashboard(nome){
     type:'line',
     data:{ labels: days60.map(d=>d.slice(5)), datasets:[
       { label:'Você', data:ma, borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.3, fill:true, pointRadius:0 },
-      { label:'Equipe (total)', data:maEquipe, borderColor:'#3E6B93', backgroundColor:'rgba(62,107,147,.06)', tension:.3, fill:true, pointRadius:0 }
+      { label:'Equipe (sem você)', data:maEquipe, borderColor:'#3E6B93', backgroundColor:'rgba(62,107,147,.06)', tension:.3, fill:true, pointRadius:0 }
     ]},
-    options:{ responsive:true, plugins:{legend:{display:true, position:'bottom'}}, scales:{y:{beginAtZero:true}} }
+    options:{ responsive:true, plugins:{legend:{display:true, position:'bottom'}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1, precision:0}}} }
   });
 
   if(chartMensal) chartMensal.destroy();
   chartMensal = new Chart(document.getElementById('chartMensal'), {
     type:'bar',
     data:{ labels: mesesLabel, datasets:[{ data: mesesOrdenados.map(m=>porMes[m]), backgroundColor:'#8B1A3A' }]},
-    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1, precision:0}}} }
   });
 
-  if(chartSemanaPizza) chartSemanaPizza.destroy();
-  chartSemanaPizza = new Chart(document.getElementById('chartSemanaPizza'), {
-    type:'pie',
-    data:{ labels: DIAS_SEMANA, datasets:[{ data: porDiaSemana, backgroundColor: CORES_SEMANA }]},
-    options:{ responsive:true, plugins:{legend:{display:true, position:'bottom', labels:{boxWidth:11, font:{size:10.5}}}} }
-  });
-
-  if(chartSemanaBarra) chartSemanaBarra.destroy();
-  chartSemanaBarra = new Chart(document.getElementById('chartSemanaBarra'), {
-    type:'bar',
-    data:{ labels: DIAS_SEMANA.map(d=>d.slice(0,3)), datasets:[{ data: porDiaSemana, backgroundColor: CORES_SEMANA }]},
-    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
-  });
+  mudarPeriodoSemana(periodoSemanaAtual);
 }
 
 init();

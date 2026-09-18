@@ -107,6 +107,10 @@
   .reacao-btn.on{background:var(--burgundy-tint);border-color:var(--burgundy);color:var(--burgundy);font-weight:700;}
 
   .input-area{padding:14px 22px;border-top:1px solid var(--line);background:#fff;display:flex;gap:8px;align-items:flex-end;position:sticky;bottom:0;z-index:5;flex-shrink:0;}
+  .mencao-sugestoes{position:absolute;bottom:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.12);max-height:200px;overflow-y:auto;z-index:20;}
+  .mencao-item{padding:9px 14px;font-size:13px;cursor:pointer;}
+  .mencao-item:hover{background:var(--paper);}
+  .mencao{background:var(--burgundy-tint,#F7E9EE);color:var(--burgundy,#8B1A3A);font-weight:700;padding:1px 4px;border-radius:5px;}
   .input-area textarea{flex:1;font-family:'Maven Pro',sans-serif;font-size:13.5px;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;resize:none;min-height:44px;max-height:160px;overflow-y:auto;}
   .anexo-btn{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:17px;flex-shrink:0;}
   .anexo-btn:hover{border-color:var(--burgundy);}
@@ -192,8 +196,11 @@
     </div>
     <div class="input-area" id="inputArea" style="display:none">
       <button class="anexo-btn" onclick="document.getElementById('anexoInput').click()" title="Anexar imagem ou vídeo">📎</button>
-      <input type="file" id="anexoInput" accept="image/*,video/*,audio/*,application/pdf" style="display:none" onchange="anexoSelecionado(this)">
-      <textarea id="msgInput" placeholder="Escreva uma mensagem..." rows="1"></textarea>
+      <input type="file" id="anexoInput" accept="image/*,video/*,audio/*,application/pdf,.xlsx,.xls,.csv" style="display:none" onchange="anexoSelecionado(this)">
+      <div style="position:relative;flex:1;">
+        <div class="mencao-sugestoes" id="mencaoSugestoes" style="display:none;"></div>
+        <textarea id="msgInput" placeholder="Escreva uma mensagem... (@ pra mencionar)" rows="1"></textarea>
+      </div>
       <button class="enviar" onclick="enviarMensagem()">Enviar</button>
     </div>
   </div>
@@ -291,7 +298,7 @@ async function aplicarNomesDeColaboradores(perfis){
   if(!vinculados.length) return;
 
   const ids = vinculados.map(p => p.colaborador_vinculado);
-  const { data: colaboradores } = await supa.from('colaboradores').select('id,nome_completo').in('id', ids);
+  const { data: colaboradores } = await supa.from('colaboradores_nomes_publicos').select('id,nome_completo').in('id', ids);
   const colabPorId = {};
   (colaboradores||[]).forEach(c => { colabPorId[c.id] = c.nome_completo; });
 
@@ -336,6 +343,10 @@ async function init(){
   document.getElementById('msgInput').addEventListener('input', () => {
     avisarQueEstouDigitando();
     autoCrescerTextarea();
+    verificarMencaoDigitando();
+  });
+  document.getElementById('msgInput').addEventListener('blur', () => {
+    setTimeout(() => { document.getElementById('mencaoSugestoes').style.display = 'none'; }, 150);
   });
 
   if('Notification' in window && Notification.permission === 'default'){
@@ -373,7 +384,7 @@ function notificarMensagemNova(m, tipo){
   if(!abaVisivel || !conversaAberta){
     tocarSom();
     if('Notification' in window && Notification.permission === 'granted'){
-      const texto = m.conteudo || (m.anexo_tipo === 'imagem' ? '🖼️ Enviou uma imagem' : m.anexo_tipo === 'video' ? '🎥 Enviou um vídeo' : m.anexo_tipo === 'audio' ? '🎵 Enviou um áudio' : m.anexo_tipo === 'pdf' ? '📄 Enviou um PDF' : 'Nova mensagem');
+      const texto = m.conteudo || (m.anexo_tipo === 'imagem' ? '🖼️ Enviou uma imagem' : m.anexo_tipo === 'video' ? '🎥 Enviou um vídeo' : m.anexo_tipo === 'audio' ? '🎵 Enviou um áudio' : m.anexo_tipo === 'pdf' ? '📄 Enviou um PDF' : m.anexo_tipo === 'planilha' ? '📊 Enviou uma planilha' : 'Nova mensagem');
       const notif = new Notification(nome + ' — Chat Interno', { body: texto, icon: undefined, tag: 'hub-chat-'+(m.canal_id||m.autor_id) });
       notif.onclick = () => { window.focus(); notif.close(); };
     }
@@ -573,7 +584,7 @@ function dmItemHtml(conv){
   const ativo = modoAtual==='dm' && alvoAtivoId===conv.userId;
   const m = conv.ultimaMsg;
   const souEuQueMandei = m.remetente_id === meuUserId;
-  let prevText = m.conteudo ? m.conteudo : (m.anexo_tipo === 'imagem' ? '🖼️ Imagem' : m.anexo_tipo === 'video' ? '🎥 Vídeo' : m.anexo_tipo === 'audio' ? '🎵 Áudio' : m.anexo_tipo === 'pdf' ? '📄 PDF' : '');
+  let prevText = m.conteudo ? m.conteudo : (m.anexo_tipo === 'imagem' ? '🖼️ Imagem' : m.anexo_tipo === 'video' ? '🎥 Vídeo' : m.anexo_tipo === 'audio' ? '🎵 Áudio' : m.anexo_tipo === 'pdf' ? '📄 PDF' : m.anexo_tipo === 'planilha' ? '📊 Planilha' : '');
   if(souEuQueMandei) prevText = 'Você: ' + prevText;
   const hora = new Date(m.criado_em).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
 
@@ -928,11 +939,58 @@ function inserirMensagemNaTela(m, tipo){
 
 // Formatação estilo WhatsApp: *negrito*, _itálico_, ~riscado~.
 // Escapa HTML primeiro (segurança) e só depois aplica a formatação.
+function candidatosMencao(){
+  const nomes = new Set(Object.values(nomesPorId));
+  nomes.delete('Alguém');
+  return ['todos', ...nomes].filter(Boolean);
+}
+
+function verificarMencaoDigitando(){
+  const el = document.getElementById('msgInput');
+  const dropdown = document.getElementById('mencaoSugestoes');
+  const pos = el.selectionStart;
+  const antesCursor = el.value.slice(0, pos);
+  const match = antesCursor.match(/@([^\s@]*)$/);
+  if(!match){ dropdown.style.display = 'none'; return; }
+  const termo = match[1].toLowerCase();
+  const candidatos = candidatosMencao().filter(n => n.toLowerCase().startsWith(termo)).slice(0,8);
+  if(!candidatos.length){ dropdown.style.display = 'none'; return; }
+  dropdown.innerHTML = candidatos.map(n => `<div class="mencao-item" onmousedown="selecionarMencao('${n.replace(/'/g,"\\'")}')">${n==='todos'?'📢 ':''}${n}</div>`).join('');
+  dropdown.style.display = 'block';
+}
+window.verificarMencaoDigitando = verificarMencaoDigitando;
+
+function selecionarMencao(nome){
+  const el = document.getElementById('msgInput');
+  const pos = el.selectionStart;
+  const antesCursor = el.value.slice(0, pos);
+  const depoisCursor = el.value.slice(pos);
+  const novoAntes = antesCursor.replace(/@([^\s@]*)$/, '@'+nome+' ');
+  el.value = novoAntes + depoisCursor;
+  el.focus();
+  const novaPos = novoAntes.length;
+  el.setSelectionRange(novaPos, novaPos);
+  document.getElementById('mencaoSugestoes').style.display = 'none';
+  autoCrescerTextarea();
+}
+window.selecionarMencao = selecionarMencao;
+
+function construirRegexMencoes(){
+  const nomes = new Set(Object.values(nomesPorId));
+  nomes.add('todos');
+  const nomesOrdenados = [...nomes].filter(n => n && n !== 'Alguém').sort((a,b)=>b.length-a.length);
+  if(!nomesOrdenados.length) return null;
+  const escapados = nomesOrdenados.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  return new RegExp('@(' + escapados.join('|') + ')\\b', 'g');
+}
+
 function formatarTextoMensagem(texto){
   let seguro = (texto||'').replace(/</g,'&lt;');
   seguro = seguro.replace(/\*([^\*\n]+)\*/g, '<strong>$1</strong>');
   seguro = seguro.replace(/_([^_\n]+)_/g, '<em>$1</em>');
   seguro = seguro.replace(/~([^~\n]+)~/g, '<del>$1</del>');
+  const regexMencoes = construirRegexMencoes();
+  if(regexMencoes) seguro = seguro.replace(regexMencoes, '<span class="mencao">@$1</span>');
   return seguro;
 }
 
@@ -997,6 +1055,8 @@ function renderMensagem(m, tipo, agrupada){
       ? `<div class="msg-anexo"><audio src="${m.anexo_url}" controls></audio></div>`
       : m.anexo_tipo === 'pdf'
       ? `<div class="msg-anexo"><a class="pdf-chip" href="${m.anexo_url}" target="_blank" rel="noopener">📄 Abrir PDF</a></div>`
+      : m.anexo_tipo === 'planilha'
+      ? `<div class="msg-anexo"><a class="pdf-chip" href="${m.anexo_url}" target="_blank" rel="noopener" download>📊 Baixar planilha</a></div>`
       : `<div class="msg-anexo"><img src="${m.anexo_url}" alt="anexo"></div>`;
   }
 
@@ -1077,13 +1137,23 @@ window.reagir = reagir;
 
 const TAMANHO_MAX_ANEXO = 25 * 1024 * 1024; // 25MB
 
+function detectarTipoAnexo(file){
+  const ext = (file.name.split('.').pop()||'').toLowerCase();
+  if(['xlsx','xls','csv'].includes(ext)) return 'planilha';
+  if(file.type.startsWith('image')) return 'imagem';
+  if(file.type.startsWith('video')) return 'video';
+  if(file.type.startsWith('audio')) return 'audio';
+  if(file.type === 'application/pdf' || ext==='pdf') return 'pdf';
+  return null;
+}
+
 function anexoSelecionado(input){
   const file = input.files[0];
   if(!file) return;
 
-  const tipo = file.type.startsWith('image') ? 'imagem' : file.type.startsWith('video') ? 'video' : file.type.startsWith('audio') ? 'audio' : file.type === 'application/pdf' ? 'pdf' : null;
+  const tipo = detectarTipoAnexo(file);
   if(!tipo){
-    alert('Só é possível enviar imagem, áudio, vídeo ou PDF.');
+    alert('Só é possível enviar imagem, áudio, vídeo, PDF ou planilha (XLSX, XLS, CSV).');
     input.value = ''; input.style.height='auto';
     return;
   }
@@ -1094,7 +1164,7 @@ function anexoSelecionado(input){
   }
 
   arquivoSelecionado = file;
-  const iconePorTipo = { imagem:'🖼️', video:'🎥', audio:'🎵', pdf:'📄' };
+  const iconePorTipo = { imagem:'🖼️', video:'🎥', audio:'🎵', pdf:'📄', planilha:'📊' };
   document.getElementById('anexoPreview').style.display = 'block';
   document.getElementById('anexoPreview').innerHTML = `${iconePorTipo[tipo]} ${file.name} (${(file.size/1024/1024).toFixed(1)}MB) <button onclick="cancelarAnexo()">remover</button>`;
 }
@@ -1121,10 +1191,7 @@ async function enviarMensagem(){
     if(upErr){ alert('Erro ao enviar anexo: ' + upErr.message); return; }
     const { data: pub } = supa.storage.from('chat-anexos').getPublicUrl(caminho);
     anexo_url = pub.publicUrl;
-    anexo_tipo = arquivoSelecionado.type.startsWith('video') ? 'video'
-      : arquivoSelecionado.type.startsWith('audio') ? 'audio'
-      : arquivoSelecionado.type === 'application/pdf' ? 'pdf'
-      : 'imagem';
+    anexo_tipo = detectarTipoAnexo(arquivoSelecionado) || 'imagem';
   }
 
   input.value = ''; input.style.height='auto';
