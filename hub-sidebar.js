@@ -344,7 +344,62 @@
       if(['chefia','gestao','conferencia','atendente'].includes(papel)){
         verificarAvisosCalendarioEditorial(supa);
       }
+
+      // Fórmula complexa pendente de aprovação -- avisa conferência
+      // em tempo real (pop-up + som), assim que alguém registra um
+      // pedido além do limite, em qualquer página do Hub
+      if(papel === 'conferencia'){
+        escutarAprovacaoComplexaPendente(supa);
+      }
     }catch(e){ /* se der erro, deixa tudo visível — melhor mostrar de mais do que travar a navegação */ }
+  }
+
+  function tocarAlertaSonoro(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.18].forEach(delay => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + delay + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + 0.16);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.18);
+      });
+    }catch(e){ /* navegador pode bloquear áudio sem interação -- segue sem som */ }
+  }
+
+  function escutarAprovacaoComplexaPendente(supa){
+    supa.channel('formulas-complexas-pendentes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'formulas_complexas_registro' }, (payload) => {
+        const registro = payload.new;
+        if(!registro || registro.status !== 'pendente') return;
+        if(payload.eventType === 'UPDATE' && payload.old && payload.old.status === 'pendente') return; // já tinha avisado
+        tocarAlertaSonoro();
+        mostrarPopupAprovacaoComplexaPendente(registro);
+      })
+      .subscribe();
+  }
+
+  function mostrarPopupAprovacaoComplexaPendente(registro){
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:28px;max-width:380px;width:100%;font-family:'Maven Pro',sans-serif;text-align:center;">
+        <div style="margin-bottom:8px;color:#8B1A3A;">${svg('puzzle')}</div>
+        <h3 style="font-family:'Space Grotesk',sans-serif;font-size:17px;margin:0 0 8px;color:#8B1A3A;">Fórmula complexa esperando aprovação</h3>
+        <p style="font-size:13.5px;color:#6E6266;margin:0 0 20px;">Requisição ${registro.requisicao || '—'}, ${registro.quantidade} unidade(s) -- passou do limite do dia e precisa de aprovação.</p>
+        <div style="display:flex;gap:10px;justify-content:center;">
+          <button id="hsAprovComplexaFechar" style="font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 18px;border-radius:8px;border:1px solid #E7DFE0;background:#fff;cursor:pointer;">Depois</button>
+          <a href="formulas-complexas.html" style="font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 18px;border-radius:8px;border:none;background:#8B1A3A;color:#fff;cursor:pointer;text-decoration:none;display:inline-block;">Ir aprovar</a>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById('hsAprovComplexaFechar').addEventListener('click', () => overlay.remove());
   }
 
   function localDateStrHS(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }

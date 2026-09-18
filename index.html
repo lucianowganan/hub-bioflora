@@ -261,22 +261,6 @@
     <div class="section-title">Calendário Interno</div>
     <a href="calendario-interno.html" class="minical-link" id="minicalArea"></a>
 
-    <div class="section-title">Integrações</div>
-    <div class="integ-grid">
-      <div class="integ-card">
-        <div class="integ-icon">🤝</div>
-        <h3>CRM</h3>
-        <p>Relacionamento e histórico de clientes/prescritores num só lugar.</p>
-        <span class="integ-soon">Em breve</span>
-      </div>
-      <a class="integ-card" href="tarefas.html" style="text-decoration:none;color:inherit;border-style:solid;cursor:pointer;">
-        <div class="integ-icon">🗂️</div>
-        <h3>Quadro de Tarefas</h3>
-        <p>Estilo Trello — tarefas do dia a dia e sugestões/ideias da equipe.</p>
-        <span class="integ-soon" style="background:var(--good-tint);color:var(--good);">Disponível →</span>
-      </a>
-    </div>
-
     <div class="section-title" id="modulesSection">Acesso rápido</div>
     <div class="modules" id="modules">
       <a class="module-card card-tarefas" href="tarefas.html" data-perm="modulo.tarefas">
@@ -753,13 +737,13 @@ async function renderWidgets(papel, perfil){
   const podeVerRotulos = ['chefia','recepcao','conferencia','atendente'].includes(papel);
   const podeVerOrdens = ['chefia','laboratorio','conferencia','atendente'].includes(papel);
   const podeVerBancoHoras = ['chefia','rh','gestao'].includes(papel);
-  const podeVerReaproveitamento = ['chefia','laboratorio','conferencia','atendente'].includes(papel);
+  const podeVerReaproveitamento = ['chefia','conferencia','atendente'].includes(papel);
 
   if(podeVerErrosProprios) cards.push(await widgetMeusErros(perfil.atendente_vinculado));
   if(podeVerErrosProprios) cards.push(await widgetMinhasInclusoes(perfil.atendente_vinculado, false));
   if(papel === 'chefia') cards.push(await widgetMinhasInclusoes(null, true));
   if(podeVerErrosGeral) cards.push(await widgetErrosEquipe());
-  if(['chefia','conferencia','atendente'].includes(papel)) cards.push(await widgetFormulasDiaSeguinte());
+  if(['chefia','conferencia','atendente','laboratorio'].includes(papel)) cards.push(await widgetFormulasDiaSeguinte());
   if(['chefia','conferencia','atendente'].includes(papel)) cards.push(await widgetFormulasComplexas());
   if(['chefia','gestao','conferencia','atendente'].includes(papel)) cards.push(await widgetCalendarioEditorialHoje());
   if(podeVerReaproveitamento) cards.push(await widgetReaproveitamento());
