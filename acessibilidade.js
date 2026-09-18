@@ -1,7 +1,9 @@
 // acessibilidade.js — Hub Bioflora
-// Widget flutuante de acessibilidade. Pra usar em qualquer página do
-// Hub, é só incluir uma linha antes de </body>:
-//   <script src="acessibilidade.js"></script>
+// Widget flutuante de acessibilidade. Carregado por um bootstrapper
+// em cada página (não uma tag <script src="..."> fixa) -- o
+// bootstrapper busca sempre a versão mais nova, com carimbo de hora
+// na URL, então esse arquivo pode ser atualizado à vontade sem
+// precisar mexer em mais nada nas outras páginas.
 // Não depende de mais nada — injeta o próprio botão, painel e CSS.
 
 (function(){
@@ -47,9 +49,17 @@
   function injetarEstilos(){
     const css = `
       .a11y-fab{position:fixed;bottom:22px;right:22px;width:52px;height:52px;border-radius:50%;
-        background:#8B1A3A;color:#fff;border:none;font-size:24px;cursor:pointer;
-        box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:9999;display:flex;align-items:center;justify-content:center;}
+        background:#8B1A3A;color:#fff;border:none;font-size:24px;cursor:grab;touch-action:none;
+        box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:9999;display:flex;align-items:center;justify-content:center;user-select:none;}
+      .a11y-fab:active{cursor:grabbing;}
       .a11y-fab:hover{background:#6E1430;}
+      .a11y-fab-fechar{position:absolute;top:-4px;right:-4px;width:19px;height:19px;border-radius:50%;
+        background:#fff;color:#6E6266;border:1px solid #E7DFE0;font-size:11px;line-height:1;cursor:pointer;
+        display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15);}
+      .a11y-reabrir{position:fixed;bottom:22px;right:0;background:#8B1A3A;color:#fff;border:none;
+        padding:8px 6px 8px 10px;border-radius:10px 0 0 10px;font-size:15px;cursor:pointer;z-index:9999;
+        box-shadow:0 2px 10px rgba(0,0,0,.2);opacity:.85;}
+      .a11y-reabrir:hover{opacity:1;}
       .a11y-panel{position:fixed;bottom:82px;right:22px;background:#fff;border:1px solid #E7DFE0;
         border-radius:14px;padding:18px;width:260px;box-shadow:0 8px 30px rgba(0,0,0,.18);z-index:9999;
         display:none;font-family:'Maven Pro',sans-serif;}
@@ -116,7 +126,7 @@
     fab.className = 'a11y-fab';
     fab.title = 'Acessibilidade';
     fab.setAttribute('aria-label', 'Abrir opções de acessibilidade');
-    fab.textContent = '♿';
+    fab.innerHTML = `♿<span class="a11y-fab-fechar" id="a11yFecharBtn" title="Esconder" aria-label="Esconder botão de acessibilidade">×</span>`;
 
     const painel = document.createElement('div');
     painel.className = 'a11y-panel';
@@ -152,7 +162,78 @@
     document.body.appendChild(fab);
     document.body.appendChild(painel);
 
-    fab.addEventListener('click', () => painel.classList.toggle('show'));
+    // ---------- Posição por canto (arrasta e encaixa) ----------
+    const CANTOS = {
+      'bottom-right': { fab:{bottom:'22px',right:'22px',top:'',left:''}, painel:{bottom:'82px',right:'22px',top:'',left:''} },
+      'bottom-left':  { fab:{bottom:'22px',left:'22px',top:'',right:''}, painel:{bottom:'82px',left:'22px',top:'',right:''} },
+      'top-right':    { fab:{top:'22px',right:'22px',bottom:'',left:''}, painel:{top:'82px',right:'22px',bottom:'',left:''} },
+      'top-left':     { fab:{top:'22px',left:'22px',bottom:'',right:''}, painel:{top:'82px',left:'22px',bottom:'',right:''} },
+    };
+    function aplicarCanto(nome){
+      const c = CANTOS[nome] || CANTOS['bottom-right'];
+      Object.assign(fab.style, c.fab);
+      Object.assign(painel.style, c.painel);
+    }
+    let cantoAtual = localStorage.getItem('a11y_canto') || 'bottom-right';
+    aplicarCanto(cantoAtual);
+
+    let arrastando = false, moveu = false, offsetX = 0, offsetY = 0;
+    fab.addEventListener('pointerdown', (e) => {
+      if(e.target.id === 'a11yFecharBtn') return;
+      arrastando = true; moveu = false;
+      const rect = fab.getBoundingClientRect();
+      offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top;
+      fab.setPointerCapture(e.pointerId);
+    });
+    fab.addEventListener('pointermove', (e) => {
+      if(!arrastando) return;
+      moveu = true;
+      fab.style.top = (e.clientY - offsetY) + 'px';
+      fab.style.left = (e.clientX - offsetX) + 'px';
+      fab.style.bottom = ''; fab.style.right = '';
+      painel.classList.remove('show');
+    });
+    fab.addEventListener('pointerup', (e) => {
+      if(!arrastando) return;
+      arrastando = false;
+      if(moveu){
+        const rect = fab.getBoundingClientRect();
+        const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+        const metadeX = window.innerWidth/2, metadeY = window.innerHeight/2;
+        cantoAtual = (cy < metadeY ? 'top' : 'bottom') + '-' + (cx < metadeX ? 'left' : 'right');
+        aplicarCanto(cantoAtual);
+        localStorage.setItem('a11y_canto', cantoAtual);
+      } else {
+        painel.classList.toggle('show');
+      }
+    });
+
+    // ---------- Fechar / reabrir ----------
+    const reabrirBtn = document.createElement('button');
+    reabrirBtn.className = 'a11y-reabrir';
+    reabrirBtn.title = 'Mostrar acessibilidade';
+    reabrirBtn.setAttribute('aria-label', 'Mostrar botão de acessibilidade');
+    reabrirBtn.textContent = '♿';
+    document.body.appendChild(reabrirBtn);
+
+    function aplicarVisibilidade(){
+      const escondido = localStorage.getItem('a11y_escondido') === '1';
+      fab.style.display = escondido ? 'none' : 'flex';
+      reabrirBtn.style.display = escondido ? 'block' : 'none';
+      if(escondido) painel.classList.remove('show');
+    }
+    aplicarVisibilidade();
+
+    document.getElementById('a11yFecharBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      localStorage.setItem('a11y_escondido', '1');
+      aplicarVisibilidade();
+    });
+    reabrirBtn.addEventListener('click', () => {
+      localStorage.setItem('a11y_escondido', '0');
+      aplicarVisibilidade();
+    });
+
     document.addEventListener('click', (e) => {
       if(!painel.contains(e.target) && e.target !== fab) painel.classList.remove('show');
     });
