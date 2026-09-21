@@ -349,6 +349,29 @@ async function init(){
     avisarQueEstouDigitando();
     autoCrescerTextarea();
   });
+  document.getElementById('msgInput').addEventListener('paste', (e) => {
+    const itens = e.clipboardData?.items;
+    if(!itens) return;
+    for(const item of itens){
+      if(item.kind === 'file'){
+        const file = item.getAsFile();
+        if(!file) continue;
+        e.preventDefault();
+        const tipo = detectarTipoAnexo(file);
+        if(!tipo){ alert('Esse tipo de arquivo colado não é suportado.'); return; }
+        if(file.size > TAMANHO_MAX_ANEXO){
+          alert(`Esse arquivo tem ${(file.size/1024/1024).toFixed(1)}MB — o limite por anexo é 25MB.`);
+          return;
+        }
+        arquivoSelecionado = file;
+        const iconePorTipo = { imagem:'🖼️', video:'🎥', audio:'🎵', pdf:'📄', planilha:'📊' };
+        const nomeArquivo = file.name || (tipo==='imagem' ? 'imagem-colada.png' : 'arquivo');
+        document.getElementById('anexoPreview').style.display = 'block';
+        document.getElementById('anexoPreview').innerHTML = `${iconePorTipo[tipo]} ${nomeArquivo} (${(file.size/1024/1024).toFixed(1)}MB) <button onclick="cancelarAnexo()">remover</button>`;
+        return;
+      }
+    }
+  });
 
   if('Notification' in window && Notification.permission === 'default'){
     Notification.requestPermission();
@@ -1062,7 +1085,7 @@ function renderMensagem(m, tipo, agrupada){
           <button class="reply-btn" onclick="responderMensagem('${m.id}','${tipo}')" title="Responder">↩</button>
           <button class="reacao-btn ${minhaReacao==='check'?'on':''}" onclick="reagir('${m.id}','${tipo}','check')">✅ ${checkCount||''}</button>
           <button class="reacao-btn ${minhaReacao==='x'?'on':''}" onclick="reagir('${m.id}','${tipo}','x')">❌ ${xCount||''}</button>
-          ${(checkCount||xCount) ? `<button class="reply-btn" onclick="abrirDetalheReacoes('${m.id}','${tipo}')" title="Ver quem reagiu">ⓘ</button>` : ''}
+          ${(minha && (checkCount||xCount)) ? `<button class="reply-btn" onclick="abrirDetalheReacoes('${m.id}','${tipo}')" title="Ver quem reagiu">ⓘ</button>` : ''}
           ${agrupada ? botaoExcluir : ''}
         </div>
       </div>

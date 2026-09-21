@@ -214,7 +214,7 @@
             <option value="dermato">🧴 Dermato</option>
           </select>
         </div>
-        <div class="field" id="mComplexidadeCapsulaWrap"><label>Complexidade</label><select class="complexidade" id="mComplexidade"></select></div>
+        <div class="field" id="mComplexidadeCapsulaWrap"><label>Tamanho</label><select class="complexidade" id="mComplexidade"></select></div>
         <div class="field" id="mComplexaCheckWrap" style="display:none">
           <label>&nbsp;</label>
           <label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px;height:38px;">
@@ -242,7 +242,7 @@
       </div>
 
       <table>
-        <thead><tr><th>Data</th><th>Colaborador</th><th>Área</th><th>Complexidade</th><th>Total</th><th>Obs.</th><th></th></tr></thead>
+        <thead><tr><th>Data</th><th>Colaborador</th><th>Área</th><th>Tamanho</th><th>Total</th><th>Obs.</th><th></th></tr></thead>
         <tbody id="manipTbody"></tbody>
       </table>
       <div class="pagination" id="manipPaginacao"></div>
@@ -262,7 +262,7 @@
             <option value="dermato">🧴 Dermato</option>
           </select>
         </div>
-        <div class="field" id="pComplexidadeCapsulaWrap"><label>Complexidade</label><select class="complexidade" id="pComplexidade"></select></div>
+        <div class="field" id="pComplexidadeCapsulaWrap"><label>Tamanho</label><select class="complexidade" id="pComplexidade"></select></div>
         <div class="field"><label>Total de fórmulas</label><input class="qtd" id="pQtd" type="number" min="0"></div>
         <div class="field"><label>Data</label><input id="pData" type="date"></div>
         <button class="btn" id="pSalvar">Salvar dia</button>
@@ -280,7 +280,7 @@
       </div>
 
       <table>
-        <thead><tr><th>Data</th><th>Colaborador</th><th>Área</th><th>Complexidade</th><th>Total</th><th>Obs.</th><th></th></tr></thead>
+        <thead><tr><th>Data</th><th>Colaborador</th><th>Área</th><th>Tamanho</th><th>Total</th><th>Obs.</th><th></th></tr></thead>
         <tbody id="pesagemTbody"></tbody>
       </table>
       <div class="pagination" id="pesagemPaginacao"></div>
@@ -355,6 +355,8 @@ function switchTab(tab){
   document.getElementById('tabManip').classList.toggle('active', tab==='manip');
   document.getElementById('tabPesagem').classList.toggle('active', tab==='pesagem');
   if(tab==='dash') carregarDashboardProd();
+  if(tab==='manip') atualizarAreaManip();
+  if(tab==='pesagem') atualizarAreaPesagem();
 }
 window.switchTab = switchTab;
 

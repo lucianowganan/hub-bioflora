@@ -212,7 +212,7 @@
 <div class="modal-overlay" id="modalComposta">
   <div class="modal">
     <h3 id="modalCompostaTitulo">Nova embalagem composta</h3>
-    <div class="edit-field"><label>Nome</label><input id="mcNome" placeholder="Ex: FRASCO DE XAROPE 30 ML" oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="edit-field"><label>Nome</label><input id="mcNome" placeholder="Ex: FRASCO DE XAROPE 30 ML" oninput="uppercaseSemPerderCursor(this)"></div>
     <div class="edit-field"><label>Código do produto associado</label><input id="mcCodigo" placeholder="Ex: 5678"></div>
     <div class="edit-field">
       <label>Buscar e adicionar componente</label>
@@ -233,7 +233,7 @@
   <div class="modal">
     <h3>Editar material</h3>
     <div class="edit-field"><label>Código</label><input id="mmCodigo"></div>
-    <div class="edit-field"><label>Nome</label><input id="mmNome" oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="edit-field"><label>Nome</label><input id="mmNome" oninput="uppercaseSemPerderCursor(this)"></div>
     <div class="edit-field"><label>Observação</label><textarea id="mmObs" rows="2"></textarea></div>
     <div class="modal-actions">
       <button class="btn secondary" onclick="fecharModalMaterial()">Cancelar</button>
@@ -247,7 +247,7 @@
   <div class="modal">
     <h3>Adicionar embalagem/material</h3>
     <div class="edit-field"><label>Código</label><input id="nmCodigo" placeholder="Ex: 24700"></div>
-    <div class="edit-field"><label>Nome</label><input id="nmNome" placeholder="Ex: FR PET AMBAR 100ML" oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="edit-field"><label>Nome</label><input id="nmNome" placeholder="Ex: FR PET AMBAR 100ML" oninput="uppercaseSemPerderCursor(this)"></div>
     <p class="desc">Entra na lista já como pendente, pra classificar normalmente (Componente / Simples / Embalagem composta / Não é embalagem).</p>
     <div class="modal-actions">
       <button class="btn secondary" onclick="fecharModalNovoMaterial()">Cancelar</button>
@@ -257,6 +257,15 @@
 </div>
 
 <script>
+// Deixar maiúsculo sem o cursor pular pro final -- setar .value sempre
+// move o cursor, então precisa guardar a posição antes e restaurar
+function uppercaseSemPerderCursor(input){
+  const pos = input.selectionStart;
+  input.value = input.value.toUpperCase();
+  input.setSelectionRange(pos, pos);
+}
+window.uppercaseSemPerderCursor = uppercaseSemPerderCursor;
+
 const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

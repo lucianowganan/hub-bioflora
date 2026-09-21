@@ -185,7 +185,7 @@
 
   <div class="kpi-row" id="kpiRow"></div>
 
-  <div class="panel">
+  <div class="panel" id="painelRegistrar">
     <h2>Registrar não retirado</h2>
     <p class="desc">Cadastre no momento em que a requisição virar "não retirada" — os ativos são selecionados da lista, nunca digitados, pra garantir que a assinatura bata certinho entre fórmulas iguais</p>
 
@@ -336,10 +336,11 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY) {
 } else {
   document.getElementById('configBanner').classList.add('show');
 }
-requireRole(['chefia','conferencia']).catch(()=>{}); // trava de acesso rápida — a checagem real acontece em init()
+requireRole(['chefia','conferencia','atendente','laboratorio']).catch(()=>{}); // trava de acesso rápida — a checagem real acontece em init()
 
 let ativosCatalogo = [];
 let meuPapelReap = null;
+let souGerenteReap = false;
 const LIMITE_LISTA_FECHADA = 5;
 let estadosExpandidos = { disponiveis:false, porAtivo:false, porCategoria:false, ativos:false, reaproveitados:false };
 
@@ -649,7 +650,7 @@ function renderDisponiveis(data){
       <td class="assinatura-cell">${formatarAtivosPorNome(m.manipulados_ativos)}</td>
       <td>${m.categoria ? `<span class="tag-categoria">${m.categoria}</span>` : '—'}</td>
       <td><span class="badge ${sit.cls}">${sit.label}</span></td>
-      <td><button class="btn secondary small" onclick="marcarReaproveitado('${m.id}')">Marcar reaproveitado</button></td>
+      <td>${souGerenteReap ? `<button class="btn secondary small" onclick="marcarReaproveitado('${m.id}')">Marcar reaproveitado</button>` : '—'}</td>
     </tr>`;
   }).join('') : `<tr><td colspan="9" class="empty-state">Nenhum item encontrado.</td></tr>`;
 }
@@ -821,9 +822,11 @@ async function carregarInsights(){
 }
 
 async function init(){
-  const { papel } = await requireRole(['chefia','conferencia']);
+  const { papel } = await requireRole(['chefia','conferencia','atendente','laboratorio']);
   meuPapelReap = papel;
+  souGerenteReap = ['chefia','conferencia'].includes(papel);
   if(papel === 'chefia') document.getElementById('tabBtnCatalogo').style.display = 'inline-block';
+  if(!souGerenteReap) document.getElementById('painelRegistrar').style.display = 'none';
   document.getElementById('fCategoria').addEventListener('input', (e) => { delete e.target.dataset.preenchidoAuto; });
   await loadAtivosCatalogo();
   addAtivoRow();
