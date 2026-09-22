@@ -64,6 +64,16 @@
 
   .chat-main{flex:1;display:flex;flex-direction:column;min-width:0;}
   .chat-header{padding:16px 22px;border-bottom:1px solid var(--line);background:#fff;display:flex;justify-content:space-between;align-items:center;}
+  .chat-voltar-btn{display:none;background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink);padding:4px 10px 4px 0;line-height:1;}
+
+  @media (max-width:720px){
+    .chat-shell{height:100dvh;}
+    .canais-col{width:100%;}
+    .chat-main{display:none;}
+    .chat-shell.mostrando-conversa .canais-col{display:none;}
+    .chat-shell.mostrando-conversa .chat-main{display:flex;}
+    .chat-voltar-btn{display:inline-flex;align-items:center;}
+  }
   .chat-header h2{font-family:var(--headfont);font-size:15px;margin:0;}
   .chat-header p{font-size:11.5px;color:var(--gray);margin:2px 0 0;}
   .del-canal-link{font-size:11px;color:var(--bad);background:none;border:none;cursor:pointer;text-decoration:underline;}
@@ -123,6 +133,13 @@
   .msg-reply-quote{border-left:3px solid var(--burgundy);background:rgba(139,26,58,.06);border-radius:6px;padding:5px 9px;margin-bottom:5px;cursor:pointer;}
   .msg-reply-quote-nome{font-size:11px;font-weight:700;color:var(--burgundy);}
   .msg-reply-quote-texto{font-size:11.5px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .msg-destacada{animation:msgFlash 1.4s ease;}
+  @keyframes msgFlash{0%{background:var(--burgundy-tint);border-radius:8px;}100%{background:transparent;}}
+  .msg-editado-tag{font-size:10.5px;color:var(--gray);font-weight:400;font-style:italic;}
+  .msg-editar-box textarea{width:100%;font-family:'Maven Pro',sans-serif;font-size:13.5px;padding:7px 10px;border:1.5px solid var(--burgundy);border-radius:8px;resize:vertical;min-height:44px;}
+  .msg-editar-acoes{display:flex;gap:8px;justify-content:flex-end;margin-top:5px;}
+  .msg-editar-acoes button{font-family:'Maven Pro',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:7px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;}
+  .msg-editar-acoes button.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
   .reply-btn{background:none;border:none;color:inherit;opacity:.6;cursor:pointer;font-size:13px;line-height:1;}
   .reply-btn:hover{opacity:1;}
   .anexo-preview button{background:none;border:none;color:var(--bad);cursor:pointer;text-decoration:underline;font-size:11px;margin-left:6px;}
@@ -169,9 +186,12 @@
 
   <div class="chat-main">
     <div class="chat-header">
-      <div>
-        <h2 id="canalNome">Selecione uma conversa</h2>
-        <p id="canalDesc"></p>
+      <div style="display:flex;align-items:center;">
+        <button class="chat-voltar-btn" onclick="voltarParaListaMobile()" title="Voltar">←</button>
+        <div>
+          <h2 id="canalNome">Selecione uma conversa</h2>
+          <p id="canalDesc"></p>
+        </div>
       </div>
       <div style="display:flex;gap:14px;align-items:center;">
         <button class="del-canal-link" id="editCanalBtn" style="display:none;color:var(--burgundy)" onclick="abrirEdicaoCanal()">Editar canal</button>
@@ -582,10 +602,11 @@ function renderSidebar(){
 
   html += `
     <div class="grupo-bloco">
-      <div class="grupo-titulo"><span>Mensagens diretas</span><span class="add-canal-link" onclick="abrirModalNovaConversa()" title="Nova conversa">+</span></div>
+      <div class="grupo-titulo"><span>Mensagens diretas</span></div>
       <div class="dm-lista">
-        ${conversasDm.length ? conversasDm.map(dmItemHtml).join('') : '<p style="font-size:11px;color:var(--gray);padding:4px 10px;">Nenhuma conversa ainda. Clique no + pra começar uma.</p>'}
+        ${conversasDm.length ? conversasDm.map(dmItemHtml).join('') : '<p style="font-size:11px;color:var(--gray);padding:4px 10px;">Nenhuma conversa ainda.</p>'}
       </div>
+      <button class="novo-grupo-btn" onclick="abrirModalNovaConversa()">+ Nova conversa</button>
     </div>`;
 
   document.getElementById('canaisLista').innerHTML = html;
@@ -794,6 +815,7 @@ async function abrirCanal(canalId){
   assinarTempoRealCanal();
   await marcarCanalComoLido(canalId);
   renderSidebar();
+  mostrarConversaMobile();
 }
 window.abrirCanal = abrirCanal;
 
@@ -810,6 +832,7 @@ async function abrirDm(userId){
   renderSidebar();
   await carregarMensagensDm();
   assinarTempoRealDm();
+  mostrarConversaMobile();
 }
 window.abrirDm = abrirDm;
 
@@ -903,6 +926,13 @@ function assinarTempoRealCanal(){
       inserirMensagemNaTela(payload.new, 'canal');
       if(payload.new.autor_id !== meuUserId) notificarMensagemNova(payload.new, 'canal');
     })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'mensagens_chat', filter: `canal_id=eq.${alvoAtivoId}` }, (payload) => {
+      if(mensagensCarregadasPorId[payload.new.id]){
+        mensagensCarregadasPorId[payload.new.id].conteudo = payload.new.conteudo;
+        mensagensCarregadasPorId[payload.new.id].editado_em = payload.new.editado_em;
+        atualizarTextoMensagemNaTela(payload.new.id);
+      }
+    })
     .on('broadcast', { event: 'digitando' }, (payload) => {
       if(payload.payload.userId !== meuUserId) mostrarDigitando(payload.payload.nome);
     })
@@ -942,6 +972,14 @@ function assinarTempoRealDm(){
       }
       await carregarConversasDm();
       renderSidebar();
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'dm_mensagens' }, (payload) => {
+      const m = payload.new;
+      if(mensagensCarregadasPorId[m.id]){
+        mensagensCarregadasPorId[m.id].conteudo = m.conteudo;
+        mensagensCarregadasPorId[m.id].editado_em = m.editado_em;
+        atualizarTextoMensagemNaTela(m.id);
+      }
     })
     .on('broadcast', { event: 'digitando' }, (payload) => {
       if(payload.payload.userId !== meuUserId) mostrarDigitando(payload.payload.nome);
@@ -990,13 +1028,28 @@ function indexarMensagensCarregadas(lista){
   lista.forEach(m => { mensagensCarregadasPorId[m.id] = { autor_id: m.autor_id, conteudo: m.conteudo }; });
 }
 
+function irParaMensagem(id){
+  const el = document.getElementById('msg_'+id);
+  if(!el){ return; }
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+  el.classList.add('msg-destacada');
+  setTimeout(() => el.classList.remove('msg-destacada'), 1400);
+}
+window.irParaMensagem = irParaMensagem;
+
+function resumirTexto(texto, max){
+  if(!texto) return '';
+  const t = texto.replace(/\n/g,' ').trim();
+  return t.length > max ? t.slice(0, max).trim()+'…' : t;
+}
+
 function responderMensagem(id, tipo){
   const original = mensagensCarregadasPorId[id];
   if(!original) return;
   mensagemRespondendoId = id;
   mensagemRespondendoTipo = tipo;
   document.getElementById('replyBannerNome').textContent = nomesPorId[original.autor_id] || 'Alguém';
-  document.getElementById('replyBannerPreview').textContent = original.conteudo || '📎 Anexo';
+  document.getElementById('replyBannerPreview').textContent = resumirTexto(original.conteudo, 90) || '📎 Anexo';
   document.getElementById('replyBanner').style.display = 'flex';
   document.getElementById('msgInput').focus();
 }
@@ -1054,13 +1107,14 @@ function renderMensagem(m, tipo, agrupada){
   const xCount = reacoesMsg.filter(r=>r.reacao==='x').length;
   const minhaReacao = reacoesMsg.find(r=>r.usuario_id===meuUserId)?.reacao;
   const botaoExcluir = (minha||meuPapel==='chefia') ? `<button class="msg-del" onclick="excluirMensagem('${m.id}','${tipo}')">excluir</button>` : '';
+  const botaoEditar = (minha && m.conteudo) ? `<button class="reply-btn" onclick="editarMensagem('${m.id}','${tipo}')" title="Editar">✏️</button>` : '';
 
   let citacaoHtml = '';
   if(m.resposta_a_id){
     const original = mensagensCarregadasPorId[m.resposta_a_id];
     const nomeOriginal = original ? (nomesPorId[original.autor_id] || 'Alguém') : 'Mensagem';
-    const textoOriginal = original ? (original.conteudo || '📎 Anexo') : 'não disponível';
-    citacaoHtml = `<div class="msg-reply-quote" onclick="document.getElementById('msg_${m.resposta_a_id}')?.scrollIntoView({behavior:'smooth',block:'center'})">
+    const textoOriginal = original ? resumirTexto(original.conteudo, 110) || '📎 Anexo' : 'não disponível';
+    citacaoHtml = `<div class="msg-reply-quote" onclick="irParaMensagem('${m.resposta_a_id}')">
       <div class="msg-reply-quote-nome">${nomeOriginal}</div>
       <div class="msg-reply-quote-texto">${(textoOriginal||'').replace(/</g,'&lt;')}</div>
     </div>`;
@@ -1076,13 +1130,14 @@ function renderMensagem(m, tipo, agrupada){
     <div class="msg-row ${minha?'mine':''} ${agrupada?'agrupada':''}" id="msg_${m.id}">
       ${agrupada ? `<div class="msg-avatar-spacer"><span class="msg-hora-hover">${hora}</span></div>` : `<div class="msg-avatar">${iniciais(nome)}</div>`}
       <div class="msg-body">
-        ${agrupada ? '' : `<div class="msg-meta"><strong>${nome}</strong> · ${hora}${botaoExcluir}</div>`}
+        ${agrupada ? '' : `<div class="msg-meta"><strong>${nome}</strong> · ${hora}${m.editado_em ? ' <span class="msg-editado-tag">(editado)</span>' : ''}${botaoExcluir}</div>`}
         ${citacaoHtml}
         ${m.conteudo ? `<div class="msg-texto ${textoLongo?'truncada':''}" id="${idTexto}">${formatarTextoMensagem(m.conteudo)}</div>
         ${textoLongo ? `<button class="msg-expandir-btn" onclick="expandirMensagem('${idTexto}', this)">Ver mensagem completa</button>` : ''}` : ''}
         ${anexoHtml}
         <div class="msg-reacoes ${(checkCount||xCount)?'tem-reacao':''}">
           <button class="reply-btn" onclick="responderMensagem('${m.id}','${tipo}')" title="Responder">↩</button>
+          ${botaoEditar}
           <button class="reacao-btn ${minhaReacao==='check'?'on':''}" onclick="reagir('${m.id}','${tipo}','check')">✅ ${checkCount||''}</button>
           <button class="reacao-btn ${minhaReacao==='x'?'on':''}" onclick="reagir('${m.id}','${tipo}','x')">❌ ${xCount||''}</button>
           ${(minha && (checkCount||xCount)) ? `<button class="reply-btn" onclick="abrirDetalheReacoes('${m.id}','${tipo}')" title="Ver quem reagiu">ⓘ</button>` : ''}
@@ -1216,6 +1271,56 @@ async function enviarMensagem(){
 }
 window.enviarMensagem = enviarMensagem;
 
+function editarMensagem(id, tipo){
+  const original = mensagensCarregadasPorId[id];
+  if(!original) return;
+  const el = document.getElementById('txt_'+id);
+  if(!el) return;
+  el.outerHTML = `<div class="msg-editar-box" id="editbox_${id}">
+    <textarea id="editarea_${id}" rows="2">${(original.conteudo||'').replace(/</g,'&lt;')}</textarea>
+    <div class="msg-editar-acoes">
+      <button class="secondary" onclick="cancelarEdicaoMensagem('${id}')">Cancelar</button>
+      <button onclick="salvarEdicaoMensagem('${id}','${tipo}')">Salvar</button>
+    </div>
+  </div>`;
+  const area = document.getElementById('editarea_'+id);
+  area.focus();
+  area.setSelectionRange(area.value.length, area.value.length);
+}
+window.editarMensagem = editarMensagem;
+
+function atualizarTextoMensagemNaTela(id){
+  const original = mensagensCarregadasPorId[id];
+  if(!original) return;
+  const elAtual = document.getElementById('txt_'+id) || document.getElementById('editbox_'+id);
+  if(!elAtual) return;
+  const textoLongo = original.conteudo && original.conteudo.length > 800;
+  elAtual.outerHTML = `<div class="msg-texto ${textoLongo?'truncada':''}" id="txt_${id}">${formatarTextoMensagem(original.conteudo)}</div>`;
+  const row = document.getElementById('msg_'+id);
+  const meta = row?.querySelector('.msg-meta');
+  if(meta && original.editado_em && !meta.querySelector('.msg-editado-tag')){
+    meta.querySelector('.msg-del')?.insertAdjacentHTML('beforebegin', ' <span class="msg-editado-tag">(editado)</span>');
+  }
+}
+
+function cancelarEdicaoMensagem(id){
+  atualizarTextoMensagemNaTela(id);
+}
+window.cancelarEdicaoMensagem = cancelarEdicaoMensagem;
+
+async function salvarEdicaoMensagem(id, tipo){
+  const novoTexto = document.getElementById('editarea_'+id).value.trim();
+  if(!novoTexto) return;
+  const tabela = tipo==='canal' ? 'mensagens_chat' : 'dm_mensagens';
+  const agora = new Date().toISOString();
+  const { error } = await supa.from(tabela).update({ conteudo: novoTexto, editado_em: agora }).eq('id', id);
+  if(error){ alert('Erro ao editar: '+error.message); return; }
+  const original = mensagensCarregadasPorId[id];
+  if(original){ original.conteudo = novoTexto; original.editado_em = agora; }
+  atualizarTextoMensagemNaTela(id);
+}
+window.salvarEdicaoMensagem = salvarEdicaoMensagem;
+
 async function excluirMensagem(id, tipo){
   pedirConfirmacao('Excluir mensagem?', 'Não dá pra desfazer.', async () => {
     const tabela = tipo === 'canal' ? 'mensagens_chat' : 'dm_mensagens';
@@ -1225,6 +1330,33 @@ async function excluirMensagem(id, tipo){
   });
 }
 window.excluirMensagem = excluirMensagem;
+
+// ---------- Mobile: lista/conversa estilo WhatsApp ----------
+function mostrarConversaMobile(){
+  document.querySelector('.chat-shell').classList.add('mostrando-conversa');
+}
+function voltarParaListaMobile(){
+  document.querySelector('.chat-shell').classList.remove('mostrando-conversa');
+}
+window.voltarParaListaMobile = voltarParaListaMobile;
+
+let toqueInicioX = null, toqueInicioY = null;
+document.addEventListener('touchstart', (e) => {
+  if(e.touches.length !== 1) return;
+  toqueInicioX = e.touches[0].clientX;
+  toqueInicioY = e.touches[0].clientY;
+}, {passive:true});
+document.addEventListener('touchend', (e) => {
+  if(toqueInicioX === null) return;
+  const toque = e.changedTouches[0];
+  const deltaX = toque.clientX - toqueInicioX;
+  const deltaY = Math.abs(toque.clientY - toqueInicioY);
+  const naConversa = document.querySelector('.chat-shell')?.classList.contains('mostrando-conversa');
+  if(naConversa && toqueInicioX < 40 && deltaX > 70 && deltaY < 60){
+    voltarParaListaMobile();
+  }
+  toqueInicioX = null; toqueInicioY = null;
+}, {passive:true});
 
 init();
 </script>
