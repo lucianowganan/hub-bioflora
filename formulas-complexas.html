@@ -113,9 +113,8 @@
     <h2>Gerenciar catálogo <span style="font-size:11px;color:var(--gray);font-weight:400;">(só chefia)</span></h2>
     <p class="desc">Cria, edita ou exclui as fórmulas complexas, o limite diário e o tamanho da vaga de cada uma.</p>
     <div class="quick-form">
-      <div class="field"><label>Nome</label><input id="novaComplexaNome" placeholder="Ex: Biscoito 30un" style="width:220px;"></div>
-      <div class="field"><label>Limite por dia (vagas)</label><input type="number" min="1" id="novaComplexaLimite" style="width:120px;"></div>
-      <div class="field"><label>Unidades por vaga</label><input type="number" min="1" id="novaComplexaUnidades" value="30" style="width:120px;"></div>
+      <div class="field"><label>Nome</label><input id="novaComplexaNome" placeholder="Ex: Biscoito" style="width:220px;"></div>
+      <div class="field"><label>Limite por dia (unidades)</label><input type="number" min="1" id="novaComplexaLimite" style="width:150px;"></div>
       <button class="btn" onclick="salvarFormulaComplexa()">+ Adicionar</button>
     </div>
     <div id="listaCatalogoComplexas"></div>
@@ -184,10 +183,6 @@ function irParaSemanaAtual(){
 }
 window.irParaSemanaAtual = irParaSemanaAtual;
 
-function vagasOcupadas(quantidade, unidadesPorVaga){
-  return Math.ceil(quantidade / unidadesPorVaga);
-}
-
 async function renderCalendario(){
   const { data: catalogo } = await supa.from('formulas_complexas_catalogo').select('*').eq('ativo', true).order('nome');
   catalogoComplexasCache = catalogo || [];
@@ -214,13 +209,13 @@ async function renderCalendario(){
     (perfisReg||[]).forEach(p => { nomesPorUsuario[p.id] = p.nome_exibicao || 'Sem nome'; });
   }
 
-  const vagasPorFormulaData = {};
+  const unidadesPorFormulaData = {};
   detalhesPorCelula = {};
   registros.forEach(r => {
     const f = catalogoComplexasCache.find(x=>x.id===r.formula_id);
     if(!f) return;
     const chave = r.formula_id+'_'+r.data;
-    vagasPorFormulaData[chave] = (vagasPorFormulaData[chave]||0) + vagasOcupadas(r.quantidade, f.unidades_por_vaga);
+    unidadesPorFormulaData[chave] = (unidadesPorFormulaData[chave]||0) + r.quantidade;
     (detalhesPorCelula[chave] = detalhesPorCelula[chave] || []).push({
       requisicao: r.requisicao || '—',
       quantidade: r.quantidade,
@@ -237,18 +232,18 @@ async function renderCalendario(){
     html += `<tr><td colspan="8" class="empty-state">Nenhuma fórmula complexa cadastrada ainda.</td></tr>`;
   } else {
     catalogoComplexasCache.forEach(f => {
-      html += `<tr><td class="nome-formula">${f.nome}<div style="font-size:10px;color:var(--gray);font-weight:400;">${f.limite_diario} vaga(s)/dia · ${f.unidades_por_vaga} un/vaga</div></td>`;
+      html += `<tr><td class="nome-formula">${f.nome}<div style="font-size:10px;color:var(--gray);font-weight:400;">${f.limite_diario} unidades/dia</div></td>`;
       dias.forEach(d => {
         const dataStr = localDateStrFC(d);
         const chaveCel = f.id+'_'+dataStr;
-        const total = vagasPorFormulaData[chaveCel] || 0;
+        const total = unidadesPorFormulaData[chaveCel] || 0;
         const restam = f.limite_diario - total;
         const temRegistros = (detalhesPorCelula[chaveCel]||[]).length > 0;
         const clique = temRegistros ? `onclick="abrirDetalheCelula('${chaveCel}', '${f.nome.replace(/'/g,"\\'")}', '${d.toLocaleDateString('pt-BR')}')" style="cursor:pointer;"` : '';
         if(restam <= 0){
           html += `<td ${clique}><div class="cel-lotada"><div class="status">Lotada</div>${temRegistros?'<div style="font-size:9.5px;color:var(--gray);">ver requisições</div>':''}</div></td>`;
         } else {
-          html += `<td ${clique}><div class="cel-disponivel"><div class="status">Disponível</div><div class="restam">restam ${restam}</div>${temRegistros?'<div style="font-size:9.5px;color:var(--gray);">ver requisições</div>':''}</div></td>`;
+          html += `<td ${clique}><div class="cel-disponivel"><div class="status">Disponível</div><div class="restam">restam ${restam} un.</div>${temRegistros?'<div style="font-size:9.5px;color:var(--gray);">ver requisições</div>':''}</div></td>`;
         }
       });
       html += '</tr>';
@@ -273,12 +268,11 @@ async function registrarComplexa(){
   if(!dataStr){ aviso.textContent = 'Escolhe a data certa (hoje, amanhã, ou a que for).'; aviso.style.color = 'var(--bad)'; return; }
 
   const formula = catalogoComplexasCache.find(f=>f.id===formulaId);
-  const vagasNovas = vagasOcupadas(quantidade, formula.unidades_por_vaga);
 
   const { data: existentes } = await supa.from('formulas_complexas_registro').select('quantidade').eq('formula_id', formulaId).eq('data', dataStr).in('status', ['aprovado','pendente']);
-  const vagasJaOcupadas = (existentes||[]).reduce((s,r)=>s+vagasOcupadas(r.quantidade, formula.unidades_por_vaga), 0);
+  const unidadesJaUsadas = (existentes||[]).reduce((s,r)=>s+r.quantidade, 0);
 
-  const vaiExtrapolar = (vagasJaOcupadas + vagasNovas) > formula.limite_diario;
+  const vaiExtrapolar = (unidadesJaUsadas + quantidade) > formula.limite_diario;
   const status = vaiExtrapolar ? 'pendente' : 'aprovado';
 
   const { data: { session } } = await supa.auth.getSession();
@@ -303,7 +297,7 @@ window.registrarComplexa = registrarComplexa;
 
 async function renderAprovacoes(){
   const { data } = await supa.from('formulas_complexas_registro')
-    .select('id,data,quantidade,requisicao,criado_em,formulas_complexas_catalogo(nome,unidades_por_vaga)')
+    .select('id,data,quantidade,requisicao,criado_em,formulas_complexas_catalogo(nome)')
     .eq('status','pendente').order('data');
   const pendentes = data || [];
 
@@ -311,7 +305,7 @@ async function renderAprovacoes(){
     <div class="aprov-row">
       <div>
         <div class="aprov-nome">${r.formulas_complexas_catalogo?.nome || '—'} — req. ${r.requisicao || '—'}</div>
-        <div class="aprov-sub">${new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR')} · ${r.quantidade} unidades (${vagasOcupadas(r.quantidade, r.formulas_complexas_catalogo?.unidades_por_vaga||30)} vaga(s))</div>
+        <div class="aprov-sub">${new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR')} · ${r.quantidade} unidades</div>
       </div>
       <div style="display:flex;gap:8px;">
         <button class="btn small" onclick="decidirExtraComplexa('${r.id}','aprovado')">Aprovar</button>
@@ -335,7 +329,7 @@ window.decidirExtraComplexa = decidirExtraComplexa;
 function renderCatalogoComplexasGerencia(){
   document.getElementById('listaCatalogoComplexas').innerHTML = catalogoComplexasCache.length ? catalogoComplexasCache.map(f => `
     <div class="catalogo-item">
-      <span>${f.nome} — ${f.limite_diario} vaga(s)/dia · ${f.unidades_por_vaga} un/vaga</span>
+      <span>${f.nome} — ${f.limite_diario} unidades/dia</span>
       <div style="display:flex;gap:8px;">
         <button class="btn secondary small" onclick="editarLimiteComplexa('${f.id}', ${f.limite_diario})">Editar limite</button>
         <button class="btn secondary small" onclick="excluirFormulaComplexa('${f.id}')" style="color:var(--bad);">Excluir</button>
@@ -347,14 +341,12 @@ function renderCatalogoComplexasGerencia(){
 async function salvarFormulaComplexa(){
   const nome = document.getElementById('novaComplexaNome').value.trim();
   const limite = Number(document.getElementById('novaComplexaLimite').value);
-  const unidades = Number(document.getElementById('novaComplexaUnidades').value) || 30;
   if(!nome || !limite){ alert('Preenche nome e limite.'); return; }
   const { data: { session } } = await supa.auth.getSession();
-  const { error } = await supa.from('formulas_complexas_catalogo').insert({ nome, limite_diario: limite, unidades_por_vaga: unidades, criado_por: session.user.id });
+  const { error } = await supa.from('formulas_complexas_catalogo').insert({ nome, limite_diario: limite, unidades_por_vaga: 1, criado_por: session.user.id });
   if(error){ alert('Erro: '+error.message); return; }
   document.getElementById('novaComplexaNome').value = '';
   document.getElementById('novaComplexaLimite').value = '';
-  document.getElementById('novaComplexaUnidades').value = '30';
   renderCalendario();
 }
 window.salvarFormulaComplexa = salvarFormulaComplexa;

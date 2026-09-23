@@ -17,7 +17,7 @@
   }
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
-  .chat-shell{display:flex;height:100vh;}
+  .chat-shell{display:flex;height:100vh;overscroll-behavior-x:none;touch-action:pan-y;}
 
   .canais-col{width:240px;flex-shrink:0;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;}
   .canais-head{padding:20px 18px 14px;border-bottom:1px solid var(--line);}
@@ -65,6 +65,13 @@
   .chat-main{flex:1;display:flex;flex-direction:column;min-width:0;}
   .chat-header{padding:16px 22px;border-bottom:1px solid var(--line);background:#fff;display:flex;justify-content:space-between;align-items:center;}
   .chat-voltar-btn{display:none;background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink);padding:4px 10px 4px 0;line-height:1;}
+  .busca-conversa-bar{display:flex;align-items:center;gap:10px;padding:9px 22px;background:var(--paper);border-bottom:1px solid var(--line);}
+  .busca-conversa-bar input{flex:1;font-family:'Maven Pro',sans-serif;font-size:13px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;}
+  .busca-conversa-bar button{background:none;border:none;color:var(--gray);cursor:pointer;font-size:15px;}
+  .msg-row.busca-oculta{display:none;}
+  .msg-row.busca-encontrada .msg-texto{background:#FBF1E0;border-radius:5px;}
+  .tab-sec-btn{font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:600;padding:7px 15px;border-radius:20px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--gray);}
+  .tab-sec-btn.active{background:var(--burgundy);color:#fff;border-color:var(--burgundy);}
 
   @media (max-width:720px){
     .chat-shell{height:100dvh;}
@@ -123,7 +130,17 @@
   .anexo-btn:hover{border-color:var(--burgundy);}
   .input-area button.enviar{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:0 22px;height:44px;border-radius:10px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;flex-shrink:0;}
   .empty-state{text-align:center;color:var(--gray);font-size:13px;margin:auto;}
-  .anexo-preview{font-size:11.5px;color:var(--gray);padding:0 22px 8px;}
+  .anexo-preview{font-size:11.5px;color:var(--gray);padding:8px 22px;display:none;align-items:center;gap:10px;}
+  .anexo-preview-img{width:44px;height:44px;object-fit:cover;border-radius:6px;}
+  .anexo-preview-nome{flex:1;min-width:0;}
+  .anexo-preview button{background:none;border:none;color:var(--burgundy);cursor:pointer;font-size:11.5px;font-weight:600;}
+  .chat-main.arrastando-arquivo{position:relative;}
+  .chat-main.arrastando-arquivo::after{
+    content:'Solte pra anexar';
+    position:absolute;inset:0;background:rgba(139,26,58,.08);border:3px dashed var(--burgundy);
+    display:flex;align-items:center;justify-content:center;font-family:var(--headfont,inherit);
+    font-size:18px;font-weight:600;color:var(--burgundy);z-index:50;pointer-events:none;
+  }
   .reply-banner{display:flex;align-items:center;gap:10px;padding:8px 22px;background:var(--paper);border-top:1px solid var(--line);}
   .reply-banner-linha{width:3px;align-self:stretch;background:var(--burgundy);border-radius:2px;}
   .reply-banner-texto{flex:1;min-width:0;}
@@ -186,19 +203,27 @@
 
   <div class="chat-main">
     <div class="chat-header">
-      <div style="display:flex;align-items:center;">
+      <div style="display:flex;align-items:center;min-width:0;">
         <button class="chat-voltar-btn" onclick="voltarParaListaMobile()" title="Voltar">←</button>
-        <div>
+        <div style="cursor:pointer;min-width:0;" onclick="abrirDetalhesConversa()" title="Ver detalhes, mídia e arquivos">
           <h2 id="canalNome">Selecione uma conversa</h2>
           <p id="canalDesc"></p>
         </div>
       </div>
       <div style="display:flex;gap:14px;align-items:center;">
+        <button class="del-canal-link" onclick="abrirBuscaConversa()" title="Buscar nessa conversa">🔍</button>
         <button class="del-canal-link" id="editCanalBtn" style="display:none;color:var(--burgundy)" onclick="abrirEdicaoCanal()">Editar canal</button>
         <button class="del-canal-link" id="delCanalBtn" style="display:none" onclick="excluirCanal()">Excluir canal</button>
       </div>
     </div>
+    <div class="busca-conversa-bar" id="buscaConversaBar" style="display:none">
+      <input id="buscaConversaInput" placeholder="Buscar nessa conversa..." oninput="filtrarBuscaConversa()">
+      <span id="buscaConversaContagem" style="font-size:11.5px;color:var(--gray);white-space:nowrap;"></span>
+      <button onclick="fecharBuscaConversa()" title="Fechar busca">✕</button>
+    </div>
     <div class="mensagens-area" id="mensagensArea">
+      <div class="empty-state">Escolha um canal ou uma pessoa pra começar.</div>
+    </div>
       <div class="empty-state">Escolha um canal ou uma pessoa pra começar.</div>
     </div>
     <div class="digitando-indicador" id="digitandoIndicador" style="display:none"></div>
@@ -250,6 +275,23 @@
     <div class="modal-actions">
       <button class="btn secondary" onclick="fecharModalCanal()">Cancelar</button>
       <button class="btn" id="btnConfirmarCanal" onclick="confirmarNovoCanal()">Criar canal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: detalhes da conversa (mídia e arquivos) -->
+<div class="modal-overlay" id="modalDetalhesConversa">
+  <div class="modal">
+    <h2 id="detConvNome">Conversa</h2>
+    <p id="detConvDesc" style="color:var(--gray);font-size:12.5px;margin:-8px 0 14px;"></p>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button class="tab-sec-btn active" id="tabDetMidia" onclick="trocarAbaDetalhes('midia')">Mídia</button>
+      <button class="tab-sec-btn" id="tabDetArquivos" onclick="trocarAbaDetalhes('arquivos')">Arquivos</button>
+    </div>
+    <div id="detConvMidiaGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-height:320px;overflow-y:auto;"></div>
+    <div id="detConvArquivosLista" style="display:none;max-height:320px;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalDetalhesConversa').classList.remove('show')">Fechar</button>
     </div>
   </div>
 </div>
@@ -377,17 +419,7 @@ async function init(){
         const file = item.getAsFile();
         if(!file) continue;
         e.preventDefault();
-        const tipo = detectarTipoAnexo(file);
-        if(!tipo){ alert('Esse tipo de arquivo colado não é suportado.'); return; }
-        if(file.size > TAMANHO_MAX_ANEXO){
-          alert(`Esse arquivo tem ${(file.size/1024/1024).toFixed(1)}MB — o limite por anexo é 25MB.`);
-          return;
-        }
-        arquivoSelecionado = file;
-        const iconePorTipo = { imagem:'🖼️', video:'🎥', audio:'🎵', pdf:'📄', planilha:'📊' };
-        const nomeArquivo = file.name || (tipo==='imagem' ? 'imagem-colada.png' : 'arquivo');
-        document.getElementById('anexoPreview').style.display = 'block';
-        document.getElementById('anexoPreview').innerHTML = `${iconePorTipo[tipo]} ${nomeArquivo} (${(file.size/1024/1024).toFixed(1)}MB) <button onclick="cancelarAnexo()">remover</button>`;
+        processarArquivoParaAnexo(file);
         return;
       }
     }
@@ -802,6 +834,7 @@ function fecharConversa(){
 async function abrirCanal(canalId){
   document.getElementById('digitandoIndicador').style.display = 'none';
   cancelarResposta();
+  fecharBuscaConversa();
   modoAtual = 'canal';
   alvoAtivoId = canalId;
   const canal = canais.find(c=>c.id===canalId);
@@ -822,6 +855,7 @@ window.abrirCanal = abrirCanal;
 async function abrirDm(userId){
   document.getElementById('digitandoIndicador').style.display = 'none';
   cancelarResposta();
+  fecharBuscaConversa();
   modoAtual = 'dm';
   alvoAtivoId = userId;
   document.getElementById('canalNome').textContent = nomesPorId[userId] || 'Conversa';
@@ -1204,26 +1238,37 @@ function detectarTipoAnexo(file){
   return null;
 }
 
-function anexoSelecionado(input){
-  const file = input.files[0];
-  if(!file) return;
-
+function processarArquivoParaAnexo(file){
   const tipo = detectarTipoAnexo(file);
   if(!tipo){
     alert('Só é possível enviar imagem, áudio, vídeo, PDF ou planilha (XLSX, XLS, CSV).');
-    input.value = ''; input.style.height='auto';
     return;
   }
   if(file.size > TAMANHO_MAX_ANEXO){
     alert(`Esse arquivo tem ${(file.size/1024/1024).toFixed(1)}MB — o limite por anexo é 25MB.`);
-    input.value = ''; input.style.height='auto';
     return;
   }
-
   arquivoSelecionado = file;
-  const iconePorTipo = { imagem:'🖼️', video:'🎥', audio:'🎵', pdf:'📄', planilha:'📊' };
-  document.getElementById('anexoPreview').style.display = 'block';
-  document.getElementById('anexoPreview').innerHTML = `${iconePorTipo[tipo]} ${file.name} (${(file.size/1024/1024).toFixed(1)}MB) <button onclick="cancelarAnexo()">remover</button>`;
+  renderAnexoPreview(file, tipo);
+}
+
+function renderAnexoPreview(file, tipo){
+  const preview = document.getElementById('anexoPreview');
+  preview.style.display = 'flex';
+  const tamanho = `${(file.size/1024/1024).toFixed(1)}MB`;
+  if(tipo === 'imagem'){
+    const url = URL.createObjectURL(file);
+    preview.innerHTML = `<img src="${url}" class="anexo-preview-img"><span class="anexo-preview-nome">${file.name} (${tamanho})</span><button onclick="cancelarAnexo()">remover</button>`;
+  } else {
+    const iconePorTipo = { video:'🎥', audio:'🎵', pdf:'📄', planilha:'📊' };
+    preview.innerHTML = `<span style="font-size:22px;">${iconePorTipo[tipo]}</span><span class="anexo-preview-nome">${file.name} (${tamanho})</span><button onclick="cancelarAnexo()">remover</button>`;
+  }
+}
+
+function anexoSelecionado(input){
+  const file = input.files[0];
+  if(!file) return;
+  processarArquivoParaAnexo(file);
 }
 window.anexoSelecionado = anexoSelecionado;
 
@@ -1340,22 +1385,159 @@ function voltarParaListaMobile(){
 }
 window.voltarParaListaMobile = voltarParaListaMobile;
 
-let toqueInicioX = null, toqueInicioY = null;
+// ---------- Detalhes da conversa (mídia e arquivos) ----------
+function abrirDetalhesConversa(){
+  if(!alvoAtivoId) return;
+  let nome, desc;
+  if(modoAtual === 'canal'){
+    const canal = canais.find(c=>c.id===alvoAtivoId);
+    nome = '#' + (canal?.nome || '');
+    desc = canal?.descricao || '';
+  } else {
+    nome = nomesPorId[alvoAtivoId] || 'Conversa';
+    desc = ROLE_LABELS[papelPorId[alvoAtivoId]] || '';
+  }
+  document.getElementById('detConvNome').textContent = nome;
+  document.getElementById('detConvDesc').textContent = desc;
+  renderDetalhesMidia();
+  renderDetalhesArquivos();
+  trocarAbaDetalhes('midia');
+  document.getElementById('modalDetalhesConversa').classList.add('show');
+}
+window.abrirDetalhesConversa = abrirDetalhesConversa;
+
+function trocarAbaDetalhes(aba){
+  document.getElementById('tabDetMidia').classList.toggle('active', aba==='midia');
+  document.getElementById('tabDetArquivos').classList.toggle('active', aba==='arquivos');
+  document.getElementById('detConvMidiaGrid').style.display = aba==='midia' ? 'grid' : 'none';
+  document.getElementById('detConvArquivosLista').style.display = aba==='arquivos' ? 'block' : 'none';
+}
+window.trocarAbaDetalhes = trocarAbaDetalhes;
+
+function irParaMensagemFechandoModal(id){
+  document.getElementById('modalDetalhesConversa').classList.remove('show');
+  setTimeout(() => irParaMensagem(id), 200);
+}
+window.irParaMensagemFechandoModal = irParaMensagemFechandoModal;
+
+function renderDetalhesMidia(){
+  const itens = Object.values(mensagensCarregadasPorId).filter(m => m.anexo_tipo==='imagem' || m.anexo_tipo==='video');
+  document.getElementById('detConvMidiaGrid').innerHTML = itens.length ? itens.map(m => m.anexo_tipo==='imagem'
+    ? `<img src="${m.anexo_url}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="irParaMensagemFechandoModal('${m.id}')">`
+    : `<video src="${m.anexo_url}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="irParaMensagemFechandoModal('${m.id}')" muted></video>`
+  ).join('') : '<div class="empty-state" style="grid-column:1/-1;">Nenhuma mídia enviada ainda.</div>';
+}
+
+function renderDetalhesArquivos(){
+  const itens = Object.values(mensagensCarregadasPorId).filter(m => m.anexo_tipo==='pdf' || m.anexo_tipo==='planilha');
+  document.getElementById('detConvArquivosLista').innerHTML = itens.length ? itens.map(m => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px;" onclick="irParaMensagemFechandoModal('${m.id}')">
+      <span>${m.anexo_tipo==='pdf'?'📄':'📊'} ${nomesPorId[m.autor_id] || 'Alguém'}</span>
+      <span style="font-size:11px;color:var(--gray);">${m.criado_em ? new Date(m.criado_em).toLocaleDateString('pt-BR') : ''}</span>
+    </div>
+  `).join('') : '<div class="empty-state">Nenhum arquivo enviado ainda.</div>';
+}
+
+// ---------- Busca dentro da conversa ----------
+function abrirBuscaConversa(){
+  if(!alvoAtivoId) return;
+  document.getElementById('buscaConversaBar').style.display = 'flex';
+  document.getElementById('buscaConversaInput').value = '';
+  document.getElementById('buscaConversaInput').focus();
+  filtrarBuscaConversa();
+}
+window.abrirBuscaConversa = abrirBuscaConversa;
+
+function fecharBuscaConversa(){
+  document.getElementById('buscaConversaBar').style.display = 'none';
+  document.querySelectorAll('.msg-row.busca-oculta').forEach(el => el.classList.remove('busca-oculta'));
+  document.querySelectorAll('.msg-row.busca-encontrada').forEach(el => el.classList.remove('busca-encontrada'));
+}
+window.fecharBuscaConversa = fecharBuscaConversa;
+
+function filtrarBuscaConversa(){
+  const termo = document.getElementById('buscaConversaInput').value.trim().toLowerCase();
+  const linhas = document.querySelectorAll('#mensagensArea .msg-row');
+  const contagem = document.getElementById('buscaConversaContagem');
+  if(!termo){
+    linhas.forEach(el => { el.classList.remove('busca-oculta'); el.classList.remove('busca-encontrada'); });
+    contagem.textContent = '';
+    return;
+  }
+  let achados = 0;
+  let primeiroEncontrado = null;
+  linhas.forEach(el => {
+    const id = el.id.replace('msg_','');
+    const m = mensagensCarregadasPorId[id];
+    const bate = m && (m.conteudo||'').toLowerCase().includes(termo);
+    el.classList.toggle('busca-oculta', !bate);
+    el.classList.toggle('busca-encontrada', bate);
+    if(bate){ achados++; if(!primeiroEncontrado) primeiroEncontrado = el; }
+  });
+  contagem.textContent = achados ? `${achados} encontrada(s)` : 'Nada encontrado';
+  if(primeiroEncontrado) primeiroEncontrado.scrollIntoView({behavior:'smooth', block:'center'});
+}
+window.filtrarBuscaConversa = filtrarBuscaConversa;
+
+// ---------- Arrastar e soltar arquivo (anexa igual o WhatsApp) ----------
+(function(){
+  const areaChat = document.querySelector('.chat-main');
+  let contadorArrasto = 0;
+  areaChat.addEventListener('dragenter', (e) => {
+    e.preventDefault();
+    if(!alvoAtivoId) return;
+    contadorArrasto++;
+    areaChat.classList.add('arrastando-arquivo');
+  });
+  areaChat.addEventListener('dragover', (e) => e.preventDefault());
+  areaChat.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    contadorArrasto = Math.max(0, contadorArrasto-1);
+    if(contadorArrasto === 0) areaChat.classList.remove('arrastando-arquivo');
+  });
+  areaChat.addEventListener('drop', (e) => {
+    e.preventDefault();
+    contadorArrasto = 0;
+    areaChat.classList.remove('arrastando-arquivo');
+    if(!alvoAtivoId) return;
+    const file = e.dataTransfer.files?.[0];
+    if(file) processarArquivoParaAnexo(file);
+  });
+})();
+
+// O gesto nativo do navegador ("arrastar da borda volta a página
+// anterior") competia com esse e ganhava, porque touchstart/touchend
+// sozinhos com passive:true não conseguem bloquear o gesto nativo --
+// precisa de um touchmove não-passivo chamando preventDefault()
+let toqueInicioX = null, toqueInicioY = null, bloqueandoGestoNativo = false;
 document.addEventListener('touchstart', (e) => {
   if(e.touches.length !== 1) return;
   toqueInicioX = e.touches[0].clientX;
   toqueInicioY = e.touches[0].clientY;
+  bloqueandoGestoNativo = false;
 }, {passive:true});
+document.addEventListener('touchmove', (e) => {
+  if(toqueInicioX === null || toqueInicioX > 60) return;
+  const naConversa = document.querySelector('.chat-shell')?.classList.contains('mostrando-conversa');
+  if(!naConversa) return;
+  const toque = e.touches[0];
+  const deltaX = toque.clientX - toqueInicioX;
+  const deltaY = Math.abs(toque.clientY - toqueInicioY);
+  if(deltaX > 15 && deltaY < 40){
+    bloqueandoGestoNativo = true;
+    e.preventDefault();
+  }
+}, {passive:false});
 document.addEventListener('touchend', (e) => {
   if(toqueInicioX === null) return;
   const toque = e.changedTouches[0];
   const deltaX = toque.clientX - toqueInicioX;
   const deltaY = Math.abs(toque.clientY - toqueInicioY);
   const naConversa = document.querySelector('.chat-shell')?.classList.contains('mostrando-conversa');
-  if(naConversa && toqueInicioX < 40 && deltaX > 70 && deltaY < 60){
+  if(naConversa && toqueInicioX < 60 && deltaX > 70 && deltaY < 60){
     voltarParaListaMobile();
   }
-  toqueInicioX = null; toqueInicioY = null;
+  toqueInicioX = null; toqueInicioY = null; bloqueandoGestoNativo = false;
 }, {passive:true});
 
 init();

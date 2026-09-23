@@ -379,7 +379,7 @@ async function loadDashboard(nome){
       <div class="kpi"><div class="label">Erro mais frequente</div><div class="value" style="font-size:16px">${tipoMaisFrequente}</div></div>
     </div>
     <div class="panel">
-      <h2>Tendência de erros (últimos 60 dias)</h2>
+      <h2>Tendência (últimos 7 dias)</h2>
       <p class="desc">Cada ponto é a média dos 7 dias anteriores — não é o total do dia, é a tendência recente</p>
       <canvas id="chartTendencia"></canvas>
     </div>
@@ -389,7 +389,7 @@ async function loadDashboard(nome){
       <canvas id="chartRanking"></canvas>
     </div>
     <div class="panel">
-      <h2>Você vs. a equipe (últimos 60 dias)</h2>
+      <h2>Você vs. a equipe (últimos 7 dias)</h2>
       <p class="desc">Cada ponto é a média dos 7 dias anteriores. "Equipe" é o resto da equipe, sem contar os seus próprios erros</p>
       <canvas id="chartComparacao"></canvas>
     </div>
@@ -417,7 +417,7 @@ async function loadDashboard(nome){
   if(chartTendencia) chartTendencia.destroy();
   chartTendencia = new Chart(document.getElementById('chartTendencia'), {
     type:'line',
-    data:{ labels: days60.map(d=>d.slice(5)), datasets:[{ data:ma, borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.3, fill:true, pointRadius:0 }]},
+    data:{ labels: days60.slice(-7).map(d=>d.slice(5)), datasets:[{ data:ma.slice(-7), borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.3, fill:true, pointRadius:3 }]},
     options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1, precision:0}}} }
   });
 
@@ -431,9 +431,9 @@ async function loadDashboard(nome){
   if(chartComparacao) chartComparacao.destroy();
   chartComparacao = new Chart(document.getElementById('chartComparacao'), {
     type:'line',
-    data:{ labels: days60.map(d=>d.slice(5)), datasets:[
-      { label:'Você', data:ma, borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.3, fill:true, pointRadius:0 },
-      { label:'Equipe (sem você)', data:maEquipe, borderColor:'#3E6B93', backgroundColor:'rgba(62,107,147,.06)', tension:.3, fill:true, pointRadius:0 }
+    data:{ labels: days60.slice(-7).map(d=>d.slice(5)), datasets:[
+      { label:'Você', data:ma.slice(-7), borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.3, fill:true, pointRadius:3 },
+      { label:'Equipe (sem você)', data:maEquipe.slice(-7), borderColor:'#3E6B93', backgroundColor:'rgba(62,107,147,.06)', tension:.3, fill:true, pointRadius:3 }
     ]},
     options:{ responsive:true, plugins:{legend:{display:true, position:'bottom'}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1, precision:0}}} }
   });

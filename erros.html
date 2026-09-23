@@ -248,7 +248,7 @@
       <select id="selectAtendenteIndividual"></select>
     </div>
     <div class="kpi-row" id="individualKpis"></div>
-    <h2>Tendência — média móvel de 7 dias</h2>
+    <h2>Tendência (últimos 7 dias)</h2>
     <canvas id="chartIndividualTendencia"></canvas>
     <h2 style="margin-top:22px">O que mais está errando</h2>
     <canvas id="chartIndividualRanking"></canvas>
@@ -716,15 +716,15 @@ async function renderIndividual(nome){
   if(chartIndividualTendenciaInstance) chartIndividualTendenciaInstance.destroy();
   chartIndividualTendenciaInstance = new Chart(document.getElementById('chartIndividualTendencia'), {
     type:'line',
-    data:{ labels: days60.map(d=>d.slice(5)), datasets:[{ data:ma, borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.3, fill:true, pointRadius:0 }]},
-    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    data:{ labels: days60.slice(-7).map(d=>d.slice(5)), datasets:[{ data:ma.slice(-7), borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.3, fill:true, pointRadius:3 }]},
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1, precision:0}}} }
   });
 
   if(chartIndividualRankingInstance) chartIndividualRankingInstance.destroy();
   chartIndividualRankingInstance = new Chart(document.getElementById('chartIndividualRanking'), {
     type:'bar',
     data:{ labels: ranking.map(r=>r[0]), datasets:[{ data: ranking.map(r=>r[1]), backgroundColor:'#8B1A3A' }]},
-    options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}} }
+    options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, ticks:{stepSize:1, precision:0}}} }
   });
 }
 
