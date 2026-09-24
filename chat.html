@@ -124,7 +124,10 @@
   .reacao-btn.on{background:var(--burgundy-tint);border-color:var(--burgundy);color:var(--burgundy);font-weight:700;}
 
   .input-area{padding:14px 22px;border-top:1px solid var(--line);background:#fff;display:flex;gap:8px;align-items:flex-end;position:sticky;bottom:0;z-index:5;flex-shrink:0;}
-  .mencao{background:var(--burgundy-tint,#F7E9EE);color:var(--burgundy,#8B1A3A);font-weight:700;padding:1px 4px;border-radius:5px;}
+  .mencao{background:rgba(139,26,58,.5);color:#5E1027;font-weight:700;padding:2px 10px;border-radius:999px;}
+  .mencao-sugestoes{position:fixed;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.14);max-height:200px;overflow-y:auto;z-index:200;}
+  .mencao-item{padding:9px 14px;font-size:13px;cursor:pointer;}
+  .mencao-item:hover{background:var(--paper);}
   .input-area textarea{flex:1;font-family:'Maven Pro',sans-serif;font-size:13.5px;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;resize:none;min-height:44px;max-height:160px;overflow-y:auto;}
   .anexo-btn{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:17px;flex-shrink:0;}
   .anexo-btn:hover{border-color:var(--burgundy);}
@@ -240,6 +243,7 @@
       <textarea id="msgInput" placeholder="Escreva uma mensagem..." rows="1"></textarea>
       <button class="enviar" onclick="enviarMensagem()">Enviar</button>
     </div>
+    <div class="mencao-sugestoes" id="mencaoSugestoes" style="display:none;"></div>
   </div>
 </div>
 
@@ -408,6 +412,10 @@ async function init(){
   document.getElementById('msgInput').addEventListener('input', () => {
     avisarQueEstouDigitando();
     autoCrescerTextarea();
+    verificarMencaoDigitando();
+  });
+  document.getElementById('msgInput').addEventListener('blur', () => {
+    setTimeout(() => { document.getElementById('mencaoSugestoes').style.display = 'none'; }, 150);
   });
   document.getElementById('msgInput').addEventListener('paste', (e) => {
     const itens = e.clipboardData?.items;
@@ -1033,6 +1041,52 @@ function inserirMensagemNaTela(m, tipo){
 
 // Formatação estilo WhatsApp: *negrito*, _itálico_, ~riscado~.
 // Escapa HTML primeiro (segurança) e só depois aplica a formatação.
+function candidatosMencao(){
+  const nomes = new Set(Object.values(nomesPorId));
+  nomes.delete('Alguém');
+  return ['todos', ...nomes].filter(Boolean);
+}
+
+function posicionarMencaoSugestoes(){
+  const el = document.getElementById('msgInput');
+  const dropdown = document.getElementById('mencaoSugestoes');
+  const rect = el.getBoundingClientRect();
+  dropdown.style.left = rect.left + 'px';
+  dropdown.style.width = Math.max(180, rect.width) + 'px';
+  dropdown.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+}
+
+function verificarMencaoDigitando(){
+  const el = document.getElementById('msgInput');
+  const dropdown = document.getElementById('mencaoSugestoes');
+  const pos = el.selectionStart;
+  const antesCursor = el.value.slice(0, pos);
+  const match = antesCursor.match(/@([^\s@]*)$/);
+  if(!match){ dropdown.style.display = 'none'; return; }
+  const termo = match[1].toLowerCase();
+  const candidatos = candidatosMencao().filter(n => n.toLowerCase().startsWith(termo)).slice(0,8);
+  if(!candidatos.length){ dropdown.style.display = 'none'; return; }
+  dropdown.innerHTML = candidatos.map(n => `<div class="mencao-item" onmousedown="selecionarMencao('${n.replace(/'/g,"\\'")}')">${n==='todos'?'📢 ':''}${n}</div>`).join('');
+  posicionarMencaoSugestoes();
+  dropdown.style.display = 'block';
+}
+window.verificarMencaoDigitando = verificarMencaoDigitando;
+
+function selecionarMencao(nome){
+  const el = document.getElementById('msgInput');
+  const pos = el.selectionStart;
+  const antesCursor = el.value.slice(0, pos);
+  const depoisCursor = el.value.slice(pos);
+  const novoAntes = antesCursor.replace(/@([^\s@]*)$/, '@'+nome+' ');
+  el.value = novoAntes + depoisCursor;
+  el.focus();
+  const novaPos = novoAntes.length;
+  el.setSelectionRange(novaPos, novaPos);
+  document.getElementById('mencaoSugestoes').style.display = 'none';
+  autoCrescerTextarea();
+}
+window.selecionarMencao = selecionarMencao;
+
 function construirRegexMencoes(){
   const nomes = new Set(Object.values(nomesPorId));
   nomes.add('todos');
