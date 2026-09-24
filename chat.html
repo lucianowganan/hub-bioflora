@@ -973,6 +973,9 @@ function assinarTempoRealCanal(){
         atualizarTextoMensagemNaTela(payload.new.id);
       }
     })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'mensagens_chat' }, (payload) => {
+      if(mensagensCarregadasPorId[payload.old.id]) carregarMensagensCanal();
+    })
     .on('broadcast', { event: 'digitando' }, (payload) => {
       if(payload.payload.userId !== meuUserId) mostrarDigitando(payload.payload.nome);
     })
@@ -1020,6 +1023,9 @@ function assinarTempoRealDm(){
         mensagensCarregadasPorId[m.id].editado_em = m.editado_em;
         atualizarTextoMensagemNaTela(m.id);
       }
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'dm_mensagens' }, (payload) => {
+      if(mensagensCarregadasPorId[payload.old.id]) carregarMensagensDm();
     })
     .on('broadcast', { event: 'digitando' }, (payload) => {
       if(payload.payload.userId !== meuUserId) mostrarDigitando(payload.payload.nome);
@@ -1423,7 +1429,11 @@ async function excluirMensagem(id, tipo){
     const tabela = tipo === 'canal' ? 'mensagens_chat' : 'dm_mensagens';
     const { error } = await supa.from(tabela).delete().eq('id', id);
     if(error){ alert('Erro: ' + error.message); return; }
-    document.getElementById('msg_'+id)?.remove();
+    // Recarrega a lista inteira em vez de só tirar o balão --
+    // senão, se a mensagem apagada era a que mostrava o nome do
+    // grupo, as de baixo ficam sem autor (bug real, já visto)
+    if(modoAtual === 'canal') await carregarMensagensCanal();
+    else await carregarMensagensDm();
   });
 }
 window.excluirMensagem = excluirMensagem;
