@@ -315,12 +315,10 @@ function atualizarAreaManip(){
   document.getElementById('mComplexaCheck').checked = false;
   document.getElementById('mComplexaTipoWrap').style.display = 'none';
   document.getElementById('mOutroWrap').style.display = 'none';
+  document.getElementById('mComplexidadeCapsulaWrap').style.display = 'none';
   if(area === 'capsula'){
-    document.getElementById('mComplexidadeCapsulaWrap').style.display = 'flex';
     document.getElementById('mComplexaCheckWrap').style.display = 'none';
-    document.getElementById('mComplexidade').innerHTML = COMPLEXIDADE_OPCOES.capsula.map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
   } else {
-    document.getElementById('mComplexidadeCapsulaWrap').style.display = 'none';
     document.getElementById('mComplexaCheckWrap').style.display = 'flex';
   }
 }
@@ -370,9 +368,7 @@ document.getElementById('mSalvar').addEventListener('click', async ()=>{
   const area = document.getElementById('mArea').value;
   const observacao = document.getElementById('mObs').value.trim() || null;
   let complexidade = 'padrao', complexidade_outro = null;
-  if(area === 'capsula'){
-    complexidade = document.getElementById('mComplexidade').value;
-  } else if(document.getElementById('mComplexaCheck').checked){
+  if(area !== 'capsula' && document.getElementById('mComplexaCheck').checked){
     complexidade = document.getElementById('mComplexidadeDermato').value;
     complexidade_outro = complexidade==='outro' ? document.getElementById('mComplexidadeOutro').value.trim() : null;
   }
