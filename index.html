@@ -922,32 +922,27 @@ async function widgetFormulasComplexas(){
   const off = new Date().getTimezoneOffset();
   const hojeStr = new Date(Date.now()-off*60000).toISOString().slice(0,10);
 
-  const { data: catalogo } = await supa.from('formulas_complexas_catalogo').select('*').eq('ativo', true).order('nome');
-  const lista = catalogo || [];
-  if(!lista.length) return '';
-
-  const idsFormulas = lista.map(f=>f.id);
-  const { data: registros } = await supa.from('formulas_complexas_registro').select('formula_id,quantidade').in('formula_id', idsFormulas).eq('data', hojeStr).in('status', ['aprovado','pendente']);
-  const vagasPorFormula = {};
-  (registros||[]).forEach(r => {
-    const f = lista.find(x=>x.id===r.formula_id);
-    if(!f) return;
-    vagasPorFormula[r.formula_id] = (vagasPorFormula[r.formula_id]||0) + Math.ceil(r.quantidade / f.unidades_por_vaga);
-  });
+  const [{ data: tempoDia }, { data: registros }] = await Promise.all([
+    supa.from('formulas_complexas_tempo_diario').select('minutos_disponiveis').eq('data', hojeStr).maybeSingle(),
+    supa.from('formulas_complexas_registro').select('quantidade,requisicao,status,minutos_calculados,formulas_complexas_catalogo(nome)').eq('data', hojeStr).in('status', ['aprovado','pendente']).order('minutos_calculados', {ascending:false})
+  ]);
+  const disponivel = tempoDia?.minutos_disponiveis ?? 480;
+  const lista = registros || [];
+  const usados = lista.reduce((s,r)=>s+(r.minutos_calculados||0), 0);
+  const pct = Math.min(100, Math.round((usados/disponivel)*100));
+  const formatarMin = (min) => { const h=Math.floor(min/60), m=Math.round(min%60); return h>0 ? `${h}h${m>0?' '+m+'min':''}` : `${Math.round(min)}min`; };
 
   return `<div class="card w8">
     <div class="card-head"><h2>Fórmulas Complexas hoje</h2><span class="card-icon">🧩</span></div>
-    <p class="card-sub">Disponibilidade de hoje — <a href="formulas-complexas.html">ver calendário completo</a></p>
+    <p class="card-sub">${formatarMin(usados)} usados de ${formatarMin(disponivel)} — <a href="formulas-complexas.html">ver calendário completo</a></p>
+    <div style="height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:14px;">
+      <div style="height:100%;width:${pct}%;background:${pct>=100?'var(--bad)':'var(--good)'};border-radius:99px;"></div>
+    </div>
     <div>
-      ${lista.map(f => {
-        const total = vagasPorFormula[f.id] || 0;
-        const restam = f.limite_diario - total;
-        const lotada = restam <= 0;
-        return `<div class="mini-list-row">
-          <span class="name" style="${lotada?'text-decoration:line-through;color:var(--gray);':''}">${f.nome}</span>
-          <span class="badge ${lotada?'bad':'good'}">${lotada?'Lotada':'restam '+restam}</span>
-        </div>`;
-      }).join('')}
+      ${lista.length ? lista.slice(0,5).map(r => `<div class="mini-list-row">
+        <span class="name">${r.formulas_complexas_catalogo?.nome || '—'} — req. ${r.requisicao || '—'}</span>
+        <span class="badge ${r.status==='pendente'?'bad':'good'}">${r.status==='pendente'?'pendente':formatarMin(r.minutos_calculados)}</span>
+      </div>`).join('') : `<div class="mini-list-row"><span class="name" style="color:var(--gray);">Nenhuma requisição pra hoje ainda.</span></div>`}
     </div>
   </div>`;
 }

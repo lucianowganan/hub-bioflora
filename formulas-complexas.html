@@ -8,12 +8,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="permissoes.js"></script>
 <style>
   :root{
-    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE;
+    --burgundy:#8B1A3A; --burgundy-tint:#F7E9EE; --burgundy-dark:#5E1027;
     --ink:#2A2224; --paper:#FBF9F7; --line:#E7DFE0; --gray:#6E6266;
     --good:#3F7A57; --good-tint:#E8F3EC; --bad:#B4472F; --bad-tint:#FBEBE6;
+    --warn:#C9922B; --warn-tint:#FBF1E0;
     --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
   }
   *{box-sizing:border-box;}
@@ -25,42 +25,74 @@
   .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--burgundy);color:#fff;text-decoration:none;display:inline-block;}
   .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
   .btn.small{padding:6px 12px;font-size:11.5px;}
+  .btn:disabled{background:var(--line);color:var(--gray);cursor:not-allowed;}
 
   .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;}
   .panel h2{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 4px;}
   .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 16px;}
 
-  .semana-nav{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
-  .semana-nav button{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:8px 14px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;}
-  .semana-nav .rotulo{font-family:var(--headfont);font-weight:600;font-size:13.5px;}
+  .form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;}
+  .form-grid > div{display:flex;flex-direction:column;gap:5px;}
+  .form-grid label{font-size:11px;color:var(--gray);font-weight:700;text-transform:uppercase;}
+  .form-grid input, .form-grid select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;}
+  @media (max-width:900px){ .form-grid{grid-template-columns:1fr 1fr;} }
 
-  .field{display:flex;flex-direction:column;gap:4px;}
-  .field label{font-size:11px;color:var(--gray);font-weight:600;}
-  .field input{font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;}
+  .preview-tempo{display:flex;gap:20px;align-items:center;background:var(--paper);border-radius:10px;padding:14px 18px;margin-bottom:14px;flex-wrap:wrap;}
+  .preview-tempo .item{font-size:12.5px;color:var(--gray);}
+  .preview-tempo .item b{display:block;font-family:var(--headfont);font-size:19px;color:var(--ink);font-weight:600;}
+  .barra-dia{flex:1;min-width:160px;height:9px;background:var(--line);border-radius:99px;overflow:hidden;}
+  .barra-dia > div{height:100%;border-radius:99px;transition:width .25s;}
 
-  table.cal-formulas{width:100%;border-collapse:collapse;font-size:12.5px;}
-  table.cal-formulas th, table.cal-formulas td{border:1px solid var(--line);padding:8px;text-align:center;vertical-align:top;}
-  table.cal-formulas th{background:var(--burgundy-tint);color:var(--burgundy);font-family:var(--headfont);font-size:11.5px;font-weight:600;}
-  table.cal-formulas td.nome-formula{text-align:left;font-weight:700;background:#fff;position:sticky;left:0;}
-  .cel-disponivel{background:var(--good-tint);cursor:pointer;border-radius:8px;padding:8px 4px;}
-  .cel-disponivel:hover{outline:2px solid var(--good);}
-  .cel-disponivel .status{color:var(--good);font-weight:700;font-size:11.5px;}
-  .cel-disponivel .restam{font-size:10.5px;color:var(--gray);margin-top:2px;}
-  .cel-lotada{background:var(--bad-tint);border-radius:8px;padding:8px 4px;}
-  .cel-lotada .status{color:var(--bad);font-weight:700;font-size:11.5px;text-decoration:line-through;}
-  .cel-feriado{background:#F1ECEA;color:var(--gray);font-size:11px;border-radius:8px;padding:8px 4px;}
+  .semana-nav{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+  .semana-nav button.nav-btn{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:8px 14px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;}
+  .semana-nav .rotulo{font-family:var(--headfont);font-weight:600;font-size:14px;min-width:190px;}
+  .expandir-btn{margin-left:auto;background:none;border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:15px;}
 
-  .quick-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;}
-  .catalogo-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
-  .catalogo-item:last-child{border-bottom:none;}
-  .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
-  .aprov-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .cal-semana{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+  .cal-dia-col{display:flex;flex-direction:column;}
+  .cal-dia-titulo{text-align:center;font-family:var(--headfont);font-size:11.5px;font-weight:600;margin-bottom:6px;}
+  .cal-dia-titulo .sub{display:block;font-size:9.5px;color:var(--gray);font-weight:400;text-transform:none;}
+  .cal-dia-corpo{flex:1;min-height:340px;border:1px solid var(--line);border-radius:10px;background:var(--paper);display:flex;flex-direction:column-reverse;overflow:hidden;position:relative;}
+  .cal-bloco{font-size:9.5px;line-height:1.25;padding:3px 6px;cursor:pointer;overflow:hidden;border-bottom:1px solid rgba(0,0,0,.08);color:var(--ink);}
+  .cal-bloco b{display:block;font-weight:700;}
+  .cal-bloco.pendente{opacity:.55;border:1.5px dashed rgba(0,0,0,.3);}
+  .cal-dia-restante{text-align:center;font-size:9.5px;color:var(--gray);padding:5px 0;}
+
+  .expandido-overlay{position:fixed;inset:0;background:var(--paper);z-index:500;display:none;padding:28px;overflow-y:auto;animation:fadeIn .18s ease;}
+  .expandido-overlay.show{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:scale(.98);}to{opacity:1;transform:scale(1);}}
+  .expandido-overlay .cal-dia-corpo{min-height:calc(100vh - 220px);}
+
+  .tabs-principais{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;border-bottom:2px solid var(--ink);}
+  .tab-principal-btn{font-family:var(--headfont);font-size:13.5px;font-weight:600;padding:10px 18px;border-radius:9px 9px 0 0;border:1px solid var(--line);border-bottom:none;background:#fff;cursor:pointer;color:var(--gray);margin-bottom:-2px;}
+  .tab-principal-btn.active{color:var(--burgundy);background:var(--burgundy-tint);border-color:var(--ink);}
+
+  .aprov-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);}
   .aprov-row:last-child{border-bottom:none;}
-  .aprov-nome{font-weight:700;}
-  .aprov-sub{color:var(--gray);font-size:11.5px;margin-top:2px;}  .modal-overlay{position:fixed;inset:0;background:rgba(42,34,36,.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px;}
+  .aprov-nome{font-weight:700;font-size:13px;}
+  .aprov-sub{font-size:11.5px;color:var(--gray);margin-top:2px;}
+  .detalhe-linha{font-size:13px;margin-bottom:8px;}
+  .detalhe-linha strong{color:var(--gray);font-weight:600;}
+  .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
+
+  .config-btn{position:fixed;bottom:20px;left:20px;background:#fff;border:1px solid var(--line);border-radius:50%;width:38px;height:38px;cursor:pointer;font-size:16px;opacity:.55;z-index:50;}
+  .config-btn:hover{opacity:1;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(42,34,36,.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px;}
   .modal-overlay.show{display:flex;}
-  .modal{background:#fff;border-radius:14px;padding:22px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;}
-  .modal h3{font-family:var(--headfont);font-size:15px;margin:0 0 10px;}
+  .modal{background:#fff;border-radius:14px;padding:24px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;}
+  .modal.wide{max-width:640px;}
+  .modal h3{font-family:var(--headfont);margin:0 0 14px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+  .edit-field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+  .edit-field label{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;}
+  .edit-field input, .edit-field select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;width:100%;}
+  .params-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .formas-lista-config{max-height:200px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;margin-bottom:14px;}
+  .forma-config-item{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);cursor:pointer;font-size:12.5px;}
+  .forma-config-item:hover{background:var(--paper);}
+  .forma-config-item:last-child{border-bottom:none;}
+  .forma-cor-dot{width:12px;height:12px;border-radius:4px;display:inline-block;margin-right:8px;vertical-align:middle;border:1px solid rgba(0,0,0,.15);}
 </style>
 </head>
 <body>
@@ -69,7 +101,7 @@
   <header class="top">
     <div class="brand-text">
       <h1>Fórmulas Complexas</h1>
-      <p>Farmácia Bioflora — limite diário de fórmulas mais trabalhosas</p>
+      <p>Farmácia Bioflora — orçamento de tempo do laboratório, por dia</p>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
       <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
@@ -78,48 +110,111 @@
   </header>
 
   <div class="panel">
-    <h2>Registrar fórmula complexa</h2>
-    <p class="desc">Escolhe a fórmula, coloca a requisição e a quantidade, e o dia certo (se for pra amanhã, coloca amanhã — não hoje que você está lançando).</p>
-    <div class="quick-form">
-      <div class="field"><label>Fórmula</label><select id="regFormulaSelect" style="width:200px;"></select></div>
-      <div class="field"><label>Requisição</label><input id="regRequisicao" placeholder="Nº da requisição" style="width:150px;"></div>
-      <div class="field"><label>Quantidade</label><input type="number" min="1" id="regQuantidade" style="width:110px;"></div>
-      <div class="field"><label>Data</label><input type="date" id="regData" style="width:150px;"></div>
-      <button class="btn" onclick="registrarComplexa()">Registrar</button>
+    <h2>Registrar / Solicitar</h2>
+    <p class="desc">O botão calcula na hora se cabe no tempo do dia ou se precisa esperar aprovação</p>
+    <div class="form-grid">
+      <div><label>Forma farmacêutica</label><select id="regForma" onchange="atualizarPreviewTempo()"></select></div>
+      <div><label>Requisição</label><input id="regRequisicao" placeholder="Nº da requisição"></div>
+      <div><label>Unidades</label><input id="regQuantidade" type="number" min="1" oninput="atualizarPreviewTempo()"></div>
+      <div><label>Data</label><input id="regData" type="date" oninput="atualizarPreviewTempo()"></div>
     </div>
-    <p id="avisoRegistroComplexa" style="font-size:12.5px;margin-top:4px;"></p>
-  </div>
-
-  <div class="panel" id="cardAprovacoesComplexas" style="display:none">
-    <h2>⏳ Fórmulas extras aguardando aprovação</h2>
-    <p class="desc">Passaram do limite do dia — chefia, conferência ou laboratório decidem se aprovam.</p>
-    <div id="listaAprovacoesComplexas"></div>
+    <div class="preview-tempo" id="previewTempo" style="display:none">
+      <div class="item">Essa requisição<b id="pvMinutosReq">—</b></div>
+      <div class="item">Já usado no dia<b id="pvMinutosUsados">—</b></div>
+      <div class="barra-dia"><div id="pvBarra"></div></div>
+      <div class="item">Disponível no dia<b id="pvMinutosDisponivel">—</b></div>
+    </div>
+    <button class="btn" id="btnRegistrar" onclick="registrarComplexa()" disabled>Preencha os campos</button>
   </div>
 
   <div class="panel">
     <div class="semana-nav">
-      <button onclick="mudarSemana(-1)">← Semana anterior</button>
+      <button class="nav-btn" onclick="mudarSemana(-1)">← Semana anterior</button>
       <span class="rotulo" id="rotuloSemana"></span>
-      <button onclick="mudarSemana(1)">Próxima semana →</button>
-      <button class="btn secondary small" onclick="irParaSemanaAtual()">Semana atual</button>
+      <button class="nav-btn" onclick="mudarSemana(1)">Próxima semana →</button>
+      <button class="nav-btn" onclick="irParaSemanaAtual()">Hoje</button>
+      <button class="expandir-btn" onclick="abrirExpandido()" title="Expandir calendário">⤢</button>
     </div>
-    <p class="desc">Verde = ainda tem vaga nesse dia. Vermelho riscado = já lotou (mas ainda dá pra registrar como extra, sob aprovação).</p>
-    <div style="overflow-x:auto;">
-      <table class="cal-formulas" id="tabelaCalFormulas"></table>
+    <div class="cal-semana" id="calSemana"></div>
+  </div>
+
+  <div class="tabs-principais">
+    <button class="tab-principal-btn active" data-tab="aprov" onclick="trocarAbaFC('aprov')">Aprovações pendentes</button>
+    <button class="tab-principal-btn" data-tab="legenda" onclick="trocarAbaFC('legenda')">Formas farmacêuticas</button>
+  </div>
+
+  <div class="tab-conteudo" id="tabAprov">
+    <div class="panel">
+      <h2>Aguardando aprovação</h2>
+      <div id="listaAprovacoes"></div>
     </div>
   </div>
 
-  <div class="panel" id="cardGerenciarComplexas" style="display:none">
-    <h2>Gerenciar catálogo <span style="font-size:11px;color:var(--gray);font-weight:400;">(só chefia)</span></h2>
-    <p class="desc">Cria, edita ou exclui as fórmulas complexas, o limite diário e o tamanho da vaga de cada uma.</p>
-    <div class="quick-form">
-      <div class="field"><label>Nome</label><input id="novaComplexaNome" placeholder="Ex: Biscoito" style="width:220px;"></div>
-      <div class="field"><label>Limite por dia (unidades)</label><input type="number" min="1" id="novaComplexaLimite" style="width:150px;"></div>
-      <button class="btn" onclick="salvarFormulaComplexa()">+ Adicionar</button>
+  <div class="tab-conteudo" id="tabLegenda" style="display:none">
+    <div class="panel">
+      <h2>Formas farmacêuticas cadastradas</h2>
+      <p class="desc">Cor de cada bloco no calendário e o tipo de cálculo de tempo usado</p>
+      <div id="listaFormasLegenda"></div>
     </div>
-    <div id="listaCatalogoComplexas"></div>
   </div>
 
+</div>
+
+<!-- Calendário expandido -->
+<div class="expandido-overlay" id="overlayExpandido">
+  <div class="semana-nav">
+    <button class="nav-btn" onclick="mudarSemana(-1)">← Semana anterior</button>
+    <span class="rotulo" id="rotuloSemanaExpandido"></span>
+    <button class="nav-btn" onclick="mudarSemana(1)">Próxima semana →</button>
+    <button class="expandir-btn" onclick="fecharExpandido()" title="Fechar">✕ Voltar</button>
+  </div>
+  <div class="cal-semana" id="calSemanaExpandido"></div>
+</div>
+
+<!-- Modal: detalhe do bloco -->
+<div class="modal-overlay" id="modalDetalheBloco">
+  <div class="modal">
+    <h3 id="detBlocoTitulo">Detalhe</h3>
+    <div id="detBlocoConteudo"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalDetalheBloco').classList.remove('show')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: confirmação registrar/solicitar -->
+<div class="modal-overlay" id="modalConfirmacaoFC">
+  <div class="modal">
+    <h3 id="confFCTitulo">Confirmado</h3>
+    <p id="confFCTexto" style="font-size:13.5px;color:var(--gray);"></p>
+    <div class="modal-actions">
+      <button class="btn" onclick="document.getElementById('modalConfirmacaoFC').classList.remove('show')">Entendi</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: configurações (escondido) -->
+<div class="modal-overlay" id="modalConfigFC">
+  <div class="modal wide">
+    <h3>Configurações</h3>
+    <div class="edit-field">
+      <label>Minutos disponíveis num dia específico</label>
+      <div style="display:flex;gap:8px;">
+        <input type="date" id="cfgData" style="flex:1;">
+        <input type="number" id="cfgMinutos" placeholder="480" style="width:110px;">
+        <button class="btn small" onclick="salvarTempoDia()">Salvar</button>
+      </div>
+      <p style="font-size:11px;color:var(--gray);margin:4px 0 0;">Se não definir nada pra uma data, ela usa o padrão de 480 minutos.</p>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;">
+    <div class="edit-field"><label>Parâmetros de cálculo por forma farmacêutica</label></div>
+    <div class="formas-lista-config" id="formasConfigLista"></div>
+    <button class="btn secondary small" onclick="abrirNovaFormaConfig()">+ Cadastrar forma farmacêutica nova</button>
+    <div id="editorFormaConfig" style="display:none;margin-top:16px;border-top:1px solid var(--line);padding-top:16px;"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalConfigFC').classList.remove('show')">Fechar</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -127,262 +222,475 @@ const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let souGerenteComplexas = false;
-let catalogoComplexasCache = [];
-let detalhesPorCelula = {};
+const TIPO_CALCULO_LABEL = {
+  fixo_mais_unidade: 'Tempo fixo + tempo por unidade',
+  minimo_com_limiar: 'Mínimo até um limiar, depois soma por unidade',
+  blocos_fixos: 'Blocos/grupos fixos',
+  placas_duplo_patamar: 'Placas com dois patamares',
+};
 
-function abrirDetalheCelula(chave, nomeFormula, dataFmt){
-  const registros = detalhesPorCelula[chave] || [];
-  document.getElementById('detalheCelulaTitulo').textContent = `${nomeFormula} — ${dataFmt}`;
-  document.getElementById('detalheCelulaConteudo').innerHTML = registros.length ? registros.map(r => `
-    <div style="border-bottom:1px solid var(--line);padding:9px 0;font-size:13px;">
-      <strong>Requisição ${r.requisicao}</strong> — ${r.quantidade} un.
-      <div style="font-size:11.5px;color:var(--gray);">Registrado por ${r.nome}${r.status==='pendente' ? ' · <span style="color:var(--warn,#C9922B);">pendente de aprovação</span>' : ''}</div>
-    </div>
-  `).join('') : '<div class="empty-state">Nenhum registro encontrado.</div>';
-  document.getElementById('modalDetalheCelula').classList.add('show');
-}
-window.abrirDetalheCelula = abrirDetalheCelula;
-let semanaInicio = inicioDaSemana(new Date());
+let catalogoFC = [];
+let souGerenteFC = false;
+let semanaInicio = null;
+let registrosSemanaCache = [];
+let tempoDiarioCache = {};
+let detalhesPorDiaCache = {};
+let idFormaEditando = null;
 
 function localDateStrFC(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
-function inicioDaSemana(d){
-  const diaSemana = d.getDay(); // 0=domingo
-  const seg = new Date(d);
-  seg.setDate(d.getDate() - (diaSemana===0 ? 6 : diaSemana-1)); // volta pra segunda
-  seg.setHours(0,0,0,0);
-  return seg;
+
+function calcularMinutos(forma, quantidade){
+  const qtd = Number(quantidade);
+  if(!forma || !qtd || qtd <= 0) return 0;
+  switch(forma.tipo_calculo){
+    case 'fixo_mais_unidade':
+      return (forma.tempo_fixo_min||0) + (forma.tempo_por_unidade_min||0) * qtd;
+    case 'minimo_com_limiar': {
+      if(qtd <= forma.limiar_unidades) return forma.tempo_fixo_min;
+      return forma.tempo_fixo_min + forma.tempo_por_unidade_min * (qtd - forma.limiar_unidades);
+    }
+    case 'blocos_fixos': {
+      const grupos = Math.ceil(qtd / forma.tamanho_grupo);
+      return grupos * forma.tempo_por_grupo_min;
+    }
+    case 'placas_duplo_patamar': {
+      let restante = qtd, total = 0;
+      while(restante > 0){
+        const nestaPlaca = Math.min(restante, forma.tamanho_placa);
+        if(nestaPlaca <= forma.limiar_placa) total += forma.tempo_placa_min;
+        else total += forma.tempo_placa_min + forma.tempo_por_unidade_acima_limiar_min * (nestaPlaca - forma.limiar_placa);
+        restante -= nestaPlaca;
+      }
+      return total;
+    }
+    default: return 0;
+  }
 }
 
-async function init(){
-  const { papel } = await requireRole(['chefia','conferencia','atendente','laboratorio']);
-  meuPapelFC = papel;
-  souGerenteComplexas = papel === 'chefia';
-  souAprovadorComplexas = ['chefia','conferencia','laboratorio'].includes(papel);
-  if(souGerenteComplexas) document.getElementById('cardGerenciarComplexas').style.display = 'block';
-  if(souAprovadorComplexas) document.getElementById('cardAprovacoesComplexas').style.display = 'block';
-  document.getElementById('regData').value = localDateStrFC(new Date());
-  await renderCalendario();
-  if(souAprovadorComplexas) await renderAprovacoes();
+function formatarMin(min){
+  if(min == null) return '—';
+  const h = Math.floor(min/60), m = Math.round(min%60);
+  return h > 0 ? `${h}h${m>0?(' '+m+'min'):''}` : `${Math.round(min)}min`;
 }
 
-let meuPapelFC = null;
-let souAprovadorComplexas = false;
+async function minutosDisponiveisNoDia(dataStr){
+  if(tempoDiarioCache[dataStr] != null) return tempoDiarioCache[dataStr];
+  const { data } = await supa.from('formulas_complexas_tempo_diario').select('minutos_disponiveis').eq('data', dataStr).maybeSingle();
+  const valor = data ? data.minutos_disponiveis : 480;
+  tempoDiarioCache[dataStr] = valor;
+  return valor;
+}
 
+async function minutosUsadosNoDia(dataStr, excluirId){
+  const { data } = await supa.from('formulas_complexas_registro').select('id,minutos_calculados').eq('data', dataStr).in('status', ['aprovado','pendente']);
+  return (data||[]).filter(r=>r.id!==excluirId).reduce((s,r)=>s+(r.minutos_calculados||0), 0);
+}
+
+// ---------- Registrar / Solicitar ----------
+async function atualizarPreviewTempo(){
+  const formaId = document.getElementById('regForma').value;
+  const qtd = Number(document.getElementById('regQuantidade').value);
+  const dataStr = document.getElementById('regData').value;
+  const btn = document.getElementById('btnRegistrar');
+  const preview = document.getElementById('previewTempo');
+
+  if(!formaId || !qtd || qtd<=0 || !dataStr){
+    preview.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Preencha os campos';
+    return;
+  }
+
+  const forma = catalogoFC.find(f=>f.id===formaId);
+  const minutosReq = calcularMinutos(forma, qtd);
+  const disponivel = await minutosDisponiveisNoDia(dataStr);
+  const usados = await minutosUsadosNoDia(dataStr);
+  const restante = Math.max(0, disponivel - usados);
+  const cabe = (usados + minutosReq) <= disponivel;
+
+  document.getElementById('pvMinutosReq').textContent = formatarMin(minutosReq);
+  document.getElementById('pvMinutosUsados').textContent = formatarMin(usados);
+  document.getElementById('pvMinutosDisponivel').textContent = formatarMin(disponivel);
+  const pct = Math.min(100, Math.round((usados/disponivel)*100));
+  document.getElementById('pvBarra').style.cssText = `width:${pct}%;background:${cabe?'var(--good)':'var(--bad)'};`;
+  preview.style.display = 'flex';
+
+  btn.disabled = false;
+  btn.textContent = cabe ? `Registrar (${formatarMin(minutosReq)})` : `Solicitar (${formatarMin(minutosReq)}, sem espaço livre)`;
+  btn.style.background = cabe ? 'var(--good)' : 'var(--warn)';
+}
+window.atualizarPreviewTempo = atualizarPreviewTempo;
+
+async function registrarComplexa(){
+  const formaId = document.getElementById('regForma').value;
+  const requisicao = document.getElementById('regRequisicao').value.trim();
+  const qtd = Number(document.getElementById('regQuantidade').value);
+  const dataStr = document.getElementById('regData').value;
+  if(!formaId || !requisicao || !qtd || !dataStr){ alert('Preenche todos os campos.'); return; }
+
+  const forma = catalogoFC.find(f=>f.id===formaId);
+  const minutosReq = calcularMinutos(forma, qtd);
+  const disponivel = await minutosDisponiveisNoDia(dataStr);
+  const usados = await minutosUsadosNoDia(dataStr);
+  const status = (usados + minutosReq) <= disponivel ? 'aprovado' : 'pendente';
+
+  const { data: { session } } = await supa.auth.getSession();
+  const { error } = await supa.from('formulas_complexas_registro').insert({
+    formula_id: formaId, data: dataStr, quantidade: qtd, requisicao, status,
+    minutos_calculados: minutosReq, registrado_por: session.user.id
+  });
+  if(error){ alert('Erro: '+error.message); return; }
+
+  document.getElementById('confFCTitulo').textContent = status==='aprovado' ? '✅ Registrado' : '⏳ Aguardando aprovação';
+  document.getElementById('confFCTexto').textContent = status==='aprovado'
+    ? `A requisição ${requisicao} já está confirmada pro dia ${new Date(dataStr+'T12:00:00').toLocaleDateString('pt-BR')}.`
+    : `Não tinha mais tempo livre nesse dia -- a requisição ${requisicao} foi pra fila de aprovação da chefia/conferência/laboratório.`;
+  document.getElementById('modalConfirmacaoFC').classList.add('show');
+
+  document.getElementById('regRequisicao').value = '';
+  document.getElementById('regQuantidade').value = '';
+  document.getElementById('previewTempo').style.display = 'none';
+  document.getElementById('btnRegistrar').disabled = true;
+  document.getElementById('btnRegistrar').textContent = 'Preencha os campos';
+  delete tempoDiarioCache[dataStr];
+  await carregarSemana();
+  await carregarAprovacoesFC();
+}
+window.registrarComplexa = registrarComplexa;
+
+// ---------- Calendário semanal ----------
 function mudarSemana(delta){
-  const nova = new Date(semanaInicio);
-  nova.setDate(nova.getDate() + delta*7);
-  semanaInicio = nova;
-  renderCalendario();
+  semanaInicio.setDate(semanaInicio.getDate() + delta*7);
+  carregarSemana();
 }
 window.mudarSemana = mudarSemana;
 
 function irParaSemanaAtual(){
   semanaInicio = inicioDaSemana(new Date());
-  renderCalendario();
+  carregarSemana();
 }
 window.irParaSemanaAtual = irParaSemanaAtual;
 
-async function renderCalendario(){
-  const { data: catalogo } = await supa.from('formulas_complexas_catalogo').select('*').eq('ativo', true).order('nome');
-  catalogoComplexasCache = catalogo || [];
+function inicioDaSemana(d){
+  const r = new Date(d);
+  r.setDate(r.getDate() - r.getDay());
+  r.setHours(0,0,0,0);
+  return r;
+}
 
-  document.getElementById('regFormulaSelect').innerHTML = catalogoComplexasCache.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('') || '<option value="">Nenhuma cadastrada</option>';
-
+async function carregarSemana(){
   const dias = [];
   for(let i=0;i<7;i++){ const d = new Date(semanaInicio); d.setDate(semanaInicio.getDate()+i); dias.push(d); }
   const inicioStr = localDateStrFC(dias[0]);
   const fimStr = localDateStrFC(dias[6]);
-  document.getElementById('rotuloSemana').textContent = `${dias[0].toLocaleDateString('pt-BR')} a ${dias[6].toLocaleDateString('pt-BR')}`;
+  const rotulo = `${dias[0].toLocaleDateString('pt-BR')} a ${dias[6].toLocaleDateString('pt-BR')}`;
+  document.getElementById('rotuloSemana').textContent = rotulo;
+  document.getElementById('rotuloSemanaExpandido').textContent = rotulo;
 
-  const idsFormulas = catalogoComplexasCache.map(f=>f.id);
-  let registros = [];
-  if(idsFormulas.length){
-    const { data } = await supa.from('formulas_complexas_registro').select('id,formula_id,data,quantidade,status,requisicao,registrado_por').in('formula_id', idsFormulas).in('status', ['aprovado','pendente']).gte('data', inicioStr).lte('data', fimStr);
-    registros = data || [];
-  }
+  const { data } = await supa.from('formulas_complexas_registro')
+    .select('id,formula_id,data,quantidade,status,requisicao,minutos_calculados,registrado_por')
+    .in('status', ['aprovado','pendente']).gte('data', inicioStr).lte('data', fimStr);
+  registrosSemanaCache = data || [];
 
-  const idsUsuarios = [...new Set(registros.map(r=>r.registrado_por).filter(Boolean))];
+  const idsUsuarios = [...new Set(registrosSemanaCache.map(r=>r.registrado_por).filter(Boolean))];
   let nomesPorUsuario = {};
   if(idsUsuarios.length){
     const { data: perfisReg } = await supa.from('perfis').select('id,nome_exibicao').in('id', idsUsuarios);
     (perfisReg||[]).forEach(p => { nomesPorUsuario[p.id] = p.nome_exibicao || 'Sem nome'; });
   }
 
-  const unidadesPorFormulaData = {};
-  detalhesPorCelula = {};
-  registros.forEach(r => {
-    const f = catalogoComplexasCache.find(x=>x.id===r.formula_id);
-    if(!f) return;
-    const chave = r.formula_id+'_'+r.data;
-    unidadesPorFormulaData[chave] = (unidadesPorFormulaData[chave]||0) + r.quantidade;
-    (detalhesPorCelula[chave] = detalhesPorCelula[chave] || []).push({
-      requisicao: r.requisicao || '—',
-      quantidade: r.quantidade,
-      status: r.status,
-      nome: nomesPorUsuario[r.registrado_por] || 'Desconhecido'
-    });
-  });
-
-  const DIAS_SEMANA = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
-
-  let html = `<thead><tr><th style="text-align:left;min-width:160px;">Fórmula</th>${dias.map((d,i)=>`<th>${DIAS_SEMANA[i]}<br>${d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</th>`).join('')}</tr></thead><tbody>`;
-
-  if(!catalogoComplexasCache.length){
-    html += `<tr><td colspan="8" class="empty-state">Nenhuma fórmula complexa cadastrada ainda.</td></tr>`;
-  } else {
-    catalogoComplexasCache.forEach(f => {
-      html += `<tr><td class="nome-formula">${f.nome}<div style="font-size:10px;color:var(--gray);font-weight:400;">${f.limite_diario} unidades/dia</div></td>`;
-      dias.forEach(d => {
-        const dataStr = localDateStrFC(d);
-        const chaveCel = f.id+'_'+dataStr;
-        const total = unidadesPorFormulaData[chaveCel] || 0;
-        const restam = f.limite_diario - total;
-        const temRegistros = (detalhesPorCelula[chaveCel]||[]).length > 0;
-        const clique = temRegistros ? `onclick="abrirDetalheCelula('${chaveCel}', '${f.nome.replace(/'/g,"\\'")}', '${d.toLocaleDateString('pt-BR')}')" style="cursor:pointer;"` : '';
-        if(restam <= 0){
-          html += `<td ${clique}><div class="cel-lotada"><div class="status">Lotada</div>${temRegistros?'<div style="font-size:9.5px;color:var(--gray);">ver requisições</div>':''}</div></td>`;
-        } else {
-          html += `<td ${clique}><div class="cel-disponivel"><div class="status">Disponível</div><div class="restam">restam ${restam} un.</div>${temRegistros?'<div style="font-size:9.5px;color:var(--gray);">ver requisições</div>':''}</div></td>`;
-        }
-      });
-      html += '</tr>';
-    });
+  detalhesPorDiaCache = {};
+  for(const dia of dias){
+    const dataStr = localDateStrFC(dia);
+    const disponivel = await minutosDisponiveisNoDia(dataStr);
+    const regsHoje = registrosSemanaCache.filter(r=>r.data===dataStr).sort((a,b)=>(a.minutos_calculados||0)-(b.minutos_calculados||0));
+    detalhesPorDiaCache[dataStr] = { disponivel, regs: regsHoje, nomesPorUsuario };
   }
-  html += '</tbody>';
-  document.getElementById('tabelaCalFormulas').innerHTML = html;
 
-  if(souGerenteComplexas) renderCatalogoComplexasGerencia();
+  renderSemana('calSemana', dias);
+  renderSemana('calSemanaExpandido', dias);
 }
 
-async function registrarComplexa(){
-  const formulaId = document.getElementById('regFormulaSelect').value;
-  const requisicao = document.getElementById('regRequisicao').value.trim();
-  const quantidade = Number(document.getElementById('regQuantidade').value);
-  const dataStr = document.getElementById('regData').value;
-  const aviso = document.getElementById('avisoRegistroComplexa');
-
-  if(!formulaId){ aviso.textContent = 'Escolhe uma fórmula.'; aviso.style.color = 'var(--bad)'; return; }
-  if(!requisicao){ aviso.textContent = 'Informa a requisição.'; aviso.style.color = 'var(--bad)'; return; }
-  if(!quantidade || quantidade < 1){ aviso.textContent = 'Quantidade inválida.'; aviso.style.color = 'var(--bad)'; return; }
-  if(!dataStr){ aviso.textContent = 'Escolhe a data certa (hoje, amanhã, ou a que for).'; aviso.style.color = 'var(--bad)'; return; }
-
-  const formula = catalogoComplexasCache.find(f=>f.id===formulaId);
-
-  const { data: existentes } = await supa.from('formulas_complexas_registro').select('quantidade').eq('formula_id', formulaId).eq('data', dataStr).in('status', ['aprovado','pendente']);
-  const unidadesJaUsadas = (existentes||[]).reduce((s,r)=>s+r.quantidade, 0);
-
-  const vaiExtrapolar = (unidadesJaUsadas + quantidade) > formula.limite_diario;
-  const status = vaiExtrapolar ? 'pendente' : 'aprovado';
-
-  const { data: { session } } = await supa.auth.getSession();
-  const { error } = await supa.from('formulas_complexas_registro').insert({
-    formula_id: formulaId, data: dataStr, quantidade, requisicao, status, registrado_por: session.user.id
-  });
-  if(error){ aviso.style.color = 'var(--bad)'; aviso.textContent = 'Erro: '+error.message; return; }
-
-  if(vaiExtrapolar){
-    aviso.style.color = 'var(--bad)';
-    aviso.textContent = `⚠️ Isso passa do limite do dia — registrado como fórmula extra, aguardando aprovação da chefia, conferência ou laboratório.`;
-  } else {
-    aviso.style.color = 'var(--good)';
-    aviso.textContent = '✅ Registrado dentro do limite do dia.';
-  }
-  document.getElementById('regRequisicao').value = '';
-  document.getElementById('regQuantidade').value = '';
-  renderCalendario();
-  if(souAprovadorComplexas) renderAprovacoes();
+function renderSemana(containerId, dias){
+  const DIAS_SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const hojeStr = localDateStrFC(new Date());
+  document.getElementById(containerId).innerHTML = dias.map(d => {
+    const dataStr = localDateStrFC(d);
+    const info = detalhesPorDiaCache[dataStr] || { disponivel:480, regs:[], nomesPorUsuario:{} };
+    const usados = info.regs.reduce((s,r)=>s+(r.minutos_calculados||0),0);
+    const restante = Math.max(0, info.disponivel - usados);
+    const blocos = info.regs.map(r => {
+      const forma = catalogoFC.find(f=>f.id===r.formula_id);
+      const alturaPct = Math.max(6, Math.round((r.minutos_calculados/info.disponivel)*100));
+      const cor = forma ? forma.cor : '#ccc';
+      return `<div class="cal-bloco ${r.status==='pendente'?'pendente':''}" style="height:${alturaPct}%;background:${cor};" onclick="abrirDetalheBloco('${r.id}')">
+        <b>${r.requisicao}</b>${forma?forma.nome:'—'} · ${r.quantidade}un
+      </div>`;
+    }).join('');
+    return `<div class="cal-dia-col">
+      <div class="cal-dia-titulo">${DIAS_SEMANA[d.getDay()].slice(0,3)}<span class="sub">${d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</span></div>
+      <div class="cal-dia-corpo" style="${dataStr===hojeStr?'outline:2px solid var(--burgundy);':''}">${blocos}</div>
+      <div class="cal-dia-restante">${formatarMin(restante)} livre</div>
+    </div>`;
+  }).join('');
 }
-window.registrarComplexa = registrarComplexa;
 
-async function renderAprovacoes(){
+function abrirDetalheBloco(id){
+  const registro = registrosSemanaCache.find(r=>r.id===id);
+  if(!registro) return;
+  const forma = catalogoFC.find(f=>f.id===registro.formula_id);
+  const info = detalhesPorDiaCache[registro.data];
+  const nome = info?.nomesPorUsuario?.[registro.registrado_por] || 'Alguém';
+  document.getElementById('detBlocoTitulo').textContent = `Requisição ${registro.requisicao}`;
+  document.getElementById('detBlocoConteudo').innerHTML = `
+    <div class="detalhe-linha"><strong>Forma:</strong> ${forma?forma.nome:'—'}</div>
+    <div class="detalhe-linha"><strong>Unidades:</strong> ${registro.quantidade}</div>
+    <div class="detalhe-linha"><strong>Tempo:</strong> ${formatarMin(registro.minutos_calculados)}</div>
+    <div class="detalhe-linha"><strong>Data:</strong> ${new Date(registro.data+'T12:00:00').toLocaleDateString('pt-BR')}</div>
+    <div class="detalhe-linha"><strong>Registrado por:</strong> ${nome}</div>
+    <div class="detalhe-linha"><strong>Status:</strong> ${registro.status==='pendente'?'Pendente de aprovação':'Aprovado'}</div>
+  `;
+  document.getElementById('modalDetalheBloco').classList.add('show');
+}
+window.abrirDetalheBloco = abrirDetalheBloco;
+
+function abrirExpandido(){ document.getElementById('overlayExpandido').classList.add('show'); }
+window.abrirExpandido = abrirExpandido;
+function fecharExpandido(){ document.getElementById('overlayExpandido').classList.remove('show'); }
+window.fecharExpandido = fecharExpandido;
+
+// ---------- Abas ----------
+function trocarAbaFC(aba){
+  document.querySelectorAll('.tab-principal-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===aba));
+  document.getElementById('tabAprov').style.display = aba==='aprov' ? 'block' : 'none';
+  document.getElementById('tabLegenda').style.display = aba==='legenda' ? 'block' : 'none';
+  if(aba==='legenda') renderLegendaFormas();
+}
+window.trocarAbaFC = trocarAbaFC;
+
+function renderLegendaFormas(){
+  document.getElementById('listaFormasLegenda').innerHTML = catalogoFC.map(f => `
+    <div class="forma-config-item" style="cursor:default;">
+      <span><span class="forma-cor-dot" style="background:${f.cor}"></span>${f.nome}</span>
+      <span style="color:var(--gray);">${TIPO_CALCULO_LABEL[f.tipo_calculo]||''}</span>
+    </div>
+  `).join('') || '<div class="empty-state">Nenhuma forma cadastrada.</div>';
+}
+
+// ---------- Aprovações ----------
+async function carregarAprovacoesFC(){
   const { data } = await supa.from('formulas_complexas_registro')
-    .select('id,data,quantidade,requisicao,criado_em,formulas_complexas_catalogo(nome)')
+    .select('id,data,quantidade,requisicao,minutos_calculados,formulas_complexas_catalogo(nome)')
     .eq('status','pendente').order('data');
   const pendentes = data || [];
-
-  document.getElementById('listaAprovacoesComplexas').innerHTML = pendentes.length ? pendentes.map(r => `
+  document.getElementById('listaAprovacoes').innerHTML = pendentes.length ? pendentes.map(r => `
     <div class="aprov-row">
       <div>
         <div class="aprov-nome">${r.formulas_complexas_catalogo?.nome || '—'} — req. ${r.requisicao || '—'}</div>
-        <div class="aprov-sub">${new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR')} · ${r.quantidade} unidades</div>
+        <div class="aprov-sub">${new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR')} · ${r.quantidade} unidades · ${formatarMin(r.minutos_calculados)}</div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn small" onclick="decidirExtraComplexa('${r.id}','aprovado')">Aprovar</button>
-        <button class="btn secondary small" onclick="decidirExtraComplexa('${r.id}','rejeitado')" style="color:var(--bad);">Rejeitar</button>
+        <button class="btn small" onclick="decidirFC('${r.id}','aprovado')">Aprovar</button>
+        <button class="btn secondary small" onclick="decidirFC('${r.id}','rejeitado')" style="color:var(--bad);">Rejeitar</button>
       </div>
     </div>
   `).join('') : '<div class="empty-state">Nada pendente no momento.</div>';
 }
 
-async function decidirExtraComplexa(id, novoStatus){
+async function decidirFC(id, novoStatus){
   const { data: { session } } = await supa.auth.getSession();
   const { error } = await supa.from('formulas_complexas_registro').update({
     status: novoStatus, aprovado_por: session.user.id, aprovado_em: new Date().toISOString()
   }).eq('id', id);
   if(error){ alert('Erro: '+error.message); return; }
-  renderAprovacoes();
-  renderCalendario();
+  await carregarAprovacoesFC();
+  await carregarSemana();
 }
-window.decidirExtraComplexa = decidirExtraComplexa;
+window.decidirFC = decidirFC;
 
-function renderCatalogoComplexasGerencia(){
-  document.getElementById('listaCatalogoComplexas').innerHTML = catalogoComplexasCache.length ? catalogoComplexasCache.map(f => `
-    <div class="catalogo-item">
-      <span>${f.nome} — ${f.limite_diario} unidades/dia</span>
-      <div style="display:flex;gap:8px;">
-        <button class="btn secondary small" onclick="editarLimiteComplexa('${f.id}', ${f.limite_diario})">Editar limite</button>
-        <button class="btn secondary small" onclick="excluirFormulaComplexa('${f.id}')" style="color:var(--bad);">Excluir</button>
-      </div>
-    </div>
-  `).join('') : '<div class="empty-state">Nada cadastrado ainda.</div>';
-}
-
-async function salvarFormulaComplexa(){
-  const nome = document.getElementById('novaComplexaNome').value.trim();
-  const limite = Number(document.getElementById('novaComplexaLimite').value);
-  if(!nome || !limite){ alert('Preenche nome e limite.'); return; }
+// ---------- Configurações (chefia/conferência/laboratório) ----------
+async function salvarTempoDia(){
+  const dataStr = document.getElementById('cfgData').value;
+  const minutos = Number(document.getElementById('cfgMinutos').value);
+  if(!dataStr || !minutos){ alert('Preenche data e minutos.'); return; }
   const { data: { session } } = await supa.auth.getSession();
-  const { error } = await supa.from('formulas_complexas_catalogo').insert({ nome, limite_diario: limite, unidades_por_vaga: 1, criado_por: session.user.id });
+  const { error } = await supa.from('formulas_complexas_tempo_diario').upsert({
+    data: dataStr, minutos_disponiveis: minutos, atualizado_por: session.user.id, atualizado_em: new Date().toISOString()
+  }, { onConflict: 'data' });
   if(error){ alert('Erro: '+error.message); return; }
-  document.getElementById('novaComplexaNome').value = '';
-  document.getElementById('novaComplexaLimite').value = '';
-  renderCalendario();
+  delete tempoDiarioCache[dataStr];
+  alert('Salvo.');
+  await carregarSemana();
 }
-window.salvarFormulaComplexa = salvarFormulaComplexa;
+window.salvarTempoDia = salvarTempoDia;
 
-async function editarLimiteComplexa(id, limiteAtual){
-  const novo = prompt('Novo limite diário (em vagas):', limiteAtual);
-  if(novo === null) return;
-  const limite = Number(novo);
-  if(!limite || limite < 1){ alert('Limite inválido.'); return; }
-  const { error } = await supa.from('formulas_complexas_catalogo').update({ limite_diario: limite }).eq('id', id);
+function renderFormasConfigLista(){
+  document.getElementById('formasConfigLista').innerHTML = catalogoFC.map(f => `
+    <div class="forma-config-item" onclick="editarFormaConfig('${f.id}')">
+      <span><span class="forma-cor-dot" style="background:${f.cor}"></span>${f.nome}</span>
+      <span style="color:var(--gray);">editar →</span>
+    </div>
+  `).join('') || '<div class="empty-state">Nenhuma forma cadastrada.</div>';
+}
+
+function camposParaTipo(tipo, f){
+  f = f || {};
+  const v = (x) => x==null ? '' : x;
+  if(tipo === 'fixo_mais_unidade') return `
+    <div class="params-grid">
+      <div class="edit-field"><label>Tempo fixo (min)</label><input type="number" step="any" id="pTempoFixo" value="${v(f.tempo_fixo_min)}"></div>
+      <div class="edit-field"><label>Tempo por unidade (min)</label><input type="number" step="any" id="pTempoUnidade" value="${v(f.tempo_por_unidade_min)}"></div>
+    </div>`;
+  if(tipo === 'minimo_com_limiar') return `
+    <div class="params-grid">
+      <div class="edit-field"><label>Tempo até o limiar (min)</label><input type="number" step="any" id="pTempoFixo" value="${v(f.tempo_fixo_min)}"></div>
+      <div class="edit-field"><label>Limiar (unidades)</label><input type="number" id="pLimiar" value="${v(f.limiar_unidades)}"></div>
+      <div class="edit-field"><label>Tempo por unidade acima (min)</label><input type="number" step="any" id="pTempoUnidade" value="${v(f.tempo_por_unidade_min)}"></div>
+    </div>`;
+  if(tipo === 'blocos_fixos') return `
+    <div class="params-grid">
+      <div class="edit-field"><label>Tamanho do grupo (unidades)</label><input type="number" id="pTamanhoGrupo" value="${v(f.tamanho_grupo)}"></div>
+      <div class="edit-field"><label>Tempo por grupo (min)</label><input type="number" step="any" id="pTempoGrupo" value="${v(f.tempo_por_grupo_min)}"></div>
+    </div>`;
+  if(tipo === 'placas_duplo_patamar') return `
+    <div class="params-grid">
+      <div class="edit-field"><label>Tamanho da placa (unidades)</label><input type="number" id="pTamanhoPlaca" value="${v(f.tamanho_placa)}"></div>
+      <div class="edit-field"><label>Limiar dentro da placa</label><input type="number" id="pLimiarPlaca" value="${v(f.limiar_placa)}"></div>
+      <div class="edit-field"><label>Tempo da placa até o limiar (min)</label><input type="number" step="any" id="pTempoPlaca" value="${v(f.tempo_placa_min)}"></div>
+      <div class="edit-field"><label>Tempo por unidade acima do limiar (min)</label><input type="number" step="any" id="pTempoUnidadeAcima" value="${v(f.tempo_por_unidade_acima_limiar_min)}"></div>
+    </div>`;
+  return '';
+}
+
+let formaSendoEditada = null;
+
+function editarFormaConfig(id){
+  const f = catalogoFC.find(x=>x.id===id);
+  idFormaEditando = id;
+  formaSendoEditada = f;
+  document.getElementById('editorFormaConfig').style.display = 'block';
+  document.getElementById('editorFormaConfig').innerHTML = `
+    <div class="edit-field"><label>Nome</label><input id="pNome" value="${f.nome}"></div>
+    <div class="edit-field"><label>Cor no calendário</label><input type="color" id="pCor" value="${f.cor}"></div>
+    <div class="edit-field"><label>Tipo de cálculo</label>
+      <select id="pTipoCalculo" onchange="document.getElementById('camposTipoCalculo').innerHTML = camposParaTipo(this.value, formaSendoEditada)">
+        ${Object.entries(TIPO_CALCULO_LABEL).map(([k,l])=>`<option value="${k}" ${f.tipo_calculo===k?'selected':''}>${l}</option>`).join('')}
+      </select>
+    </div>
+    <div id="camposTipoCalculo">${camposParaTipo(f.tipo_calculo, f)}</div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="excluirFormaConfig()" style="color:var(--bad);">Excluir</button>
+      <button class="btn" onclick="salvarFormaConfig()">Salvar</button>
+    </div>
+  `;
+}
+window.editarFormaConfig = editarFormaConfig;
+window.camposParaTipo = camposParaTipo;
+
+function abrirNovaFormaConfig(){
+  idFormaEditando = null;
+  formaSendoEditada = null;
+  document.getElementById('editorFormaConfig').style.display = 'block';
+  document.getElementById('editorFormaConfig').innerHTML = `
+    <div class="edit-field"><label>Nome</label><input id="pNome" placeholder="Ex: Cápsula gelatinosa"></div>
+    <div class="edit-field"><label>Cor no calendário</label><input type="color" id="pCor" value="#8B1A3A"></div>
+    <div class="edit-field"><label>Tipo de cálculo</label>
+      <select id="pTipoCalculo" onchange="document.getElementById('camposTipoCalculo').innerHTML = camposParaTipo(this.value)">
+        ${Object.entries(TIPO_CALCULO_LABEL).map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}
+      </select>
+    </div>
+    <div id="camposTipoCalculo">${camposParaTipo('fixo_mais_unidade')}</div>
+    <div class="modal-actions">
+      <button class="btn" onclick="salvarFormaConfig()">Cadastrar</button>
+    </div>
+  `;
+}
+window.abrirNovaFormaConfig = abrirNovaFormaConfig;
+
+function lerCamposTipo(tipo){
+  const num = (id) => { const el = document.getElementById(id); return el && el.value!=='' ? Number(el.value) : null; };
+  const obj = { tipo_calculo: tipo, tempo_fixo_min:0, tempo_por_unidade_min:0, limiar_unidades:null, tamanho_grupo:null, tempo_por_grupo_min:null, tamanho_placa:null, limiar_placa:null, tempo_placa_min:null, tempo_por_unidade_acima_limiar_min:null };
+  if(tipo==='fixo_mais_unidade'){ obj.tempo_fixo_min = num('pTempoFixo')||0; obj.tempo_por_unidade_min = num('pTempoUnidade')||0; }
+  if(tipo==='minimo_com_limiar'){ obj.tempo_fixo_min = num('pTempoFixo')||0; obj.limiar_unidades = num('pLimiar'); obj.tempo_por_unidade_min = num('pTempoUnidade')||0; }
+  if(tipo==='blocos_fixos'){ obj.tamanho_grupo = num('pTamanhoGrupo'); obj.tempo_por_grupo_min = num('pTempoGrupo'); }
+  if(tipo==='placas_duplo_patamar'){ obj.tamanho_placa = num('pTamanhoPlaca'); obj.limiar_placa = num('pLimiarPlaca'); obj.tempo_placa_min = num('pTempoPlaca'); obj.tempo_por_unidade_acima_limiar_min = num('pTempoUnidadeAcima'); }
+  return obj;
+}
+
+async function salvarFormaConfig(){
+  const nome = document.getElementById('pNome').value.trim();
+  const cor = document.getElementById('pCor').value;
+  const tipo = document.getElementById('pTipoCalculo').value;
+  if(!nome){ alert('Preenche o nome.'); return; }
+  const campos = lerCamposTipo(tipo);
+  const dados = { nome, cor, ...campos, limite_diario: 999, unidades_por_vaga: 1 };
+
+  if(idFormaEditando){
+    const { error } = await supa.from('formulas_complexas_catalogo').update(dados).eq('id', idFormaEditando);
+    if(error){ alert('Erro: '+error.message); return; }
+  } else {
+    const { data: { session } } = await supa.auth.getSession();
+    const { error } = await supa.from('formulas_complexas_catalogo').insert({ ...dados, criado_por: session.user.id });
+    if(error){ alert('Erro: '+error.message); return; }
+  }
+  document.getElementById('editorFormaConfig').style.display = 'none';
+  await carregarCatalogoFC();
+  renderFormasConfigLista();
+  popularSelectForma();
+  await carregarSemana();
+}
+window.salvarFormaConfig = salvarFormaConfig;
+
+async function excluirFormaConfig(){
+  if(!idFormaEditando || !confirm('Excluir essa forma farmacêutica? Registros antigos que usam ela continuam existindo.')) return;
+  const { error } = await supa.from('formulas_complexas_catalogo').delete().eq('id', idFormaEditando);
   if(error){ alert('Erro: '+error.message); return; }
-  renderCalendario();
+  document.getElementById('editorFormaConfig').style.display = 'none';
+  await carregarCatalogoFC();
+  renderFormasConfigLista();
+  popularSelectForma();
 }
-window.editarLimiteComplexa = editarLimiteComplexa;
+window.excluirFormaConfig = excluirFormaConfig;
 
-async function excluirFormulaComplexa(id){
-  if(!confirm('Excluir essa fórmula complexa do catálogo? O histórico de registros dela some junto.')) return;
-  const { error } = await supa.from('formulas_complexas_catalogo').delete().eq('id', id);
-  if(error){ alert('Erro: '+error.message); return; }
-  renderCalendario();
+// ---------- Init ----------
+async function carregarCatalogoFC(){
+  const { data } = await supa.from('formulas_complexas_catalogo').select('*').eq('ativo', true).order('nome');
+  catalogoFC = data || [];
 }
-window.excluirFormulaComplexa = excluirFormulaComplexa;
 
+function popularSelectForma(){
+  document.getElementById('regForma').innerHTML = '<option value="">Selecione...</option>' + catalogoFC.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+}
+
+async function init(){
+  const { papel } = await requireRole(['chefia','gestao','conferencia','atendente','laboratorio']);
+  souGerenteFC = ['chefia','conferencia','laboratorio'].includes(papel);
+
+  document.getElementById('regData').value = localDateStrFC(new Date());
+  semanaInicio = inicioDaSemana(new Date());
+
+  await carregarCatalogoFC();
+  popularSelectForma();
+
+  if(souGerenteFC){
+    const cfgBtn = document.createElement('button');
+    cfgBtn.className = 'config-btn';
+    cfgBtn.title = 'Configurações';
+    cfgBtn.textContent = '⚙';
+    cfgBtn.onclick = () => {
+      document.getElementById('cfgData').value = localDateStrFC(new Date());
+      renderFormasConfigLista();
+      document.getElementById('editorFormaConfig').style.display = 'none';
+      document.getElementById('modalConfigFC').classList.add('show');
+    };
+    document.body.appendChild(cfgBtn);
+  }
+
+  await carregarSemana();
+  await carregarAprovacoesFC();
+}
 init();
 </script>
 <script>(function(){var s=document.createElement("script");s.src="acessibilidade.js?t="+Date.now();document.body.appendChild(s);})();</script>
 <script>(function(){var s=document.createElement("script");s.src="hub-sidebar.js?t="+Date.now();document.body.appendChild(s);})();</script>
-<div class="modal-overlay" id="modalDetalheCelula">
-  <div class="modal">
-    <h3 id="detalheCelulaTitulo">Detalhe</h3>
-    <div id="detalheCelulaConteudo"></div>
-    <div style="text-align:right;margin-top:14px;">
-      <button class="btn secondary" onclick="document.getElementById('modalDetalheCelula').classList.remove('show')">Fechar</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
