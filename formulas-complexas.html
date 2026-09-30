@@ -75,9 +75,6 @@
   .detalhe-linha strong{color:var(--gray);font-weight:600;}
   .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
 
-  .config-btn{position:fixed;bottom:20px;left:20px;background:#fff;border:1px solid var(--line);border-radius:50%;width:38px;height:38px;cursor:pointer;font-size:16px;opacity:.55;z-index:50;}
-  .config-btn:hover{opacity:1;}
-
   .modal-overlay{position:fixed;inset:0;background:rgba(42,34,36,.5);display:none;align-items:center;justify-content:center;z-index:999;padding:20px;}
   .modal-overlay.show{display:flex;}
   .modal{background:#fff;border-radius:14px;padding:24px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;}
@@ -104,6 +101,7 @@
       <p>Farmácia Bioflora — orçamento de tempo do laboratório, por dia</p>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
+      <span id="cfgFormulasLink" style="display:none;"><button class="btn secondary" id="cfgFormulasBtn">⚙ Configurações</button></span>
       <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
       <button onclick="logout()" class="btn secondary">Sair</button>
     </div>
@@ -672,17 +670,13 @@ async function init(){
   popularSelectForma();
 
   if(souGerenteFC){
-    const cfgBtn = document.createElement('button');
-    cfgBtn.className = 'config-btn';
-    cfgBtn.title = 'Configurações';
-    cfgBtn.textContent = '⚙';
-    cfgBtn.onclick = () => {
+    document.getElementById('cfgFormulasLink').style.display = 'inline-block';
+    document.getElementById('cfgFormulasBtn').onclick = () => {
       document.getElementById('cfgData').value = localDateStrFC(new Date());
       renderFormasConfigLista();
       document.getElementById('editorFormaConfig').style.display = 'none';
       document.getElementById('modalConfigFC').classList.add('show');
     };
-    document.body.appendChild(cfgBtn);
   }
 
   await carregarSemana();
