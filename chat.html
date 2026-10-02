@@ -81,6 +81,14 @@
     .chat-shell.mostrando-conversa .chat-main{display:flex;}
     .chat-voltar-btn{display:inline-flex;align-items:center;}
   }
+  /* Tela dividida / janela estreita (qualquer ponteiro): a sidebar vira barra fixa de 64px
+     embaixo (hub-sidebar.js), então o chat desconta essa altura pra não cobrir o campo de escrever */
+  @media (max-width:720px){
+    .chat-shell{height:calc(100vh - 64px);height:calc(100dvh - 64px);}
+  }
+  @media (min-width:721px) and (max-width:1000px){
+    .canais-col{width:190px;}
+  }
   .chat-header h2{font-family:var(--headfont);font-size:15px;margin:0;}
   .chat-header p{font-size:11.5px;color:var(--gray);margin:2px 0 0;}
   .del-canal-link{font-size:11px;color:var(--bad);background:none;border:none;cursor:pointer;text-decoration:underline;}
