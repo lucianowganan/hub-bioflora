@@ -46,6 +46,10 @@
   .semana-nav{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
   .semana-nav button.nav-btn{font-family:'Maven Pro',sans-serif;font-size:12.5px;padding:8px 14px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;}
   .semana-nav .rotulo{font-family:var(--headfont);font-weight:600;font-size:14px;min-width:190px;}
+  .aviso-excedido{background:var(--bad-tint);color:var(--bad);border-radius:10px;padding:12px 16px;font-size:13px;font-weight:600;margin-bottom:14px;}
+  .sem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;}
+  .sem-grid label{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:4px;}
+  .sem-grid input{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;}
   .expandir-btn{margin-left:auto;background:none;border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:15px;}
 
   .cal-semana{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
@@ -107,7 +111,7 @@
     .params-grid{grid-template-columns:1fr;}
     .preview-tempo{gap:12px;padding:12px 14px;}
     .semana-nav{flex-wrap:wrap;gap:8px;}
-    .semana-nav .rotulo{min-width:0;flex:1;font-size:13px;}
+    .semana-nav .rotulo{order:10;flex:1 1 100%;min-width:0;text-align:center;font-size:13px;}
     .cal-semana{grid-template-columns:repeat(7,minmax(112px,1fr));overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;}
     .cal-dia-corpo{min-height:300px;}
     .tabs-principais{overflow-x:auto;flex-wrap:nowrap;}
@@ -137,8 +141,8 @@
   </header>
 
   <div class="panel">
-    <h2>Registrar / Solicitar</h2>
-    <p class="desc">O botão calcula na hora se cabe no tempo do dia ou se precisa esperar aprovação</p>
+    <h2>Registrar</h2>
+    <p class="desc">Calcula na hora o tempo da requisição e se ela cabe no dia escolhido</p>
     <div class="form-grid">
       <div><label>Forma farmacêutica</label><select id="regForma" onchange="atualizarPreviewTempo()"></select></div>
       <div><label>Requisição</label><input id="regRequisicao" placeholder="Nº da requisição"></div>
@@ -151,6 +155,7 @@
       <div class="barra-dia"><div id="pvBarra"></div></div>
       <div class="item">Disponível no dia<b id="pvMinutosDisponivel">—</b></div>
     </div>
+    <div class="aviso-excedido" id="avisoExcedido" style="display:none">O limite de tempo desse dia já foi excedido. Escolha outra data.</div>
     <button class="btn" id="btnRegistrar" onclick="registrarComplexa()" disabled>Preencha os campos</button>
   </div>
 
@@ -225,13 +230,21 @@
   <div class="modal wide">
     <h3>Configurações</h3>
     <div class="edit-field">
+      <label>Minutos disponíveis por dia da semana (padrão)</label>
+      <div class="sem-grid" id="semGrid"></div>
+      <button class="btn small" onclick="salvarLimitesSemana()">Salvar dias da semana</button>
+      <p style="font-size:11px;color:var(--gray);margin:6px 0 0;">Vale para todas as semanas. Um dia específico, abaixo, tem prioridade. Sem nada definido, usa 480 minutos.</p>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;">
+    <div class="edit-field">
       <label>Minutos disponíveis num dia específico</label>
       <div style="display:flex;gap:8px;">
-        <input type="date" id="cfgData" style="flex:1;">
+        <input type="date" id="cfgData" style="flex:1;" onchange="preencherMinutosDia()">
         <input type="number" id="cfgMinutos" placeholder="480" style="width:110px;">
         <button class="btn small" onclick="salvarTempoDia()">Salvar</button>
+        <button class="btn secondary small" onclick="removerTempoDia()">Voltar ao padrão</button>
       </div>
-      <p style="font-size:11px;color:var(--gray);margin:4px 0 0;">Se não definir nada pra uma data, ela usa o padrão de 480 minutos.</p>
+      <p style="font-size:11px;color:var(--gray);margin:4px 0 0;">Sem limite específico, a data usa o padrão do dia da semana.</p>
     </div>
     <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;">
     <div class="edit-field"><label>Parâmetros de cálculo por forma farmacêutica</label></div>
@@ -263,6 +276,9 @@ let registrosSemanaCache = [];
 let tempoDiarioCache = {};
 let detalhesPorDiaCache = {};
 let idFormaEditando = null;
+let limiteSemanaCache = {}; // dia da semana (0=dom ... 6=sáb) -> minutos
+const TOLERANCIA_MIN = 5;   // folga interna do sistema: não é exibida pra quem usa
+const NOMES_DIAS_SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 
 function localDateStrFC(d){ const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
 
@@ -294,6 +310,15 @@ function calcularMinutos(forma, quantidade){
   }
 }
 
+// Texto escuro em cor clara, branco em cor escura (luminância percebida)
+function corTextoPara(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  if(!m) return 'var(--ink)';
+  const n = parseInt(m[1], 16);
+  const r = (n>>16)&255, g = (n>>8)&255, b = n&255;
+  return (r*299 + g*587 + b*114)/1000 >= 150 ? '#1F1A1B' : '#FFFFFF';
+}
+
 function formatarMin(min){
   if(min == null) return '—';
   const h = Math.floor(min/60), m = Math.round(min%60);
@@ -303,7 +328,9 @@ function formatarMin(min){
 async function minutosDisponiveisNoDia(dataStr){
   if(tempoDiarioCache[dataStr] != null) return tempoDiarioCache[dataStr];
   const { data } = await supa.from('formulas_complexas_tempo_diario').select('minutos_disponiveis').eq('data', dataStr).maybeSingle();
-  const valor = data ? data.minutos_disponiveis : 480;
+  // prioridade: dia específico > dia da semana > 480
+  const diaSemana = new Date(dataStr+'T12:00:00').getDay();
+  const valor = data ? data.minutos_disponiveis : (limiteSemanaCache[diaSemana] != null ? limiteSemanaCache[diaSemana] : 480);
   tempoDiarioCache[dataStr] = valor;
   return valor;
 }
@@ -323,7 +350,8 @@ async function atualizarPreviewTempo(){
 
   if(!formaId || !qtd || qtd<=0 || !dataStr){
     preview.style.display = 'none';
-    btn.disabled = true; btn.textContent = 'Preencha os campos';
+    document.getElementById('avisoExcedido').style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Preencha os campos'; btn.style.background = '';
     return;
   }
 
@@ -332,7 +360,7 @@ async function atualizarPreviewTempo(){
   const disponivel = await minutosDisponiveisNoDia(dataStr);
   const usados = await minutosUsadosNoDia(dataStr);
   const restante = Math.max(0, disponivel - usados);
-  const cabe = (usados + minutosReq) <= disponivel;
+  const cabe = (usados + minutosReq) <= disponivel + TOLERANCIA_MIN;
 
   document.getElementById('pvMinutosReq').textContent = formatarMin(minutosReq);
   document.getElementById('pvMinutosUsados').textContent = formatarMin(usados);
@@ -341,9 +369,10 @@ async function atualizarPreviewTempo(){
   document.getElementById('pvBarra').style.cssText = `width:${pct}%;background:${cabe?'var(--good)':'var(--bad)'};`;
   preview.style.display = 'flex';
 
-  btn.disabled = false;
-  btn.textContent = cabe ? `Registrar (${formatarMin(minutosReq)})` : `Solicitar (${formatarMin(minutosReq)}, sem espaço livre)`;
-  btn.style.background = cabe ? 'var(--good)' : 'var(--warn)';
+  document.getElementById('avisoExcedido').style.display = cabe ? 'none' : 'block';
+  btn.disabled = !cabe;
+  btn.textContent = cabe ? `Registrar (${formatarMin(minutosReq)})` : 'Limite do dia excedido';
+  btn.style.background = cabe ? 'var(--good)' : '';
 }
 window.atualizarPreviewTempo = atualizarPreviewTempo;
 
@@ -358,7 +387,12 @@ async function registrarComplexa(){
   const minutosReq = calcularMinutos(forma, qtd);
   const disponivel = await minutosDisponiveisNoDia(dataStr);
   const usados = await minutosUsadosNoDia(dataStr);
-  const status = (usados + minutosReq) <= disponivel ? 'aprovado' : 'pendente';
+  if((usados + minutosReq) > disponivel + TOLERANCIA_MIN){
+    alert('O limite de tempo desse dia já foi excedido. Escolha outra data.');
+    atualizarPreviewTempo();
+    return;
+  }
+  const status = 'aprovado';
 
   const { data: { session } } = await supa.auth.getSession();
   const { error } = await supa.from('formulas_complexas_registro').insert({
@@ -367,10 +401,8 @@ async function registrarComplexa(){
   });
   if(error){ alert('Erro: '+error.message); return; }
 
-  document.getElementById('confFCTitulo').textContent = status==='aprovado' ? '✅ Registrado' : '⏳ Aguardando aprovação';
-  document.getElementById('confFCTexto').textContent = status==='aprovado'
-    ? `A requisição ${requisicao} já está confirmada pro dia ${new Date(dataStr+'T12:00:00').toLocaleDateString('pt-BR')}.`
-    : `Não tinha mais tempo livre nesse dia -- a requisição ${requisicao} foi pra fila de aprovação da chefia/conferência/laboratório.`;
+  document.getElementById('confFCTitulo').textContent = 'Registrado';
+  document.getElementById('confFCTexto').textContent = `A requisição ${requisicao} já está confirmada pro dia ${new Date(dataStr+'T12:00:00').toLocaleDateString('pt-BR')}.`;
   document.getElementById('modalConfirmacaoFC').classList.add('show');
 
   document.getElementById('regRequisicao').value = '';
@@ -378,6 +410,8 @@ async function registrarComplexa(){
   document.getElementById('previewTempo').style.display = 'none';
   document.getElementById('btnRegistrar').disabled = true;
   document.getElementById('btnRegistrar').textContent = 'Preencha os campos';
+  document.getElementById('btnRegistrar').style.background = '';
+  document.getElementById('avisoExcedido').style.display = 'none';
   delete tempoDiarioCache[dataStr];
   await carregarSemana();
   await carregarAprovacoesFC();
@@ -449,7 +483,7 @@ function renderSemana(containerId, dias){
       const forma = catalogoFC.find(f=>f.id===r.formula_id);
       const alturaPct = Math.max(6, Math.round((r.minutos_calculados/info.disponivel)*100));
       const cor = forma ? forma.cor : '#ccc';
-      return `<div class="cal-bloco ${r.status==='pendente'?'pendente':''}" style="height:${alturaPct}%;background:${cor};" onclick="abrirDetalheBloco('${r.id}')">
+      return `<div class="cal-bloco ${r.status==='pendente'?'pendente':''}" style="height:${alturaPct}%;background:${cor};color:${corTextoPara(cor)};" onclick="abrirDetalheBloco('${r.id}')">
         <b>${r.requisicao}</b>${forma?forma.nome:'—'} · ${r.quantidade}un
       </div>`;
     }).join('');
@@ -535,15 +569,76 @@ async function decidirFC(id, novoStatus){
 window.decidirFC = decidirFC;
 
 // ---------- Configurações (chefia/conferência/laboratório) ----------
+async function carregarLimitesSemana(){
+  const { data } = await supa.from('formulas_complexas_limite_semanal').select('dia_semana,minutos_disponiveis');
+  limiteSemanaCache = {};
+  (data||[]).forEach(r => { limiteSemanaCache[r.dia_semana] = r.minutos_disponiveis; });
+  tempoDiarioCache = {};
+}
+
+function renderLimitesSemanaInputs(){
+  // Segunda a sábado
+  document.getElementById('semGrid').innerHTML = [1,2,3,4,5,6].map(d => `
+    <div><label>${NOMES_DIAS_SEMANA[d]}</label><input type="number" min="0" id="limSem${d}" placeholder="480" value="${limiteSemanaCache[d] != null ? limiteSemanaCache[d] : ''}"></div>
+  `).join('');
+}
+
+async function salvarLimitesSemana(){
+  const { data: { session } } = await supa.auth.getSession();
+  const agora = new Date().toISOString();
+  const aSalvar = [], aRemover = [];
+  for(const d of [1,2,3,4,5,6]){
+    const v = document.getElementById('limSem'+d).value;
+    if(v === '') aRemover.push(d);
+    else if(Number(v) >= 0) aSalvar.push({ dia_semana:d, minutos_disponiveis:Number(v), atualizado_por:session.user.id, atualizado_em:agora });
+  }
+  if(aSalvar.length){
+    const { data, error } = await supa.from('formulas_complexas_limite_semanal').upsert(aSalvar, { onConflict:'dia_semana' }).select('dia_semana');
+    if(error){ alert('Erro: '+error.message); return; }
+    if(!data || data.length < aSalvar.length){ alert('Não foi possível salvar (sem permissão).'); return; }
+  }
+  if(aRemover.length){
+    const { error } = await supa.from('formulas_complexas_limite_semanal').delete().in('dia_semana', aRemover);
+    if(error){ alert('Erro: '+error.message); return; }
+  }
+  await carregarLimitesSemana();
+  renderLimitesSemanaInputs();
+  alert('Salvo.');
+  await carregarSemana();
+  atualizarPreviewTempo();
+}
+window.salvarLimitesSemana = salvarLimitesSemana;
+
+async function preencherMinutosDia(){
+  const dataStr = document.getElementById('cfgData').value;
+  if(!dataStr) return;
+  delete tempoDiarioCache[dataStr];
+  document.getElementById('cfgMinutos').value = await minutosDisponiveisNoDia(dataStr);
+}
+window.preencherMinutosDia = preencherMinutosDia;
+
+async function removerTempoDia(){
+  const dataStr = document.getElementById('cfgData').value;
+  if(!dataStr){ alert('Escolha a data.'); return; }
+  const { error } = await supa.from('formulas_complexas_tempo_diario').delete().eq('data', dataStr);
+  if(error){ alert('Erro: '+error.message); return; }
+  delete tempoDiarioCache[dataStr];
+  await preencherMinutosDia();
+  alert('Esse dia voltou a usar o padrão do dia da semana.');
+  await carregarSemana();
+}
+window.removerTempoDia = removerTempoDia;
+
 async function salvarTempoDia(){
   const dataStr = document.getElementById('cfgData').value;
   const minutos = Number(document.getElementById('cfgMinutos').value);
   if(!dataStr || !minutos){ alert('Preenche data e minutos.'); return; }
   const { data: { session } } = await supa.auth.getSession();
-  const { error } = await supa.from('formulas_complexas_tempo_diario').upsert({
+  const { data: salvo, error } = await supa.from('formulas_complexas_tempo_diario').upsert({
     data: dataStr, minutos_disponiveis: minutos, atualizado_por: session.user.id, atualizado_em: new Date().toISOString()
-  }, { onConflict: 'data' });
+  }, { onConflict: 'data' }).select('data');
   if(error){ alert('Erro: '+error.message); return; }
+  if(!salvo || !salvo.length){ alert('Não foi possível salvar (sem permissão).'); return; }
   delete tempoDiarioCache[dataStr];
   alert('Salvo.');
   await carregarSemana();
@@ -652,8 +747,9 @@ async function salvarFormaConfig(){
   const dados = { nome, cor, ...campos, limite_diario: 999, unidades_por_vaga: 1 };
 
   if(idFormaEditando){
-    const { error } = await supa.from('formulas_complexas_catalogo').update(dados).eq('id', idFormaEditando);
+    const { data: atualizado, error } = await supa.from('formulas_complexas_catalogo').update(dados).eq('id', idFormaEditando).select('id');
     if(error){ alert('Erro: '+error.message); return; }
+    if(!atualizado || !atualizado.length){ alert('Não foi possível salvar (sem permissão).'); return; }
   } else {
     const { data: { session } } = await supa.auth.getSession();
     const { error } = await supa.from('formulas_complexas_catalogo').insert({ ...dados, criado_por: session.user.id });
@@ -669,8 +765,9 @@ window.salvarFormaConfig = salvarFormaConfig;
 
 async function excluirFormaConfig(){
   if(!idFormaEditando || !confirm('Excluir essa forma farmacêutica? Registros antigos que usam ela continuam existindo.')) return;
-  const { error } = await supa.from('formulas_complexas_catalogo').delete().eq('id', idFormaEditando);
+  const { data: excluido, error } = await supa.from('formulas_complexas_catalogo').delete().eq('id', idFormaEditando).select('id');
   if(error){ alert('Erro: '+error.message); return; }
+  if(!excluido || !excluido.length){ alert('Não foi possível excluir (sem permissão).'); return; }
   document.getElementById('editorFormaConfig').style.display = 'none';
   await carregarCatalogoFC();
   renderFormasConfigLista();
@@ -695,6 +792,7 @@ async function init(){
   document.getElementById('regData').value = localDateStrFC(new Date());
   semanaInicio = inicioDaSemana(new Date());
 
+  await carregarLimitesSemana();
   await carregarCatalogoFC();
   popularSelectForma();
 
@@ -703,6 +801,8 @@ async function init(){
     document.getElementById('cfgFormulasBtn').onclick = () => {
       document.getElementById('cfgData').value = localDateStrFC(new Date());
       renderFormasConfigLista();
+      renderLimitesSemanaInputs();
+      preencherMinutosDia();
       document.getElementById('editorFormaConfig').style.display = 'none';
       document.getElementById('modalConfigFC').classList.add('show');
     };
