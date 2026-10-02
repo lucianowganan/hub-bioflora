@@ -520,6 +520,10 @@
   function iniciar(){
     // Se a página já carregou o supabase-js, ótimo; senão carrega
     // uma cópia só pra sidebar funcionar (não interfere na página).
+    // Trava a rolagem de fora quando há pop-up aberto (script compartilhado, sempre a versão mais nova)
+    const ts = document.createElement('script');
+    ts.src = 'trava-scroll.js?t=' + Date.now();
+    document.body.appendChild(ts);
     injetarEstilos();
     const aside = injetarSidebar();
     if(window.supabase){
