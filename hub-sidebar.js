@@ -74,6 +74,13 @@
     { href: 'cargos.html', icone: 'escudoCheck', label: 'Cargos & Permissões', perm: 'modulo.admin' },
   ];
 
+  // Barra de endereço sem ".html" (só visual -- o GitHub Pages serve o mesmo arquivo em /chat e /chat.html)
+  try{
+    if(/\.html$/.test(location.pathname)){
+      history.replaceState(null, '', location.pathname.replace(/index\.html$/, '').replace(/\.html$/, '') + location.search + location.hash);
+    }
+  }catch(e){}
+
   function injetarEstilos(){
     const css = `
       body{padding-left:92px !important;}
@@ -129,7 +136,7 @@
   }
 
   function paginaAtual(){
-    return location.pathname.split('/').pop() || 'index.html';
+    return (location.pathname.split('/').pop() || 'index').replace(/\.html$/, '') + '.html';
   }
 
   let modoEdicaoSidebar = false;

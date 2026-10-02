@@ -395,7 +395,8 @@ let sideItemArrastadoHref = null;
 let sideTemPermRef = null;
 let sideUserIdRef = null;
 
-function paginaAtualIndex(){ return location.pathname.split('/').pop() || 'index.html'; }
+function paginaAtualIndex(){ return (location.pathname.split('/').pop() || 'index').replace(/\.html$/, '') + '.html'; }
+try{ if(/\.html$/.test(location.pathname)) history.replaceState(null,'',location.pathname.replace(/index\.html$/,'').replace(/\.html$/,'')+location.search+location.hash); }catch(e){}
 
 function sideModulosVisiveisOrdenados(){
   const visiveis = SIDE_MODULOS.filter(m => !m.perm || (sideTemPermRef && sideTemPermRef(m.perm)));
