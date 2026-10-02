@@ -1401,8 +1401,14 @@ function atualizarTextoMensagemNaTela(id){
   elAtual.outerHTML = `<div class="msg-texto ${textoLongo?'truncada':''}" id="txt_${id}">${formatarTextoMensagem(original.conteudo)}</div>`;
   const row = document.getElementById('msg_'+id);
   const meta = row?.querySelector('.msg-meta');
-  if(meta && original.editado_em && !meta.querySelector('.msg-editado-tag')){
-    meta.querySelector('.msg-del')?.insertAdjacentHTML('beforebegin', ' <span class="msg-editado-tag">(editado)</span>');
+  if(original.editado_em && row && !row.querySelector('.msg-editado-tag')){
+    const tag = ' <span class="msg-editado-tag">(editado)</span>';
+    const del = meta?.querySelector('.msg-del');
+    // O botão excluir só existe pra quem enviou; pros outros, a tag vai no fim do cabeçalho.
+    // Mensagem agrupada não tem cabeçalho, então a tag vai logo após o texto.
+    if(del) del.insertAdjacentHTML('beforebegin', tag);
+    else if(meta) meta.insertAdjacentHTML('beforeend', tag);
+    else document.getElementById('txt_'+id)?.insertAdjacentHTML('beforeend', tag);
   }
 }
 
