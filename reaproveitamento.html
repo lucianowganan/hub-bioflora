@@ -111,6 +111,33 @@
   .badge.late{background:var(--burgundy-tint);color:var(--burgundy);}
   .destaque-card.verde-garantido{border-color:var(--good);}
   .destaques-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .wrap{padding:18px 14px 80px;}
+    header.top{padding-bottom:14px;margin-bottom:16px;}
+    .brand-text h1{font-size:19px;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .btn.small{min-height:34px;}
+    .panel,.card{padding:16px;border-radius:12px;}
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    input,select,textarea{font-size:16px !important;}
+    .modal-overlay{padding:12px;}
+    .modal{padding:18px;}
+    .brand-text h1{font-size:19px;}
+    .form-grid{grid-template-columns:1fr 1fr;}
+    .form-grid.two{grid-template-columns:1fr;}
+    .kpi-row{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));}
+    .kpi{padding:12px 14px;}
+    .kpi .value{font-size:22px;}
+    .tabs-principais,.tabs-secundarias{overflow-x:auto;flex-wrap:nowrap;}
+    .tab-principal-btn,.tab-sec-btn{white-space:nowrap;flex-shrink:0;}
+    .ativo-row{flex-wrap:wrap;}
+    .ativo-autocomplete{flex:1 1 100%;}
+    .busca-com-icone{min-width:0;flex:1 1 100%;}
+    .destaques-row{grid-template-columns:1fr;}
+    .insights-grid{grid-template-columns:1fr;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">

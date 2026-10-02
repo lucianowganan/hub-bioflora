@@ -114,6 +114,30 @@
 
   .prazo-popup-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);gap:10px;}
   .prazo-popup-item:last-child{border-bottom:none;}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .wrap{padding:18px 14px 80px;}
+    header.top{padding-bottom:14px;margin-bottom:16px;}
+    .brand-text h1{font-size:19px;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .btn.small{min-height:34px;}
+    .panel,.card{padding:16px;border-radius:12px;}
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    input,select,textarea{font-size:16px !important;}
+    .modal-overlay{padding:12px;}
+    .modal{padding:18px;}
+    .area-tabs{overflow-x:auto;}
+    .area-tab-btn{white-space:nowrap;flex-shrink:0;padding:9px 16px;}
+    .kpi-row{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+    .kpi:last-child{grid-column:span 2;}
+    .kpi{padding:14px;}
+    .kpi .value{font-size:24px;}
+    .graficos-row{grid-template-columns:1fr;}
+    .form-grid{grid-template-columns:1fr 1fr;}
+    .modal .form-grid{grid-template-columns:1fr;}
+    .row-actions button{min-height:34px;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">

@@ -90,6 +90,32 @@
   .forma-config-item:hover{background:var(--paper);}
   .forma-config-item:last-child{border-bottom:none;}
   .forma-cor-dot{width:12px;height:12px;border-radius:4px;display:inline-block;margin-right:8px;vertical-align:middle;border:1px solid rgba(0,0,0,.15);}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .wrap{padding:18px 14px 80px;}
+    header.top{padding-bottom:14px;margin-bottom:16px;}
+    .brand-text h1{font-size:19px;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .btn.small{min-height:34px;}
+    .panel,.card{padding:16px;border-radius:12px;}
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    input,select,textarea{font-size:16px !important;}
+    .modal-overlay{padding:12px;}
+    .modal{padding:18px;}
+    .form-grid{grid-template-columns:1fr;}
+    .params-grid{grid-template-columns:1fr;}
+    .preview-tempo{gap:12px;padding:12px 14px;}
+    .semana-nav{flex-wrap:wrap;gap:8px;}
+    .semana-nav .rotulo{min-width:0;flex:1;font-size:13px;}
+    .cal-semana{grid-template-columns:repeat(7,minmax(112px,1fr));overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;}
+    .cal-dia-corpo{min-height:300px;}
+    .tabs-principais{overflow-x:auto;flex-wrap:nowrap;}
+    .tab-principal-btn{white-space:nowrap;flex-shrink:0;padding:9px 14px;}
+    .aprov-row{flex-wrap:wrap;gap:8px;}
+    .expandido-overlay{padding:14px;}
+    .modal.wide{max-width:100%;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">

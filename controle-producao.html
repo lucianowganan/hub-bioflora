@@ -99,6 +99,31 @@
   .pagination span{font-size:12px;color:var(--gray);}
 
   .hint{font-size:11.5px;color:var(--gray);margin-top:4px;}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .wrap{padding:18px 14px 80px;}
+    header.top{padding-bottom:14px;margin-bottom:16px;}
+    .brand-text h1{font-size:19px;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .btn.small{min-height:34px;}
+    .panel,.card{padding:16px;border-radius:12px;}
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    input,select,textarea{font-size:16px !important;}
+    .modal-overlay{padding:12px;}
+    .modal{padding:18px;}
+    .tabs,.subtabs{overflow-x:auto;flex-wrap:nowrap;}
+    .tab,.subtab{white-space:nowrap;flex-shrink:0;}
+    .quick-form{flex-direction:column;align-items:stretch;}
+    .quick-form .field{width:100%;}
+    .quick-form input,.quick-form select,.quick-form input.colaborador,.quick-form input.qtd,.quick-form select.area,.quick-form select.complexidade,.quick-form input.complexidade-outro{width:100%;}
+    .kpi-row{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
+    .lab-cards{grid-template-columns:1fr;}
+    .mini-chart-card{padding:10px 6px;}
+    .period-row{gap:8px;}
+    .filter-row select,.filter-row input{flex:1;min-width:120px;}
+    .pagination{gap:10px;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">

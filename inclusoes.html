@@ -77,6 +77,30 @@
   .perf-bar-fill{height:100%;border-radius:6px;transition:width .3s;}
 
   .empty-state{text-align:center;padding:40px 20px;color:var(--gray);}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .wrap{padding:18px 14px 80px;}
+    header.top{padding-bottom:14px;margin-bottom:16px;}
+    .brand-text h1{font-size:19px;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .btn.small{min-height:34px;}
+    .panel,.card{padding:16px;border-radius:12px;}
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    input,select,textarea{font-size:16px !important;}
+    .modal-overlay{padding:12px;}
+    .modal{padding:18px;}
+    .tabs{overflow-x:auto;flex-wrap:nowrap;}
+    .tab-btn{white-space:nowrap;flex-shrink:0;margin-right:16px;}
+    .kpi-row{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;}
+    .kpi{padding:12px 14px;}
+    .kpi .value{font-size:20px;}
+    .lancar-row{grid-template-columns:1fr 100px;gap:10px;}
+    .complexa-row{flex-wrap:wrap;gap:8px;}
+    .date-row{gap:8px;}
+    .period-btn{padding:8px 12px;}
+    .perf-top{flex-wrap:wrap;gap:4px;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">
