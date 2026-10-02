@@ -78,6 +78,22 @@
   .quadro-actions{display:flex;justify-content:flex-end;margin:-10px 0 14px;}
   .link-excluir{font-family:'Maven Pro',sans-serif;font-size:11.5px;color:var(--gray);background:none;border:none;cursor:pointer;text-decoration:underline;}
   .link-excluir:hover{color:var(--bad);}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .wrap{padding:18px 14px 80px;}
+    header.top{padding-bottom:14px;margin-bottom:16px;}
+    .brand-text h1{font-size:19px;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .quadro-tabs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;margin-bottom:14px;}
+    .quadro-tab{white-space:nowrap;flex-shrink:0;}
+    .board{scroll-snap-type:x mandatory;gap:12px;margin:0 -14px;padding:0 14px 16px;}
+    .coluna{min-width:84vw;max-width:84vw;scroll-snap-align:center;}
+    .modal-overlay{padding:12px;align-items:flex-end;}
+    .modal{padding:20px;max-height:92vh;border-radius:16px 16px 12px 12px;}
+    .modal input,.modal textarea,.modal select{font-size:16px;}
+    .modal-actions .btn{min-height:44px;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">

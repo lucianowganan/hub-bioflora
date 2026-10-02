@@ -61,6 +61,25 @@
   .evento-tipo-badge.outro{background:var(--burgundy);}
   .del-btn{font-family:'Maven Pro',sans-serif;font-size:11px;color:var(--bad);border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 9px;cursor:pointer;}
   .empty-state{text-align:center;padding:40px 20px;color:var(--gray);font-size:13px;}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .wrap{padding:18px 14px 80px;}
+    header.top{padding-bottom:14px;margin-bottom:16px;}
+    .brand-text h1{font-size:19px;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .panel{padding:16px;border-radius:12px;}
+    .form-grid{grid-template-columns:1fr;}
+    .form-grid input,.form-grid textarea,.form-grid select{font-size:16px;}
+    .cal-header{flex-wrap:wrap;gap:8px;}
+    .cal-nav{display:flex;gap:6px;width:100%;}
+    .cal-nav button{margin-left:0;flex:1;min-height:40px;}
+    .cal-grid{gap:2px;}
+    .cal-day{min-height:52px;padding:3px 4px;}
+    .cal-evt{font-size:0;width:7px;height:7px;padding:0;border-radius:50%;display:inline-block;margin:3px 2px 0 0;}
+    .evento-row{flex-wrap:wrap;}
+    .del-btn{min-height:34px;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">
