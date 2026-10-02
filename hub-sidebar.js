@@ -76,25 +76,24 @@
 
   function injetarEstilos(){
     const css = `
-      body{padding-left:76px !important;}
-      .hub-sidebar{position:fixed;left:0;top:0;bottom:0;width:76px;background:#5E1027;
+      body{padding-left:92px !important;}
+      .hub-sidebar{position:fixed;left:14px;top:14px;bottom:14px;width:64px;background:linear-gradient(180deg,#B8325A 0%,#8B1A3A 48%,#4A0E20 100%);border-radius:28px;box-shadow:0 8px 28px rgba(74,14,32,.28);
         display:flex;flex-direction:column;align-items:stretch;padding:20px 0;z-index:200;overflow:hidden;
         transition:width .16s ease;}
       .hub-sidebar:hover{width:250px;overflow-y:auto;}
       .hub-sidebar.hs-editando{width:250px !important;overflow-y:auto;}
       .hub-sidebar::-webkit-scrollbar{width:0;}
-      .hub-sidebar .hs-mark-row{display:flex;align-items:center;gap:12px;padding:0 16px;margin-bottom:20px;flex-shrink:0;}
-      .hub-sidebar .hs-mark{width:38px;height:38px;min-width:38px;border-radius:10px;background:rgba(255,255,255,.12);
-        display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
-        font-family:'Space Grotesk','Maven Pro',sans-serif;font-size:15px;flex-shrink:0;}
+      .hub-sidebar .hs-mark-row{display:flex;align-items:center;gap:12px;padding:0 13px;margin-bottom:22px;flex-shrink:0;}
+      .hub-sidebar .hs-mark{width:38px;height:38px;min-width:38px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
+      .hub-sidebar .hs-mark svg{width:38px;height:36px;display:block;}
       .hub-sidebar .hs-mark-nome{color:#fff;font-family:'Space Grotesk','Maven Pro',sans-serif;font-weight:600;
         font-size:14.5px;white-space:nowrap;opacity:0;transition:opacity .12s;}
       .hub-sidebar:hover .hs-mark-nome{opacity:1;}
       .hub-sidebar nav{display:flex;flex-direction:column;gap:4px;flex:1;}
-      .hs-btn{display:flex;align-items:center;gap:14px;height:42px;min-height:42px;border-radius:10px;
-        color:rgba(255,255,255,.65);text-decoration:none;cursor:pointer;border:none;background:transparent;
+      .hs-btn{display:flex;align-items:center;gap:14px;height:42px;min-height:42px;border-radius:16px;
+        color:rgba(255,255,255,.7);text-decoration:none;cursor:pointer;border:none;background:transparent;
         transition:background .15s,color .15s;position:relative;flex-shrink:0;font-family:'Maven Pro',sans-serif;
-        font-size:13px;font-weight:600;width:calc(100% - 16px);margin:0 8px;padding:0 11px;white-space:nowrap;
+        font-size:13px;font-weight:600;width:calc(100% - 16px);margin:0 8px;padding:0 13px;white-space:nowrap;
         box-sizing:border-box;}
       .hs-btn .hs-icon{width:21px;height:21px;min-width:21px;flex-shrink:0;}
       .hs-btn .hs-label{opacity:0;transition:opacity .1s;}
@@ -113,7 +112,7 @@
 
       @media (max-width:720px){
         body{padding-left:0 !important;padding-bottom:64px !important;}
-        .hub-sidebar{left:0;right:0;top:auto;bottom:0;width:auto !important;height:64px;flex-direction:row;
+        .hub-sidebar{left:0;right:0;top:auto;bottom:0;width:auto !important;height:64px;flex-direction:row;border-radius:0;box-shadow:none;background:linear-gradient(90deg,#B8325A 0%,#8B1A3A 50%,#4A0E20 100%);
           padding:0 4px;overflow-x:auto;overflow-y:hidden;align-items:center;}
         .hub-sidebar .hs-mark-row{display:none;}
         .hub-sidebar nav{flex-direction:row;gap:0;flex:none;}
@@ -221,7 +220,7 @@
 
     const markRow = document.createElement('div');
     markRow.className = 'hs-mark-row';
-    markRow.innerHTML = `<div class="hs-mark">B</div><span class="hs-mark-nome">Hub Bioflora</span>`;
+    markRow.innerHTML = `<div class="hs-mark"><svg viewBox="195 207 615 585" fill="currentColor" aria-label="Bioflora"><path d="M 732.03 484.81 C 727.37 494.12 729.10 486.62 729.55 482.34 C 734.43 440.52 665.52 412.90 632.56 403.29 C 537.37 375.36 442.48 401.26 346.54 384.37 C 255.64 368.38 201.36 309.15 202.11 215.61 C 240.02 242.57 271.93 263.96 319.07 272.22 C 403.60 287.16 496.01 271.16 580.91 277.85 C 674.45 285.28 766.93 389.32 732.03 484.81 Z"/><path d="M 796.41 656.78 C 785.30 641.92 775.92 631.71 759.03 623.00 C 627.73 555.52 364.76 651.45 281.96 510.55 C 275.58 499.74 266.50 482.17 285.11 482.25 C 327.08 482.32 392.09 478.42 437.28 477.82 C 547.56 476.32 687.19 453.50 764.96 552.29 C 786.28 579.31 803.09 622.63 796.41 656.78 Z"/><path d="M 533.96 781.41 C 374.44 766.02 263.19 624.29 224.68 477.90 C 220.55 461.98 217.09 438.49 217.70 423.10 C 225.13 429.03 241.94 466.27 246.30 475.05 C 297.42 579.24 382.47 680.81 501.38 705.51 C 540.95 713.69 607.98 720.38 641.24 695.23 C 679.07 666.55 674.34 639.75 641.46 609.42 C 680.65 610.40 775.61 619.41 785.37 666.63 C 801.59 745.60 684.10 776.30 626.45 781.41 C 617.74 782.83 612.26 783.66 602.73 783.88 C 591.09 784.03 579.68 784.93 557.68 783.88 C 548.68 783.81 543.12 782.38 533.96 781.41 Z"/><path d="M 720.64 499.77 C 693.92 483.70 660.59 475.59 629.89 470.57 C 630.11 459.08 630.26 446.47 626.58 436.11 C 622.75 425.30 614.35 415.09 608.04 405.55 C 650.53 416.14 740.99 443.54 720.64 499.77 Z"/></svg></div><span class="hs-mark-nome">Hub Bioflora</span>`;
     aside.appendChild(markRow);
 
     const nav = document.createElement('nav');
