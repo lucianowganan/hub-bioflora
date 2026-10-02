@@ -118,9 +118,9 @@
       .hub-sidebar .hs-bottom{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
 
       @media (max-width:720px){
-        body{padding-left:0 !important;padding-bottom:64px !important;}
-        .hub-sidebar{left:0;right:0;top:auto;bottom:0;width:auto !important;height:64px;flex-direction:row;border-radius:0;box-shadow:none;background:linear-gradient(90deg,#B8325A 0%,#8B1A3A 50%,#4A0E20 100%);
-          padding:0 4px;overflow-x:auto;overflow-y:hidden;align-items:center;}
+        body{padding-left:env(safe-area-inset-left,0px) !important;padding-right:env(safe-area-inset-right,0px);padding-bottom:calc(64px + env(safe-area-inset-bottom,0px)) !important;}
+        .hub-sidebar{left:0;right:0;top:auto;bottom:0;width:auto !important;height:calc(64px + env(safe-area-inset-bottom,0px));flex-direction:row;border-radius:0;box-shadow:none;background:linear-gradient(90deg,#B8325A 0%,#8B1A3A 50%,#4A0E20 100%);
+          padding:0 4px env(safe-area-inset-bottom,0px);overflow-x:auto;overflow-y:hidden;align-items:center;}
         .hub-sidebar .hs-mark-row{display:none;}
         .hub-sidebar nav{flex-direction:row;gap:0;flex:none;}
         .hub-sidebar .hs-bottom{flex-direction:row;gap:0;}

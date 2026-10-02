@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Chat Interno — Hub Bioflora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -84,7 +84,7 @@
   /* Tela dividida / janela estreita (qualquer ponteiro): a sidebar vira barra fixa de 64px
      embaixo (hub-sidebar.js), então o chat desconta essa altura pra não cobrir o campo de escrever */
   @media (max-width:720px){
-    .chat-shell{height:calc(100vh - 64px);height:calc(100dvh - 64px);}
+    .chat-shell{height:calc(100vh - 64px - env(safe-area-inset-bottom,0px));height:calc(100dvh - 64px - env(safe-area-inset-bottom,0px));}
   }
   @media (min-width:721px) and (max-width:1000px){
     .canais-col{width:190px;}
@@ -1458,12 +1458,24 @@ async function excluirMensagem(id, tipo){
 window.excluirMensagem = excluirMensagem;
 
 // ---------- Mobile: lista/conversa estilo WhatsApp ----------
+function ehLayoutMobileChat(){
+  return window.matchMedia('(max-width:720px) and (pointer:coarse)').matches;
+}
+// A conversa aberta entra no histórico do navegador: o "voltar" do Safari/Android
+// (arrastar da borda ou botão) fecha a conversa e mostra a lista, em vez de sair do chat.
 function mostrarConversaMobile(){
   document.querySelector('.chat-shell').classList.add('mostrando-conversa');
+  if(ehLayoutMobileChat() && !(history.state && history.state.chatConversa)){
+    history.pushState({chatConversa:true}, '', location.href);
+  }
 }
 function voltarParaListaMobile(){
-  document.querySelector('.chat-shell').classList.remove('mostrando-conversa');
+  if(history.state && history.state.chatConversa) history.back();
+  else document.querySelector('.chat-shell').classList.remove('mostrando-conversa');
 }
+window.addEventListener('popstate', () => {
+  document.querySelector('.chat-shell').classList.remove('mostrando-conversa');
+});
 window.voltarParaListaMobile = voltarParaListaMobile;
 
 // ---------- Detalhes da conversa (mídia e arquivos) ----------

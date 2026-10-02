@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Hub Bioflora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -57,8 +57,8 @@
 
   @media (max-width:720px){
     .main{margin-left:0;}
-    .sidebar{left:0;right:0;top:auto;bottom:0;width:auto !important;height:64px;flex-direction:row;border-radius:0;box-shadow:none;background:linear-gradient(90deg,#B8325A 0%,#8B1A3A 50%,#4A0E20 100%);
-      padding:0 4px;overflow-x:auto;overflow-y:hidden;align-items:center;}
+    .sidebar{left:0;right:0;top:auto;bottom:0;width:auto !important;height:calc(64px + env(safe-area-inset-bottom,0px));flex-direction:row;border-radius:0;box-shadow:none;background:linear-gradient(90deg,#B8325A 0%,#8B1A3A 50%,#4A0E20 100%);
+      padding:0 4px env(safe-area-inset-bottom,0px);overflow-x:auto;overflow-y:hidden;align-items:center;}
     .sidebar .mark-row{display:none;}
     .sidebar nav{flex-direction:row;gap:0;flex:none;}
     .sidebar .bottom{flex-direction:row;gap:0;}
@@ -176,7 +176,7 @@
 
   /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
   @media (max-width:720px){
-    .main{margin-left:0;padding:16px 14px 80px;}
+    .main{margin-left:0;padding:16px 14px calc(80px + env(safe-area-inset-bottom,0px));}
     .topbar{flex-wrap:wrap;gap:8px;}
     .hero{padding:20px 18px;border-radius:18px;}
     .hero h1{font-size:22px;}
