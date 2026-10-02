@@ -1422,8 +1422,10 @@ async function salvarEdicaoMensagem(id, tipo){
   if(!novoTexto) return;
   const tabela = tipo==='canal' ? 'mensagens_chat' : 'dm_mensagens';
   const agora = new Date().toISOString();
-  const { error } = await supa.from(tabela).update({ conteudo: novoTexto, editado_em: agora }).eq('id', id);
+  const { data: linhas, error } = await supa.from(tabela).update({ conteudo: novoTexto, editado_em: agora }).eq('id', id).select('id');
   if(error){ alert('Erro ao editar: '+error.message); return; }
+  // RLS bloqueia UPDATE sem erro (0 linhas) -- não fingir que salvou
+  if(!linhas || !linhas.length){ alert('Não foi possível salvar a edição (sem permissão).'); return; }
   const original = mensagensCarregadasPorId[id];
   if(original){ original.conteudo = novoTexto; original.editado_em = agora; }
   atualizarTextoMensagemNaTela(id);
