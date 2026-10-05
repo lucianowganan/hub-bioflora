@@ -174,29 +174,96 @@
   .loading-msg{font-size:12px;color:var(--gray);padding:30px 0;text-align:center;}
   footer{margin-top:50px;text-align:center;font-size:11px;color:var(--gray);}
 
+  /* ============================================================
+     REPAGINAÇÃO DA HOME (linha "Suave" + grupos por área)
+     Estas regras sobrescrevem as antigas acima.
+     ============================================================ */
+  body{background:#F4EFEC;}
+  .main{padding:26px 34px 80px;}
+  .wrap{max-width:1320px;}
+
+  .hm-top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px;}
+  .hm-search{display:flex;align-items:center;gap:10px;background:#fff;border-radius:30px;padding:0 18px;height:44px;width:380px;max-width:100%;box-shadow:0 1px 3px rgba(0,0,0,.04);color:#9a8f92;}
+  .hm-search svg{width:18px;height:18px;flex-shrink:0;}
+  .hm-search input{border:none;outline:none;background:transparent;font-family:'Maven Pro',sans-serif;font-size:14px;color:var(--ink);width:100%;}
+  .hm-user{display:flex;align-items:center;gap:12px;}
+  .hm-user-txt{text-align:right;line-height:1.25;}
+  .hm-user-txt b{display:block;font-size:13.5px;font-weight:700;}
+  .hm-user-txt span{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--burgundy);}
+  .hm-av{width:42px;height:42px;border-radius:50%;background:var(--burgundy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;}
+
+  .hm-hero{background:linear-gradient(120deg,#9A2347 0%,#5E1027 100%);border-radius:30px;padding:32px 38px;color:#fff;position:relative;overflow:hidden;margin-bottom:22px;}
+  .hm-hero::after{content:'';position:absolute;right:-90px;top:-100px;width:340px;height:340px;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none;}
+  .hm-hero-txt{position:relative;z-index:1;}
+  .hm-date{font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.75;font-weight:700;}
+  .hm-hero h1{font-family:var(--headfont);font-size:32px;font-weight:600;margin:6px 0 4px;letter-spacing:-0.01em;}
+  .hm-hero .sub{font-size:14px;opacity:.8;}
+  .hm-kpis{display:flex;flex-wrap:wrap;gap:14px;margin-top:24px;position:relative;z-index:1;}
+  .hm-kpi{display:block;text-decoration:none;color:#fff;background:rgba(255,255,255,.14);border-radius:20px;padding:15px 22px;min-width:168px;transition:background .15s;}
+  a.hm-kpi:hover{background:rgba(255,255,255,.22);}
+  .hm-kpi b{display:block;font-family:var(--headfont);font-size:28px;font-weight:600;line-height:1.1;}
+  .hm-kpi .l{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.82;margin-top:3px;font-weight:700;}
+  .hm-kpi .h{display:block;font-size:11.5px;opacity:.7;margin-top:2px;}
+  .hm-kpi.bad{background:rgba(232,64,64,.28);}
+  .hm-kpi.warn{background:rgba(201,146,43,.3);}
+
+  .hm-sec{display:flex;justify-content:space-between;align-items:baseline;margin:26px 2px 14px;}
+  .hm-sec h2{font-family:var(--headfont);font-size:17px;font-weight:600;margin:0;}
+  .hm-sec small{font-size:12px;color:var(--gray);}
+
+  /* cartões de painel (widgets) */
+  .grid{gap:16px;grid-auto-flow:dense;}
+  .card{border:none;border-radius:24px;padding:22px 24px;box-shadow:0 2px 10px rgba(94,16,39,.06);}
+  .card-head h2{font-size:15px;}
+  .card-icon{width:34px;height:34px;border-radius:11px;background:var(--burgundy-tint);color:var(--burgundy);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0;}
+  .card-icon svg{width:18px;height:18px;}
+  .card-sub a{color:var(--burgundy);font-weight:700;text-decoration:none;}
+  .hm-chart{position:relative;height:220px;}
+  .hm-chart canvas{max-height:none;}
+  .hm-lista{display:flex;flex-direction:column;}
+  .hm-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink);font-size:13px;}
+  .hm-item:last-child{border-bottom:none;}
+  a.hm-item:hover .nome{color:var(--burgundy);}
+  .hm-item .nome{font-weight:600;}
+  .hm-item .sub{display:block;font-size:11.5px;color:var(--gray);font-weight:400;margin-top:1px;}
+  .hm-ok{font-size:11px;color:var(--gray);}
+  .hm-skel{height:140px;border-radius:24px;background:linear-gradient(90deg,#EFE8E4,#F7F2EF,#EFE8E4);background-size:200% 100%;animation:hmSkel 1.2s infinite;}
+  @keyframes hmSkel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  /* módulos por área */
+  .hm-grupo{margin-bottom:22px;}
+  .hm-grupo h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--burgundy);font-weight:700;margin:0 2px 12px;}
+  .hm-mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;}
+  .hm-mod{display:block;background:#fff;border-radius:22px;padding:18px 18px 16px;text-decoration:none;color:var(--ink);box-shadow:0 2px 10px rgba(94,16,39,.06);transition:transform .15s,box-shadow .15s;}
+  .hm-mod:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(94,16,39,.12);}
+  .hm-mi{width:42px;height:42px;border-radius:14px;background:var(--burgundy-tint);color:var(--burgundy);display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+  .hm-mi svg{width:22px;height:22px;}
+  .hm-mod h3{font-family:var(--headfont);font-size:14.5px;font-weight:600;margin:0 0 4px;}
+  .hm-mod p{font-size:12px;color:#7a6e72;margin:0;line-height:1.4;}
+  .hm-vazio{text-align:center;color:var(--gray);padding:30px 0;font-size:13px;}
+  .minical-link{border:none;border-radius:24px;box-shadow:0 2px 10px rgba(94,16,39,.06);}
+  .minical-link:hover{box-shadow:0 8px 22px rgba(94,16,39,.12);}
+
   /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
   @media (max-width:720px){
     .main{margin-left:0;padding:16px 14px calc(80px + env(safe-area-inset-bottom,0px));}
-    .topbar{flex-wrap:wrap;gap:8px;}
-    .hero{padding:20px 18px;border-radius:18px;}
-    .hero h1{font-size:22px;}
-    .quickstats{grid-template-columns:repeat(2,1fr);gap:10px;}
-    .qs-card{padding:12px 14px;}
-    .qs-card .qs-value{font-size:21px;}
-    .grid{gap:12px;}
-    .card{padding:16px;border-radius:16px;}
-    .stat-big{font-size:28px;}
-    .section-title{margin:26px 0 12px;font-size:16px;}
-    .modules{grid-template-columns:repeat(2,1fr);gap:10px;}
-    .module-card{padding:14px;border-radius:14px;}
-    .module-card h3{font-size:14px;}
-    .integ-grid{grid-template-columns:1fr;}
+    .hm-top{gap:10px;}
+    .hm-search{width:auto;flex:1;height:42px;}
+    .hm-user-txt{display:none;}
+    .hm-hero{padding:22px 20px;border-radius:24px;}
+    .hm-hero h1{font-size:24px;}
+    .hm-kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px;}
+    .hm-kpi{min-width:0;padding:13px 15px;border-radius:16px;}
+    .hm-kpi b{font-size:22px;}
+    .card{padding:18px;border-radius:20px;}
+    .hm-chart{height:200px;}
+    .hm-mods{grid-template-columns:1fr 1fr;gap:10px;}
+    .hm-mod{padding:14px;border-radius:18px;}
     .minical-link{padding:14px;}
     .minical-grid{gap:2px;}
     .minical-day{min-height:38px;padding:2px 3px;}
     .minical-evt{font-size:0;width:6px;height:6px;padding:0;border-radius:50%;display:inline-block;margin:2px 2px 0 0;}
     .minical-evt-more{display:none;}
-    canvas{max-height:170px;}
   }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -217,117 +284,38 @@
 <div class="main">
   <div class="wrap">
 
-    <div class="topbar">
-      <span class="who" id="whoLabel"></span>
-      <span></span>
-    </div>
-
-    <div class="quickstats" id="quickStats"></div>
-
-    <div class="hero">
-      <div class="hero-top">
-        <div>
-          <h1 id="heroGreeting">Bem-vindo(a)</h1>
-          <div class="sub" id="heroSub">Farmácia Bioflora — painel interno</div>
-        </div>
-        <div class="role-pill" id="rolePill"></div>
+    <div class="hm-top">
+      <label class="hm-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <input id="buscaModulo" type="search" placeholder="Buscar módulo..." autocomplete="off">
+      </label>
+      <div class="hm-user">
+        <div class="hm-user-txt"><b id="whoLabel"></b><span id="rolePill"></span></div>
+        <div class="hm-av" id="whoAv"></div>
       </div>
     </div>
 
+    <section class="hm-hero">
+      <div class="hm-hero-txt">
+        <div class="hm-date" id="heroDate"></div>
+        <h1 id="heroGreeting">Bem-vindo(a)</h1>
+        <div class="sub" id="heroSub">Farmácia Bioflora — painel interno</div>
+      </div>
+      <div class="hm-kpis" id="quickStats"></div>
+    </section>
+
     <div id="roleBanner" class="status-banner" style="display:none"></div>
 
-    <div id="widgetArea"></div>
+    <div id="painelSecao" style="display:none">
+      <div class="hm-sec"><h2>Seu painel</h2></div>
+      <div id="widgetArea"></div>
+    </div>
 
-    <div class="section-title">Calendário Interno</div>
+    <div class="hm-sec" id="secCalendario"><h2>Calendário interno</h2></div>
     <a href="calendario-interno.html" class="minical-link" id="minicalArea"></a>
 
-    <div class="section-title" id="modulesSection">Acesso rápido</div>
-    <div class="modules" id="modules">
-      <a class="module-card card-tarefas" href="tarefas.html" data-perm="modulo.tarefas">
-        <div class="stripe"></div><div class="icon">🗂️</div><h3>Quadro de Tarefas</h3>
-        <p>Kanban de tarefas e sugestões/ideias.</p>
-      </a>
-      <a class="module-card card-calendario-interno" href="calendario-interno.html" data-perm="modulo.calendario_interno">
-        <div class="stripe"></div><div class="icon">🗓️</div><h3>Calendário Interno</h3>
-        <p>Treinamentos, folgas e descansos da equipe.</p>
-      </a>
-      <a class="module-card card-rh" href="rh.html" data-perm="modulo.rh">
-        <div class="stripe" style="background:#8B1A3A"></div><div class="icon">🗂️</div><h3>Central de RH</h3>
-        <p>Colaboradores, ponto, férias, avaliações e relatórios — tudo num só lugar.</p>
-      </a>
-      <a class="module-card card-visitas" href="visitas-medicas.html" data-perm="modulo.visitas">
-        <div class="stripe" style="background:#8B1A3A"></div><div class="icon">🩺</div><h3>Visitas de Representantes</h3>
-        <p>Agenda de horários e solicitações vindas do link da bio.</p>
-      </a>
-      <a class="module-card card-clientefiel" href="cliente-fiel.html" data-perm="modulo.cliente_fiel">
-        <div class="stripe" style="background:#8B1A3A"></div><div class="icon">💳</div><h3>Cliente Fiel</h3>
-        <p>Programa de fidelidade sem cartão físico — pontos, brindes e histórico.</p>
-      </a>
-      <a class="module-card card-rotulos" href="rotulos.html" data-perm="modulo.rotulos">
-        <div class="stripe"></div><div class="icon">🏷️</div><h3>Controle de Rótulos</h3>
-        <p>A comprar, pedido e chegou.</p>
-      </a>
-      <a class="module-card card-producao" href="producao.html" data-perm="modulo.producao">
-        <div class="stripe"></div><div class="icon">🧪</div><h3>Ordem de Produção</h3>
-        <p>Rastreabilidade completa até a liberação.</p>
-      </a>
-      <a class="module-card card-controle" href="controle-producao.html" data-perm="modulo.controle_producao">
-        <div class="stripe"></div><div class="icon">📋</div><h3>Controle de Produção</h3>
-        <p>Total diário de fórmulas e pesagens.</p>
-      </a>
-      <a class="module-card card-reaproveitamento" href="reaproveitamento.html" data-perm="modulo.reaproveitamento">
-        <div class="stripe"></div><div class="icon">♻️</div><h3>Reaproveitamento</h3>
-        <p>Manipulados não retirados disponíveis para reuso.</p>
-      </a>
-      <a class="module-card card-erros" href="erros.html" data-perm="modulo.erros">
-        <div class="stripe"></div><div class="icon">📝</div><h3>Registro de Erros</h3>
-        <p>Grade de lançamento da conferência.</p>
-      </a>
-      <a class="module-card card-inclusoes" href="inclusoes.html" data-perm="modulo.inclusoes">
-        <div class="stripe" style="background:#B4472F"></div><div class="icon">🧮</div><h3>Inclusões & Performance</h3>
-        <p>Cruza inclusões diárias com erros — % de erro por atendente.</p>
-      </a>
-      <a class="module-card card-calendario-editorial" href="calendario-editorial.html" data-perm="modulo.calendario_editorial">
-        <div class="stripe" style="background:#3E6B93"></div><div class="icon">📅</div><h3>Calendário Editorial</h3>
-        <p>O que grava, o que fala e o que posta em cada dia.</p>
-      </a>
-      <a class="module-card card-formulas-complexas" href="formulas-complexas.html" data-perm="modulo.formulas_complexas">
-        <div class="stripe" style="background:#B4472F"></div><div class="icon">🧩</div><h3>Fórmulas Complexas</h3>
-        <p>Calendário de limite diário — quantas ainda cabem em cada dia.</p>
-      </a>
-      <a class="module-card card-meuserros" href="meus-erros.html" data-perm="modulo.meus_erros">
-        <div class="stripe"></div><div class="icon">📈</div><h3>Meus Erros</h3>
-        <p>Seu desempenho individual detalhado.</p>
-      </a>
-      <a class="module-card card-chat" href="chat.html" data-perm="modulo.chat">
-        <div class="stripe"></div><div class="icon">💬</div><h3>Chat Interno</h3>
-        <p>Canais de conversa da equipe, em tempo real.</p>
-      </a>
-      <a class="module-card card-wanessia" href="wanessia.html" data-perm="modulo.wanessia">
-        <div class="stripe" style="background:#6E1430"></div><div class="icon">🤖</div><h3>Wanessia</h3>
-        <p>Assistente de normas Anvisa e regimento interno.</p>
-      </a>
-      <a class="module-card card-vendas" href="vendas-yampi.html" data-perm="modulo.vendas">
-        <div class="stripe" style="background:#2F7A5F"></div><div class="icon">📊</div><h3>Vendas (Yampi)</h3>
-        <p>Relatório de pedidos e faturamento da loja.</p>
-      </a>
-      <a class="module-card card-email-marketing" href="email-marketing.html" data-perm="modulo.email_marketing">
-        <div class="stripe" style="background:#2F7A5F"></div><div class="icon">✉️</div><h3>Email Marketing</h3>
-        <p>Dispara campanha pra base do Cliente Fiel, via Brevo.</p>
-      </a>
-      <a class="module-card card-embalagens" href="embalagens.html" data-perm="modulo.embalagens">
-        <div class="stripe" style="background:#6E4A8C"></div><div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 12 4l8.5 4.5v9L12 22l-8.5-4.5Z"/><path d="M3.5 8.5 12 13l8.5-4.5"/><path d="M12 13v9"/></svg></div><h3>Controle de Embalagens</h3>
-        <p>Triagem, embalagens compostas e inventário de estoque.</p>
-      </a>
-      <a class="module-card card-admin" href="admin.html" data-perm="modulo.admin" style="display:none">
-        <div class="stripe" style="background:var(--ink)"></div><div class="icon">🔐</div><h3>Administração</h3>
-        <p>Usuários e permissões.</p>
-      </a>
-      <a class="module-card card-cargos" href="cargos.html" data-perm="modulo.admin" style="display:none">
-        <div class="stripe" style="background:var(--ink)"></div><div class="icon">🛡️</div><h3>Cargos & Permissões</h3>
-        <p>Cria cargos e libera módulos direto pela tela, sem SQL.</p>
-      </a>
-    </div>
+    <div class="hm-sec"><h2 id="modulesSection">Módulos</h2></div>
+    <div id="modules"></div>
 
     <footer>Hub interno Bioflora · construído sob medida</footer>
   </div>
@@ -517,53 +505,6 @@ function renderSideBottom(){
   bottom.appendChild(sairBtn);
 }
 
-async function init(){
-  const { data: { session } } = await supa.auth.getSession();
-  if(!session){ window.location.href = 'login.html'; return; }
-
-  const { data: perfil } = await supa.from('perfis').select('papel,nome_exibicao,atendente_vinculado').eq('id', session.user.id).maybeSingle();
-  const papel = perfil ? perfil.papel : 'sem_papel';
-  const primeiroNome = (perfil?.nome_exibicao || session.user.email).split('@')[0].split('.')[0];
-  const minhasPermissoes = await buscarMinhasPermissoes(papel);
-  const temPerm = (chave) => !minhasPermissoes || minhasPermissoes.has(chave); // sem permissoes carregadas = mostra tudo (fallback seguro)
-
-  document.getElementById('whoLabel').textContent = perfil?.nome_exibicao || session.user.email;
-  document.getElementById('heroGreeting').textContent = `Bem-vindo(a), ${primeiroNome.charAt(0).toUpperCase()+primeiroNome.slice(1)}`;
-  document.getElementById('rolePill').textContent = ROLE_LABELS[papel];
-
-  sideTemPermRef = temPerm;
-  sideUserIdRef = session.user.id;
-  try{
-    const { data: pref } = await supa.from('preferencias_hub').select('sidebar_ordem').eq('user_id', session.user.id).maybeSingle();
-    sideOrdemPersonalizada = pref?.sidebar_ordem || null;
-  }catch(e){ sideOrdemPersonalizada = null; }
-  renderSideNav();
-  renderSideBottom();
-
-  if(papel === 'sem_papel'){
-    document.getElementById('roleBanner').style.display = 'block';
-    document.getElementById('roleBanner').textContent = 'ⓘ Sua conta ainda não tem um papel definido. Peça para a chefia liberar seu acesso na tela de Administração.';
-    document.querySelectorAll('.module-card').forEach(el => el.style.display = 'none');
-    document.getElementById('heroSub').textContent = 'Aguardando liberação de acesso';
-    return;
-  }
-  document.getElementById('heroSub').textContent = 'Farmácia Bioflora — painel interno';
-
-  document.querySelectorAll('.module-card').forEach(el => {
-    const perm = el.dataset.perm;
-    el.style.display = temPerm(perm) ? 'block' : 'none';
-  });
-
-  document.querySelectorAll('.integ-card[data-perm]').forEach(el => {
-    el.style.display = temPerm(el.dataset.perm) ? 'block' : 'none';
-  });
-
-  await renderQuickStats(papel);
-  await renderWidgets(papel, perfil);
-  await renderMiniCalendarioInterno();
-  await checkAvisosPopup(papel, session.user.id);
-}
-
 // ============================================================
 // AVISOS EM POP-UP — chefia cria um aviso direcionado a um ou mais
 // cargos (ou todo mundo); aparece assim que a pessoa abre o Hub, uma
@@ -669,75 +610,574 @@ async function renderMiniCalendarioInterno(){
 // ============================================================
 // QUICK STATS — fileira de números pequenos no topo (estilo "Quick Stats")
 // ============================================================
-async function renderQuickStats(papel){
-  const el = document.getElementById('quickStats');
-  const stats = [];
+// ============================================================
+// HOME REPAGINADA: módulos por área + painel por cargo
+// ============================================================
+const GRUPOS_HOME = ['Operação','Qualidade','Pessoas','Comercial e marketing','Gestão'];
+const MODULOS_HOME = [
+ {
+  "href": "tarefas.html",
+  "perm": "modulo.tarefas",
+  "titulo": "Quadro de Tarefas",
+  "desc": "Kanban de tarefas e sugestões/ideias.",
+  "icone": "kanban",
+  "grupo": "Pessoas"
+ },
+ {
+  "href": "calendario-interno.html",
+  "perm": "modulo.calendario_interno",
+  "titulo": "Calendário Interno",
+  "desc": "Treinamentos, folgas e descansos da equipe.",
+  "icone": "calendario",
+  "grupo": "Pessoas"
+ },
+ {
+  "href": "rh.html",
+  "perm": "modulo.rh",
+  "titulo": "Central de RH",
+  "desc": "Colaboradores, ponto, férias, avaliações e relatórios — tudo num só lugar.",
+  "icone": "pessoas",
+  "grupo": "Pessoas"
+ },
+ {
+  "href": "visitas-medicas.html",
+  "perm": "modulo.visitas",
+  "titulo": "Visitas de Representantes",
+  "desc": "Agenda de horários e solicitações vindas do link da bio.",
+  "icone": "estetoscopio",
+  "grupo": "Comercial e marketing"
+ },
+ {
+  "href": "cliente-fiel.html",
+  "perm": "modulo.cliente_fiel",
+  "titulo": "Cliente Fiel",
+  "desc": "Programa de fidelidade sem cartão físico — pontos, brindes e histórico.",
+  "icone": "cartao",
+  "grupo": "Comercial e marketing"
+ },
+ {
+  "href": "rotulos.html",
+  "perm": "modulo.rotulos",
+  "titulo": "Controle de Rótulos",
+  "desc": "A comprar, pedido e chegou.",
+  "icone": "etiqueta",
+  "grupo": "Operação"
+ },
+ {
+  "href": "producao.html",
+  "perm": "modulo.producao",
+  "titulo": "Ordem de Produção",
+  "desc": "Rastreabilidade completa até a liberação.",
+  "icone": "frasco",
+  "grupo": "Operação"
+ },
+ {
+  "href": "controle-producao.html",
+  "perm": "modulo.controle_producao",
+  "titulo": "Controle de Produção",
+  "desc": "Total diário de fórmulas e pesagens.",
+  "icone": "prancheta",
+  "grupo": "Operação"
+ },
+ {
+  "href": "reaproveitamento.html",
+  "perm": "modulo.reaproveitamento",
+  "titulo": "Reaproveitamento",
+  "desc": "Manipulados não retirados disponíveis para reuso.",
+  "icone": "reciclar",
+  "grupo": "Operação"
+ },
+ {
+  "href": "erros.html",
+  "perm": "modulo.erros",
+  "titulo": "Registro de Erros",
+  "desc": "Grade de lançamento da conferência.",
+  "icone": "lapis",
+  "grupo": "Qualidade"
+ },
+ {
+  "href": "inclusoes.html",
+  "perm": "modulo.inclusoes",
+  "titulo": "Inclusões & Performance",
+  "desc": "Cruza inclusões diárias com erros — % de erro por atendente.",
+  "icone": "grafico",
+  "grupo": "Qualidade"
+ },
+ {
+  "href": "calendario-editorial.html",
+  "perm": "modulo.calendario_editorial",
+  "titulo": "Calendário Editorial",
+  "desc": "O que grava, o que fala e o que posta em cada dia.",
+  "icone": "calendario",
+  "grupo": "Comercial e marketing"
+ },
+ {
+  "href": "formulas-complexas.html",
+  "perm": "modulo.formulas_complexas",
+  "titulo": "Fórmulas Complexas",
+  "desc": "Calendário de limite diário — quantas ainda cabem em cada dia.",
+  "icone": "puzzle",
+  "grupo": "Operação"
+ },
+ {
+  "href": "meus-erros.html",
+  "perm": "modulo.meus_erros",
+  "titulo": "Meus Erros",
+  "desc": "Seu desempenho individual detalhado.",
+  "icone": "tendencia",
+  "grupo": "Qualidade"
+ },
+ {
+  "href": "chat.html",
+  "perm": "modulo.chat",
+  "titulo": "Chat Interno",
+  "desc": "Canais de conversa da equipe, em tempo real.",
+  "icone": "chat",
+  "grupo": "Pessoas"
+ },
+ {
+  "href": "wanessia.html",
+  "perm": "modulo.wanessia",
+  "titulo": "Wanessia",
+  "desc": "Assistente de normas Anvisa e regimento interno.",
+  "icone": "robo",
+  "grupo": "Gestão"
+ },
+ {
+  "href": "vendas-yampi.html",
+  "perm": "modulo.vendas",
+  "titulo": "Vendas (Yampi)",
+  "desc": "Relatório de pedidos e faturamento da loja.",
+  "icone": "vendas",
+  "grupo": "Comercial e marketing"
+ },
+ {
+  "href": "email-marketing.html",
+  "perm": "modulo.email_marketing",
+  "titulo": "Email Marketing",
+  "desc": "Dispara campanha pra base do Cliente Fiel, via Brevo.",
+  "icone": "email",
+  "grupo": "Comercial e marketing"
+ },
+ {
+  "href": "embalagens.html",
+  "perm": "modulo.embalagens",
+  "titulo": "Controle de Embalagens",
+  "desc": "Triagem, embalagens compostas e inventário de estoque.",
+  "icone": "caixa",
+  "grupo": "Operação"
+ },
+ {
+  "href": "admin.html",
+  "perm": "modulo.admin",
+  "titulo": "Administração",
+  "desc": "Usuários e permissões.",
+  "icone": "escudo",
+  "grupo": "Gestão"
+ },
+ {
+  "href": "cargos.html",
+  "perm": "modulo.admin",
+  "titulo": "Cargos & Permissões",
+  "desc": "Cria cargos e libera módulos direto pela tela, sem SQL.",
+  "icone": "escudoCheck",
+  "grupo": "Gestão"
+ }
+];
 
-  if(['chefia','recepcao','conferencia','atendente'].includes(papel)){
-    const { data } = await supa.from('rotulos_kanban').select('status');
-    stats.push({ label:'Rótulos a comprar', value:(data||[]).filter(r=>r.status==='a_comprar').length, accent:false });
-  }
-  if(['chefia','laboratorio','conferencia','atendente'].includes(papel)){
-    const { data } = await supa.from('ordens_producao').select('status');
-    stats.push({ label:'Ordens em andamento', value:(data||[]).filter(r=>r.status!=='liberado').length, accent:false });
-  }
-  if(papel === 'chefia' || papel === 'conferencia'){
-    const seteDias = new Date(); seteDias.setDate(seteDias.getDate()-7);
-    const { data } = await supa.from('erros_registrados').select('id').gte('registrado_em', seteDias.toISOString());
-    stats.push({ label:'Erros (7 dias)', value:(data||[]).length, accent:true });
-  }
-  if(['chefia','rh','gestao'].includes(papel)){
-    const { data: ultimo } = await supa.from('folhas_ponto').select('periodo_inicio').order('periodo_inicio',{ascending:false}).limit(1);
-    if(ultimo && ultimo.length){
-      const { data: folhas } = await supa.from('folhas_ponto').select('saldo_final_min').eq('periodo_inicio', ultimo[0].periodo_inicio);
-      stats.push({ label:'Saldo negativo', value:(folhas||[]).filter(f=>f.saldo_final_min<0).length, accent:false });
-    }
-  }
+// Ícones extras usados só na Home
+Object.assign(SIDE_ICONES, {
+  relogio: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  alerta: '<path d="M12 4 3.5 19h17Z"/><path d="M12 10v4M12 16.8v.2"/>',
+});
 
-  el.innerHTML = stats.map(s => `
-    <div class="qs-card ${s.accent?'accent':''}">
-      <div class="qs-label">${s.label}</div>
-      <div class="qs-value">${s.value}</div>
-    </div>
-  `).join('');
+const EMOJI_PARA_ICONE = {
+  '📈':'tendencia', '⚠️':'alerta', '📋':'prancheta', '🧩':'puzzle', '📅':'calendario',
+  '♻️':'reciclar', '🏷️':'etiqueta', '🧪':'frasco', '⏱️':'relogio', '📊':'grafico',
+};
+// Troca os emojis dos cartões antigos por ícones SVG e remove emoji solto no texto
+function limparEmojis(html){
+  html = html.replace(/<span class="card-icon">([^<]*)<\/span>/g, (m, e) =>
+    `<span class="card-icon">${sideSvg(EMOJI_PARA_ICONE[e.trim()] || 'puzzle')}</span>`);
+  return html.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]\s?/gu, '');
 }
 
-// ============================================================
-// WIDGETS — cada card do painel principal é uma função independente.
-// Pra adicionar um novo no futuro: escreve uma função (buscar dado
-// + montar HTML) e chama ela dentro de renderWidgets, no "if" do(s)
-// cargo(s) que devem vê-la.
-// ============================================================
+function saudacaoHome(){
+  const h = new Date().getHours();
+  return h < 12 ? 'Bom dia' : (h < 18 ? 'Boa tarde' : 'Boa noite');
+}
+function dataLongaHome(){
+  const t = new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+const fmtMinHome = (min) => { const h = Math.floor(min/60), m = Math.round(min%60); return h > 0 ? `${h}h${m>0?' '+m+'min':''}` : `${Math.round(min)}min`; };
+const hojeHome = () => localDateStr(new Date());
+
+function semanaSegASab(){
+  const d = new Date(), dow = d.getDay();
+  const seg = new Date(d); seg.setDate(d.getDate() - ((dow + 6) % 7));
+  return [0,1,2,3,4,5].map(i => { const x = new Date(seg); x.setDate(seg.getDate()+i); return localDateStr(x); });
+}
+
+// Minutos disponíveis por dia nas Fórmulas Complexas: dia específico > dia da semana > 480
+async function fcDisponivelPorDia(datas){
+  const [{ data: esp }, { data: sem }] = await Promise.all([
+    supa.from('formulas_complexas_tempo_diario').select('data,minutos_disponiveis').in('data', datas),
+    supa.from('formulas_complexas_limite_semanal').select('dia_semana,minutos_disponiveis'),
+  ]);
+  const espM = {}; (esp||[]).forEach(r => { espM[r.data] = r.minutos_disponiveis; });
+  const semM = {}; (sem||[]).forEach(r => { semM[r.dia_semana] = r.minutos_disponiveis; });
+  const out = {};
+  datas.forEach(d => { const dow = new Date(d+'T12:00:00').getDay(); out[d] = espM[d] != null ? espM[d] : (semM[dow] != null ? semM[dow] : 480); });
+  return out;
+}
+
+async function contar(tabela, filtros){
+  let q = supa.from(tabela).select('id', { count:'exact', head:true });
+  (filtros||[]).forEach(f => { q = q[f[0]](...f.slice(1)); });
+  const { count } = await q;
+  return count || 0;
+}
+
+function cardHome({ titulo, sub, corpo, span, icone, link }){
+  return `<div class="card ${span||'w6'}">
+    <div class="card-head"><h2>${titulo}</h2><span class="card-icon">${sideSvg(icone||'puzzle')}</span></div>
+    ${sub ? `<p class="card-sub">${sub}</p>` : ''}${corpo}</div>`;
+}
+
+if(window.Chart){
+  Chart.defaults.font.family = "'Maven Pro', sans-serif";
+  Chart.defaults.color = '#6E6266';
+}
+const VINHOS = ['#8B1A3A','#C45A78','#E3A6B8','#5E1027','#B8325A'];
+
+// ---------- Indicadores do topo (por cargo) ----------
+const KPIS = {
+  ordens: async () => ({ label:'Ordens em andamento', value: await contar('ordens_producao', [['neq','status','liberado']]), href:'producao.html' }),
+  fcHoje: async () => {
+    const h = hojeHome();
+    const [lim, { data }] = await Promise.all([
+      fcDisponivelPorDia([h]),
+      supa.from('formulas_complexas_registro').select('minutos_calculados').eq('data', h).in('status', ['aprovado','pendente']),
+    ]);
+    const usados = (data||[]).reduce((s,r) => s + (r.minutos_calculados||0), 0);
+    const pct = lim[h] ? Math.round(usados / lim[h] * 100) : 100;
+    return { label:'Fórmulas complexas hoje', value: pct + '%', hint: `${fmtMinHome(usados)} de ${fmtMinHome(lim[h])}`, href:'formulas-complexas.html', tone: pct >= 100 ? 'bad' : (pct >= 85 ? 'warn' : '') };
+  },
+  fcLivre: async () => {
+    const h = hojeHome();
+    const [lim, { data }] = await Promise.all([
+      fcDisponivelPorDia([h]),
+      supa.from('formulas_complexas_registro').select('minutos_calculados').eq('data', h).in('status', ['aprovado','pendente']),
+    ]);
+    const usados = (data||[]).reduce((s,r) => s + (r.minutos_calculados||0), 0);
+    return { label:'Tempo livre hoje (complexas)', value: fmtMinHome(Math.max(0, lim[h] - usados)), href:'formulas-complexas.html' };
+  },
+  erros7: async () => {
+    const d = new Date(); d.setDate(d.getDate()-7);
+    return { label:'Erros (7 dias)', value: await contar('erros_registrados', [['gte','registrado_em', d.toISOString()]]), href:'erros.html' };
+  },
+  pendenciasFC: async () => {
+    const n = await contar('formulas_complexas_registro', [['eq','status','pendente']]);
+    return { label:'Aprovações pendentes', value:n, href:'formulas-complexas.html', tone: n ? 'warn' : '' };
+  },
+  pendencias: async () => {
+    const [a, b] = await Promise.all([
+      contar('formulas_complexas_registro', [['eq','status','pendente']]),
+      contar('ferias_solicitacoes', [['eq','status','pendente']]),
+    ]);
+    return { label:'Pendências de aprovação', value:a+b, hint:`${a} fórmulas · ${b} férias`, href: a ? 'formulas-complexas.html' : 'rh.html', tone: (a+b) ? 'warn' : '' };
+  },
+  rotulos: async () => ({ label:'Rótulos a comprar', value: await contar('rotulos_kanban', [['eq','status','a_comprar']]), href:'rotulos.html' }),
+  rotulosPedido: async () => ({ label:'Rótulos pedidos', value: await contar('rotulos_kanban', [['eq','status','pedido']]), href:'rotulos.html' }),
+  rotulosChegou: async () => ({ label:'Rótulos que chegaram', value: await contar('rotulos_kanban', [['eq','status','chegou']]), href:'rotulos.html' }),
+  producaoHoje: async () => {
+    const h = hojeHome();
+    const [a, b] = await Promise.all([
+      supa.from('registro_manipulacao_diario').select('quantidade').eq('data', h),
+      supa.from('registro_pesagem_diario').select('quantidade').eq('data', h),
+    ]);
+    const soma = (x) => (x.data||[]).reduce((s,r) => s + (r.quantidade||0), 0);
+    return { label:'Produzido hoje', value: soma(a) + soma(b), hint:'manipulação + pesagem', href:'controle-producao.html' };
+  },
+  previstas: async () => {
+    const ont = new Date(); ont.setDate(ont.getDate()-1);
+    const { data } = await supa.from('formulas_dia_seguinte').select('capsula,dermato').eq('data', localDateStr(ont)).maybeSingle();
+    return { label:'Fórmulas previstas hoje', value:(data?.capsula||0)+(data?.dermato||0), hint:`${data?.capsula||0} cápsulas · ${data?.dermato||0} dermato`, href:'inclusoes.html' };
+  },
+  reaprov: async () => ({ label:'Reaproveitáveis agora', value: await contar('manipulados_nao_retirados', [['eq','status','disponivel']]), href:'reaproveitamento.html' }),
+  colabAtivos: async () => ({ label:'Colaboradores ativos', value: await contar('colaboradores', [['eq','status','ativo']]), href:'rh.html' }),
+  feriasPend: async () => {
+    const n = await contar('ferias_solicitacoes', [['eq','status','pendente']]);
+    return { label:'Férias a aprovar', value:n, href:'rh.html', tone: n ? 'warn' : '' };
+  },
+  ausentesHoje: async () => {
+    const h = hojeHome();
+    return { label:'Ausentes hoje', value: await contar('ferias_solicitacoes', [['eq','status','aprovada'],['lte','data_inicio',h],['gte','data_fim',h]]), href:'rh.html' };
+  },
+  saldoNeg: async () => {
+    const { data: ult } = await supa.from('folhas_ponto').select('periodo_inicio').order('periodo_inicio',{ascending:false}).limit(1);
+    if(!ult || !ult.length) return null;
+    const { data } = await supa.from('folhas_ponto').select('saldo_final_min').eq('periodo_inicio', ult[0].periodo_inicio);
+    return { label:'Saldo de horas negativo', value:(data||[]).filter(f => f.saldo_final_min < 0).length, href:'banco-de-horas.html' };
+  },
+  postsHoje: async () => ({ label:'Posts de hoje', value: await contar('calendario_posts', [['eq','data', hojeHome()]]), href:'calendario-editorial.html' }),
+  storiesHoje: async () => ({ label:'Stories de hoje', value: await contar('calendario_stories', [['eq','data', hojeHome()]]), href:'calendario-editorial.html' }),
+  meusErros7: async (ctx) => {
+    if(!ctx.perfil?.atendente_vinculado) return null;
+    const d = new Date(); d.setDate(d.getDate()-7);
+    return { label:'Meus erros (7 dias)', value: await contar('erros_registrados', [['eq','atendente', ctx.perfil.atendente_vinculado],['gte','registrado_em', d.toISOString()]]), href:'meus-erros.html' };
+  },
+  minhasInclusoesHoje: async (ctx) => {
+    if(!ctx.perfil?.atendente_vinculado) return null;
+    const { data } = await supa.from('inclusoes_diarias').select('quantidade').eq('atendente', ctx.perfil.atendente_vinculado).eq('data', hojeHome());
+    return { label:'Minhas inclusões hoje', value:(data||[]).reduce((s,r) => s + (r.quantidade||0), 0), href:'inclusoes.html' };
+  },
+};
+
+// ---------- Cartões do painel (por cargo) ----------
+// Cada função devolve { html, draw? }. draw() roda depois que o HTML está na tela (gráficos).
+const WIDGETS = {
+  atencao: async (ctx) => {
+    const hoje = hojeHome();
+    const em5 = new Date(); em5.setDate(em5.getDate()+5);
+    const ehRH = ['chefia','rh'].includes(ctx.papel);
+    const [{ data: prazos }, { data: ordens }, fc, rot, venc, ferias] = await Promise.all([
+      supa.from('prazos_producao').select('prioridade,dias_prazo'),
+      supa.from('ordens_producao').select('prioridade,data_ordem_criada,status').neq('status','liberado'),
+      contar('formulas_complexas_registro', [['eq','status','pendente']]),
+      contar('rotulos_kanban', [['eq','status','a_comprar']]),
+      contar('manipulados_nao_retirados', [['eq','status','disponivel'],['lte','validade', localDateStr(em5)],['gte','validade', hoje]]),
+      ehRH ? contar('ferias_solicitacoes', [['eq','status','pendente']]) : Promise.resolve(0),
+    ]);
+    const dias = {}; (prazos||[]).forEach(p => { dias[p.prioridade] = p.dias_prazo; });
+    const h0 = new Date(); h0.setHours(0,0,0,0);
+    const atrasadas = (ordens||[]).filter(o => {
+      if(!o.data_ordem_criada) return false;
+      const lim = new Date(o.data_ordem_criada+'T00:00:00'); lim.setDate(lim.getDate() + (dias[o.prioridade] ?? 7));
+      return lim < h0;
+    }).length;
+    const itens = [
+      { nome:'Ordens de produção atrasadas', n:atrasadas, href:'producao.html', ruim:true },
+      { nome:'Fórmulas complexas aguardando aprovação', n:fc, href:'formulas-complexas.html', ruim:true },
+      { nome:'Manipulados vencendo em até 5 dias', n:venc, href:'reaproveitamento.html', ruim:true },
+      { nome:'Rótulos a comprar', n:rot, href:'rotulos.html', ruim:false },
+    ];
+    if(ehRH) itens.push({ nome:'Férias aguardando aprovação', n:ferias, href:'rh.html', ruim:true });
+    const corpo = `<div class="hm-lista">${itens.map(i => `
+      <a class="hm-item" href="${i.href}"><span class="nome">${i.nome}</span>
+        ${i.n ? `<span class="badge ${i.ruim ? 'bad' : 'warn'}">${i.n}</span>` : '<span class="hm-ok">em dia</span>'}</a>`).join('')}</div>`;
+    return { html: cardHome({ titulo:'Precisa de atenção', sub:'Pendências do dia a dia', corpo, span:'w4', icone:'alerta' }) };
+  },
+
+  fcSemana: async () => {
+    const dias = semanaSegASab();
+    const [disp, { data: regs }] = await Promise.all([
+      fcDisponivelPorDia(dias),
+      supa.from('formulas_complexas_registro').select('data,minutos_calculados').in('data', dias).in('status', ['aprovado','pendente']),
+    ]);
+    const usado = {}; (regs||[]).forEach(r => { usado[r.data] = (usado[r.data]||0) + (r.minutos_calculados||0); });
+    const nomes = ['Seg','Ter','Qua','Qui','Sex','Sáb'];
+    return {
+      html: cardHome({ titulo:'Fórmulas complexas na semana', sub:'Tempo usado x limite de cada dia — <a href="formulas-complexas.html">abrir calendário</a>', corpo:'<div class="hm-chart"><canvas id="chartFcSemana"></canvas></div>', span:'w8', icone:'puzzle' }),
+      draw: () => new Chart(document.getElementById('chartFcSemana'), {
+        data:{ labels: dias.map((d,i) => `${nomes[i]} ${d.slice(8)}`), datasets:[
+          { type:'bar', label:'Usado (min)', data: dias.map(d => Math.round(usado[d]||0)), borderRadius:8,
+            backgroundColor: dias.map(d => (usado[d]||0) > disp[d] ? '#B4472F' : '#8B1A3A') },
+          { type:'line', label:'Limite (min)', data: dias.map(d => disp[d]), borderColor:'#C9922B', borderDash:[5,4], pointRadius:3, pointBackgroundColor:'#C9922B', fill:false, tension:0 },
+        ]},
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12 } } }, scales:{ y:{ beginAtZero:true } } }
+      }),
+    };
+  },
+
+  ordensStatus: async () => {
+    const { data } = await supa.from('ordens_producao').select('status,area').neq('status','liberado');
+    const lista = data || [];
+    const criada = lista.filter(o => o.status === 'ordem_criada').length;
+    const manip = lista.filter(o => o.status === 'em_manipulacao').length;
+    const caps = lista.filter(o => o.area === 'capsula').length, derm = lista.filter(o => o.area === 'dermato').length;
+    const corpo = lista.length
+      ? `<div class="hm-chart" style="height:170px"><canvas id="chartOrdensStatus"></canvas></div>
+         <div class="hm-lista" style="margin-top:8px">
+           <div class="hm-item"><span class="nome">Cápsula</span><b>${caps}</b></div>
+           <div class="hm-item"><span class="nome">Dermato</span><b>${derm}</b></div></div>`
+      : '<div class="empty-mini">Nenhuma ordem em aberto.</div>';
+    return {
+      html: cardHome({ titulo:'Ordens em aberto', sub:'Por etapa — <a href="producao.html">abrir produção</a>', corpo, span:'w4', icone:'frasco' }),
+      draw: () => { const c = document.getElementById('chartOrdensStatus'); if(!c) return;
+        new Chart(c, { type:'doughnut', data:{ labels:['Ordem criada','Em manipulação'], datasets:[{ data:[criada, manip], backgroundColor:['#E3A6B8','#8B1A3A'], borderWidth:0 }] },
+          options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ position:'right', labels:{ boxWidth:12 } } } } }); },
+    };
+  },
+
+  producaoSemana: async () => {
+    const dias = lastNDaysLocal(7);
+    const [a, b] = await Promise.all([
+      supa.from('registro_manipulacao_diario').select('data,quantidade,area').gte('data', dias[0]),
+      supa.from('registro_pesagem_diario').select('data,quantidade,area').gte('data', dias[0]),
+    ]);
+    const soma = { capsula:{}, dermato:{} };
+    [...(a.data||[]), ...(b.data||[])].forEach(r => { const k = r.area === 'dermato' ? 'dermato' : 'capsula'; soma[k][r.data] = (soma[k][r.data]||0) + (r.quantidade||0); });
+    return {
+      html: cardHome({ titulo:'Produção dos últimos 7 dias', sub:'Fórmulas manipuladas e pesadas, por área — <a href="controle-producao.html">abrir controle</a>', corpo:'<div class="hm-chart"><canvas id="chartProducaoSemana"></canvas></div>', span:'w8', icone:'prancheta' }),
+      draw: () => new Chart(document.getElementById('chartProducaoSemana'), {
+        type:'bar', data:{ labels: dias.map(d => d.slice(8)+'/'+d.slice(5,7)), datasets:[
+          { label:'Cápsula', data: dias.map(d => soma.capsula[d]||0), backgroundColor:'#8B1A3A', borderRadius:6 },
+          { label:'Dermato', data: dias.map(d => soma.dermato[d]||0), backgroundColor:'#E3A6B8', borderRadius:6 },
+        ]},
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12 } } }, scales:{ x:{ stacked:true }, y:{ stacked:true, beginAtZero:true } } }
+      }),
+    };
+  },
+
+  errosTipo: async () => ({ html: await widgetErrosEquipe(), draw: () => drawErrosEquipeChart() }),
+  meusErros: async (ctx) => ctx.perfil?.atendente_vinculado ? ({ html: await widgetMeusErros(ctx.perfil.atendente_vinculado), draw: () => drawMeusErrosChart(ctx.perfil.atendente_vinculado) }) : null,
+  minhasInclusoes: async (ctx) => ctx.perfil?.atendente_vinculado ? ({ html: await widgetMinhasInclusoes(ctx.perfil.atendente_vinculado, false), draw: () => ligarWidgetMinhasInclusoes(ctx.perfil.atendente_vinculado) }) : null,
+  inclusoesChefia: async () => ({ html: await widgetMinhasInclusoes(null, true), draw: () => ligarSeletorInclusoesChefia() }),
+  previstas: async () => ({ html: await widgetFormulasDiaSeguinte() }),
+  fcHojeLista: async () => ({ html: await widgetFormulasComplexas() }),
+  conteudoHoje: async () => ({ html: await widgetCalendarioEditorialHoje() }),
+  reaproveitamento: async () => ({ html: await widgetReaproveitamento() }),
+  rotulosCard: async () => ({ html: await widgetRotulos() }),
+  bancoHoras: async () => ({ html: await widgetBancoHoras() }),
+
+  feriasPend: async () => {
+    const { data } = await supa.from('ferias_solicitacoes').select('solicitante_nome,departamento,data_inicio,data_fim,dias_totais,tipo').eq('status','pendente').order('data_inicio').limit(6);
+    const fmt = (d) => new Date(d+'T12:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
+    const corpo = (data && data.length)
+      ? `<div class="hm-lista">${data.map(f => `<a class="hm-item" href="rh.html"><span class="nome">${f.solicitante_nome||'—'}<span class="sub">${f.departamento||''}${f.tipo?' · '+f.tipo:''}</span></span><span class="badge warn">${fmt(f.data_inicio)} a ${fmt(f.data_fim)}</span></a>`).join('')}</div>`
+      : '<div class="empty-mini">Nenhuma solicitação aguardando aprovação.</div>';
+    return { html: cardHome({ titulo:'Férias e ausências a aprovar', sub:'Solicitações pendentes — <a href="rh.html">abrir RH</a>', corpo, span:'w6', icone:'calendario' }) };
+  },
+  colabDepto: async () => {
+    const { data } = await supa.from('colaboradores').select('departamento').eq('status','ativo');
+    const cont = {}; (data||[]).forEach(c => { const k = c.departamento || 'Sem setor'; cont[k] = (cont[k]||0) + 1; });
+    const ordenado = Object.entries(cont).sort((a,b) => b[1]-a[1]);
+    return {
+      html: cardHome({ titulo:'Equipe por setor', sub:`${(data||[]).length} colaboradores ativos`, corpo:'<div class="hm-chart"><canvas id="chartColabDepto"></canvas></div>', span:'w6', icone:'pessoas' }),
+      draw: () => new Chart(document.getElementById('chartColabDepto'), {
+        type:'doughnut', data:{ labels: ordenado.map(o => o[0]), datasets:[{ data: ordenado.map(o => o[1]), backgroundColor: ordenado.map((_,i) => VINHOS[i % VINHOS.length]), borderWidth:0 }] },
+        options:{ responsive:true, maintainAspectRatio:false, cutout:'58%', plugins:{ legend:{ position:'right', labels:{ boxWidth:12 } } } }
+      }),
+    };
+  },
+};
+
+// Quais indicadores e cartões cada cargo vê, na ordem
+const PAINEL_POR_CARGO = {
+  chefia:      { kpis:['ordens','fcHoje','erros7','pendencias'],
+                 widgets:['atencao','fcSemana','ordensStatus','producaoSemana','errosTipo','inclusoesChefia','previstas','conteudoHoje','reaproveitamento','rotulosCard','bancoHoras'] },
+  conferencia: { kpis:['ordens','pendenciasFC','erros7','rotulos'],
+                 widgets:['atencao','fcSemana','ordensStatus','errosTipo','previstas','conteudoHoje','reaproveitamento','rotulosCard'] },
+  laboratorio: { kpis:['ordens','producaoHoje','previstas','reaprov'],
+                 widgets:['ordensStatus','producaoSemana','previstas','reaproveitamento'] },
+  atendente:   { kpis:['meusErros7','minhasInclusoesHoje','fcLivre','rotulos'],
+                 widgets:['meusErros','minhasInclusoes','previstas','fcHojeLista','conteudoHoje','reaproveitamento','rotulosCard'] },
+  recepcao:    { kpis:['rotulos','rotulosPedido','rotulosChegou'], widgets:['rotulosCard'] },
+  rh:          { kpis:['colabAtivos','feriasPend','ausentesHoje','saldoNeg'], widgets:['feriasPend','colabDepto','bancoHoras'] },
+  gestao:      { kpis:['saldoNeg','postsHoje','storiesHoje'], widgets:['conteudoHoje','bancoHoras'] },
+  cpd:         { kpis:[], widgets:[] },
+};
+
+async function renderQuickStats(papel, perfil){
+  const el = document.getElementById('quickStats');
+  const cfg = PAINEL_POR_CARGO[papel] || { kpis:[] };
+  const ctx = { papel, perfil };
+  const resultados = await Promise.all(cfg.kpis.map(k => KPIS[k](ctx).catch(() => null)));
+  const lista = resultados.filter(Boolean);
+  el.innerHTML = lista.map(k => `<a class="hm-kpi ${k.tone||''}" href="${k.href||'#'}">
+      <b>${k.value}</b><span class="l">${k.label}</span>${k.hint ? `<span class="h">${k.hint}</span>` : ''}</a>`).join('');
+  el.style.display = lista.length ? '' : 'none';
+}
+
 async function renderWidgets(papel, perfil){
+  const secao = document.getElementById('painelSecao');
   const area = document.getElementById('widgetArea');
-  area.innerHTML = '<div class="loading-msg">Carregando seu painel...</div>';
-  const cards = [];
+  const cfg = PAINEL_POR_CARGO[papel] || { widgets:[] };
+  if(!cfg.widgets.length){ secao.style.display = 'none'; return; }
+  secao.style.display = '';
+  area.innerHTML = '<div class="grid"><div class="hm-skel card w8"></div><div class="hm-skel card w4"></div></div>';
 
-  const podeVerErrosProprios = perfil?.atendente_vinculado;
-  const podeVerErrosGeral = papel === 'conferencia' || papel === 'chefia';
-  const podeVerRotulos = ['chefia','recepcao','conferencia','atendente'].includes(papel);
-  const podeVerOrdens = ['chefia','laboratorio','conferencia','atendente'].includes(papel);
-  const podeVerBancoHoras = ['chefia','rh','gestao'].includes(papel);
-  const podeVerReaproveitamento = ['chefia','conferencia','atendente'].includes(papel);
+  const ctx = { papel, perfil };
+  const resultados = await Promise.all(cfg.widgets.map(k => WIDGETS[k](ctx).catch(e => { console.error('widget', k, e); return null; })));
+  const prontos = resultados.filter(r => r && r.html);
+  area.innerHTML = prontos.length ? `<div class="grid">${limparEmojis(prontos.map(r => r.html).join(''))}</div>` : '';
+  if(!prontos.length) secao.style.display = 'none';
+  prontos.forEach(r => { if(r.draw){ try{ r.draw(); }catch(e){ console.error(e); } } });
+}
 
-  if(podeVerErrosProprios) cards.push(await widgetMeusErros(perfil.atendente_vinculado));
-  if(podeVerErrosProprios) cards.push(await widgetMinhasInclusoes(perfil.atendente_vinculado, false));
-  if(papel === 'chefia') cards.push(await widgetMinhasInclusoes(null, true));
-  if(podeVerErrosGeral) cards.push(await widgetErrosEquipe());
-  if(['chefia','conferencia','atendente','laboratorio'].includes(papel)) cards.push(await widgetFormulasDiaSeguinte());
-  if(['chefia','conferencia','atendente'].includes(papel)) cards.push(await widgetFormulasComplexas());
-  if(['chefia','gestao','conferencia','atendente'].includes(papel)) cards.push(await widgetCalendarioEditorialHoje());
-  if(podeVerReaproveitamento) cards.push(await widgetReaproveitamento());
-  if(podeVerRotulos) cards.push(await widgetRotulos());
-  if(podeVerOrdens) cards.push(await widgetOrdens());
-  if(podeVerBancoHoras) cards.push(await widgetBancoHoras());
+// ---------- Módulos por área, com busca ----------
+const ORDEM_MODULOS_HOME = ['producao','controle-producao','formulas-complexas','reaproveitamento','rotulos','embalagens',
+  'erros','inclusoes','meus-erros','rh','tarefas','calendario-interno','chat',
+  'cliente-fiel','vendas-yampi','email-marketing','calendario-editorial','visitas-medicas','wanessia','admin','cargos'];
+function renderModulosHome(temPerm){
+  const alvo = document.getElementById('modules');
+  const pos = (m) => { const i = ORDEM_MODULOS_HOME.indexOf(m.href.replace('.html','')); return i < 0 ? 99 : i; };
+  const visiveis = MODULOS_HOME.filter(m => temPerm(m.perm)).sort((x, y) => pos(x) - pos(y));
+  alvo.innerHTML = GRUPOS_HOME.map(g => {
+    const itens = visiveis.filter(m => m.grupo === g);
+    if(!itens.length) return '';
+    return `<section class="hm-grupo" data-grupo="${g}"><h2>${g}</h2><div class="hm-mods">${itens.map(m => `
+      <a class="hm-mod" href="${m.href}" data-busca="${(m.titulo+' '+m.desc).toLowerCase()}">
+        <div class="hm-mi">${sideSvg(m.icone)}</div><h3>${m.titulo}</h3><p>${m.desc}</p></a>`).join('')}</div></section>`;
+  }).join('') + '<div class="hm-vazio" id="buscaVazia" style="display:none">Nenhum módulo encontrado.</div>';
 
-  area.innerHTML = cards.length ? `<div class="grid">${cards.join('')}</div>` : '';
+  document.getElementById('buscaModulo').addEventListener('input', (e) => {
+    const t = e.target.value.trim().toLowerCase();
+    let achou = 0;
+    alvo.querySelectorAll('.hm-grupo').forEach(sec => {
+      let n = 0;
+      sec.querySelectorAll('.hm-mod').forEach(a => { const ok = !t || a.dataset.busca.includes(t); a.style.display = ok ? '' : 'none'; if(ok) n++; });
+      sec.style.display = n ? '' : 'none';
+      achou += n;
+    });
+    document.getElementById('buscaVazia').style.display = achou ? 'none' : 'block';
+  });
+}
 
-  if(podeVerErrosProprios) drawMeusErrosChart(perfil.atendente_vinculado);
-  if(podeVerErrosProprios) ligarWidgetMinhasInclusoes(perfil.atendente_vinculado, false);
-  if(papel === 'chefia') await ligarSeletorInclusoesChefia();
-  if(podeVerErrosGeral) drawErrosEquipeChart();
+async function init(){
+  const { data: { session } } = await supa.auth.getSession();
+  if(!session){ window.location.href = 'login.html'; return; }
+
+  const { data: perfil } = await supa.from('perfis').select('papel,nome_exibicao,atendente_vinculado').eq('id', session.user.id).maybeSingle();
+  const papel = perfil ? perfil.papel : 'sem_papel';
+  const nomeCompleto = perfil?.nome_exibicao || session.user.email;
+  const primeiroNome = nomeCompleto.split('@')[0].split('.')[0].split(' ')[0];
+  const nomeBonito = primeiroNome.charAt(0).toUpperCase() + primeiroNome.slice(1);
+  const minhasPermissoes = await buscarMinhasPermissoes(papel);
+  const temPerm = (chave) => !minhasPermissoes || minhasPermissoes.has(chave); // sem permissoes carregadas = mostra tudo (fallback seguro)
+
+  document.getElementById('whoLabel').textContent = nomeCompleto;
+  document.getElementById('whoAv').textContent = nomeBonito.charAt(0);
+  document.getElementById('heroGreeting').textContent = `${saudacaoHome()}, ${nomeBonito}`;
+  document.getElementById('heroDate').textContent = dataLongaHome();
+  document.getElementById('rolePill').textContent = ROLE_LABELS[papel] || '';
+
+  sideTemPermRef = temPerm;
+  sideUserIdRef = session.user.id;
+  try{
+    const { data: pref } = await supa.from('preferencias_hub').select('sidebar_ordem').eq('user_id', session.user.id).maybeSingle();
+    sideOrdemPersonalizada = pref?.sidebar_ordem || null;
+  }catch(e){ sideOrdemPersonalizada = null; }
+  renderSideNav();
+  renderSideBottom();
+
+  if(papel === 'sem_papel'){
+    document.getElementById('roleBanner').style.display = 'block';
+    document.getElementById('roleBanner').textContent = 'Sua conta ainda não tem um papel definido. Peça para a chefia liberar seu acesso na tela de Administração.';
+    document.getElementById('heroSub').textContent = 'Aguardando liberação de acesso';
+    document.getElementById('quickStats').style.display = 'none';
+    document.getElementById('secCalendario').style.display = 'none';
+    document.getElementById('minicalArea').style.display = 'none';
+    document.getElementById('modulesSection').parentElement.style.display = 'none';
+    return;
+  }
+  document.getElementById('heroSub').textContent = 'Farmácia Bioflora — painel interno';
+
+  renderModulosHome(temPerm);
+  await Promise.all([ renderQuickStats(papel, perfil), renderWidgets(papel, perfil), renderMiniCalendarioInterno() ]);
+  await checkAvisosPopup(papel, session.user.id);
 }
 
 async function widgetMeusErros(nome){
@@ -903,14 +1343,14 @@ async function widgetFormulasComplexas(){
   const off = new Date().getTimezoneOffset();
   const hojeStr = new Date(Date.now()-off*60000).toISOString().slice(0,10);
 
-  const [{ data: tempoDia }, { data: registros }] = await Promise.all([
-    supa.from('formulas_complexas_tempo_diario').select('minutos_disponiveis').eq('data', hojeStr).maybeSingle(),
+  const [limitesHoje, { data: registros }] = await Promise.all([
+    fcDisponivelPorDia([hojeStr]),
     supa.from('formulas_complexas_registro').select('quantidade,requisicao,status,minutos_calculados,formulas_complexas_catalogo(nome)').eq('data', hojeStr).in('status', ['aprovado','pendente']).order('minutos_calculados', {ascending:false})
   ]);
-  const disponivel = tempoDia?.minutos_disponiveis ?? 480;
+  const disponivel = limitesHoje[hojeStr];
   const lista = registros || [];
   const usados = lista.reduce((s,r)=>s+(r.minutos_calculados||0), 0);
-  const pct = Math.min(100, Math.round((usados/disponivel)*100));
+  const pct = disponivel ? Math.min(100, Math.round((usados/disponivel)*100)) : 100;
   const formatarMin = (min) => { const h=Math.floor(min/60), m=Math.round(min%60); return h>0 ? `${h}h${m>0?' '+m+'min':''}` : `${Math.round(min)}min`; };
 
   return `<div class="card w8">
