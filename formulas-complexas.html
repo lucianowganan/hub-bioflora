@@ -53,6 +53,15 @@
   .lista-dia-cor{width:12px;height:12px;border-radius:4px;flex-shrink:0;margin-top:3px;border:1px solid rgba(0,0,0,.15);}
   .lista-dia-titulo{font-weight:700;font-size:13.5px;}
   .lista-dia-sub{font-size:12px;color:var(--gray);margin-top:2px;}
+  .lista-dia-corpo{flex:1;min-width:0;}
+  .lista-dia-acao{display:flex;align-items:flex-start;gap:6px;flex-shrink:0;}
+  .lixo-btn{background:none;border:1px solid var(--line);border-radius:8px;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gray);}
+  .lixo-btn:hover{color:var(--bad);border-color:var(--bad);}
+  .lixo-btn svg{width:17px;height:17px;}
+  .apagar-confirma{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:12px;color:var(--bad);font-weight:600;}
+  .apagar-confirma .linha{display:flex;gap:6px;}
+  .btn-apagar{font-family:'Maven Pro',sans-serif;font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;border:none;background:var(--bad);color:#fff;cursor:pointer;min-height:34px;}
+  .btn-cancelar-apagar{font-family:'Maven Pro',sans-serif;font-size:12px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;min-height:34px;}
   .lista-dia-quem{font-size:12px;margin-top:3px;}
   .lista-dia-quem b{font-weight:700;}
   .tag-pendente{display:inline-block;font-size:9.5px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:20px;background:var(--warn-tint);color:#8A6512;margin-left:6px;}
@@ -292,6 +301,7 @@ const TIPO_CALCULO_LABEL = {
 
 let catalogoFC = [];
 let souGerenteFC = false;
+let podeApagarFC = false; // só chefia e conferência
 let semanaInicio = null;
 let registrosSemanaCache = [];
 let tempoDiarioCache = {};
@@ -523,6 +533,42 @@ function renderSemana(containerId, dias){
   }).join('');
 }
 
+// ---------- Apagar fórmula (chefia e conferência), com re-confirmação ----------
+function botaoLixoHtml(id, dataStr){
+  return `<button class="lixo-btn" title="Apagar" aria-label="Apagar" onclick="pedirConfirmacaoApagar('${id}','${dataStr}')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l.8 12.5h9.4L17.5 7"/><path d="M10 11v5M14 11v5"/></svg>
+  </button>`;
+}
+
+function pedirConfirmacaoApagar(id, dataStr){
+  document.getElementById('acaoApagar_'+id).innerHTML = `
+    <div class="apagar-confirma">
+      <span>Apagar essa fórmula?</span>
+      <div class="linha">
+        <button class="btn-cancelar-apagar" onclick="cancelarApagar('${id}','${dataStr}')">Cancelar</button>
+        <button class="btn-apagar" onclick="apagarRegistroFC('${id}','${dataStr}')">Sim, apagar</button>
+      </div>
+    </div>`;
+}
+window.pedirConfirmacaoApagar = pedirConfirmacaoApagar;
+
+function cancelarApagar(id, dataStr){
+  document.getElementById('acaoApagar_'+id).innerHTML = botaoLixoHtml(id, dataStr);
+}
+window.cancelarApagar = cancelarApagar;
+
+async function apagarRegistroFC(id, dataStr){
+  if(!podeApagarFC) return;
+  const { data, error } = await supa.from('formulas_complexas_registro').delete().eq('id', id).select('id');
+  if(error){ alert('Erro: '+error.message); return; }
+  if(!data || !data.length){ alert('Não foi possível apagar (sem permissão).'); cancelarApagar(id, dataStr); return; }
+  delete tempoDiarioCache[dataStr];
+  await carregarSemana();
+  await carregarAprovacoesFC();
+  abrirListaDia(dataStr);
+}
+window.apagarRegistroFC = apagarRegistroFC;
+
 function abrirListaDia(dataStr){
   const info = detalhesPorDiaCache[dataStr];
   if(!info) return;
@@ -534,11 +580,12 @@ function abrirListaDia(dataStr){
     const quem = quemRegistrou(info, r.registrado_por);
     return `<div class="lista-dia-item">
       <span class="lista-dia-cor" style="background:${forma?forma.cor:'#ccc'}"></span>
-      <div>
+      <div class="lista-dia-corpo">
         <div class="lista-dia-titulo">${forma?forma.nome:'—'}${r.status==='pendente'?'<span class="tag-pendente">Pendente</span>':''}</div>
         <div class="lista-dia-sub">Req. ${r.requisicao||'—'} · ${r.quantidade} un · ${formatarMin(r.minutos_calculados)}</div>
         <div class="lista-dia-quem">Registrado por <b>${quem.nome}</b>${quem.papel?' ('+quem.papel+')':''}</div>
       </div>
+      ${podeApagarFC ? `<div class="lista-dia-acao" id="acaoApagar_${r.id}">${botaoLixoHtml(r.id, dataStr)}</div>` : ''}
     </div>`;
   }).join('');
   document.getElementById('listaDiaConteudo').innerHTML = `
@@ -842,6 +889,7 @@ function popularSelectForma(){
 async function init(){
   const { papel } = await requireRole(['chefia','gestao','conferencia','atendente','laboratorio']);
   souGerenteFC = ['chefia','conferencia','laboratorio'].includes(papel);
+  podeApagarFC = ['chefia','conferencia'].includes(papel);
 
   document.getElementById('regData').value = localDateStrFC(new Date());
   semanaInicio = inicioDaSemana(new Date());
