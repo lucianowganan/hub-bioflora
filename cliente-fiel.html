@@ -12,118 +12,220 @@
 <script src="auth-guard.js"></script>
 <style>
   :root{
-    --vinho:#8B1A3A; --vinho-escuro:#6B1230; --vinho-tint:#F7EEF1;
-    --ink:#2A2A2A; --paper:#F4F4F4; --line:#E8E0E3; --gray:#5A5A5A;
-    --good:#2D9B4E; --good-tint:#EAF6ED; --bad:#E84040; --bad-tint:#FDEDED;
-    --warn:#B87700; --warn-tint:#FFF3D6;
-    --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
+    --vinho:#8B1A3A; --vinho-escuro:#5E1027; --vinho-tint:#F7E9EE;
+    --ink:#2A2224; --paper:#F4EFEC; --line:#E7DFE0; --gray:#6E6266;
+    --good:#2D8A4E; --good-tint:#E8F3EC;
+    --bad:#C23B3B; --bad-tint:#FDECEC; --bad-borda:#F0B4B4;
+    --warn:#A87500; --warn-tint:#FFF5D6; --warn-borda:#EBD18A;
+    --azul:#3E6B93; --azul-tint:#E7EFF5; --azul-borda:#B9CFE2;
+    --headfont:'Space Grotesk','Maven Pro',sans-serif;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;}
-  .shell{display:flex;min-height:100vh;}
+  .cf-main{max-width:1320px;margin:0 auto;padding:26px 34px 70px;}
+  svg.ic{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
 
-  .cf-nav{width:220px;flex-shrink:0;background:#fff;border-right:1px solid var(--line);padding:24px 16px;}
-  .cf-nav-brand{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 2px;}
-  .cf-nav-brand span{color:var(--vinho);}
-  .cf-nav-sub{font-size:11px;color:var(--gray);margin:0 0 22px;}
-  .cf-nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;cursor:pointer;font-size:13.5px;color:var(--gray);margin-bottom:2px;}
-  .cf-nav-item:hover{background:var(--paper);}
-  .cf-nav-item.active{background:var(--vinho);color:#fff;font-weight:600;}
-  .cf-nav-foot{margin-top:24px;}
-  .cf-nav-foot a{font-size:12px;color:var(--gray);text-decoration:none;}
+  /* topo: título + abas */
+  .cf-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px;}
+  .cf-top h1{font-family:var(--headfont);font-size:24px;font-weight:600;margin:0;}
+  .cf-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;}
+  .cf-tab{display:inline-flex;align-items:center;gap:8px;font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;padding:10px 18px;border-radius:30px;border:none;background:#fff;color:var(--gray);cursor:pointer;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .cf-tab:hover{color:var(--vinho);}
+  .cf-tab.active{background:var(--vinho);color:#fff;}
 
-  .cf-main{flex:1;padding:32px 36px 60px;max-width:1300px;}
+  /* início: degradê e quadrados grandes */
+  .cf-hero{background:linear-gradient(120deg,#9A2347 0%,#5E1027 100%);border-radius:30px;padding:30px 34px 34px;color:#fff;position:relative;overflow:hidden;margin-bottom:18px;}
+  .cf-hero::after{content:'';position:absolute;right:-90px;top:-110px;width:340px;height:340px;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none;}
+  .cf-hero-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;position:relative;z-index:1;}
+  .cf-hero h2{font-family:var(--headfont);font-size:30px;font-weight:600;margin:0;}
+  .cf-hero-acoes{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn-vidro{display:inline-flex;align-items:center;gap:8px;font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;padding:11px 18px;border-radius:30px;border:none;cursor:pointer;background:rgba(255,255,255,.16);color:#fff;}
+  .btn-vidro:hover{background:rgba(255,255,255,.26);}
+  .btn-vidro.claro{background:#fff;color:var(--vinho);}
+  .cf-big{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px;position:relative;z-index:1;}
+  .cf-big-item{background:rgba(255,255,255,.14);border-radius:24px;padding:22px 26px;}
+  .cf-big-item .n{font-family:var(--headfont);font-size:46px;font-weight:600;line-height:1.05;}
+  .cf-big-item .l{font-size:12px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;opacity:.82;margin-top:6px;}
 
-  .hero{background:linear-gradient(160deg,var(--vinho),var(--vinho-escuro));border-radius:20px;padding:34px 38px;color:#fff;margin-bottom:22px;position:relative;overflow:hidden;display:flex;justify-content:space-between;align-items:center;gap:24px;}
-  .hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:rgba(255,255,255,.05);border-radius:50%;}
-  .hero-left{flex-shrink:0;}
-  .hero h1{font-family:var(--headfont);font-size:32px;font-weight:600;margin:0 0 6px;}
-  .hero p{font-size:13.5px;color:rgba(255,255,255,.85);margin:0;max-width:340px;}
-  .hero-stats{display:flex;gap:32px;position:relative;justify-content:flex-end;}
-  .hero-stats .n{font-family:var(--headfont);font-size:28px;font-weight:600;}
-  .hero-stats .l{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.7);margin-top:2px;}
+  /* indicadores coloridos */
+  .cf-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+  .cf-kpi{border:none;text-align:left;font-family:inherit;cursor:pointer;border-radius:22px;padding:18px 20px;background:#fff;box-shadow:0 2px 10px rgba(94,16,39,.06);}
+  .cf-kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:var(--gray);}
+  .cf-kpi .v{font-family:var(--headfont);font-size:32px;font-weight:600;margin-top:4px;}
+  .cf-kpi .s{font-size:12px;color:var(--gray);margin-top:2px;}
+  .cf-kpi.azul{background:var(--azul-tint);} .cf-kpi.azul .v,.cf-kpi.azul .l{color:var(--azul);}
+  .cf-kpi.vermelho{background:var(--bad-tint);} .cf-kpi.vermelho .v,.cf-kpi.vermelho .l{color:var(--bad);}
+  .cf-kpi.amarelo{background:var(--warn-tint);} .cf-kpi.amarelo .v,.cf-kpi.amarelo .l{color:var(--warn);}
+  .cf-kpi.vinho{background:var(--vinho-tint);} .cf-kpi.vinho .v,.cf-kpi.vinho .l{color:var(--vinho);}
 
-  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
-  .kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;}
-  .kpi .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:600;}
-  .kpi .value{font-family:var(--headfont);font-weight:600;font-size:24px;margin-top:5px;}
-  .kpi.alert{background:var(--warn-tint);}
-  .kpi.alert .value{color:var(--warn);}
+  .cf-grid2{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:16px;}
+  .panel{background:#fff;border-radius:24px;padding:22px 24px;margin-bottom:16px;box-shadow:0 2px 10px rgba(94,16,39,.06);}
+  .panel h2{font-family:var(--headfont);font-size:16px;font-weight:600;margin:0 0 4px;}
+  .panel .desc{font-size:12.5px;color:var(--gray);margin:0 0 14px;}
+  .hm-chart{position:relative;height:240px;}
 
-  .panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:16px;}
-  .panel h2{font-family:var(--headfont);font-size:15px;font-weight:600;margin:0 0 4px;}
-  .panel .desc{font-size:12px;color:var(--gray);margin:0 0 14px;}
+  /* barras de qualidade */
+  .qual-barra{display:flex;height:16px;border-radius:99px;overflow:hidden;background:var(--line);margin:8px 0 12px;}
+  .qual-barra div{height:100%;}
+  .qual-leg{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--gray);}
+  .qual-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;}
 
-  .search-row{display:flex;gap:10px;margin-bottom:18px;}
-  .search-row input{flex:1;font-family:'Maven Pro',sans-serif;font-size:14px;padding:12px 16px;border:1px solid var(--line);border-radius:10px;}
-  .btn{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;padding:11px 20px;border-radius:10px;border:none;cursor:pointer;background:var(--vinho);color:#fff;}
-  .btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  /* barra de ferramentas e filtros */
+  .cf-tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center;}
+  .cf-busca{display:flex;align-items:center;gap:10px;background:#fff;border-radius:30px;padding:0 18px;height:46px;flex:1;min-width:240px;box-shadow:0 1px 3px rgba(0,0,0,.04);color:#9a8f92;}
+  .cf-busca input{border:none;outline:none;background:transparent;font-family:'Maven Pro',sans-serif;font-size:14px;color:var(--ink);width:100%;}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;padding:11px 20px;border-radius:30px;border:none;cursor:pointer;background:var(--vinho);color:#fff;text-decoration:none;}
+  .btn.secondary{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08);}
   .btn.dark{background:var(--ink);color:#fff;}
+  .btn.small{padding:8px 14px;font-size:12px;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .cf-filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+  .chip{font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:30px;border:1.5px solid transparent;background:#fff;color:var(--gray);cursor:pointer;display:inline-flex;gap:7px;align-items:center;}
+  .chip b{font-weight:800;}
+  .chip.active{background:var(--ink);color:#fff;}
+  .chip.vermelho{background:var(--bad-tint);color:var(--bad);} .chip.vermelho.active{background:var(--bad);color:#fff;}
+  .chip.amarelo{background:var(--warn-tint);color:var(--warn);} .chip.amarelo.active{background:var(--warn);color:#fff;}
+  .cf-sel{font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:30px;border:none;background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.06);}
 
-  .cliente-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;cursor:pointer;background:#fff;}
-  .cliente-row:hover{border-color:var(--vinho);}
-  .avatar{width:38px;height:38px;border-radius:50%;background:var(--vinho);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--headfont);font-weight:700;font-size:13px;flex-shrink:0;}
-  .cliente-row-info{flex:1;}
-  .cliente-row-nome{font-size:13px;font-weight:700;}
-  .cliente-row-sub{font-size:11px;color:var(--gray);}
-  .cliente-row-pts{font-size:14px;font-weight:800;color:var(--vinho);}
-  .nivel-tag{font-size:9px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:20px;background:var(--vinho-tint);color:var(--vinho);margin-left:6px;}
+  /* cartões de clientes */
+  .cf-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;}
+  .cli-card{background:#fff;border:2px solid transparent;border-radius:26px;padding:18px 20px 16px;cursor:pointer;box-shadow:0 2px 10px rgba(94,16,39,.06);transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column;gap:10px;position:relative;}
+  .cli-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(94,16,39,.13);}
+  .cli-card.vermelho{background:var(--bad-tint);border-color:var(--bad-borda);}
+  .cli-card.amarelo{background:var(--warn-tint);border-color:var(--warn-borda);}
+  .cli-topo{display:flex;gap:12px;align-items:center;}
+  .avatar{width:46px;height:46px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--headfont);font-weight:700;font-size:15px;flex-shrink:0;}
+  .cli-nome{font-family:var(--headfont);font-size:15.5px;font-weight:600;line-height:1.2;word-break:break-word;}
+  .cli-sub{font-size:11.5px;color:var(--gray);margin-top:2px;}
+  .cli-pts{margin-left:auto;text-align:right;flex-shrink:0;}
+  .cli-pts b{display:block;font-family:var(--headfont);font-size:22px;color:var(--vinho);line-height:1;}
+  .cli-pts span{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:700;}
+  .cli-info{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink);}
+  .cli-info .vazio{color:var(--bad);font-weight:700;}
+  .cli-info .vazio.am{color:var(--warn);}
+  .pend{display:flex;gap:6px;flex-wrap:wrap;}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:30px;background:rgba(0,0,0,.06);color:var(--gray);}
+  .pill.red{background:var(--bad);color:#fff;} .pill.yel{background:var(--warn);color:#fff;}
+  .pill.nivel{background:var(--vinho-tint);color:var(--vinho);text-transform:uppercase;letter-spacing:.03em;}
+  .pill.seg{background:#fff;border:1px solid var(--line);}
+  .mais{display:flex;justify-content:center;margin:20px 0 4px;}
 
-  .ficha-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;}
-  .ficha-avatar{width:56px;height:56px;border-radius:50%;background:var(--vinho);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--headfont);font-weight:700;font-size:20px;}
-  .ficha-pts{font-family:var(--headfont);font-size:34px;font-weight:700;color:var(--vinho);}
-  .ficha-info-row{display:flex;gap:8px;font-size:12.5px;color:var(--gray);margin-top:3px;flex-wrap:wrap;}
+  /* aniversários */
+  .aniv-linha{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);}
+  .aniv-linha:last-child{border-bottom:none;}
+  .aniv-dia{width:54px;height:54px;border-radius:16px;background:var(--vinho-tint);color:var(--vinho);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;line-height:1.05;}
+  .aniv-dia b{font-family:var(--headfont);font-size:20px;}
+  .aniv-dia span{font-size:9.5px;text-transform:uppercase;font-weight:700;letter-spacing:.05em;}
+  .aniv-dia.hoje{background:var(--vinho);color:#fff;}
+  .aniv-info{flex:1;min-width:0;}
+  .aniv-info b{display:block;font-size:14px;word-break:break-word;}
+  .aniv-info span{font-size:12px;color:var(--gray);}
+  .btn-wa{display:inline-flex;align-items:center;gap:8px;font-family:'Maven Pro',sans-serif;font-size:12.5px;font-weight:700;padding:9px 16px;border-radius:30px;border:none;cursor:pointer;background:#25A244;color:#fff;text-decoration:none;white-space:nowrap;}
+  .btn-wa.off{background:var(--line);color:var(--gray);cursor:not-allowed;}
+  .subtabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+
+  /* tabelas e rankings */
+  .rank-linha{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;}
+  .rank-linha:last-child{border-bottom:none;}
+  .rank-pos{width:28px;font-family:var(--headfont);font-weight:700;color:var(--gray);text-align:center;}
+  .rank-linha b{font-size:13.5px;}
+  .rank-pts{margin-left:auto;font-family:var(--headfont);font-weight:700;color:var(--vinho);font-size:16px;}
+  .cf-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;}
+
+  /* ficha */
+  .ficha-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px;flex-wrap:wrap;}
+  .ficha-avatar{width:64px;height:64px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--headfont);font-weight:700;font-size:22px;flex-shrink:0;}
+  .ficha-pts{font-family:var(--headfont);font-size:42px;font-weight:700;color:var(--vinho);line-height:1;}
+  .ficha-info-row{display:flex;gap:8px;font-size:12.5px;color:var(--gray);margin-top:5px;flex-wrap:wrap;align-items:center;}
+  .aviso-cad{border-radius:16px;padding:12px 16px;font-size:13px;margin-bottom:14px;}
+  .aviso-cad.vermelho{background:var(--bad-tint);color:var(--bad);border:1px solid var(--bad-borda);}
+  .aviso-cad.amarelo{background:var(--warn-tint);color:var(--warn);border:1px solid var(--warn-borda);}
   .extrato-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
   .extrato-item:last-child{border-bottom:none;}
   .extrato-pts{font-weight:800;}
   .extrato-pts.pos{color:var(--good);} .extrato-pts.neg{color:var(--bad);}
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
-  .form-grid label{font-size:11px;color:var(--gray);font-weight:600;display:block;margin-bottom:4px;}
-  .form-grid input,.form-grid select,.form-grid textarea{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:7px;}
+  .form-grid label{font-size:11px;color:var(--gray);font-weight:700;display:block;margin-bottom:4px;}
+  .form-grid input,.form-grid select,.form-grid textarea{width:100%;font-family:'Maven Pro',sans-serif;font-size:13px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;}
+  .req{color:var(--bad);}
 
   .brinde-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
-  .brinde-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center;}
-  .brinde-card img{width:100%;height:100px;object-fit:cover;border-radius:10px;margin-bottom:10px;background:var(--paper);}
-  .brinde-emoji-placeholder{width:100%;height:100px;border-radius:10px;margin-bottom:10px;background:var(--vinho-tint);display:flex;align-items:center;justify-content:center;font-size:32px;}
+  .brinde-card{background:#fff;border-radius:22px;padding:16px;text-align:center;box-shadow:0 2px 10px rgba(94,16,39,.06);}
+  .brinde-card img{width:100%;height:100px;object-fit:cover;border-radius:14px;margin-bottom:10px;background:var(--paper);}
+  .brinde-emoji-placeholder{width:100%;height:100px;border-radius:14px;margin-bottom:10px;background:var(--vinho-tint);color:var(--vinho);display:flex;align-items:center;justify-content:center;}
+  .brinde-emoji-placeholder svg{width:34px;height:34px;}
   .brinde-nome{font-weight:700;font-size:13px;}
   .brinde-pts{color:var(--vinho);font-weight:800;font-size:13px;margin:4px 0 8px;}
   .tag-inativo{background:#F1ECEA;color:var(--gray);font-size:9px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:20px;}
 
-  .modal-overlay{position:fixed !important;inset:0 !important;background:rgba(0,0,0,.4);display:none;align-items:center !important;justify-content:center !important;z-index:999 !important;padding:20px;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:999;padding:20px;}
   .modal-overlay.show{display:flex;}
-  .modal{background:#fff;border-radius:16px;padding:24px;max-width:460px;width:100%;max-height:88vh;overflow:auto;}
-  .modal h3{font-family:var(--headfont);margin:0 0 14px;font-size:16px;}
-  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+  .modal{background:#fff;border-radius:24px;padding:26px;max-width:480px;width:100%;max-height:88vh;overflow:auto;}
+  .modal h3{font-family:var(--headfont);margin:0 0 14px;font-size:17px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap;}
   .empty-state{text-align:center;padding:50px 20px;color:var(--gray);font-size:13px;}
+  .imp-resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0;}
+  .imp-resumo div{border-radius:16px;padding:12px 14px;background:var(--paper);}
+  .imp-resumo b{display:block;font-family:var(--headfont);font-size:24px;}
+  .imp-resumo span{font-size:11px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+  .imp-resumo .r{background:var(--bad-tint);} .imp-resumo .r b{color:var(--bad);}
+  .imp-resumo .a{background:var(--warn-tint);} .imp-resumo .a b{color:var(--warn);}
+  .imp-resumo .g{background:var(--good-tint);} .imp-resumo .g b{color:var(--good);}
+  .imp-progresso{height:10px;background:var(--line);border-radius:99px;overflow:hidden;margin:14px 0 6px;}
+  .imp-progresso div{height:100%;background:var(--vinho);width:0;transition:width .2s;}
+
+  /* ---------- Responsivo ---------- */
+  @media (max-width:900px){
+    .cf-grid2,.cf-grid3{grid-template-columns:1fr;}
+    .cf-kpis{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:720px){
+    .cf-main{padding:16px 14px calc(80px + env(safe-area-inset-bottom,0px));}
+    .cf-top h1{font-size:20px;}
+    .cf-hero{padding:22px 18px 22px;border-radius:24px;}
+    .cf-hero h2{font-size:24px;}
+    .cf-big{gap:8px;margin-top:18px;}
+    .cf-big-item{padding:14px 12px;border-radius:18px;}
+    .cf-big-item .n{font-size:26px;}
+    .cf-big-item .l{font-size:9.5px;letter-spacing:.04em;}
+    .cf-kpi{padding:14px 16px;border-radius:18px;} .cf-kpi .v{font-size:26px;}
+    .panel{padding:18px;border-radius:20px;}
+    .cf-cards{grid-template-columns:1fr;}
+    .cf-busca{min-width:0;flex:1 1 100%;}
+    .imp-resumo{grid-template-columns:1fr 1fr;}
+    .aniv-linha{flex-wrap:wrap;}
+    .form-grid{grid-template-columns:1fr;} .form-grid > div{grid-column:auto !important;}
+    .modal{padding:20px;}
+    .form-grid input,.form-grid select,.form-grid textarea,.cf-busca input{font-size:16px;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
 </head>
 <body>
-<div class="shell">
-  <nav class="cf-nav">
-    <h1 class="cf-nav-brand">Cliente <span>Fiel</span></h1>
-    <p class="cf-nav-sub">Farmácia Bioflora</p>
-    <div class="cf-nav-item" data-tab="dashboard" onclick="trocarAbaCF('dashboard')">🏠 Dashboard</div>
-    <div class="cf-nav-item" data-tab="buscar" onclick="trocarAbaCF('buscar')">🔍 Buscar cliente</div>
-    <div class="cf-nav-item" data-tab="brindes" onclick="trocarAbaCF('brindes')">🎁 Catálogo de brindes</div>
-    <div class="cf-nav-item" data-tab="niveis" onclick="trocarAbaCF('niveis')">⭐ Níveis</div>
-    <div class="cf-nav-foot"><a href="index.html">← Voltar ao Hub</a></div>
-  </nav>
-  <main class="cf-main" id="cfMain"></main>
-</div>
+<main class="cf-main">
+  <div class="cf-top">
+    <h1>Cliente Fiel</h1>
+    <div class="cf-tabs" id="cfTabs"></div>
+  </div>
+  <div id="cfMain"></div>
+</main>
 
+<!-- Novo / editar cliente -->
 <div class="modal-overlay" id="modalNovoCliente">
   <div class="modal">
     <h3 id="modalClienteTitulo">Novo cliente</h3>
     <div class="form-grid">
-      <div style="grid-column:span 2"><label>Nome completo*</label><input id="ncNome"></div>
-      <div><label>Telefone</label><input id="ncTelefone" placeholder="(35) 99999-9999"></div>
-      <div><label>CPF</label><input id="ncCpf"></div>
+      <div style="grid-column:span 2"><label>Nome completo <span class="req">*</span></label><input id="ncNome"></div>
+      <div><label>Telefone (com DDD) <span class="req">*</span></label><input id="ncTelefone" placeholder="(35) 99999-9999" inputmode="tel"></div>
+      <div><label>CPF <span class="req">*</span></label><input id="ncCpf" placeholder="000.000.000-00" inputmode="numeric"></div>
       <div><label>E-mail</label><input id="ncEmail" type="email"></div>
       <div><label>Data de nascimento</label><input id="ncNascimento" type="date"></div>
-      <div style="grid-column:span 2"><label>Código no Fórmula Certa</label><input id="ncCodigoFC" placeholder="Código do cliente no sistema de gestão"></div>
+      <div style="grid-column:span 2"><label>Não sabe o ano? Informe só dia e mês</label>
+        <div style="display:flex;gap:8px;"><select id="ncAnivDia"></select><select id="ncAnivMes"></select></div></div>
+      <div><label>Gênero</label><select id="ncGenero"><option value="">Não informado</option><option value="F">Feminino</option><option value="M">Masculino</option></select></div>
+      <div><label>Código no Fórmula Certa</label><input id="ncCodigoFC" placeholder="Código do cliente"></div>
       <div style="grid-column:span 2"><label>Observações internas (não aparece pro cliente)</label><textarea id="ncObs" placeholder="Anotações da equipe..."></textarea></div>
     </div>
     <div class="modal-actions">
@@ -133,21 +235,19 @@
   </div>
 </div>
 
+<!-- Importar planilha -->
 <div class="modal-overlay" id="modalImportar">
-  <div class="modal" style="max-width:640px;">
+  <div class="modal" style="max-width:680px;">
     <h3>Importar clientes (planilha)</h3>
-    <div id="importarPasso1">
-      <p style="font-size:12.5px;color:var(--gray);">Aceita .xlsx ou .csv. A primeira linha deve ter os nomes das colunas.</p>
+    <div id="impPasso1">
+      <p style="font-size:12.5px;color:var(--gray);margin-top:0;">Aceita .xlsx ou .csv, com os nomes das colunas na primeira linha. Reconhece sozinho as colunas do relatório de clientes do sistema da farmácia. Quem já existe (pelo código) é atualizado, sem duplicar e sem apagar o que a equipe já corrigiu.</p>
       <input type="file" id="arquivoImportar" accept=".xlsx,.csv" style="width:100%;margin-bottom:10px;">
     </div>
-    <div id="importarPasso2" style="display:none;">
-      <p style="font-size:12.5px;color:var(--gray);margin-bottom:10px;">Diz qual coluna da planilha corresponde a cada campo (deixa em "Não importar" se não tiver):</p>
-      <div id="mapeamentoCamposArea"></div>
-      <p id="importarResumo" style="font-size:12px;color:var(--gray);margin-top:10px;"></p>
-    </div>
-    <div class="modal-actions">
-      <button class="btn secondary" onclick="document.getElementById('modalImportar').classList.remove('show')">Cancelar</button>
-      <button class="btn" id="btnImportarAvancar" onclick="avancarImportacao()">Avançar</button>
+    <div id="impPasso2" style="display:none;"></div>
+    <div id="impPasso3" style="display:none;"></div>
+    <div class="modal-actions" id="impAcoes">
+      <button class="btn secondary" onclick="fecharImportacao()">Cancelar</button>
+      <button class="btn" id="impBtnAvancar" onclick="avancarImportacao()">Avançar</button>
     </div>
   </div>
 </div>
@@ -236,37 +336,14 @@ const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let abaAtivaCF = 'dashboard';
-let clienteEmFichaId = null;
-let clientesCacheCF = [];
-let brindesCacheCF = [];
+let brindeEmEdicaoId = null;
+let imagemAtualBrindeEmEdicao = null;
 
-async function init(){
-  await requireRole(['chefia','recepcao','conferencia','atendente']);
-  trocarAbaCF('dashboard');
-}
-
-function trocarAbaCF(aba){
-  abaAtivaCF = aba;
-  document.querySelectorAll('.cf-nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab===aba));
-  if(aba==='dashboard') renderDashboardCF();
-  else if(aba==='buscar') renderBuscarCF();
-  else if(aba==='brindes') renderBrindesCF();
-  else if(aba==='niveis') renderNiveisCF();
-}
-window.trocarAbaCF = trocarAbaCF;
-
-let niveisCacheCF = null;
 async function carregarNiveisCF(){
   if(niveisCacheCF) return niveisCacheCF;
   const { data } = await supa.from('niveis_fidelidade').select('*').order('pontos_minimos');
   niveisCacheCF = data || [];
   return niveisCacheCF;
-}
-async function calcularNivelPorSaldo(saldo){
-  const niveis = await carregarNiveisCF();
-  const alcancados = niveis.filter(n => saldo >= n.pontos_minimos);
-  return alcancados.length ? alcancados[alcancados.length-1].nivel : (niveis[0]?.nivel || 'bronze');
 }
 
 async function renderNiveisCF(){
@@ -308,258 +385,17 @@ async function salvarNiveisCF(){
       valor_por_ponto: Number(document.getElementById('nivel_valor_'+nivel).value),
     }).eq('nivel', nivel);
   }
-  niveisCacheCF = null;
+  niveisCacheCF = null; baseCF.suja = true;
   alert('Níveis atualizados.');
   renderNiveisCF();
 }
 window.salvarNiveisCF = salvarNiveisCF;
 
-function saldoCliente(clienteId, transacoes){
-  return transacoes.filter(t=>t.cliente_id===clienteId).reduce((s,t)=>s+t.pontos,0);
-}
-
-let chartPontosMes = null;
-
-async function renderDashboardCF(){
-  await carregarNiveisCF();
-  const { data: clientes } = await supa.from('clientes_fidelidade').select('*');
-  const { data: transacoes } = await supa.from('fidelidade_transacoes').select('*');
-  const { data: resgates } = await supa.from('fidelidade_resgates').select('*');
-  clientesCacheCF = clientes || [];
-
-  const trans = transacoes || [];
-  const pontosCirculando = trans.reduce((s,t)=>s+t.pontos,0);
-  const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
-  const resgatesMes = (resgates||[]).filter(r=>new Date(r.criado_em) >= inicioMes).length;
-
-  const hojeStr = hojeBrasiliaStr();
-  const [anoH, mesH, diaH] = hojeStr.split('-').map(Number);
-  const em30dias = new Date(anoH, mesH-1, diaH); em30dias.setDate(em30dias.getDate()+30);
-  const em30diasStr = em30dias.toISOString().slice(0,10);
-  const clientesComVencimento = new Set(
-    trans.filter(t => t.tipo==='ganho' && t.data_validade && t.data_validade >= hojeStr && t.data_validade <= em30diasStr).map(t=>t.cliente_id)
-  );
-
-  document.getElementById('cfMain').innerHTML = `
-    <div class="hero">
-      <div class="hero-left">
-        <h1>Cliente Fiel</h1>
-        <p>Fidelidade sem cartão físico — busca por nome, telefone ou CPF.</p>
-      </div>
-      <div class="hero-stats">
-        <div><div class="n">${clientesCacheCF.length}</div><div class="l">Clientes</div></div>
-        <div><div class="n">${pontosCirculando.toLocaleString('pt-BR')}</div><div class="l">Pontos em circulação</div></div>
-        <div><div class="n">${resgatesMes}</div><div class="l">Resgates este mês</div></div>
-      </div>
-    </div>
-
-    <div class="kpi-row">
-      <div class="kpi"><div class="label">Total de clientes</div><div class="value">${clientesCacheCF.length}</div></div>
-      <div class="kpi"><div class="label">Pontos em circulação</div><div class="value">${pontosCirculando.toLocaleString('pt-BR')}</div></div>
-      <div class="kpi"><div class="label">Resgates no mês</div><div class="value">${resgatesMes}</div></div>
-      <div class="kpi alert"><div class="label">⏰ Pontos vencendo (30d)</div><div class="value">${clientesComVencimento.size} clientes</div></div>
-    </div>
-
-    <div class="panel">
-      <h2>Clientes cadastrados recentemente</h2>
-      <p class="desc">Últimos 8 cadastros</p>
-      <div id="listaRecentesCF"></div>
-    </div>
-  `;
-
-  const recentes = [...clientesCacheCF].sort((a,b)=>new Date(b.criado_em)-new Date(a.criado_em)).slice(0,8);
-  document.getElementById('listaRecentesCF').innerHTML = recentes.length ? recentes.map(c => {
-    const saldo = saldoCliente(c.id, trans);
-    return clienteRowHtml(c, saldo);
-  }).join('') : '<div class="empty-state">Nenhum cliente cadastrado ainda.</div>';
-}
-
-function calcularNivelPorSaldoSync(saldo){
-  const niveis = niveisCacheCF || [];
-  const alcancados = niveis.filter(n => saldo >= n.pontos_minimos);
-  return alcancados.length ? alcancados[alcancados.length-1].nivel : (niveis[0]?.nivel || 'bronze');
-}
-
-function clienteRowHtml(c, saldo){
-  const nivel = c.nivel_manual || calcularNivelPorSaldoSync(saldo);
-  return `<div class="cliente-row" onclick="abrirFichaCliente('${c.id}')">
-    <div class="avatar">${iniciaisCF(c.nome)}</div>
-    <div class="cliente-row-info">
-      <div class="cliente-row-nome">${c.nome}<span class="nivel-tag">${nivel}</span></div>
-      <div class="cliente-row-sub">${c.telefone || c.cpf || 'sem contato'}</div>
-    </div>
-    <div class="cliente-row-pts">${saldo} pts</div>
-  </div>`;
-}
-function iniciaisCF(nome){ return (nome||'?').split(' ').slice(0,2).map(p=>p[0]).join('').toUpperCase(); }
-
-async function renderBuscarCF(){
-  await carregarNiveisCF();
-  document.getElementById('cfMain').innerHTML = `
-    <h1 style="font-family:var(--headfont);font-size:22px;margin:0 0 16px;">Buscar cliente</h1>
-    <div class="search-row">
-      <input id="buscaClienteCF" placeholder="Nome, telefone, CPF ou código..." oninput="filtrarClientesCF(this.value)">
-      <button class="btn secondary" onclick="abrirModalImportar()">📄 Importar planilha</button>
-      <button class="btn dark" onclick="abrirModalNovoCliente()">+ Novo cliente</button>
-    </div>
-    <div id="resultadoBuscaCF"></div>
-  `;
-  const { data: clientes } = await supa.from('clientes_fidelidade').select('*').order('nome');
-  clientesCacheCF = clientes || [];
-  filtrarClientesCF('');
-}
-window.renderBuscarCF = renderBuscarCF;
-
-async function filtrarClientesCF(termo){
-  const t = termo.trim().toLowerCase();
-  const lista = !t ? clientesCacheCF : clientesCacheCF.filter(c =>
-    (c.nome||'').toLowerCase().includes(t) ||
-    (c.telefone||'').toLowerCase().includes(t) ||
-    (c.cpf||'').toLowerCase().includes(t) ||
-    (c.email||'').toLowerCase().includes(t) ||
-    (c.codigo_acesso||'').toLowerCase().includes(t) ||
-    (c.codigo_formula_certa||'').toLowerCase().includes(t)
-  );
-  const { data: transacoes } = await supa.from('fidelidade_transacoes').select('cliente_id,pontos').in('cliente_id', lista.map(c=>c.id));
-  document.getElementById('resultadoBuscaCF').innerHTML = lista.length ? lista.map(c => clienteRowHtml(c, saldoCliente(c.id, transacoes||[]))).join('') : '<div class="empty-state">Nenhum cliente encontrado.</div>';
-}
-window.filtrarClientesCF = filtrarClientesCF;
-
-let clienteEmEdicaoId = null;
-
-function abrirModalNovoCliente(){
-  clienteEmEdicaoId = null;
-  document.getElementById('modalClienteTitulo').textContent = 'Novo cliente';
-  ['ncNome','ncTelefone','ncCpf','ncEmail','ncNascimento','ncCodigoFC','ncObs'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('modalNovoCliente').classList.add('show');
-}
-window.abrirModalNovoCliente = abrirModalNovoCliente;
-
-function abrirModalEditarCliente(cliente){
-  clienteEmEdicaoId = cliente.id;
-  document.getElementById('modalClienteTitulo').textContent = 'Editar cliente';
-  document.getElementById('ncNome').value = cliente.nome || '';
-  document.getElementById('ncTelefone').value = cliente.telefone || '';
-  document.getElementById('ncCpf').value = cliente.cpf || '';
-  document.getElementById('ncEmail').value = cliente.email || '';
-  document.getElementById('ncNascimento').value = cliente.data_nascimento || '';
-  document.getElementById('ncCodigoFC').value = cliente.codigo_formula_certa || '';
-  document.getElementById('ncObs').value = cliente.observacoes || '';
-  document.getElementById('modalNovoCliente').classList.add('show');
-}
-window.abrirModalEditarCliente = abrirModalEditarCliente;
-
-async function salvarNovoCliente(){
-  const nome = document.getElementById('ncNome').value.trim();
-  if(!nome){ alert('Digite o nome.'); return; }
-  const dados = {
-    nome,
-    telefone: document.getElementById('ncTelefone').value.trim() || null,
-    cpf: document.getElementById('ncCpf').value.trim() || null,
-    email: document.getElementById('ncEmail').value.trim() || null,
-    data_nascimento: document.getElementById('ncNascimento').value || null,
-    codigo_formula_certa: document.getElementById('ncCodigoFC').value.trim() || null,
-    observacoes: document.getElementById('ncObs').value.trim() || null,
-  };
-
-  if(clienteEmEdicaoId){
-    const { error } = await supa.from('clientes_fidelidade').update(dados).eq('id', clienteEmEdicaoId);
-    if(error){ alert('Erro: '+error.message); return; }
-    document.getElementById('modalNovoCliente').classList.remove('show');
-    abrirFichaCliente(clienteEmEdicaoId);
-    return;
-  }
-
-  const { data: { session } } = await supa.auth.getSession();
-  const { data, error } = await supa.from('clientes_fidelidade').insert({ ...dados, criado_por: session.user.id }).select().single();
-  if(error){ alert('Erro: '+error.message); return; }
-  document.getElementById('modalNovoCliente').classList.remove('show');
-  abrirFichaCliente(data.id);
-}
-window.salvarNovoCliente = salvarNovoCliente;
-
-async function abrirFichaCliente(id){
-  clienteEmFichaId = id;
-  const { data: cliente } = await supa.from('clientes_fidelidade').select('*').eq('id', id).single();
-  const { data: transacoes } = await supa.from('fidelidade_transacoes').select('*').eq('cliente_id', id).order('criado_em', {ascending:false});
-  const saldo = (transacoes||[]).reduce((s,t)=>s+t.pontos,0);
-  const nivel = cliente.nivel_manual || await calcularNivelPorSaldo(saldo);
-
-  document.getElementById('cfMain').innerHTML = `
-    <button class="btn secondary" style="margin-bottom:16px;" onclick="renderBuscarCF()">← Voltar à busca</button>
-    <div class="panel">
-      <div class="ficha-header">
-        <div style="display:flex;gap:14px;align-items:center;">
-          <div class="ficha-avatar">${iniciaisCF(cliente.nome)}</div>
-          <div>
-            <h2 style="font-size:18px;margin:0;">${cliente.nome}</h2>
-            <div class="ficha-info-row">
-              ${cliente.telefone?`<span>📞 ${cliente.telefone}</span>`:''}
-              ${cliente.cpf?`<span>${cliente.cpf}</span>`:''}
-              <span>Código: ${cliente.codigo_acesso}</span>
-              ${cliente.codigo_formula_certa?`<span>Fórmula Certa: ${cliente.codigo_formula_certa}</span>`:''}
-              <span class="nivel-tag">${nivel}${cliente.nivel_manual?' (manual)':''}</span>
-            </div>
-          </div>
-        </div>
-        <div style="text-align:right;">
-          <div class="ficha-pts">${saldo}</div>
-          <div style="font-size:11px;color:var(--gray);">pontos</div>
-        </div>
-      </div>
-      ${cliente.observacoes ? `<div style="background:var(--paper);border-radius:9px;padding:12px 14px;font-size:12.5px;margin-bottom:14px;"><strong>Observações internas:</strong> ${cliente.observacoes}</div>` : ''}
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn" onclick="abrirModalLancarPontos()">+ Lançar pontos</button>
-        <button class="btn secondary" onclick="abrirModalResgate()">🎁 Registrar resgate</button>
-        <button class="btn secondary" onclick="abrirModalAjuste()">⚙️ Ajustar pontos/nível</button>
-        <button class="btn secondary" onclick='abrirModalEditarCliente(${JSON.stringify(cliente)})'>✏️ Editar dados</button>
-        <button class="btn secondary" style="color:var(--bad);border-color:var(--bad-tint);margin-left:auto;" onclick="excluirCliente()">Excluir cliente</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Histórico completo</h2>
-      <p class="desc">Todos os lançamentos, mais recente primeiro</p>
-      <div id="extratoClienteCF"></div>
-    </div>
-  `;
-
-  document.getElementById('extratoClienteCF').innerHTML = (transacoes||[]).length ? transacoes.map(t => `
-    <div class="extrato-item">
-      <div>
-        <div>${t.descricao || {ganho:'Pontos ganhos',resgate:'Resgate',ajuste:'Ajuste',expiracao:'Expiração'}[t.tipo]}</div>
-        <div style="color:var(--gray);font-size:11px;">${new Date(t.criado_em).toLocaleDateString('pt-BR')}${t.data_validade ? ' · válido até '+new Date(t.data_validade+'T00:00:00').toLocaleDateString('pt-BR') : ''}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div class="extrato-pts ${t.pontos>=0?'pos':'neg'}">${t.pontos>=0?'+':''}${t.pontos}</div>
-        <button style="border:none;background:none;color:var(--bad);cursor:pointer;font-size:11px;" onclick="excluirLancamento('${t.id}')">Excluir</button>
-      </div>
-    </div>`).join('') : '<div class="empty-state">Nenhum lançamento ainda.</div>';
-}
-window.abrirFichaCliente = abrirFichaCliente;
-
-async function excluirLancamento(transacaoId){
-  if(!confirm('Excluir esse lançamento? O saldo do cliente será recalculado automaticamente.')) return;
-  const { error } = await supa.from('fidelidade_transacoes').delete().eq('id', transacaoId);
-  if(error){ alert('Erro: '+error.message); return; }
-  abrirFichaCliente(clienteEmFichaId);
-}
-window.excluirLancamento = excluirLancamento;
-
-async function excluirCliente(){
-  if(!confirm('Excluir esse cliente do cadastro de vez? Todo o histórico de pontos dele também será apagado. Não dá pra desfazer.')) return;
-  const { error } = await supa.from('clientes_fidelidade').delete().eq('id', clienteEmFichaId);
-  if(error){ alert('Erro: '+error.message); return; }
-  renderBuscarCF();
-}
-window.excluirCliente = excluirCliente;
-
-// Data de hoje no fuso de Brasília, sempre -- não depende do
-// horário/fuso configurado no computador de quem está usando
 function hojeBrasiliaStr(){
   const partes = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date());
   return partes; // já sai no formato YYYY-MM-DD
 }
+
 function validadeSeisMesesStr(){
   const [ano, mes, dia] = hojeBrasiliaStr().split('-').map(Number);
   const d = new Date(ano, mes-1, dia);
@@ -693,7 +529,7 @@ async function renderBrindesCF(){
 
   document.getElementById('brindeGridCF').innerHTML = brindesCacheCF.length ? brindesCacheCF.map(b => `
     <div class="brinde-card">
-      ${b.imagem_url ? `<img src="${b.imagem_url}" alt="${b.nome}">` : `<div class="brinde-emoji-placeholder">🎁</div>`}
+      ${b.imagem_url ? `<img src="${b.imagem_url}" alt="${b.nome}">` : `<div class="brinde-emoji-placeholder">${ico('presente')}</div>`}
       <div class="brinde-nome">${b.nome}</div>
       <div class="brinde-pts">${b.pontos_necessarios} pts</div>
       ${!b.ativo ? '<span class="tag-inativo">Inativo</span>' : ''}
@@ -719,8 +555,6 @@ async function excluirBrinde(id, imagemUrl){
 }
 window.excluirBrinde = excluirBrinde;
 
-let brindeEmEdicaoId = null;
-let imagemAtualBrindeEmEdicao = null;
 function abrirModalBrinde(id){
   brindeEmEdicaoId = id || null;
   const b = id ? brindesCacheCF.find(x=>x.id===id) : null;
@@ -771,28 +605,732 @@ async function salvarBrinde(){
 }
 window.salvarBrinde = salvarBrinde;
 
+async function excluirLancamento(transacaoId){
+  if(!confirm('Excluir esse lançamento? O saldo do cliente será recalculado automaticamente.')) return;
+  const { error } = await supa.from('fidelidade_transacoes').delete().eq('id', transacaoId);
+  if(error){ alert('Erro: '+error.message); return; }
+  abrirFichaCliente(clienteEmFichaId);
+}
+window.excluirLancamento = excluirLancamento;
+
+if(window.Chart){ Chart.defaults.font.family = "'Maven Pro', sans-serif"; Chart.defaults.color = '#6E6266'; }
+
 // ============================================================
-// IMPORTAÇÃO DE CLIENTES (planilha XLSX/CSV)
+// ÍCONES E UTILITÁRIOS
 // ============================================================
-let importState = { headers: [], rows: [], passo: 1 };
-const CAMPOS_IMPORTACAO = [
-  { chave:'nome', label:'Nome completo*' },
-  { chave:'telefone', label:'Telefone' },
-  { chave:'cpf', label:'CPF' },
-  { chave:'email', label:'E-mail' },
-  { chave:'data_nascimento', label:'Data de nascimento' },
-  { chave:'codigo_formula_certa', label:'Código Fórmula Certa' },
+const ICONES_CF = {
+  inicio:'<path d="M4 11.5 12 4l8 7.5"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-6h4v6"/>',
+  clientes:'<circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2"/><circle cx="17" cy="9" r="2.3"/><path d="M15.2 14.5c2.6.2 4.6 2.2 4.8 5"/>',
+  bolo:'<path d="M4 20h16v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2z"/><path d="M12 12V8.5"/><path d="M12 6c.8-.9.8-1.7 0-2.6-.8.9-.8 1.7 0 2.6z"/><path d="M4 16.2c1.7 1.2 3 1.2 4 0s2.3-1.2 4 0 3 1.2 4 0 2.3-1.2 4 0"/>',
+  analise:'<path d="M4.5 20V10M11 20V4M17.5 20v-7"/>',
+  presente:'<rect x="3.5" y="9" width="17" height="11" rx="1.5"/><path d="M12 9v11M3.5 13.5h17"/><path d="M12 9C9.5 9 8 8 8 6.7S9.3 4.5 10.5 5 12 7.5 12 9zM12 9c2.5 0 4-1 4-2.3S14.7 4.5 13.5 5 12 7.5 12 9z"/>',
+  estrela:'<path d="m12 4 2.4 5 5.4.7-4 3.7 1 5.4L12 16.2 7.2 18.8l1-5.4-4-3.7 5.4-.7z"/>',
+  busca:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>',
+  mais:'<path d="M12 5v14M5 12h14"/>',
+  subir:'<path d="M12 16V5M7.5 9.5 12 5l4.5 4.5"/><path d="M5 19h14"/>',
+  baixar:'<path d="M12 5v11M7.5 11.5 12 16l4.5-4.5"/><path d="M5 19h14"/>',
+  msg:'<path d="M20 11.5a8 8 0 0 1-11.7 7.1L4 20l1.4-4.1A8 8 0 1 1 20 11.5z"/>',
+  voltar:'<path d="M15 5l-7 7 7 7"/>',
+  editar:'<path d="M4 20l1-4.2L15.5 5.3a1.8 1.8 0 0 1 2.5 0l.7.7a1.8 1.8 0 0 1 0 2.5L8.2 19z"/>',
+  ajuste:'<path d="M5 8h9M18 8h1M5 16h1M10 16h9"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/>',
+};
+const ico = (n) => `<svg class="ic" viewBox="0 0 24 24">${ICONES_CF[n]||''}</svg>`;
+
+const COR_NIVEL = { bronze:'#B9774A', prata:'#8F98A3', ouro:'#C9922B', diamante:'#4A8FD6' };
+const ORDEM_SEG = {
+  seg_recencia:['Distante','Recente'],
+  seg_frequencia:['Turista','Ascendente','Conectado','Fiel'],
+  seg_volume:['Iniciante','Potencial','Campeão','VIP'],
+};
+const MESES_PT = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+const norm = (s) => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+const soDigitos = (s) => String(s||'').replace(/\D/g,'');
+const escapar = (s) => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const iniciaisCF = (nome) => (nome||'?').trim().split(/\s+/).slice(0,2).map(p=>p[0]).join('').toUpperCase();
+const primeiroNome = (nome) => { const p = (nome||'').trim().split(/\s+/)[0] || ''; return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); };
+
+function cpfValido(cpf){
+  const c = soDigitos(cpf);
+  if(c.length !== 11 || /^(\d)\1{10}$/.test(c)) return false;
+  for(const t of [9,10]){
+    let s = 0; for(let i=0;i<t;i++) s += Number(c[i]) * (t+1-i);
+    if(((s*10)%11)%10 !== Number(c[t])) return false;
+  }
+  return true;
+}
+const formatarCpf = (c) => { const d = soDigitos(c); return d.length===11 ? `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}` : c; };
+
+function telefoneDigitos(t){
+  let d = soDigitos(t);
+  if(d.length >= 12 && d.startsWith('55')) d = d.slice(2);
+  return d;
+}
+const telValido = (t) => { const d = telefoneDigitos(t); return d.length === 10 || d.length === 11; };
+const celularWhats = (t) => { const d = telefoneDigitos(t); return d.length === 11 && d[2] === '9'; };
+function formatarTelefone(t){
+  const d = telefoneDigitos(t);
+  if(d.length === 11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+  if(d.length === 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+  return t || '';
+}
+
+function titleCase(nome){
+  const peq = new Set(['de','da','do','das','dos','e','di','du']);
+  return String(nome||'').trim().replace(/\s+/g,' ').toLowerCase().split(' ').map((p,i) =>
+    (i>0 && peq.has(p)) ? p : p.split('-').map(x => x.charAt(0).toUpperCase()+x.slice(1)).join('-')
+  ).join(' ');
+}
+
+// Regras de cadastro: vermelho = obrigatório faltando; amarelo = ajustar
+function statusCadastro(c){
+  const vermelho = [], amarelo = [];
+  if(!cpfValido(c.cpf)) vermelho.push('CPF');
+  if(!telValido(c.telefone)) vermelho.push('Telefone');
+  if(!c.data_nascimento) amarelo.push('Data de nascimento');
+  // Para cobrar também o e-mail, basta acrescentar: if(!c.email) amarelo.push('E-mail');
+  return { nivel: vermelho.length ? 'vermelho' : (amarelo.length ? 'amarelo' : 'ok'), vermelho, amarelo };
+}
+
+// Data de hoje no fuso de Brasília
+function hojeBrasiliaDate(){
+  const [a,m,d] = hojeBrasiliaStr().split('-').map(Number);
+  return new Date(a, m-1, d);
+}
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const bissexto = (a) => (a%4===0 && a%100!==0) || a%400===0;
+
+// ============================================================
+// DADOS (carrega tudo em páginas de 1000 — o Supabase limita cada resposta)
+// ============================================================
+let abaAtivaCF = 'inicio';
+let clienteEmFichaId = null;
+let brindesCacheCF = [];
+let niveisCacheCF = null;
+let baseCF = { clientes:[], transacoes:[], resgates:[], saldo:{}, suja:true, carregada:false };
+
+async function paginarCF(tabela, colunas){
+  let tudo = [], de = 0; const passo = 1000;
+  while(true){
+    const { data, error } = await supa.from(tabela).select(colunas).order('id').range(de, de+passo-1);
+    if(error) throw error;
+    tudo = tudo.concat(data || []);
+    if(!data || data.length < passo) break;
+    de += passo;
+  }
+  return tudo;
+}
+
+async function carregarBaseCF(forcar){
+  if(baseCF.carregada && !baseCF.suja && !forcar) return baseCF;
+  await carregarNiveisCF();
+  const [clientes, transacoes, resgates] = await Promise.all([
+    paginarCF('clientes_fidelidade','*'),
+    paginarCF('fidelidade_transacoes','id,cliente_id,pontos,tipo,data_validade,criado_em'),
+    paginarCF('fidelidade_resgates','id,cliente_id,criado_em'),
+  ]);
+  const saldo = {};
+  transacoes.forEach(t => { saldo[t.cliente_id] = (saldo[t.cliente_id]||0) + t.pontos; });
+  clientes.forEach(c => {
+    c._saldo = saldo[c.id] || 0;
+    c._nivel = c.nivel_manual || nivelPorSaldo(c._saldo);
+    c._st = statusCadastro(c);
+    c._busca = norm([c.nome, c.email, c.codigo_acesso, c.codigo_formula_certa].join(' ')) + ' ' + soDigitos(c.cpf) + ' ' + telefoneDigitos(c.telefone);
+  });
+  baseCF = { clientes, transacoes, resgates, saldo, suja:false, carregada:true };
+  return baseCF;
+}
+
+function nivelPorSaldo(saldo){
+  const niveis = niveisCacheCF || [];
+  const alcancados = niveis.filter(n => saldo >= n.pontos_minimos);
+  return alcancados.length ? alcancados[alcancados.length-1].nivel : (niveis[0]?.nivel || 'bronze');
+}
+
+// ============================================================
+// ABAS
+// ============================================================
+const ABAS_CF = [
+  { id:'inicio', rotulo:'Início', icone:'inicio' },
+  { id:'clientes', rotulo:'Clientes', icone:'clientes' },
+  { id:'aniversarios', rotulo:'Aniversários', icone:'bolo' },
+  { id:'analises', rotulo:'Análises', icone:'analise' },
+  { id:'brindes', rotulo:'Brindes', icone:'presente' },
+  { id:'niveis', rotulo:'Níveis', icone:'estrela' },
 ];
 
+async function init(){
+  await requireRole(['chefia','recepcao','conferencia','atendente']);
+  trocarAbaCF('inicio');
+}
+
+function desenharAbasCF(aba){
+  document.getElementById('cfTabs').innerHTML = ABAS_CF.map(a =>
+    `<button class="cf-tab ${a.id===aba?'active':''}" onclick="trocarAbaCF('${a.id}')">${ico(a.icone)}${a.rotulo}</button>`).join('');
+}
+
+function trocarAbaCF(aba, opcoes){
+  abaAtivaCF = aba;
+  desenharAbasCF(aba);
+  if(opcoes && opcoes.filtro) cfFiltro = { ...cfFiltroPadrao(), ...opcoes.filtro };
+  if(aba==='inicio') renderInicioCF();
+  else if(aba==='clientes') renderClientesCF();
+  else if(aba==='aniversarios') renderAniversariosCF();
+  else if(aba==='analises') renderAnalisesCF();
+  else if(aba==='brindes') renderBrindesCF();
+  else if(aba==='niveis') renderNiveisCF();
+  window.scrollTo({ top:0 });
+}
+window.trocarAbaCF = trocarAbaCF;
+const renderBuscarCF = () => trocarAbaCF('clientes');
+window.renderBuscarCF = renderBuscarCF;
+
+// ============================================================
+// WHATSAPP
+// ============================================================
+function mensagemParabens(c){
+  return `Olá, ${primeiroNome(c.nome)}! Hoje é um dia muito especial e a equipe da Farmácia Bioflora não poderia deixar de te desejar um feliz aniversário! Que seja um dia cheio de saúde, alegria e bem-estar. Um abraço!`;
+}
+function linkWhats(c, texto){
+  return `https://wa.me/55${telefoneDigitos(c.telefone)}?text=${encodeURIComponent(texto)}`;
+}
+function botaoParabens(c){
+  return celularWhats(c.telefone)
+    ? `<a class="btn-wa" href="${linkWhats(c, mensagemParabens(c))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${ico('msg')}Enviar parabéns</a>`
+    : `<span class="btn-wa off" title="Cadastre um celular com DDD (11 dígitos) para enviar pelo WhatsApp">${ico('msg')}Sem celular</span>`;
+}
+
+// ============================================================
+// INÍCIO
+// ============================================================
+function contagemStatus(){
+  const r = { vermelho:0, amarelo:0, ok:0 };
+  baseCF.clientes.forEach(c => { r[c._st.nivel]++; });
+  return r;
+}
+
+function aniversariantesEntre(ini, fim){
+  const out = [];
+  baseCF.clientes.forEach(c => {
+    let dm = null;
+    if(c.aniversario_dia && c.aniversario_mes) dm = [c.aniversario_dia, c.aniversario_mes];
+    else if(c.data_nascimento){ const p = c.data_nascimento.split('-').map(Number); dm = [p[2], p[1]]; }
+    if(!dm) return;
+    for(let ano = ini.getFullYear(); ano <= fim.getFullYear(); ano++){
+      const d = (dm[0]===29 && dm[1]===2 && !bissexto(ano)) ? new Date(ano,1,28) : new Date(ano, dm[1]-1, dm[0]);
+      if(d >= ini && d <= fim) out.push({ c, data:d });
+    }
+  });
+  out.sort((a,b) => a.data - b.data || a.c.nome.localeCompare(b.c.nome));
+  return out;
+}
+function idadeQueFaz(c, data){
+  return c.data_nascimento ? data.getFullYear() - Number(c.data_nascimento.slice(0,4)) : null;
+}
+
+async function renderInicioCF(){
+  const alvo = document.getElementById('cfMain');
+  alvo.innerHTML = '<div class="empty-state">Carregando...</div>';
+  try{ await carregarBaseCF(); }catch(e){ alvo.innerHTML = `<div class="empty-state">Erro ao carregar: ${escapar(e.message)}</div>`; return; }
+
+  const clientes = baseCF.clientes;
+  const pontosCirculando = baseCF.transacoes.reduce((s,t) => s + t.pontos, 0);
+  const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
+  const resgatesMes = baseCF.resgates.filter(r => new Date(r.criado_em) >= inicioMes).length;
+
+  const hoje = hojeBrasiliaDate();
+  const hojeStr = ymd(hoje);
+  const em30 = new Date(hoje); em30.setDate(em30.getDate()+30);
+  const vencendo = new Set(baseCF.transacoes.filter(t => t.tipo==='ganho' && t.data_validade && t.data_validade >= hojeStr && t.data_validade <= ymd(em30)).map(t => t.cliente_id));
+  const st = contagemStatus();
+  const anivHoje = aniversariantesEntre(hoje, hoje);
+  const total = clientes.length || 1;
+
+  const recentes = [...clientes].sort((a,b) => new Date(b.criado_em) - new Date(a.criado_em)).slice(0,6);
+
+  alvo.innerHTML = `
+    <section class="cf-hero">
+      <div class="cf-hero-top">
+        <h2>Visão geral</h2>
+        <div class="cf-hero-acoes">
+          <button class="btn-vidro" onclick="abrirModalImportar()">${ico('subir')}Importar planilha</button>
+          <button class="btn-vidro claro" onclick="abrirModalNovoCliente()">${ico('mais')}Novo cliente</button>
+        </div>
+      </div>
+      <div class="cf-big">
+        <div class="cf-big-item"><div class="n">${clientes.length.toLocaleString('pt-BR')}</div><div class="l">Clientes</div></div>
+        <div class="cf-big-item"><div class="n">${pontosCirculando.toLocaleString('pt-BR')}</div><div class="l">Pontos em circulação</div></div>
+        <div class="cf-big-item"><div class="n">${resgatesMes.toLocaleString('pt-BR')}</div><div class="l">Resgates no mês</div></div>
+      </div>
+    </section>
+
+    <div class="cf-kpis">
+      <button class="cf-kpi azul" onclick="trocarAbaCF('analises')"><div class="l">Pontos vencendo (30 dias)</div><div class="v">${vencendo.size}</div><div class="s">clientes com pontos a vencer</div></button>
+      <button class="cf-kpi vermelho" onclick="trocarAbaCF('clientes',{filtro:{status:'vermelho'}})"><div class="l">A regularizar</div><div class="v">${st.vermelho}</div><div class="s">sem CPF ou telefone (obrigatório)</div></button>
+      <button class="cf-kpi amarelo" onclick="trocarAbaCF('clientes',{filtro:{status:'amarelo'}})"><div class="l">A ajustar</div><div class="v">${st.amarelo}</div><div class="s">faltam outros dados</div></button>
+      <button class="cf-kpi vinho" onclick="trocarAbaCF('aniversarios')"><div class="l">Aniversariantes hoje</div><div class="v">${anivHoje.length}</div><div class="s">ver lista e enviar parabéns</div></button>
+    </div>
+
+    <div class="cf-grid2">
+      <div class="panel">
+        <h2>Aniversariantes de hoje</h2>
+        <p class="desc">${hoje.toLocaleDateString('pt-BR',{weekday:'long', day:'numeric', month:'long'})}</p>
+        ${anivHoje.length ? anivHoje.slice(0,6).map(a => linhaAniversario(a, hoje)).join('') + (anivHoje.length>6 ? `<div style="text-align:center;margin-top:10px;"><button class="btn secondary small" onclick="trocarAbaCF('aniversarios')">Ver todos (${anivHoje.length})</button></div>` : '') : '<div class="empty-state" style="padding:24px;">Nenhum aniversariante hoje.</div>'}
+      </div>
+      <div class="panel">
+        <h2>Qualidade do cadastro</h2>
+        <p class="desc">Quanto da base está completa</p>
+        <div class="qual-barra">
+          <div style="width:${st.ok/total*100}%;background:var(--good)"></div>
+          <div style="width:${st.amarelo/total*100}%;background:#E3B23C"></div>
+          <div style="width:${st.vermelho/total*100}%;background:var(--bad)"></div>
+        </div>
+        <div class="qual-leg">
+          <span><i style="background:var(--good)"></i>Completos ${st.ok}</span>
+          <span><i style="background:#E3B23C"></i>A ajustar ${st.amarelo}</span>
+          <span><i style="background:var(--bad)"></i>A regularizar ${st.vermelho}</span>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn secondary small" onclick="trocarAbaCF('clientes',{filtro:{status:'vermelho'}})">Ver a regularizar</button>
+          <button class="btn secondary small" onclick="baixarPendenciasCF()">${ico('baixar')}Baixar pendências</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Cadastrados recentemente</h2>
+      <p class="desc">Últimos 6 clientes</p>
+      <div class="cf-cards">${recentes.length ? recentes.map(cartaoCliente).join('') : '<div class="empty-state">Nenhum cliente cadastrado ainda.</div>'}</div>
+    </div>
+  `;
+}
+
+function linhaAniversario(a, hoje){
+  const c = a.c, ehHoje = ymd(a.data) === ymd(hoje);
+  const idade = idadeQueFaz(c, a.data);
+  return `<div class="aniv-linha">
+    <div class="aniv-dia ${ehHoje?'hoje':''}"><b>${a.data.getDate()}</b><span>${MESES_PT[a.data.getMonth()].slice(0,3)}</span></div>
+    <div class="aniv-info"><b>${escapar(c.nome)}</b><span>${idade ? idade+' anos · ' : ''}${c.telefone ? escapar(formatarTelefone(c.telefone)) : 'sem telefone'}</span></div>
+    ${botaoParabens(c)}
+  </div>`;
+}
+
+// ============================================================
+// CLIENTES (cartões)
+// ============================================================
+const cfFiltroPadrao = () => ({ busca:'', status:'todos', nivel:'', volume:'', ordem:'nome', pagina:1 });
+let cfFiltro = cfFiltroPadrao();
+const POR_PAGINA = 24;
+
+function cartaoCliente(c){
+  const st = c._st;
+  const corAvatar = COR_NIVEL[c._nivel] || '#8B1A3A';
+  const pend = [
+    ...st.vermelho.map(x => `<span class="pill red">Falta ${x}</span>`),
+    ...st.amarelo.map(x => `<span class="pill yel">Falta ${x.toLowerCase()}</span>`),
+  ].join('');
+  return `<div class="cli-card ${st.nivel==='ok'?'':st.nivel}" onclick="abrirFichaCliente('${c.id}')">
+    <div class="cli-topo">
+      <div class="avatar" style="background:${corAvatar}">${iniciaisCF(c.nome)}</div>
+      <div style="min-width:0;">
+        <div class="cli-nome">${escapar(c.nome)}</div>
+        <div class="cli-sub">${c.codigo_formula_certa ? 'Cód. '+escapar(c.codigo_formula_certa) : 'Cód. de acesso '+escapar(c.codigo_acesso||'')}</div>
+      </div>
+      <div class="cli-pts"><b>${c._saldo}</b><span>pontos</span></div>
+    </div>
+    <div class="cli-info">
+      <div>${c.telefone && telValido(c.telefone) ? escapar(formatarTelefone(c.telefone)) : `<span class="vazio">${c.telefone ? 'Telefone inválido' : 'Sem telefone'}</span>`}</div>
+      <div>${cpfValido(c.cpf) ? escapar(formatarCpf(c.cpf)) : `<span class="vazio">${c.cpf ? 'CPF inválido' : 'Sem CPF'}</span>`}</div>
+      <div>${c.data_nascimento ? 'Nasc. '+new Date(c.data_nascimento+'T12:00:00').toLocaleDateString('pt-BR') : (c.aniversario_dia ? `Aniversário ${c.aniversario_dia}/${String(c.aniversario_mes).padStart(2,'0')}` : '<span class="vazio am">Sem data de nascimento</span>')}</div>
+    </div>
+    <div class="pend">
+      <span class="pill nivel">${escapar(c._nivel)}</span>
+      ${c.seg_volume ? `<span class="pill seg">${escapar(c.seg_volume)}</span>` : ''}
+      ${c.seg_frequencia ? `<span class="pill seg">${escapar(c.seg_frequencia)}</span>` : ''}
+    </div>
+    ${pend ? `<div class="pend">${pend}</div>` : ''}
+  </div>`;
+}
+
+async function renderClientesCF(){
+  const alvo = document.getElementById('cfMain');
+  alvo.innerHTML = '<div class="empty-state">Carregando...</div>';
+  try{ await carregarBaseCF(); }catch(e){ alvo.innerHTML = `<div class="empty-state">Erro ao carregar: ${escapar(e.message)}</div>`; return; }
+  const st = contagemStatus();
+  const niveis = niveisCacheCF || [];
+  alvo.innerHTML = `
+    <div class="cf-tools">
+      <label class="cf-busca">${ico('busca')}<input id="buscaClienteCF" placeholder="Nome, telefone, CPF ou código..." value="${escapar(cfFiltro.busca)}" oninput="cfFiltro.busca=this.value;cfFiltro.pagina=1;desenharCartoesCF()"></label>
+      <button class="btn secondary" onclick="abrirModalImportar()">${ico('subir')}Importar planilha</button>
+      <button class="btn" onclick="abrirModalNovoCliente()">${ico('mais')}Novo cliente</button>
+    </div>
+    <div class="cf-filtros">
+      <button class="chip ${cfFiltro.status==='todos'?'active':''}" onclick="cfFiltro.status='todos';cfFiltro.pagina=1;renderClientesCF()">Todos <b>${baseCF.clientes.length}</b></button>
+      <button class="chip vermelho ${cfFiltro.status==='vermelho'?'active':''}" onclick="cfFiltro.status='vermelho';cfFiltro.pagina=1;renderClientesCF()">A regularizar <b>${st.vermelho}</b></button>
+      <button class="chip amarelo ${cfFiltro.status==='amarelo'?'active':''}" onclick="cfFiltro.status='amarelo';cfFiltro.pagina=1;renderClientesCF()">A ajustar <b>${st.amarelo}</b></button>
+      <button class="chip ${cfFiltro.status==='ok'?'active':''}" onclick="cfFiltro.status='ok';cfFiltro.pagina=1;renderClientesCF()">Completos <b>${st.ok}</b></button>
+      <select class="cf-sel" onchange="cfFiltro.nivel=this.value;cfFiltro.pagina=1;desenharCartoesCF()">
+        <option value="">Todos os níveis</option>
+        ${niveis.map(n => `<option value="${n.nivel}" ${cfFiltro.nivel===n.nivel?'selected':''}>${n.nivel.charAt(0).toUpperCase()+n.nivel.slice(1)}</option>`).join('')}
+      </select>
+      <select class="cf-sel" onchange="cfFiltro.volume=this.value;cfFiltro.pagina=1;desenharCartoesCF()">
+        <option value="">Todos os perfis de volume</option>
+        ${ORDEM_SEG.seg_volume.map(v => `<option value="${v}" ${cfFiltro.volume===v?'selected':''}>${v}</option>`).join('')}
+      </select>
+      <select class="cf-sel" onchange="cfFiltro.ordem=this.value;cfFiltro.pagina=1;desenharCartoesCF()">
+        <option value="nome" ${cfFiltro.ordem==='nome'?'selected':''}>Ordem: nome</option>
+        <option value="mais" ${cfFiltro.ordem==='mais'?'selected':''}>Ordem: mais pontos</option>
+        <option value="menos" ${cfFiltro.ordem==='menos'?'selected':''}>Ordem: menos pontos</option>
+        <option value="recentes" ${cfFiltro.ordem==='recentes'?'selected':''}>Ordem: mais recentes</option>
+      </select>
+    </div>
+    <div id="resultadoBuscaCF"></div>
+  `;
+  desenharCartoesCF();
+}
+
+function desenharCartoesCF(){
+  const f = cfFiltro;
+  const t = norm(f.busca), td = soDigitos(f.busca);
+  let lista = baseCF.clientes.filter(c => {
+    if(f.status !== 'todos' && c._st.nivel !== f.status) return false;
+    if(f.nivel && c._nivel !== f.nivel) return false;
+    if(f.volume && c.seg_volume !== f.volume) return false;
+    if(!t) return true;
+    return c._busca.includes(t) || (td.length >= 3 && c._busca.includes(td));
+  });
+  const ordens = {
+    nome: (a,b) => a.nome.localeCompare(b.nome),
+    mais: (a,b) => b._saldo - a._saldo || a.nome.localeCompare(b.nome),
+    menos: (a,b) => a._saldo - b._saldo || a.nome.localeCompare(b.nome),
+    recentes: (a,b) => new Date(b.criado_em) - new Date(a.criado_em),
+  };
+  lista.sort(ordens[f.ordem] || ordens.nome);
+  const mostrar = lista.slice(0, f.pagina * POR_PAGINA);
+  document.getElementById('resultadoBuscaCF').innerHTML = lista.length
+    ? `<div class="cf-cards">${mostrar.map(cartaoCliente).join('')}</div>
+       <div class="mais">${mostrar.length < lista.length ? `<button class="btn secondary" onclick="cfFiltro.pagina++;desenharCartoesCF()">Mostrar mais (${mostrar.length} de ${lista.length})</button>` : `<span style="font-size:12px;color:var(--gray);">${lista.length} cliente(s)</span>`}</div>`
+    : '<div class="empty-state">Nenhum cliente encontrado.</div>';
+}
+window.desenharCartoesCF = desenharCartoesCF;
+
+// ============================================================
+// ANIVERSÁRIOS (hoje / semana / mês)
+// ============================================================
+let anivPeriodo = 'hoje';
+let anivMes = new Date().getMonth();
+
+async function renderAniversariosCF(){
+  const alvo = document.getElementById('cfMain');
+  alvo.innerHTML = '<div class="empty-state">Carregando...</div>';
+  try{ await carregarBaseCF(); }catch(e){ alvo.innerHTML = `<div class="empty-state">Erro ao carregar: ${escapar(e.message)}</div>`; return; }
+
+  const hoje = hojeBrasiliaDate();
+  let ini, fim, titulo;
+  if(anivPeriodo === 'hoje'){ ini = fim = hoje; titulo = 'Aniversariantes de hoje'; }
+  else if(anivPeriodo === 'semana'){ ini = hoje; fim = new Date(hoje); fim.setDate(fim.getDate()+6); titulo = 'Próximos 7 dias'; }
+  else { ini = new Date(hoje.getFullYear(), anivMes, 1); fim = new Date(hoje.getFullYear(), anivMes+1, 0); titulo = `Aniversariantes de ${MESES_PT[anivMes]}`; }
+  const lista = aniversariantesEntre(ini, fim);
+  const semData = baseCF.clientes.filter(c => !c.aniversario_dia && !c.data_nascimento).length;
+
+  alvo.innerHTML = `
+    <div class="subtabs">
+      ${['hoje','semana','mes'].map(p => `<button class="chip ${anivPeriodo===p?'active':''}" onclick="anivPeriodo='${p}';renderAniversariosCF()">${{hoje:'Hoje',semana:'Semana',mes:'Mês'}[p]}</button>`).join('')}
+      ${anivPeriodo==='mes' ? `<select class="cf-sel" onchange="anivMes=Number(this.value);renderAniversariosCF()">${MESES_PT.map((m,i) => `<option value="${i}" ${i===anivMes?'selected':''}>${m.charAt(0).toUpperCase()+m.slice(1)}</option>`).join('')}</select>` : ''}
+    </div>
+    <div class="panel">
+      <h2>${titulo}</h2>
+      <p class="desc">${lista.length} aniversariante(s) · ${semData} cliente(s) ainda sem data de aniversário cadastrada</p>
+      ${lista.length ? lista.map(a => linhaAniversario(a, hoje)).join('') : '<div class="empty-state">Ninguém faz aniversário nesse período.</div>'}
+    </div>`;
+}
+window.renderAniversariosCF = renderAniversariosCF;
+
+// ============================================================
+// ANÁLISES (gráficos e rankings)
+// ============================================================
+let analiseGrupo = 'nivel';
+let analiseFiltro = '';
+let analiseOrdem = 'mais';
+const GRUPOS_ANALISE = {
+  nivel: { rotulo:'Nível', valor: c => c._nivel },
+  seg_volume: { rotulo:'Volume', valor: c => c.seg_volume || 'Sem classificação' },
+  seg_frequencia: { rotulo:'Frequência', valor: c => c.seg_frequencia || 'Sem classificação' },
+  seg_recencia: { rotulo:'Recência', valor: c => c.seg_recencia || 'Sem classificação' },
+  tipo_cadastro: { rotulo:'Tipo de cadastro', valor: c => c.tipo_cadastro || 'Sem classificação' },
+  genero: { rotulo:'Gênero', valor: c => ({F:'Feminino',M:'Masculino'}[c.genero] || 'Não informado') },
+  qualidade: { rotulo:'Qualidade do cadastro', valor: c => ({vermelho:'A regularizar',amarelo:'A ajustar',ok:'Completo'}[c._st.nivel]) },
+};
+let chartsAnalise = [];
+
+async function renderAnalisesCF(){
+  const alvo = document.getElementById('cfMain');
+  alvo.innerHTML = '<div class="empty-state">Carregando...</div>';
+  try{ await carregarBaseCF(); }catch(e){ alvo.innerHTML = `<div class="empty-state">Erro ao carregar: ${escapar(e.message)}</div>`; return; }
+  chartsAnalise.forEach(c => c.destroy()); chartsAnalise = [];
+
+  const g = GRUPOS_ANALISE[analiseGrupo];
+  const grupos = {};
+  baseCF.clientes.forEach(c => { const k = g.valor(c); (grupos[k] ||= { qtd:0, pontos:0 }); grupos[k].qtd++; grupos[k].pontos += c._saldo; });
+  let chaves = Object.keys(grupos);
+  const ordemFixa = analiseGrupo==='nivel' ? (niveisCacheCF||[]).map(n => n.nivel) : (ORDEM_SEG[analiseGrupo] || []);
+  chaves.sort((a,b) => { const ia = ordemFixa.indexOf(a), ib = ordemFixa.indexOf(b); return (ia<0?99:ia) - (ib<0?99:ib) || grupos[b].qtd - grupos[a].qtd; });
+  const cores = ['#8B1A3A','#C45A78','#E3A6B8','#5E1027','#B8325A','#C9922B','#3E6B93','#6E6266'];
+
+  // ranking
+  let base = baseCF.clientes.filter(c => !analiseFiltro || g.valor(c) === analiseFiltro);
+  base = [...base].sort((a,b) => analiseOrdem==='mais' ? b._saldo - a._saldo || a.nome.localeCompare(b.nome) : a._saldo - b._saldo || a.nome.localeCompare(b.nome));
+  const top = base.slice(0,15);
+  const zerados = baseCF.clientes.filter(c => c._saldo === 0).length;
+
+  alvo.innerHTML = `
+    <div class="cf-filtros">
+      <select class="cf-sel" onchange="analiseGrupo=this.value;analiseFiltro='';renderAnalisesCF()">
+        ${Object.entries(GRUPOS_ANALISE).map(([k,v]) => `<option value="${k}" ${k===analiseGrupo?'selected':''}>Agrupar por: ${v.rotulo}</option>`).join('')}
+      </select>
+    </div>
+    <div class="cf-grid2">
+      <div class="panel"><h2>Clientes por ${g.rotulo.toLowerCase()}</h2><p class="desc">Quantidade de clientes em cada grupo</p><div class="hm-chart"><canvas id="chAnQtd"></canvas></div></div>
+      <div class="panel"><h2>Pontos por ${g.rotulo.toLowerCase()}</h2><p class="desc">Total de pontos acumulados em cada grupo</p><div class="hm-chart"><canvas id="chAnPts"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <h2>Resumo por ${g.rotulo.toLowerCase()}</h2>
+      <p class="desc">${zerados} cliente(s) com saldo zerado no total</p>
+      <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:420px;">
+        <thead><tr style="text-align:left;font-size:10.5px;text-transform:uppercase;color:var(--gray);"><th style="padding:0 8px 8px 0;">${g.rotulo}</th><th style="padding:0 8px 8px 0;">Clientes</th><th style="padding:0 8px 8px 0;">Pontos</th><th style="padding:0 8px 8px 0;">Média por cliente</th></tr></thead>
+        <tbody>${chaves.map(k => `<tr style="border-top:1px solid var(--line);cursor:pointer;" onclick="analiseFiltro='${escapar(k).replace(/'/g,"\\'")}';renderAnalisesCF()">
+          <td style="padding:10px 8px 10px 0;font-weight:700;text-transform:capitalize;">${escapar(k)}</td><td style="padding:10px 8px 10px 0;">${grupos[k].qtd}</td><td style="padding:10px 8px 10px 0;">${grupos[k].pontos.toLocaleString('pt-BR')}</td><td style="padding:10px 8px 10px 0;">${(grupos[k].pontos/grupos[k].qtd).toFixed(1)}</td></tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;margin-bottom:6px;">
+        <div><h2>Ranking de clientes</h2><p class="desc" style="margin:0;">${analiseFiltro ? 'Só: <b>'+escapar(analiseFiltro)+'</b>' : 'Toda a base'} · 15 primeiros</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <select class="cf-sel" onchange="analiseOrdem=this.value;renderAnalisesCF()"><option value="mais" ${analiseOrdem==='mais'?'selected':''}>Mais pontos</option><option value="menos" ${analiseOrdem==='menos'?'selected':''}>Menos pontos</option></select>
+          <select class="cf-sel" onchange="analiseFiltro=this.value;renderAnalisesCF()"><option value="">Todos os grupos</option>${chaves.map(k => `<option value="${escapar(k)}" ${k===analiseFiltro?'selected':''}>${escapar(k)}</option>`).join('')}</select>
+        </div>
+      </div>
+      ${top.length ? top.map((c,i) => `<div class="rank-linha" onclick="abrirFichaCliente('${c.id}')"><div class="rank-pos">${i+1}</div><div class="avatar" style="width:36px;height:36px;font-size:12px;background:${COR_NIVEL[c._nivel]||'#8B1A3A'}">${iniciaisCF(c.nome)}</div><div><b>${escapar(c.nome)}</b><div class="cli-sub">${escapar(c._nivel)}${c.seg_volume ? ' · '+escapar(c.seg_volume) : ''}</div></div><div class="rank-pts">${c._saldo}</div></div>`).join('') : '<div class="empty-state">Sem clientes nesse grupo.</div>'}
+    </div>`;
+
+  const opcoes = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } };
+  chartsAnalise.push(new Chart(document.getElementById('chAnQtd'), { type:'doughnut',
+    data:{ labels:chaves, datasets:[{ data:chaves.map(k => grupos[k].qtd), backgroundColor:chaves.map((_,i) => cores[i%cores.length]), borderWidth:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'58%', plugins:{ legend:{ position:'right', labels:{ boxWidth:12 } } } } }));
+  chartsAnalise.push(new Chart(document.getElementById('chAnPts'), { type:'bar',
+    data:{ labels:chaves, datasets:[{ data:chaves.map(k => grupos[k].pontos), backgroundColor:chaves.map((_,i) => cores[i%cores.length]), borderRadius:8 }] },
+    options:{ ...opcoes, scales:{ y:{ beginAtZero:true } } } }));
+}
+window.renderAnalisesCF = renderAnalisesCF;
+
+
+// ============================================================
+// FICHA DO CLIENTE
+// ============================================================
+async function abrirFichaCliente(id){
+  clienteEmFichaId = id;
+  desenharAbasCF('clientes');
+  baseCF.suja = true; // qualquer coisa feita na ficha pode mudar os números da lista
+  await carregarNiveisCF();
+  const { data: cliente } = await supa.from('clientes_fidelidade').select('*').eq('id', id).single();
+  const { data: transacoes } = await supa.from('fidelidade_transacoes').select('*').eq('cliente_id', id).order('criado_em', {ascending:false});
+  const saldo = (transacoes||[]).reduce((s,t) => s + t.pontos, 0);
+  const nivel = cliente.nivel_manual || nivelPorSaldo(saldo);
+  const st = statusCadastro(cliente);
+  const hoje = hojeBrasiliaDate();
+  const anivHoje = (cliente.aniversario_dia && cliente.aniversario_mes && cliente.aniversario_dia === hoje.getDate() && cliente.aniversario_mes === hoje.getMonth()+1)
+    || (cliente.data_nascimento && cliente.data_nascimento.slice(5) === ymd(hoje).slice(5));
+
+  const avisoCad = st.nivel === 'ok' ? '' : `<div class="aviso-cad ${st.nivel}">
+      ${st.vermelho.length ? `<b>Regularizar (obrigatório):</b> falta ${st.vermelho.join(' e ')}.` : ''}
+      ${st.amarelo.length ? `${st.vermelho.length?'<br>':''}<b>Ajustar:</b> falta ${st.amarelo.join(', ').toLowerCase()}.` : ''}
+      <button class="btn small" style="margin-left:8px;" onclick='abrirModalEditarCliente(${JSON.stringify(cliente).replace(/'/g,"&#39;")})'>Completar agora</button></div>`;
+
+  document.getElementById('cfMain').innerHTML = `
+    <button class="btn secondary" style="margin-bottom:16px;" onclick="trocarAbaCF('clientes')">${ico('voltar')}Voltar aos clientes</button>
+    <div class="panel">
+      <div class="ficha-header">
+        <div style="display:flex;gap:16px;align-items:center;">
+          <div class="ficha-avatar" style="background:${COR_NIVEL[nivel]||'#8B1A3A'}">${iniciaisCF(cliente.nome)}</div>
+          <div>
+            <h2 style="font-size:20px;margin:0;">${escapar(cliente.nome)}</h2>
+            <div class="ficha-info-row">
+              <span class="pill nivel">${escapar(nivel)}${cliente.nivel_manual?' (manual)':''}</span>
+              ${cliente.tipo_cadastro ? `<span class="pill seg">${escapar(cliente.tipo_cadastro)}</span>` : ''}
+              ${cliente.seg_volume ? `<span class="pill seg">${escapar(cliente.seg_volume)}</span>` : ''}
+              ${cliente.seg_frequencia ? `<span class="pill seg">${escapar(cliente.seg_frequencia)}</span>` : ''}
+              ${cliente.seg_recencia ? `<span class="pill seg">${escapar(cliente.seg_recencia)}</span>` : ''}
+            </div>
+            <div class="ficha-info-row">
+              <span>${cliente.telefone && telValido(cliente.telefone) ? escapar(formatarTelefone(cliente.telefone)) : '<b style="color:var(--bad)">Sem telefone válido</b>'}</span>
+              <span>${cpfValido(cliente.cpf) ? escapar(formatarCpf(cliente.cpf)) : '<b style="color:var(--bad)">Sem CPF válido</b>'}</span>
+              ${cliente.email ? `<span>${escapar(cliente.email)}</span>` : ''}
+            </div>
+            <div class="ficha-info-row">
+              <span>Código de acesso: ${escapar(cliente.codigo_acesso)}</span>
+              ${cliente.codigo_formula_certa ? `<span>Fórmula Certa: ${escapar(cliente.codigo_formula_certa)}</span>` : ''}
+              ${cliente.data_nascimento ? `<span>Nascimento: ${new Date(cliente.data_nascimento+'T12:00:00').toLocaleDateString('pt-BR')}</span>` : (cliente.aniversario_dia ? `<span>Aniversário: ${cliente.aniversario_dia}/${String(cliente.aniversario_mes).padStart(2,'0')}</span>` : '')}
+            </div>
+          </div>
+        </div>
+        <div style="text-align:right;"><div class="ficha-pts">${saldo}</div><div style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;font-weight:700;">pontos</div></div>
+      </div>
+      ${avisoCad}
+      ${cliente.observacoes ? `<div style="background:var(--paper);border-radius:14px;padding:12px 14px;font-size:12.5px;margin-bottom:14px;"><strong>Observações internas:</strong> ${escapar(cliente.observacoes)}</div>` : ''}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn" onclick="abrirModalLancarPontos()">${ico('mais')}Lançar pontos</button>
+        <button class="btn secondary" onclick="abrirModalResgate()">${ico('presente')}Registrar resgate</button>
+        <button class="btn secondary" onclick="abrirModalAjuste()">${ico('ajuste')}Ajustar pontos/nível</button>
+        <button class="btn secondary" onclick='abrirModalEditarCliente(${JSON.stringify(cliente).replace(/'/g,"&#39;")})'>${ico('editar')}Editar dados</button>
+        ${celularWhats(cliente.telefone) ? `<a class="btn-wa" href="https://wa.me/55${telefoneDigitos(cliente.telefone)}" target="_blank" rel="noopener">${ico('msg')}WhatsApp</a>` : ''}
+        ${anivHoje && celularWhats(cliente.telefone) ? `<a class="btn-wa" href="${linkWhats(cliente, mensagemParabens(cliente))}" target="_blank" rel="noopener">${ico('bolo')}Enviar parabéns</a>` : ''}
+        <button class="btn secondary" style="color:var(--bad);margin-left:auto;" onclick="excluirCliente()">Excluir cliente</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Histórico completo</h2>
+      <p class="desc">Todos os lançamentos, mais recente primeiro</p>
+      <div id="extratoClienteCF"></div>
+    </div>
+  `;
+
+  document.getElementById('extratoClienteCF').innerHTML = (transacoes||[]).length ? transacoes.map(t => `
+    <div class="extrato-item">
+      <div>
+        <div>${escapar(t.descricao || {ganho:'Pontos ganhos',resgate:'Resgate',ajuste:'Ajuste',expiracao:'Expiração'}[t.tipo])}</div>
+        <div style="color:var(--gray);font-size:11px;">${new Date(t.criado_em).toLocaleDateString('pt-BR')}${t.data_validade ? ' · válido até '+new Date(t.data_validade+'T00:00:00').toLocaleDateString('pt-BR') : ''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="extrato-pts ${t.pontos>=0?'pos':'neg'}">${t.pontos>=0?'+':''}${t.pontos}</div>
+        <button style="border:none;background:none;color:var(--bad);cursor:pointer;font-size:11px;" onclick="excluirLancamento('${t.id}')">Excluir</button>
+      </div>
+    </div>`).join('') : '<div class="empty-state">Nenhum lançamento ainda.</div>';
+}
+window.abrirFichaCliente = abrirFichaCliente;
+
+async function excluirCliente(){
+  if(!confirm('Excluir esse cliente do cadastro de vez? Todo o histórico de pontos dele também será apagado. Não dá pra desfazer.')) return;
+  const { error } = await supa.from('clientes_fidelidade').delete().eq('id', clienteEmFichaId);
+  if(error){ alert('Erro: '+error.message); return; }
+  baseCF.suja = true;
+  trocarAbaCF('clientes');
+}
+window.excluirCliente = excluirCliente;
+
+// ============================================================
+// NOVO / EDITAR CLIENTE (CPF e telefone obrigatórios)
+// ============================================================
+let clienteEmEdicaoId = null;
+
+function preencherSelectsAniversario(dia, mes){
+  document.getElementById('ncAnivDia').innerHTML = '<option value="">Dia</option>' + Array.from({length:31},(_,i)=>`<option value="${i+1}" ${dia===i+1?'selected':''}>${i+1}</option>`).join('');
+  document.getElementById('ncAnivMes').innerHTML = '<option value="">Mês</option>' + MESES_PT.map((m,i)=>`<option value="${i+1}" ${mes===i+1?'selected':''}>${m.charAt(0).toUpperCase()+m.slice(1)}</option>`).join('');
+}
+
+function abrirModalNovoCliente(){
+  clienteEmEdicaoId = null;
+  document.getElementById('modalClienteTitulo').textContent = 'Novo cliente';
+  ['ncNome','ncTelefone','ncCpf','ncEmail','ncNascimento','ncCodigoFC','ncObs'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ncGenero').value = '';
+  preencherSelectsAniversario(null, null);
+  document.getElementById('modalNovoCliente').classList.add('show');
+}
+window.abrirModalNovoCliente = abrirModalNovoCliente;
+
+function abrirModalEditarCliente(cliente){
+  clienteEmEdicaoId = cliente.id;
+  document.getElementById('modalClienteTitulo').textContent = 'Editar cliente';
+  document.getElementById('ncNome').value = cliente.nome || '';
+  document.getElementById('ncTelefone').value = cliente.telefone || '';
+  document.getElementById('ncCpf').value = cliente.cpf || '';
+  document.getElementById('ncEmail').value = cliente.email || '';
+  document.getElementById('ncNascimento').value = cliente.data_nascimento || '';
+  document.getElementById('ncCodigoFC').value = cliente.codigo_formula_certa || '';
+  document.getElementById('ncObs').value = cliente.observacoes || '';
+  document.getElementById('ncGenero').value = cliente.genero || '';
+  preencherSelectsAniversario(cliente.aniversario_dia, cliente.aniversario_mes);
+  document.getElementById('modalNovoCliente').classList.add('show');
+}
+window.abrirModalEditarCliente = abrirModalEditarCliente;
+
+async function salvarNovoCliente(){
+  const nome = document.getElementById('ncNome').value.trim();
+  const cpf = document.getElementById('ncCpf').value.trim();
+  const telefone = document.getElementById('ncTelefone').value.trim();
+  if(!nome){ alert('Digite o nome.'); return; }
+  if(!cpfValido(cpf)){ alert('CPF obrigatório: informe um CPF válido (11 dígitos).'); return; }
+  if(!telValido(telefone)){ alert('Telefone obrigatório: informe com DDD (10 ou 11 dígitos).'); return; }
+
+  const nascimento = document.getElementById('ncNascimento').value || null;
+  let dia = Number(document.getElementById('ncAnivDia').value) || null;
+  let mes = Number(document.getElementById('ncAnivMes').value) || null;
+  if(nascimento){ const p = nascimento.split('-').map(Number); dia = p[2]; mes = p[1]; }
+  if((dia && !mes) || (!dia && mes)){ alert('Para o aniversário, escolha o dia e o mês.'); return; }
+
+  const dados = {
+    nome: titleCase(nome),
+    telefone: formatarTelefone(telefone),
+    cpf: formatarCpf(cpf),
+    email: document.getElementById('ncEmail').value.trim() || null,
+    data_nascimento: nascimento,
+    aniversario_dia: dia, aniversario_mes: mes,
+    genero: document.getElementById('ncGenero').value || null,
+    codigo_formula_certa: document.getElementById('ncCodigoFC').value.trim() || null,
+    observacoes: document.getElementById('ncObs').value.trim() || null,
+  };
+
+  baseCF.suja = true;
+  if(clienteEmEdicaoId){
+    const { error } = await supa.from('clientes_fidelidade').update(dados).eq('id', clienteEmEdicaoId);
+    if(error){ alert('Erro: '+error.message); return; }
+    document.getElementById('modalNovoCliente').classList.remove('show');
+    abrirFichaCliente(clienteEmEdicaoId);
+    return;
+  }
+  const { data: { session } } = await supa.auth.getSession();
+  const { data, error } = await supa.from('clientes_fidelidade').insert({ ...dados, criado_por: session.user.id }).select().single();
+  if(error){ alert('Erro: '+(error.message.includes('codigo_fc') ? 'Já existe um cliente com esse código do Fórmula Certa.' : error.message)); return; }
+  document.getElementById('modalNovoCliente').classList.remove('show');
+  abrirFichaCliente(data.id);
+}
+window.salvarNovoCliente = salvarNovoCliente;
+
+// ============================================================
+// IMPORTAÇÃO DE PLANILHA (reconhece o relatório do sistema da farmácia)
+// ============================================================
+const CAMPOS_IMP = [
+  { chave:'nome', rotulo:'Nome *', alias:['cliente','nome','nome completo','nome do cliente'] },
+  { chave:'codigo', rotulo:'Código no Fórmula Certa', alias:['cod','codigo','cod cliente','codigo do cliente','codigo formula certa'] },
+  { chave:'cpf', rotulo:'CPF', alias:['cpf','cpf/cnpj'] },
+  { chave:'telefone', rotulo:'Telefone', alias:['telefone','celular','fone','whatsapp','tel'] },
+  { chave:'email', rotulo:'E-mail', alias:['email','e-mail','e mail'] },
+  { chave:'aniversario', rotulo:'Aniversário / nascimento', alias:['aniversario','nascimento','data de nascimento','data nascimento','dt nascimento'] },
+  { chave:'idade', rotulo:'Idade (para achar o ano)', alias:['idade'] },
+  { chave:'genero', rotulo:'Gênero', alias:['gen','genero','sexo'] },
+  { chave:'tipo_cadastro', rotulo:'Tipo de cadastro', alias:['cadastro','tipo de cadastro'] },
+  { chave:'seg_recencia', rotulo:'Recência', alias:['recencia'] },
+  { chave:'seg_frequencia', rotulo:'Frequência', alias:['frequencia'] },
+  { chave:'seg_volume', rotulo:'Volume', alias:['volume'] },
+];
+let imp = { linhas:[], headers:[], map:{}, plano:null, passo:1 };
+
+const normHeader = (h) => norm(h).replace(/[^a-z0-9\/ \-]/g,'').replace(/\s+/g,' ');
+
 function abrirModalImportar(){
-  importState = { headers: [], rows: [], passo: 1 };
+  imp = { linhas:[], headers:[], map:{}, plano:null, passo:1 };
   document.getElementById('arquivoImportar').value = '';
-  document.getElementById('importarPasso1').style.display = 'block';
-  document.getElementById('importarPasso2').style.display = 'none';
-  document.getElementById('btnImportarAvancar').textContent = 'Avançar';
+  document.getElementById('impPasso1').style.display = 'block';
+  document.getElementById('impPasso2').style.display = 'none';
+  document.getElementById('impPasso3').style.display = 'none';
+  document.getElementById('impAcoes').innerHTML = `
+    <button class="btn secondary" onclick="fecharImportacao()">Cancelar</button>
+    <button class="btn" id="impBtnAvancar" onclick="avancarImportacao()">Avançar</button>`;
   document.getElementById('modalImportar').classList.add('show');
 }
 window.abrirModalImportar = abrirModalImportar;
+function fecharImportacao(){ document.getElementById('modalImportar').classList.remove('show'); }
+window.fecharImportacao = fecharImportacao;
 
 function lerArquivoImportacao(){
   return new Promise((resolve, reject) => {
@@ -801,67 +1339,242 @@ function lerArquivoImportacao(){
     const reader = new FileReader();
     reader.onload = (e) => {
       try{
-        const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const linhas = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
-        resolve(linhas);
+        resolve(XLSX.utils.sheet_to_json(ws, { header:1, raw:false, defval:'' }));
       }catch(err){ reject('Não consegui ler esse arquivo: '+err.message); }
     };
     reader.readAsArrayBuffer(arquivo);
   });
 }
 
+function parseAniversario(txt, idade, hoje){
+  const t = norm(txt);
+  if(!t || t.startsWith('sem data')) return null;
+  let m;
+  if((m = t.match(/^(\d{4})-(\d{2})-(\d{2})/))) return { dia:+m[3], mes:+m[2], data:`${m[1]}-${m[2]}-${m[3]}` };
+  if((m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) return { dia:+m[1], mes:+m[2], data:`${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}` };
+  let dia = null, mes = null;
+  if((m = t.match(/^(\d{1,2})\/(\d{1,2})$/))){ dia = +m[1]; mes = +m[2]; }
+  else if((m = t.match(/^(\d{1,2}) de ([a-zç]+)/))){
+    dia = +m[1];
+    const i = MESES_PT.findIndex(x => norm(x).startsWith(m[2].slice(0,3)));
+    mes = i >= 0 ? i+1 : null;
+  }
+  if(!dia || !mes || dia > 31 || mes > 12) return null;
+  const r = { dia, mes, data:null };
+  if(idade >= 5 && idade <= 100){
+    const jaFez = (mes < hoje.getMonth()+1) || (mes === hoje.getMonth()+1 && dia <= hoje.getDate());
+    const ano = hoje.getFullYear() - idade - (jaFez ? 0 : 1);
+    const dt = new Date(ano, mes-1, dia);
+    if(dt.getMonth() === mes-1 && dt.getDate() === dia) r.data = `${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+  }
+  return r;
+}
+
+const SEGMENTO_LIMPO = (s) => { const x = String(s||'').trim().replace(/^\d+\s*-\s*/,''); if(!x) return null; const t = x.toLowerCase(); return t === 'vip' ? 'VIP' : t.charAt(0).toUpperCase()+t.slice(1); };
+
+function limparLinhaImport(linha, map, hoje){
+  const g = (k) => (map[k] != null && map[k] !== '') ? String(linha[map[k]] ?? '').trim() : '';
+  const nome = g('nome');
+  if(!nome) return null;
+  const av = {};
+  const rec = { nome: titleCase(nome) };
+
+  const cod = g('codigo').replace(/\.0+$/,'');
+  rec.codigo_formula_certa = cod && cod.toLowerCase() !== 'total' ? cod : null;
+
+  const cpfD = soDigitos(g('cpf'));
+  if(cpfD){ if(cpfValido(cpfD)) rec.cpf = formatarCpf(cpfD); else { rec.cpf = null; av.cpfInvalido = true; } } else rec.cpf = null;
+
+  const telRaw = g('telefone');
+  if(telRaw){ if(telValido(telRaw)) rec.telefone = formatarTelefone(telRaw); else { rec.telefone = null; av.telInvalido = true; } } else rec.telefone = null;
+
+  const em = g('email').toLowerCase();
+  rec.email = em && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em) ? em : null;
+
+  const idade = Number(g('idade')) || 0;
+  const an = parseAniversario(g('aniversario'), idade, hoje);
+  rec.data_nascimento = an?.data || null;
+  rec.aniversario_dia = an?.dia || null;
+  rec.aniversario_mes = an?.mes || null;
+
+  const gen = g('genero').toUpperCase();
+  rec.genero = gen.startsWith('F') ? 'F' : (gen.startsWith('M') ? 'M' : null);
+  const tc = g('tipo_cadastro');
+  rec.tipo_cadastro = tc ? tc.charAt(0).toUpperCase()+tc.slice(1).toLowerCase() : null;
+  rec.seg_recencia = SEGMENTO_LIMPO(g('seg_recencia'));
+  rec.seg_frequencia = SEGMENTO_LIMPO(g('seg_frequencia'));
+  rec.seg_volume = SEGMENTO_LIMPO(g('seg_volume'));
+  return { rec, av };
+}
+
+const CAMPOS_GRAVAVEIS = ['nome','cpf','telefone','email','data_nascimento','aniversario_dia','aniversario_mes','genero','tipo_cadastro','seg_recencia','seg_frequencia','seg_volume','codigo_formula_certa'];
+
+// Junta o que já existe com o que veio da planilha SEM apagar correções feitas pela equipe
+function mesclarComExistente(ex, novo){
+  const manter = (a, b) => (a !== null && a !== undefined && a !== '') ? a : (b ?? null);
+  const sobrescrever = (a, b) => (b !== null && b !== undefined && b !== '') ? b : (a ?? null);
+  const temData = ex.data_nascimento || (ex.aniversario_dia && ex.aniversario_mes);
+  return {
+    nome: manter(ex.nome, novo.nome), cpf: manter(ex.cpf, novo.cpf), telefone: manter(ex.telefone, novo.telefone),
+    email: manter(ex.email, novo.email), genero: manter(ex.genero, novo.genero),
+    codigo_formula_certa: manter(ex.codigo_formula_certa, novo.codigo_formula_certa),
+    data_nascimento: manter(ex.data_nascimento, novo.data_nascimento),
+    aniversario_dia: temData ? (ex.aniversario_dia ?? novo.aniversario_dia) : novo.aniversario_dia,
+    aniversario_mes: temData ? (ex.aniversario_mes ?? novo.aniversario_mes) : novo.aniversario_mes,
+    tipo_cadastro: sobrescrever(ex.tipo_cadastro, novo.tipo_cadastro),
+    seg_recencia: sobrescrever(ex.seg_recencia, novo.seg_recencia),
+    seg_frequencia: sobrescrever(ex.seg_frequencia, novo.seg_frequencia),
+    seg_volume: sobrescrever(ex.seg_volume, novo.seg_volume),
+  };
+}
+
 async function avancarImportacao(){
-  if(importState.passo === 1){
+  const btn = document.getElementById('impBtnAvancar');
+  if(imp.passo === 1){
     let linhas;
-    try{ linhas = await lerArquivoImportacao(); }
-    catch(msg){ alert(msg); return; }
+    try{ linhas = await lerArquivoImportacao(); }catch(msg){ alert(msg); return; }
     if(!linhas.length){ alert('Planilha vazia.'); return; }
+    imp.headers = linhas[0].map(h => String(h||'').trim());
+    imp.linhas = linhas.slice(1).filter(r => r.some(c => String(c||'').trim() !== ''));
+    imp.map = {};
+    const hn = imp.headers.map(normHeader);
+    CAMPOS_IMP.forEach(c => { const i = hn.findIndex(h => c.alias.includes(h)); imp.map[c.chave] = i >= 0 ? i : ''; });
 
-    importState.headers = linhas[0].map(h => String(h||'').trim());
-    importState.rows = linhas.slice(1).filter(r => r.some(c => String(c||'').trim() !== ''));
-
-    document.getElementById('mapeamentoCamposArea').innerHTML = CAMPOS_IMPORTACAO.map(c => `
-      <div class="form-grid" style="grid-template-columns:1fr 1fr;align-items:end;">
-        <div style="align-self:center;font-size:13px;font-weight:600;">${c.label}</div>
-        <div><select id="map_${c.chave}">
-          <option value="">Não importar</option>
-          ${importState.headers.map((h,i)=>`<option value="${i}" ${h.toLowerCase().includes(c.chave.split('_')[0])?'selected':''}>${h}</option>`).join('')}
-        </select></div>
-      </div>`).join('');
-    document.getElementById('importarResumo').textContent = `${importState.rows.length} linha(s) encontrada(s) na planilha.`;
-
-    document.getElementById('importarPasso1').style.display = 'none';
-    document.getElementById('importarPasso2').style.display = 'block';
-    document.getElementById('btnImportarAvancar').textContent = 'Importar';
-    importState.passo = 2;
+    document.getElementById('impPasso2').innerHTML = `
+      <p style="font-size:12.5px;color:var(--gray);margin-top:0;">${imp.linhas.length} linha(s) encontrada(s). Confira se cada campo está ligado à coluna certa:</p>
+      <div style="max-height:46vh;overflow:auto;">${CAMPOS_IMP.map(c => `
+        <div class="form-grid" style="align-items:center;margin-bottom:6px;">
+          <div style="font-size:13px;font-weight:700;">${c.rotulo}</div>
+          <select onchange="imp.map['${c.chave}']=this.value">
+            <option value="">Não importar</option>
+            ${imp.headers.map((h,i) => `<option value="${i}" ${String(imp.map[c.chave])===String(i)?'selected':''}>${escapar(h)}</option>`).join('')}
+          </select>
+        </div>`).join('')}</div>`;
+    document.getElementById('impPasso1').style.display = 'none';
+    document.getElementById('impPasso2').style.display = 'block';
+    btn.textContent = 'Analisar';
+    imp.passo = 2;
     return;
   }
 
-  // Passo 2: monta e importa de verdade
-  const colunaNome = document.getElementById('map_nome').value;
-  if(colunaNome === ''){ alert('É preciso mapear pelo menos o campo Nome.'); return; }
+  if(imp.passo === 2){
+    if(imp.map.nome === '' || imp.map.nome == null){ alert('É preciso ligar pelo menos o campo Nome.'); return; }
+    btn.disabled = true; btn.textContent = 'Analisando...';
+    try{ await carregarBaseCF(true); }catch(e){ alert('Erro ao ler os clientes atuais: '+e.message); btn.disabled = false; btn.textContent = 'Analisar'; return; }
+    const hoje = hojeBrasiliaDate();
+    const porCodigo = new Map(), porCpf = new Map();
+    baseCF.clientes.forEach(c => { if(c.codigo_formula_certa) porCodigo.set(String(c.codigo_formula_certa), c); const d = soDigitos(c.cpf); if(d) porCpf.set(d, c); });
 
-  const { data: { session } } = await supa.auth.getSession();
-  const registros = importState.rows.map(linha => {
-    const obj = { criado_por: session.user.id };
-    CAMPOS_IMPORTACAO.forEach(c => {
-      const idx = document.getElementById('map_'+c.chave).value;
-      obj[c.chave] = idx !== '' ? String(linha[idx]||'').trim() || null : null;
+    const plano = { novos:[], atualizar:[], ignoradas:0, repetidas:0, cpfInvalido:0, telInvalido:0, semCpf:0, semTel:0, semNasc:0, soDiaMes:0 };
+    const vistos = new Set();
+    imp.linhas.forEach(l => {
+      const r = limparLinhaImport(l, imp.map, hoje);
+      if(!r){ plano.ignoradas++; return; }
+      const { rec, av } = r;
+      const chave = rec.codigo_formula_certa || ('cpf:'+soDigitos(rec.cpf));
+      if(rec.codigo_formula_certa || rec.cpf){ if(vistos.has(chave)){ plano.repetidas++; return; } vistos.add(chave); }
+      if(av.cpfInvalido) plano.cpfInvalido++;
+      if(av.telInvalido) plano.telInvalido++;
+      const ex = (rec.codigo_formula_certa && porCodigo.get(rec.codigo_formula_certa)) || (rec.cpf && porCpf.get(soDigitos(rec.cpf))) || null;
+      const final = ex ? mesclarComExistente(ex, rec) : rec;
+      if(!cpfValido(final.cpf)) plano.semCpf++;
+      if(!telValido(final.telefone)) plano.semTel++;
+      if(!final.data_nascimento){ plano.semNasc++; if(final.aniversario_dia) plano.soDiaMes++; }
+      if(ex) plano.atualizar.push({ id:ex.id, ...final }); else plano.novos.push(final);
     });
-    return obj;
-  }).filter(r => r.nome);
+    imp.plano = plano;
+    const vermelhos = [...plano.novos, ...plano.atualizar].filter(x => !cpfValido(x.cpf) || !telValido(x.telefone)).length;
+    document.getElementById('impPasso3').innerHTML = `
+      <p style="font-size:12.5px;color:var(--gray);margin-top:0;">Prévia do que será feito. Nada foi gravado ainda.</p>
+      <div class="imp-resumo">
+        <div class="g"><b>${plano.novos.length}</b><span>Clientes novos</span></div>
+        <div class="g"><b>${plano.atualizar.length}</b><span>Já existem (atualizar)</span></div>
+        <div><b>${plano.ignoradas + plano.repetidas}</b><span>Linhas ignoradas</span></div>
+        <div class="r"><b>${vermelhos}</b><span>Ficarão vermelhos (CPF ou telefone)</span></div>
+        <div class="a"><b>${plano.semNasc}</b><span>Ficarão amarelos (nascimento)</span></div>
+        <div><b>${plano.cpfInvalido + plano.telInvalido}</b><span>CPF/telefone inválidos descartados</span></div>
+      </div>
+      <p style="font-size:12px;color:var(--gray);">Sem CPF: ${plano.semCpf} · Sem telefone válido: ${plano.semTel} · Aniversário só com dia e mês: ${plano.soDiaMes}. Quem já existe mantém os dados que a equipe corrigiu; só tipo de cadastro e segmentação são atualizados.</p>
+      <div class="imp-progresso" id="impBarra" style="display:none;"><div></div></div>
+      <div id="impStatus" style="font-size:12.5px;color:var(--gray);"></div>`;
+    document.getElementById('impPasso2').style.display = 'none';
+    document.getElementById('impPasso3').style.display = 'block';
+    btn.disabled = (plano.novos.length + plano.atualizar.length) === 0;
+    btn.textContent = 'Importar';
+    imp.passo = 3;
+    return;
+  }
 
-  if(!registros.length){ alert('Nenhuma linha com nome preenchido pra importar.'); return; }
-
-  const { error } = await supa.from('clientes_fidelidade').insert(registros);
-  if(error){ alert('Erro ao importar: '+error.message); return; }
-
-  document.getElementById('modalImportar').classList.remove('show');
-  alert(`${registros.length} cliente(s) importado(s) com sucesso.`);
-  renderBuscarCF();
+  if(imp.passo === 3) await executarImportacao();
+  else fecharImportacao();
 }
 window.avancarImportacao = avancarImportacao;
+
+async function executarImportacao(){
+  const btn = document.getElementById('impBtnAvancar'); btn.disabled = true; btn.textContent = 'Importando...';
+  const barra = document.getElementById('impBarra'); barra.style.display = 'block';
+  const status = document.getElementById('impStatus');
+  const { data: { session } } = await supa.auth.getSession();
+  const plano = imp.plano;
+  const total = plano.novos.length + plano.atualizar.length;
+  let feitos = 0, erros = [];
+  const avancar = (n) => { feitos += n; barra.firstElementChild.style.width = Math.round(feitos/total*100)+'%'; status.textContent = `${feitos} de ${total}...`; };
+  const completar = (o) => { const x = {}; CAMPOS_GRAVAVEIS.forEach(k => { x[k] = o[k] ?? null; }); return x; };
+  const LOTE = 200;
+
+  for(let i = 0; i < plano.novos.length; i += LOTE){
+    const lote = plano.novos.slice(i, i+LOTE).map(o => ({ ...completar(o), criado_por: session.user.id }));
+    const { error } = await supa.from('clientes_fidelidade').insert(lote);
+    if(error){
+      for(const reg of lote){ // isola a linha com problema
+        const { error: e2 } = await supa.from('clientes_fidelidade').insert(reg);
+        if(e2) erros.push(`${reg.nome}: ${e2.message}`);
+      }
+    }
+    avancar(lote.length);
+  }
+  for(let i = 0; i < plano.atualizar.length; i += LOTE){
+    const lote = plano.atualizar.slice(i, i+LOTE).map(o => ({ id:o.id, ...completar(o) }));
+    const { error } = await supa.from('clientes_fidelidade').upsert(lote, { onConflict:'id' });
+    if(error){
+      for(const reg of lote){
+        const { id, ...resto } = reg;
+        const { error: e2 } = await supa.from('clientes_fidelidade').update(resto).eq('id', id);
+        if(e2) erros.push(`${reg.nome}: ${e2.message}`);
+      }
+    }
+    avancar(lote.length);
+  }
+
+  baseCF.suja = true;
+  await carregarBaseCF(true);
+  status.innerHTML = `<b style="color:var(--good)">Importação concluída.</b> ${total - erros.length} cliente(s) gravado(s)${erros.length ? `, <b style="color:var(--bad)">${erros.length} com erro</b>` : ''}.
+    ${erros.length ? `<div style="margin-top:6px;max-height:90px;overflow:auto;font-size:11.5px;color:var(--bad);">${erros.slice(0,20).map(escapar).join('<br>')}</div>` : ''}`;
+  document.getElementById('impAcoes').innerHTML = `
+    <button class="btn secondary" onclick="baixarPendenciasCF()">${ico('baixar')}Baixar pendências</button>
+    <button class="btn" onclick="fecharImportacao();trocarAbaCF('clientes',{filtro:{status:'vermelho'}})">Ver a regularizar</button>`;
+}
+
+// Lista de quem ainda precisa ser regularizado/ajustado, em planilha
+function baixarPendenciasCF(){
+  const linhas = baseCF.clientes.filter(c => c._st.nivel !== 'ok').map(c => ({
+    'Código Fórmula Certa': c.codigo_formula_certa || '',
+    'Nome': c.nome,
+    'Telefone': c.telefone || '',
+    'CPF': c.cpf || '',
+    'Nascimento': c.data_nascimento ? new Date(c.data_nascimento+'T12:00:00').toLocaleDateString('pt-BR') : (c.aniversario_dia ? `${c.aniversario_dia}/${c.aniversario_mes}` : ''),
+    'Prioridade': c._st.nivel === 'vermelho' ? 'Obrigatório (regularizar)' : 'Ajustar',
+    'O que falta': [...c._st.vermelho, ...c._st.amarelo].join(', '),
+  }));
+  if(!linhas.length){ alert('Nenhuma pendência no momento.'); return; }
+  const ws = XLSX.utils.json_to_sheet(linhas);
+  ws['!cols'] = [{wch:20},{wch:36},{wch:18},{wch:16},{wch:12},{wch:24},{wch:30}];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Pendencias');
+  XLSX.writeFile(wb, 'Pendencias_Cliente_Fiel.xlsx');
+}
+window.baixarPendenciasCF = baixarPendenciasCF;
 
 init();
 </script>
