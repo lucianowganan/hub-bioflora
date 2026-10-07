@@ -222,19 +222,26 @@ Widget flutuante universal (alto contraste, tema escuro por `filter:invert(1) hu
 
 ## 10. Roteiro do responsivo (projeto de celular)
 
-Decisão: **sem app nativo/loja**. Caminho: responsivo por módulo + **PWA** (manifest + ícone, "adicionar à tela inicial") — **PWA ainda não construído**.
+Decisão: **sem app nativo/loja**. Caminho: responsivo por módulo + **PWA** (instalação na tela inicial) — **ambos feitos** (ver 10.1).
 
 - **Fase 1** (feita): index, tarefas, calendario-interno.
 - **Fase 2** (feita): producao, controle-producao, inclusoes, formulas-complexas, reaproveitamento.
 - **Fase 3** (feita): cliente-fiel, vendas-yampi, erros, meus-erros, rotulos.
-- **Fase 4** (pendente, mais pesada): **rh.html** (sozinho), embalagens, calendario-editorial, visitas-medicas, banco-de-horas.
-- **Fase 5** (pendente): admin, cargos, email-marketing, wanessia, alterar-senha.
-- Depois: **PWA**; estender (ou não) a detecção por toque do chat para o resto do Hub; levar o novo visual (cartões arredondados, cabeçalhos, botões, tabelas) para todos os módulos por meio de um **arquivo de tema compartilhado** (`hub-tema.css` carregado pelo bootstrapper com carimbo de hora) — ideia aprovada em conceito, ainda não feita.
+- **Fase 4** (feita): rh, embalagens, calendario-editorial, visitas-medicas, banco-de-horas.
+- **Fase 5** (feita): admin, cargos (matriz rola nos dois sentidos, coluna de nomes fixa), email-marketing, wanessia, alterar-senha.
+- Depois: estender (ou não) a detecção por toque do chat para o resto do Hub; levar o novo visual (cartões arredondados, cabeçalhos, botões, tabelas) para todos os módulos por meio de um **arquivo de tema compartilhado** (`hub-tema.css` carregado pelo bootstrapper com carimbo de hora) — ideia aprovada em conceito, ainda não feita.
 - Cada fase foi testada com Chromium headless e Supabase simulado; o Luciano valida no iPhone.
+
+### 10.1 PWA (feito)
+- Arquivos na raiz: `manifest.webmanifest` (standalone, `start_url "./"`, cor do tema `#8B1A3A`, fundo `#F4EFEC`), `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png` (180px, opaco) e `sw.js`.
+- Tags no `<head>` de 29 páginas (exceto `link.html` e `pesquisa-*`): manifest, `theme-color`, metas `apple-mobile-web-app-*`. O registro do service worker está em `hub-sidebar.js`, `index.html` e `login.html`.
+- **`sw.js` é "rede primeiro"**: sempre busca a versão mais nova (respeita o carimbo de hora dos scripts compartilhados); só usa a cópia guardada se estiver sem internet. Ignora Supabase/CDNs/POST. Nunca cachear agressivo (cache velho já causou falsos bugs).
+- iPhone: Safari > Compartilhar > **Adicionar à Tela de Início**. Android/Chrome: menu > **Instalar app**. No iPhone o app instalado tem armazenamento separado do Safari: **é preciso entrar de novo (login) uma vez dentro do app**.
+- Para publicar uma versão nova do `sw.js` basta subir o arquivo; troque `CACHE` (v2...) só se quiser limpar as cópias offline.
 
 ## 11. Pendências e ideias em aberto
 
-- Fases 4 e 5 do responsivo; PWA; tema compartilhado para repaginar os demais módulos.
+- Tema compartilhado (`hub-tema.css`) para repaginar os demais módulos; conferência no iPhone de tudo que foi feito no responsivo.
 - Cliente Fiel: importar a base completa; definir pontos iniciais; decidir se e-mail vira "amarelo"; registrar quem já recebeu parabéns; remover o índice parcial redundante; conferir se `Cód` realmente é o código Fórmula Certa.
 - Fórmulas Complexas: fechar no banco o DELETE do atendente (migração 83 sugerida); decidir se laboratório pode registrar.
 - Wanessia: faltam prompt/base de conhecimento reais e a API key da OpenAI.

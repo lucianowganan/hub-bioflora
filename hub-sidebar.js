@@ -518,6 +518,8 @@
   }
 
   function iniciar(){
+    // PWA: registra o service worker (instalação na tela inicial)
+    try{ if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){}); }catch(e){}
     // Se a página já carregou o supabase-js, ótimo; senão carrega
     // uma cópia só pra sidebar funcionar (não interfere na página).
     // Trava a rolagem de fora quando há pop-up aberto (script compartilhado, sempre a versão mais nova)
