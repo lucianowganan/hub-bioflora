@@ -1,0 +1,64 @@
+/* hub-tema.css — Hub Bioflora
+   Visual "Suave" compartilhado pelos módulos (mesma linha da Home e do Cliente Fiel).
+   Carregado em cada página DEPOIS do <style> da própria página, com carimbo de hora
+   (document.write no <head>), então atualizar este arquivo muda todos os módulos de uma vez.
+   Regra de ouro: aqui entram só cor, forma e sombra. Larguras, grids e ajustes de celular
+   continuam no @media de cada página. Não incluir em index.html, chat.html e cliente-fiel.html
+   (têm design próprio). */
+
+:root{
+  --paper:#F4EFEC;
+  --tema-sombra:0 2px 10px rgba(94,16,39,.06);
+  --tema-sombra-hover:0 8px 22px rgba(94,16,39,.12);
+}
+html,body{background:#F4EFEC;}
+
+/* ---------- Cabeçalho da página ---------- */
+header.top{border-bottom:none;}
+.brand-text p{margin-top:3px;}
+@media (min-width:721px){
+  header.top{padding-bottom:0;margin-bottom:22px;}
+  .brand-text h1{font-size:26px;letter-spacing:-.02em;}
+}
+
+/* ---------- Botões ---------- */
+.btn{border-radius:30px;transition:filter .15s,box-shadow .15s;}
+.btn:hover:not(:disabled){filter:brightness(1.07);}
+.btn.secondary{background:#fff;border:none;box-shadow:0 1px 3px rgba(0,0,0,.09);}
+.btn.small{padding-left:14px;padding-right:14px;}
+
+/* ---------- Painéis e cartões de indicador ---------- */
+.panel,.upload-panel,.panel-white,.insight-card,.grafico-panel{
+  border:none;border-radius:24px;box-shadow:var(--tema-sombra);
+}
+.kpi,.ponto-kpi,.rel-kpi,.qs-card{
+  border:2px solid transparent;border-radius:22px;box-shadow:var(--tema-sombra);
+}
+.grid-wrap{border:1px solid var(--line);border-radius:22px;box-shadow:var(--tema-sombra);}
+.column{border:none;border-radius:24px;box-shadow:var(--tema-sombra);}
+
+/* ---------- Abas e filtros em pílula ---------- */
+.tabs,.tabs-principais{border-bottom:none;gap:8px;}
+.tab-btn,.tab-principal-btn,.tab-sec-btn,.area-tab-btn,.quadro-tab,.subtab,.chip-btn,.period-btn,.aval-filtro-btn,.view-toggle button{
+  border-radius:30px;border:none;background:#fff;color:var(--gray);
+  box-shadow:0 1px 3px rgba(0,0,0,.07);margin-right:0;
+}
+.tab-btn:hover,.tab-principal-btn:hover,.chip-btn:hover,.period-btn:hover,.aval-filtro-btn:hover{color:var(--burgundy);}
+.tab-btn.active,.tab-principal-btn.active,.tab-sec-btn.active,.area-tab-btn.active,.quadro-tab.active,.subtab.active,
+.chip-btn.active,.period-btn.active,.aval-filtro-btn.active,.view-toggle button.active{
+  background:var(--burgundy) !important;color:#fff !important;border:none !important;
+}
+
+/* ---------- Campos ---------- */
+input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=color]):not([type=range]),select,textarea{
+  border-radius:12px;
+}
+input:not([type=checkbox]):not([type=radio]):not([type=file]):focus,select:focus,textarea:focus{
+  outline:none;border-color:var(--burgundy);box-shadow:0 0 0 3px rgba(139,26,58,.14);
+}
+
+/* ---------- Janelas (modais) ---------- */
+.modal{border-radius:24px;box-shadow:0 20px 50px rgba(42,34,36,.25);}
+
+/* ---------- Tabelas ---------- */
+tbody tr:hover td{background:#FBF4F6;}

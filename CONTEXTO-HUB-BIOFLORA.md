@@ -232,6 +232,13 @@ Decisão: **sem app nativo/loja**. Caminho: responsivo por módulo + **PWA** (in
 - Depois: estender (ou não) a detecção por toque do chat para o resto do Hub; levar o novo visual (cartões arredondados, cabeçalhos, botões, tabelas) para todos os módulos por meio de um **arquivo de tema compartilhado** (`hub-tema.css` carregado pelo bootstrapper com carimbo de hora) — ideia aprovada em conceito, ainda não feita.
 - Cada fase foi testada com Chromium headless e Supabase simulado; o Luciano valida no iPhone.
 
+### 10.0 Tema compartilhado (feito) — `hub-tema.css`
+- Visual "Suave" (fundo `#F4EFEC`, painéis e indicadores arredondados com sombra suave, botões e abas em pílula, foco vinho nos campos, modais arredondados) aplicado a **19 módulos** de uma vez: admin, banco-de-horas, calendario-editorial, calendario-interno, cargos, controle-producao, email-marketing, embalagens, erros, formulas-complexas, inclusoes, meus-erros, producao, reaproveitamento, rh, rotulos, tarefas, vendas-yampi, visitas-medicas.
+- Carregado no `<head>` **depois** do `<style>` da página, por `document.write` com carimbo de hora (bloqueia a pintura, sem "piscada" do visual antigo e sempre a versão mais nova): `<script>document.write('<link rel="stylesheet" href="hub-tema.css?t='+Date.now()+'">');</script>`.
+- **Não** incluir em `index.html`, `chat.html`, `cliente-fiel.html` (design próprio), nem em login/públicas/legado.
+- Regra: o tema só mexe em cor, forma e sombra. Larguras, grids e celular continuam no `@media` de cada página (o tema vem depois e venceria empates de especificidade; por isso o tamanho do título é só `min-width:721px`).
+- Para repaginar mais um módulo: conferir se usa as classes padrão (`header.top`, `.btn`, `.panel`, `.kpi`, abas) e colar a linha acima. Ajustes específicos continuam na página.
+
 ### 10.1 PWA (feito)
 - Arquivos na raiz: `manifest.webmanifest` (standalone, `start_url "./"`, cor do tema `#8B1A3A`, fundo `#F4EFEC`), `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png` (180px, opaco) e `sw.js`.
 - Tags no `<head>` de 29 páginas (exceto `link.html` e `pesquisa-*`): manifest, `theme-color`, metas `apple-mobile-web-app-*`. O registro do service worker está em `hub-sidebar.js`, `index.html` e `login.html`.
