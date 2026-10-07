@@ -59,6 +59,23 @@
   .form-row input.qtd{width:90px;}
   .form-row input.solicitante{flex:1;min-width:150px;}
   .form-row input.obs{flex:1;min-width:200px;}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .wrap{padding:18px 14px 80px;}
+    header.top{padding-bottom:14px;margin-bottom:16px;}
+    .brand-text h1{font-size:19px;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .panel,.card{border-radius:12px;}
+    .panel{padding:16px;}
+    input,select,textarea{font-size:16px !important;}
+    .board{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -14px;padding:0 14px 16px;-webkit-overflow-scrolling:touch;}
+    .column{min-width:84vw;max-width:84vw;scroll-snap-align:center;flex-shrink:0;}
+    .card-actions button{min-height:36px;padding:6px 12px;font-size:12px;}
+    .form-row input,.form-row select{flex:1 1 100%;width:100%;min-width:0;}
+    .form-row input.qtd{width:100%;}
+    .add-form{padding:16px;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">
