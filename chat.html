@@ -198,6 +198,23 @@
   .pessoa-busca-item .dm-avatar{width:32px;height:32px;font-size:11px;}
   .pessoa-busca-nome{font-size:13px;font-weight:600;color:var(--ink);}
   .pessoa-busca-tag{font-size:10.5px;color:var(--gray);margin-left:auto;}
+
+  /* ---------- Conversa sem rolagem lateral (celular e tela estreita) ---------- */
+  /* Os filhos de um flex só encolhem com min-width:0; sem isso um link longo,
+     uma citação ou um anexo alargam a conversa e dá pra "arrastar" pro lado. */
+  html,body{overflow-x:hidden;max-width:100%;overscroll-behavior-x:none;}
+  .chat-shell{overflow:hidden;max-width:100%;}
+  .chat-main{min-width:0;max-width:100%;overflow:hidden;}
+  .mensagens-area{min-width:0;overflow-x:hidden;overscroll-behavior-x:none;touch-action:pan-y;}
+  .msg-row{min-width:0;max-width:100%;}
+  .msg-row .msg-body{min-width:0;flex:1 1 auto;max-width:100%;}
+  .msg-body .msg-texto{overflow-wrap:anywhere;word-break:break-word;}
+  .msg-reply-quote{max-width:100%;overflow:hidden;}
+  .msg-anexo img,.msg-anexo video{max-width:min(280px,100%);height:auto;}
+  .pdf-chip{max-width:100%;white-space:normal;overflow-wrap:anywhere;}
+  .anexo-preview,.reply-banner{max-width:100%;min-width:0;}
+  .chat-header{min-width:0;}
+  .chat-header h2,.chat-header p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">
