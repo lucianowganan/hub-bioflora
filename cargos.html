@@ -72,6 +72,25 @@
   .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
   .empty-state{text-align:center;padding:30px;color:var(--gray);font-size:12.5px;}
   .aviso{font-size:12px;color:var(--gray);background:var(--paper);border-radius:8px;padding:10px 14px;margin-bottom:16px;}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .wrap{padding:18px 14px calc(84px + env(safe-area-inset-bottom,0px));}
+    header.top{padding-bottom:14px;margin-bottom:16px;}
+    .brand-text h1{font-size:19px;}
+    .panel{padding:16px;border-radius:12px;}
+    input,select,textarea{font-size:16px !important;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .modal-overlay{padding:12px;}
+    .modal{padding:18px;}
+    table.matriz{display:block;overflow:auto;max-height:68vh;-webkit-overflow-scrolling:touch;}
+    table.matriz th:first-child,table.matriz td:first-child{position:sticky;left:0;z-index:3;background:#fff;min-width:150px !important;}
+    table.matriz thead th:first-child{z-index:6;}
+    table.matriz tr.linha-hover td,table.matriz th.coluna-hover,table.matriz td.coluna-hover{background:inherit !important;}
+    table.matriz td.col-cargo.cel-hover{background:transparent !important;}
+    input[type=checkbox]{width:22px;height:22px;}
+    .cargo-row{flex-wrap:wrap;gap:8px;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">

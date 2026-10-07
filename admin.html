@@ -52,6 +52,20 @@
 
   .roles-legend{font-size:12px;color:var(--gray);margin-top:18px;line-height:1.8;}
   .roles-legend strong{color:var(--ink);}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .wrap{padding:18px 14px calc(84px + env(safe-area-inset-bottom,0px));}
+    header.top{padding-bottom:14px;margin-bottom:16px;}
+    .brand-text h1{font-size:19px;}
+    .panel{padding:16px;border-radius:12px;}
+    input,select,textarea{font-size:16px !important;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .modal-overlay{padding:12px;}
+    .modal{padding:18px;}
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    div[style*="grid-template-columns"]{grid-template-columns:1fr !important;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">

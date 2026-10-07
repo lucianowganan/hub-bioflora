@@ -52,6 +52,20 @@
   .empty-state{text-align:center;padding:24px;color:var(--gray);font-size:12.5px;}
   .aviso-config{background:#FBF1E0;color:#8A6512;border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:16px;}
   .progresso-envio{font-size:12.5px;color:var(--gray);margin-top:10px;}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .wrap{padding:18px 14px calc(84px + env(safe-area-inset-bottom,0px));}
+    header.top{padding-bottom:14px;margin-bottom:16px;}
+    .brand-text h1{font-size:19px;}
+    .panel{padding:16px;border-radius:12px;}
+    input,select,textarea{font-size:16px !important;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .modal-overlay{padding:12px;}
+    .modal{padding:18px;}
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .kpi-row{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">
