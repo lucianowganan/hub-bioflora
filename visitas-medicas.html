@@ -98,6 +98,31 @@
   .modal{background:#fff;border-radius:var(--radius);padding:24px;max-width:460px;width:100%;max-height:88vh;overflow:auto;}
   .modal h3{margin-bottom:14px;}
   .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .main{padding:18px 14px calc(84px + env(safe-area-inset-bottom,0px));}
+    .page-head{margin-bottom:16px;}
+    .page-head h1{font-size:20px;}
+    .page-head-actions{flex-wrap:wrap;}
+    .card{padding:16px;}
+    input,select,textarea{font-size:16px !important;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .modal-overlay{padding:12px;}
+    .modal{padding:18px;}
+    table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .tabs{overflow-x:auto;flex-wrap:nowrap;margin-bottom:16px;}
+    .tab-btn{white-space:nowrap;flex-shrink:0;}
+    .add-slot-form{flex-direction:column;align-items:stretch;}
+    .add-slot-form .field,.add-slot-form input,.add-slot-form select{width:100%;}
+    .cal-grid{gap:3px;}
+    .cal-day{min-height:46px;padding:3px;}
+    .cal-nav{flex-wrap:wrap;}
+    .view-toggle{flex-wrap:wrap;}
+    .row-actions{flex-wrap:wrap;}
+    .prescritor-row,.kit-row{flex-wrap:wrap;}
+    .slot-chip-row{gap:6px;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">

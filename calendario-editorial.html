@@ -87,6 +87,31 @@
   .aviso-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
   .aviso-row:last-child{border-bottom:none;}
   .aviso-data{font-family:var(--headfont);font-weight:700;color:var(--burgundy);font-size:11.5px;min-width:70px;}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .wrap{padding:18px 14px calc(84px + env(safe-area-inset-bottom,0px));}
+    header.top{padding-bottom:14px;margin-bottom:16px;}
+    .brand-text h1{font-size:19px;}
+    .panel{padding:16px;border-radius:12px;}
+    input,select,textarea{font-size:16px !important;}
+    .btn{min-height:42px;display:inline-flex;align-items:center;justify-content:center;}
+    .modal-overlay{padding:12px;}
+    .modal{padding:18px;}
+    .mes-nav{flex-wrap:wrap;gap:8px;}
+    .mes-nav .rotulo{min-width:0;flex:1 1 100%;order:10;text-align:center;}
+    .cal-grid{gap:3px;}
+    .cal-dia{min-height:54px;padding:4px 3px;border-radius:8px;}
+    .cal-weekday{font-size:9px;}
+    .cal-badge{font-size:0 !important;width:8px;height:8px;padding:0 !important;border-radius:50%;display:inline-block;}
+    .tabs{overflow-x:auto;flex-wrap:nowrap;}
+    .tab-btn{white-space:nowrap;flex-shrink:0;}
+    .quick-form{flex-direction:column;align-items:stretch;}
+    .quick-form input,.quick-form select,.quick-form textarea{width:100%;}
+    .kanban-board{scroll-snap-type:x mandatory;margin:0 -14px;padding:0 14px 12px;-webkit-overflow-scrolling:touch;}
+    .kanban-col{min-width:80vw;max-width:80vw;scroll-snap-align:center;}
+    .aviso-row{flex-wrap:wrap;gap:6px;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">
