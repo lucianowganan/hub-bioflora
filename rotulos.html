@@ -262,6 +262,7 @@ function renderCard(card){
   return `<div class="card">
     <div class="produto">${card.produto}</div>
     <div class="meta">${card.quantidade ? 'Qtd: '+card.quantidade+' · ' : ''}${card.solicitado_por ? 'Pedido por: '+card.solicitado_por : ''}</div>
+    ${card.criado_em ? `<div class="meta">Adicionado em ${new Date(card.criado_em).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'})}</div>` : ''}
     ${card.observacao ? `<div class="obs">"${card.observacao}"</div>` : ''}
     <div class="card-actions">${actions}</div>
   </div>`;
