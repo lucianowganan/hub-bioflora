@@ -232,6 +232,50 @@
   .rel-kpi .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray);font-weight:600;}
   .rel-kpi .value{font-family:var(--headfont);font-weight:600;font-size:21px;}
   .rel-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;}
+
+  /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
+  @media (max-width:720px){
+    .shell{flex-direction:column;min-height:0;}
+    .rh-nav{width:100%;padding:10px 14px;display:flex;gap:6px;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;-webkit-overflow-scrolling:touch;}
+    .rh-nav-brand,.rh-nav-sub,.rh-nav-group,.rh-nav-foot{display:none;}
+    .rh-nav-item{margin:0;flex-shrink:0;white-space:nowrap;padding:9px 14px;border-radius:30px;background:var(--paper);}
+    .rh-nav-item.active{background:var(--burgundy);}
+    .rh-nav-item svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+    .rh-main{padding:16px 14px calc(84px + env(safe-area-inset-bottom,0px));max-width:100%;}
+    .hero{padding:22px 20px;border-radius:18px;}
+    .hero h1{font-size:26px;}
+    .hero p{margin-bottom:16px;}
+    .hero-stats{gap:20px;flex-wrap:wrap;}
+    .hero-stats .n{font-size:24px;}
+    .toolbar-row{gap:10px;}
+    .search-box{max-width:100%;flex:1 1 100%;}
+    .btn{min-height:42px;}
+    input,select,textarea{font-size:16px !important;}
+    .colab-grid,.aval-grid{grid-template-columns:1fr;}
+    .modal-overlay{padding:12px !important;}
+    .modal{padding:20px;}
+    .form-grid{grid-template-columns:1fr;}
+    .form-grid > *{grid-column:auto !important;}
+    .modal-actions{flex-wrap:wrap;}
+    .upload-panel,.panel-white{padding:16px;}
+    .upload-zone{padding:20px;}
+    .ponto-kpi-row{grid-template-columns:repeat(2,1fr);gap:10px;}
+    .ponto-kpi{padding:14px;}
+    .ponto-kpi .value{font-size:21px;}
+    .grid-2,.rel-grid,.ferias-grid{grid-template-columns:1fr;}
+    .ponto-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .bar-name{width:96px;}
+    .period-select{flex-wrap:wrap;}
+    .solic-item{flex-wrap:wrap;}
+    .cal-ferias-day{min-height:46px;padding:3px;}
+    .cal-ferias-feriado-label{display:none;}
+    .status-row{grid-template-columns:1fr auto;gap:8px 12px;}
+    .status-row .status-bars{grid-column:1 / -1;order:3;}
+    .aval-toolbar{flex-wrap:nowrap;overflow-x:auto;}
+    .aval-filtro-btn{flex-shrink:0;white-space:nowrap;}
+    .rel-kpi-row{grid-template-columns:1fr;}
+    .ferias-form select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:10px;}
+  }
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">
@@ -244,18 +288,18 @@
     <h1 class="rh-nav-brand">Central de <span>RH</span></h1>
     <p class="rh-nav-sub">Farmácia Bioflora</p>
 
-    <div class="rh-nav-item" data-tab="dashboard" onclick="trocarAba('dashboard')">🏠 Dashboard</div>
+    <div class="rh-nav-item" data-tab="dashboard" onclick="trocarAba('dashboard')"><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-4px;margin-right:2px;" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 9.5V20h12V9.5"/></svg> Dashboard</div>
 
     <div class="rh-nav-group">Cadastro</div>
-    <div class="rh-nav-item" data-tab="colaboradores" onclick="trocarAba('colaboradores')">👥 Colaboradores</div>
+    <div class="rh-nav-item" data-tab="colaboradores" onclick="trocarAba('colaboradores')"><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-4px;margin-right:2px;" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2"/><circle cx="17" cy="9" r="2.3"/></svg> Colaboradores</div>
 
     <div class="rh-nav-group">Operacional</div>
-    <div class="rh-nav-item" data-tab="ponto" onclick="trocarAba('ponto')">⏱️ Ponto</div>
-    <div class="rh-nav-item" data-tab="ferias" onclick="trocarAba('ferias')">📅 Férias</div>
+    <div class="rh-nav-item" data-tab="ponto" onclick="trocarAba('ponto')"><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-4px;margin-right:2px;" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg> Ponto</div>
+    <div class="rh-nav-item" data-tab="ferias" onclick="trocarAba('ferias')"><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-4px;margin-right:2px;" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v3M16 3v3"/></svg> Férias</div>
 
     <div class="rh-nav-group">Histórico</div>
-    <div class="rh-nav-item" data-tab="avaliacoes" onclick="trocarAba('avaliacoes')">📊 Avaliações</div>
-    <div class="rh-nav-item" data-tab="relatorios" onclick="trocarAba('relatorios')">📈 Relatórios</div>
+    <div class="rh-nav-item" data-tab="avaliacoes" onclick="trocarAba('avaliacoes')"><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-4px;margin-right:2px;" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20V10M11 20V4M17.5 20v-7"/></svg> Avaliações</div>
+    <div class="rh-nav-item" data-tab="relatorios" onclick="trocarAba('relatorios')"><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-4px;margin-right:2px;" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5 9.5 11l4 4L20 7.5"/></svg> Relatórios</div>
 
     <div class="rh-nav-foot">
       <a href="index.html">← Voltar ao Hub</a>
