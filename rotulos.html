@@ -56,7 +56,7 @@
   .form-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
   .form-row input, .form-row select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:7px;}
   .form-row input.produto{flex:2;min-width:200px;}
-  .form-row input.qtd{width:90px;}
+  .form-row input.qtd{width:130px;}
   .form-row input.solicitante{flex:1;min-width:150px;}
   .form-row input.obs{flex:1;min-width:200px;}
 
@@ -161,9 +161,9 @@
   <div class="add-form" id="addForm">
     <h2>Adicionar rótulo</h2>
     <div class="form-row">
-      <input class="produto" id="fProduto" placeholder="Nome do produto/rótulo" />
-      <input class="qtd" id="fQtd" type="number" placeholder="Qtd" />
-      <input class="solicitante" id="fSolicitante" placeholder="Solicitado por" />
+      <input class="produto" id="fProduto" placeholder="Nome do produto/rótulo *" />
+      <input class="qtd" id="fQtd" placeholder="Tamanho *" />
+      <input class="solicitante" id="fSolicitante" placeholder="Solicitado por *" />
     </div>
     <div class="form-row">
       <input class="obs" id="fObs" placeholder="Observação (opcional)" />
@@ -205,6 +205,12 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY) {
 requireRole(['chefia','recepcao','conferencia','atendente']).catch(()=>{});
 
 
+const dataHoraRotulo = (iso) => {
+  const d = new Date(iso), tz = { timeZone:'America/Sao_Paulo' };
+  return d.toLocaleDateString('pt-BR', tz) + ' às ' + d.toLocaleTimeString('pt-BR', { ...tz, hour:'2-digit', minute:'2-digit' });
+};
+// só mostra "Movido em" se o cartão mudou de coluna depois de criado (mais de 1 min de diferença)
+const movidoDepois = (c) => c.atualizado_em && c.criado_em && (new Date(c.atualizado_em) - new Date(c.criado_em)) > 60000;
 const STATUS_LABELS = {a_comprar:'A comprar', pedido:'Pedido', chegou:'Chegou'};
 const STATUS_ORDER = ['a_comprar','pedido','chegou'];
 
@@ -217,14 +223,16 @@ document.getElementById('cancelForm').addEventListener('click', ()=>{
 
 document.getElementById('saveCard').addEventListener('click', async ()=>{
   const produto = document.getElementById('fProduto').value.trim();
+  const tamanho = document.getElementById('fQtd').value.trim();
+  const solicitante = document.getElementById('fSolicitante').value.trim();
   if(!produto){ alert('Informe o nome do produto/rótulo.'); return; }
-  const qtd = document.getElementById('fQtd').value || null;
-  const solicitante = document.getElementById('fSolicitante').value.trim() || null;
+  if(!tamanho){ alert('Informe o tamanho do rótulo.'); return; }
+  if(!solicitante){ alert('Informe quem está solicitando.'); return; }
   const obs = document.getElementById('fObs').value.trim() || null;
 
   if(!supa){ alert('Supabase não configurado.'); return; }
   const { error } = await supa.from('rotulos_kanban').insert({
-    produto, quantidade: qtd, solicitado_por: solicitante, observacao: obs, status: 'a_comprar'
+    produto, tamanho, solicitado_por: solicitante, observacao: obs, status: 'a_comprar'
   });
   if(error){ alert('Erro ao salvar: '+error.message); return; }
 
@@ -261,8 +269,9 @@ function renderCard(card){
 
   return `<div class="card">
     <div class="produto">${card.produto}</div>
-    <div class="meta">${card.quantidade ? 'Qtd: '+card.quantidade+' · ' : ''}${card.solicitado_por ? 'Pedido por: '+card.solicitado_por : ''}</div>
-    ${card.criado_em ? `<div class="meta">Adicionado em ${new Date(card.criado_em).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'})}</div>` : ''}
+    <div class="meta">${card.tamanho ? 'Tamanho: '+card.tamanho+' · ' : (card.quantidade ? 'Qtd: '+card.quantidade+' · ' : '')}${card.solicitado_por ? 'Pedido por: '+card.solicitado_por : ''}</div>
+    ${card.criado_em ? `<div class="meta">Adicionado em ${dataHoraRotulo(card.criado_em)}</div>` : ''}
+    ${movidoDepois(card) ? `<div class="meta">Movido em ${dataHoraRotulo(card.atualizado_em)}</div>` : ''}
     ${card.observacao ? `<div class="obs">"${card.observacao}"</div>` : ''}
     <div class="card-actions">${actions}</div>
   </div>`;
