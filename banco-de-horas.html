@@ -268,13 +268,23 @@ function parseWorkbook(wb){
     if(!nome) return;
     const cargo = get('B3');
     const setor = get('B4') || null;
-    const saldoInicial = get('B8');
-    const ht = get('B45');
-    const fa = get('B48');
-    const totalTrabalhar = get('B50');
-    const bh = get('B53');
+    // Procura cada total pelo texto da coluna A (folhas curtas, de quem entrou no meio do mês, têm as linhas em outro lugar)
+    const achar = (inicio) => {
+      for(let r=1; r<=120; r++){
+        const a = get('A'+r);
+        if(a!==undefined && String(a).trim().toLowerCase().startsWith(inicio)) return get('B'+r);
+      }
+      return undefined;
+    };
+    const saldoInicial = achar('saldo inicial');
+    const ht = achar('hora trabalhada diurna');
+    const fa = achar('falta');
+    const totalTrabalhar = achar('total a trabalhar');
+    const bh = achar('banco de horas');
     const saldoIniMin = toMin(saldoInicial);
-    const bhMin = toMin(bh);
+    // O "Banco de Horas (BH)" da folha já é o saldo ACUMULADO (saldo inicial + movimento do mês): não somar de novo.
+    const saldoFinalMin = toMin(bh);
+    const bhMin = saldoFinalMin - saldoIniMin;
 
     const sched = {};
     for(let r=3;r<=8;r++){
@@ -307,7 +317,7 @@ function parseWorkbook(wb){
       nome, cargo, setor,
       saldo_inicial_min: saldoIniMin,
       variacao_mes_min: bhMin,
-      saldo_final_min: saldoIniMin+bhMin,
+      saldo_final_min: saldoFinalMin,
       horas_trabalhadas_min: ht ? hmToMin(ht.toString().padStart(5,'0')) || parseInt(ht) : null,
       dias_com_ponto: diasComPonto,
       atrasos_leve: leve, atrasos_grave: grave,
