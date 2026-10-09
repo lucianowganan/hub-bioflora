@@ -306,6 +306,8 @@ Decisão: **sem app nativo/loja**. Caminho: responsivo por módulo + **PWA** (in
 
 **Fluxo de teste ativo:** "Teste: comentário 🔥 → material" (conta LN, só no post 18122364154932417): resposta pública (3 variações) → DM privada com botão "Quero" → link.
 
+**Builder (etapa 2, `instagram.html`, só chefia, permissão `modulo.instagram`, migração 87):** abas Fluxos (canvas de nós + checagem + simulador) e Conexões (testar token). Salva em `ig_fluxos` (debounce 700 ms; `.select('id')` para pegar RLS silenciosa). O simulador usa o mesmo `engine.js` (importado como módulo de `supabase/functions/ig-webhook/engine.js`). Ativar um fluxo pede confirmação e é bloqueado se a checagem tiver erro. Seletor de posts/stories vem da Edge Function **`ig-api`** (verify_jwt ligado, exige `is_chefia()`; lê `/me/media` e `/me/stories` com o token do `token_env` da conta); se falhar, cola-se o ID. Só desktop (celular mostra aviso). O arquivo foi gerado a partir do protótipo `flow-builder-instagram-v2.html` do Luciano por script de patches (não está no repositório).
+
 **Próximas etapas combinadas:** (2) builder no módulo "Instagram" do Hub (aba Fluxos com canvas e simulador usando o mesmo `engine.js`; aba Conexões); (3) renovação do token e tela Conexões; (4) Contatos e DMs; (5) trocar LN por Bioflora (aceitar convite, token, decidir o ManyChat). Fora do semanal da chefia, vem depois. Pipeline e dashboard de insights são fases posteriores.
 
 **Decisões abertas:** clique em botão antigo hoje é ignorado (retomar?); nome real do contato (a Meta só manda o @ nas DMs; dá para buscar por chamada extra); LN/FourLab terão conta própria no mesmo motor.
