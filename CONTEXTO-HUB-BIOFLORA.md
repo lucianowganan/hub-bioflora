@@ -280,3 +280,32 @@ Decisão: **sem app nativo/loja**. Caminho: responsivo por módulo + **PWA** (in
 - Sessão longa reenvia todo o histórico a cada resposta; imagens e arquivos grandes pesam. **Abrir sessão nova por tarefa** (ex.: "Fase 4: rh.html") é o maior ganho.
 - Plugins do Luciano (instalados localmente, escopo usuário): **Caveman** (respostas curtas, `/caveman lite|full|ultra`), **Ponytail** (código mínimo, `/ponytail ...`), **claude-code-setup** (skill `claude-automation-recommender`). Ativam sozinhos em sessão **local** nova; **não** aparecem em sessão de nuvem. CodeBurn (`codeburn today|month`) mede gasto; RTK não instalou.
 - Hábitos que economizam: poucos prints (medir por código/DOM), ler só trechos dos arquivos grandes, pedidos agrupados, testes com stub em vez de reescrever.
+
+## 15. Automação de Instagram (estilo ManyChat) — estado em 09/10/2026
+
+**Objetivo:** app interno, só Instagram, via API oficial da Meta (login do Instagram, sem Página do Facebook). Primeiro Bioflora; depois LN Soluções e FourLab. Chefia é quem acessa o módulo.
+
+**Meta (app "Bioflora Automação", id 2284521165632236, publicado em acesso Padrão):**
+- Permissões: `instagram_business_basic`, `_manage_comments`, `_manage_messages`, `_manage_insights` (+ `_content_publish`, sem uso). Webhooks assinados: comments, live_comments, message_edit, message_reactions, messages, messaging_postbacks, messaging_referral, messaging_seen.
+- Publicar o app foi necessário para os webhooks reais chegarem (o botão "Teste" da Meta funciona antes, o tráfego real não). Exigiu URLs públicas: `politica-de-privacidade.html`, `termos-de-servico.html`, `exclusao-de-dados.html` (sem login, na raiz do repositório).
+- Convite de testador só aparece na **web** (instagram.com/accounts/manage_access), não no app do celular.
+- Contas hoje conectadas: `ln.solucoesempresariais` (id 17841432304278909, conta de teste). **Bioflora ainda não** (precisa de alguém com o login aceitar convite de testador e gerar token) e o **ManyChat está ativo** nela: decidir a virada para não duplicar mensagens.
+- Confirmado em teste real: comentário chega em segundos; resposta pública (`/{comment}/replies`) e **resposta privada com botão** (`/me/messages` com `recipient.comment_id`, template button/postback) funcionam; clique chega por `messaging_postbacks`; link enviado na janela de 24h. Funciona para pessoa **sem função no app**.
+- Eco (`is_echo`) chega pelo campo `messages`, sem nada que diferencie bot de humano: o servidor compara o `mid` com os `message_id` guardados em `ig_envios` (após 3 s); se não for nosso, pausa o contato 30 min. **Só testado em simulação.**
+- Limites vistos na documentação (fonte secundária, não confirmados na prática): 750 respostas privadas/h; resposta privada = 1 mensagem por comentário, até 7 dias; tag de agente humano sujeita a revisão (não usar).
+
+**Segredos (nunca no chat nem no repositório):** `IG_APP_SECRET`, `IG_VERIFY_TOKEN`, `IG_TOKEN_LN` (token da conta LN; vence em ~60 dias, ainda sem renovação automática) em Edge Functions → Secrets. Cada conta aponta o nome do seu segredo em `ig_contas.token_env`.
+
+**Banco (migrações 84, 85, 86):** `ig_contas`, `ig_tokens` (reservada, sem uso ainda), `ig_eventos` (webhook bruto), `ig_disparos` (trava de 1 disparo por pessoa por post), `ig_envios` (cada chamada à Meta e a resposta), `ig_fluxos` (nodes/edges em JSON), `ig_contatos`, `ig_execucoes`, `ig_config` (segredo do relógio). RLS ligado; chefia lê tudo e edita `ig_fluxos`; escrita dos demais só pelo servidor (service role). **Cuidado:** `delete` direto pelo MCP dá timeout; usar `with d as (delete ... returning 1) select count(*) from d`.
+
+**Código (`supabase/functions/ig-webhook/`):**
+- `engine.js`: motor puro (sem rede/banco/DOM), mesmo arquivo para servidor e para o futuro simulador do builder. Nós: gatilho (comentário, DM, story, padrão), mensagem (texto, imagem, PDF, áudio, vídeo, cartão, botões), coletar resposta, condição, randomizador, atraso, ações (tag/campo/soma), iniciar outro fluxo, humano, fim, nota. Regras: janela 24h, resposta privada única, 1 disparo por post, opt-out ("parar/sair...") e opt-in ("começar"), pausa por atendente.
+- `index.ts`: Edge Function `ig-webhook` (verify_jwt desligado, segurança = assinatura HMAC). Carrega fluxos/contato/execuções, roda o motor e executa os efeitos. Rota `POST ?acao=tick` (cabeçalho `x-worker-secret`, valor em `ig_config`) processa lembretes/esperas/atrasos; **pg_cron job `ig-tick` roda a cada minuto** via pg_net.
+- Deploy: pelo MCP, enviando `index.ts` **e** `engine.js` juntos. Atenção para colar sem alterar (uma versão publicada tem `ctx.contato ?? ctx.contact` em vez de `ctx.contact` num ponto; inofensivo, sincronizar no próximo deploy).
+- Testes locais: scripts em scratchpad usando Node (`--experimental-strip-types`) com banco simulado; 31 verificações do motor.
+
+**Fluxo de teste ativo:** "Teste: comentário 🔥 → material" (conta LN, só no post 18122364154932417): resposta pública (3 variações) → DM privada com botão "Quero" → link.
+
+**Próximas etapas combinadas:** (2) builder no módulo "Instagram" do Hub (aba Fluxos com canvas e simulador usando o mesmo `engine.js`; aba Conexões); (3) renovação do token e tela Conexões; (4) Contatos e DMs; (5) trocar LN por Bioflora (aceitar convite, token, decidir o ManyChat). Fora do semanal da chefia, vem depois. Pipeline e dashboard de insights são fases posteriores.
+
+**Decisões abertas:** clique em botão antigo hoje é ignorado (retomar?); nome real do contato (a Meta só manda o @ nas DMs; dá para buscar por chamada extra); LN/FourLab terão conta própria no mesmo motor.

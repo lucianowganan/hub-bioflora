@@ -198,9 +198,25 @@ async function tratarComentario(conta: any, v: any) {
   await executarEfeitos(conta, ctx.contact, ctx.effects);
 }
 
+// Eco: a Meta avisa de toda mensagem enviada PELA conta, inclusive as do próprio bot. O eco não traz nada que
+// diferencie, então comparamos o id da mensagem com os que o bot enviou (guardados em ig_envios).
+// O que não for do bot é um atendente respondendo pelo app: pausamos a automação deste contato.
+async function tratarEco(conta: any, m: any) {
+  const alvo = String(m?.recipient?.id ?? ''), mid = String(m?.message?.mid ?? '');
+  if (!alvo || !mid || alvo === conta.ig_user_id) return;
+  await new Promise((r) => setTimeout(r, 3000));   // dá tempo de o envio do bot ser registrado
+  const r = await db('GET', `ig_envios?resposta->>message_id=eq.${encodeURIComponent(mid)}&select=id&limit=1`);
+  if (r === null || r.length) return;               // erro de leitura (não pausa por engano) ou foi o próprio bot
+  const ctx = await carregarContexto(conta, alvo);
+  if (!ctx) return;
+  E.onAgentEcho(ctx);
+  await salvarContexto(conta, ctx);
+}
+
 async function tratarMensagem(conta: any, m: any) {
   const contatoIg = String(m?.sender?.id ?? '');
-  if (!contatoIg || contatoIg === conta.ig_user_id) return;
+  if (contatoIg === conta.ig_user_id) { if (m?.message?.is_echo) await tratarEco(conta, m); return; }
+  if (!contatoIg) return;
   if (m?.message?.is_echo) return;
   if (String(m?.recipient?.id ?? '') !== conta.ig_user_id) return;
 
