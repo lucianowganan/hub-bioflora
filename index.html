@@ -369,6 +369,7 @@ const SIDE_ICONES = {
   puzzle: '<path d="M9 4.5h3.3a1.6 1.6 0 0 1 1.6 1.9 1.6 1.6 0 0 0 1.9 1.9h1.7a1.5 1.5 0 0 1 1.5 1.5V13a1.6 1.6 0 0 0-1.9-1.6 1.6 1.6 0 0 0 0 3.2A1.6 1.6 0 0 1 19 16.2v2.3a1.5 1.5 0 0 1-1.5 1.5h-2.3a1.6 1.6 0 0 0 1.6-1.9 1.6 1.6 0 0 0-3.2 0 1.6 1.6 0 0 0 1.6 1.9H5.5A1.5 1.5 0 0 1 4 18.5v-2.3a1.6 1.6 0 0 1 1.9-1.6 1.6 1.6 0 0 0 0-3.2A1.6 1.6 0 0 1 4 9.8V7.5A1.5 1.5 0 0 1 5.5 6h2.3A1.6 1.6 0 0 1 9 4.5Z"/>',
   tendencia: '<path d="M4 16.5 9.5 11l3.5 3.5L20 7"/><path d="M15 7h5v5"/>',
   chat: '<path d="M4 5.5h16v10.5H9.2L5 20V16H4V5.5Z"/><path d="M7.5 9h9M7.5 12.3h6"/>',
+  instagram: '<rect x="4" y="4" width="16" height="16" rx="4.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="16.8" cy="7.2" r="0.9" fill="currentColor"/>',
   robo: '<rect x="5" y="9" width="14" height="10.5" rx="2.5"/><path d="M12 5.5v3.5"/><circle cx="12" cy="4" r="1.2"/><circle cx="9" cy="14" r="1.3"/><circle cx="15" cy="14" r="1.3"/><path d="M3.3 12v4M20.7 12v4"/>',
   vendas: '<path d="M5 5h1.8l1 11.3A2 2 0 0 0 9.8 18h7.4a2 2 0 0 0 2-1.7L20.3 9H7.1"/><circle cx="10" cy="21" r="1.3"/><circle cx="17.5" cy="21" r="1.3"/>',
   email: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4.5 7 12 12.5 19.5 7"/>',
@@ -403,6 +404,7 @@ const SIDE_MODULOS = [
   { href:'wanessia.html', icone:'robo', label:'Wanessia', perm:'modulo.wanessia' },
   { href:'vendas-yampi.html', icone:'vendas', label:'Vendas (Yampi)', perm:'modulo.vendas' },
   { href:'email-marketing.html', icone:'email', label:'Email Marketing', perm:'modulo.email_marketing' },
+  { href:'instagram.html', icone:'instagram', label:'Instagram', perm:'modulo.instagram' },
   { href:'embalagens.html', icone:'caixa', label:'Controle de Embalagens', perm:'modulo.embalagens' },
   { href:'admin.html', icone:'escudo', label:'Administração', perm:'modulo.admin' },
   { href:'cargos.html', icone:'escudoCheck', label:'Cargos & Permissões', perm:'modulo.admin' },
@@ -766,6 +768,14 @@ const MODULOS_HOME = [
   "grupo": "Comercial e marketing"
  },
  {
+  "href": "instagram.html",
+  "perm": "modulo.instagram",
+  "titulo": "Instagram",
+  "desc": "Respostas automáticas a comentários e mensagens, com fluxos e simulador.",
+  "icone": "instagram",
+  "grupo": "Comercial e marketing"
+ },
+ {
   "href": "embalagens.html",
   "perm": "modulo.embalagens",
   "titulo": "Controle de Embalagens",
@@ -1116,7 +1126,7 @@ async function renderWidgets(papel, perfil){
 // ---------- Módulos por área, com busca ----------
 const ORDEM_MODULOS_HOME = ['producao','controle-producao','formulas-complexas','reaproveitamento','rotulos','embalagens',
   'erros','inclusoes','meus-erros','rh','tarefas','calendario-interno','chat',
-  'cliente-fiel','vendas-yampi','email-marketing','calendario-editorial','visitas-medicas','wanessia','admin','cargos'];
+  'cliente-fiel','vendas-yampi','email-marketing','instagram','calendario-editorial','visitas-medicas','wanessia','admin','cargos'];
 function renderModulosHome(temPerm){
   const alvo = document.getElementById('modules');
   const pos = (m) => { const i = ORDEM_MODULOS_HOME.indexOf(m.href.replace('.html','')); return i < 0 ? 99 : i; };
