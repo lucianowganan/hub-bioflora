@@ -47,6 +47,11 @@
   .cal-badge{font-size:9.5px;padding:2px 5px;border-radius:5px;}
   .cal-badge.post{background:var(--info-tint);color:var(--info);}
   .cal-badge.story{background:var(--good-tint);color:var(--good);}
+  .modo-import{display:flex;flex-direction:column;gap:8px;margin:0 0 14px;}
+  .modo-import label{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;font-size:13px;line-height:1.5;}
+  .modo-import label:has(input:checked){border-color:var(--burgundy);background:var(--burgundy-tint);}
+  .modo-import input{margin-top:3px;}
+  .btn-excluir{color:#C23B3B;}
 
   .detalhe-card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px;}
   .detalhe-card h4{font-family:var(--headfont);font-size:13px;margin:0 0 8px;}
@@ -140,7 +145,13 @@
 
   <div class="panel" id="painelImportar" style="display:none">
     <h2>Importar planilha</h2>
-    <p class="desc">Sobe o .xlsx do calendário (abas "Calendário Posts" e "Calendário Stories") pra atualizar tudo de uma vez. Isso <strong>substitui</strong> os dias que vierem na planilha — não precisa apagar nada na mão antes. Ajustes simples e pontuais não precisam disso — dá pra editar direto num card, veja abaixo.</p>
+    <p class="desc">Sobe o .xlsx do calendário (abas "Calendário Posts" e "Calendário Stories"). Escolha o que fazer com o que já está no calendário. Ajustes pontuais não precisam disso: dá pra editar ou excluir direto num card, no detalhe do dia.</p>
+    <div class="modo-import">
+      <label><input type="radio" name="modoImport" value="adicionar" checked>
+        <span><strong>Adicionar itens</strong>: mantém tudo o que já está no calendário e acrescenta os itens da planilha. O que já existir igual é ignorado, então subir a mesma planilha duas vezes não duplica.</span></label>
+      <label><input type="radio" name="modoImport" value="substituir">
+        <span><strong>Substituir tudo</strong>: apaga todos os posts e stories de hoje e deixa só o que vier na planilha. Antes de apagar, o Hub baixa uma cópia do calendário atual.</span></label>
+    </div>
     <input type="file" id="arquivoCalendario" accept=".xlsx">
     <button class="btn" onclick="importarPlanilha()" style="margin-left:10px;">Importar</button>
     <div class="status-msg" id="statusImportacao"></div>
@@ -321,7 +332,7 @@ function renderDetalhe(dataStr){
     html += `<div class="detalhe-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <h4>📸 Post ${p.pilar_editorial ? '— '+p.pilar_editorial : ''}</h4>
-        ${podeEditar ? `<button class="btn secondary small" onclick="abrirEdicaoPost('${p.id}')">Editar</button>` : ''}
+        ${podeEditar ? `<div style="display:flex;gap:8px;"><button class="btn secondary small" onclick="abrirEdicaoPost('${p.id}')">Editar</button><button class="btn secondary small btn-excluir" onclick="excluirItemCalendario('post','${p.id}')">Excluir</button></div>` : ''}
       </div>
       ${p.ideia_pauta ? `<div class="detalhe-linha"><strong>Pauta:</strong> ${p.ideia_pauta}</div>` : ''}
       ${p.formato ? `<div class="detalhe-linha"><strong>Formato:</strong> ${p.formato}</div>` : ''}
@@ -339,7 +350,7 @@ function renderDetalhe(dataStr){
         <h4>💬 Stories</h4>
         <div style="display:flex;gap:8px;">
           <button class="btn ${s.feito ? '' : 'secondary'} small" onclick="alternarStoryFeito('${s.id}', ${!s.feito})">${s.feito ? '✅ Feito' : 'Marcar como feito'}</button>
-          ${podeEditar ? `<button class="btn secondary small" onclick="abrirEdicaoStory('${s.id}')">Editar</button>` : ''}
+          ${podeEditar ? `<button class="btn secondary small" onclick="abrirEdicaoStory('${s.id}')">Editar</button><button class="btn secondary small btn-excluir" onclick="excluirItemCalendario('story','${s.id}')">Excluir</button>` : ''}
         </div>
       </div>
       ${s.produto_pressao ? `<div class="detalhe-linha"><strong>Produto/foco:</strong> ${s.produto_pressao}</div>` : ''}
@@ -414,10 +425,56 @@ function extrairLinhasDaPlanilha(sheet, primeiraColuna, mapaColunas){
   return resultado;
 }
 
+// Colunas da planilha (a mesma ordem serve para importar e para gerar o backup).
+const MAPA_POSTS = {
+  data: 'Data', dia_semana: 'Dia', pilar_editorial: 'Pilar Editorial', relacao_produto: 'Relação com Produto',
+  campanha_vinculada: 'Campanha vinculada', produto_relacionado: 'Produto relacionado', objetivo: 'Objetivo',
+  formato: 'Formato', ideia_pauta: 'Ideia / Pauta', cta: 'CTA', tipo: 'Tipo',
+  status_producao: 'Status produção', observacoes: 'Observações'
+};
+const MAPA_STORIES = {
+  data: 'Data', dia_semana: 'Dia', produto_pressao: 'Produto / Pressão comercial', bastidor_rotina: 'Bastidor / Rotina',
+  interacao: 'Interação', faq_objecao: 'FAQ / Objeção', oferta_cta: 'Oferta / CTA',
+  prova_autoridade: 'Prova / Autoridade', responsavel: 'Responsável', observacoes: 'Observações'
+};
+
+// Lê todas as linhas da tabela (o Supabase devolve no máximo 1000 por pedido).
+async function lerTudoCE(tabela){
+  let tudo = [], de = 0;
+  const passo = 1000;
+  for(;;){
+    const { data, error } = await supa.from(tabela).select('*').order('id').range(de, de + passo - 1);
+    if(error) throw new Error(error.message);
+    tudo = tudo.concat(data || []);
+    if(!data || data.length < passo) break;
+    de += passo;
+  }
+  return tudo;
+}
+
+// Identifica um item pelo conteúdo. Status do quadro e dia da semana ficam de fora: mudam depois da importação.
+const normCE = v => String(v == null ? '' : v).trim().toLowerCase();
+function assinaturaCE(item, mapa){
+  return item.data + '|' + Object.keys(mapa).filter(c => c !== 'data' && c !== 'dia_semana' && c !== 'status_producao').map(c => normCE(item[c])).join('|');
+}
+
+// Baixa uma planilha com o calendário atual, no mesmo formato que a importação lê.
+function baixarBackupCalendario(posts, stories){
+  const wb = XLSX.utils.book_new();
+  const aba = (itens, mapa) => {
+    const cols = Object.keys(mapa);
+    return XLSX.utils.aoa_to_sheet([cols.map(c => mapa[c])].concat(itens.map(it => cols.map(c => it[c] == null ? '' : it[c]))));
+  };
+  XLSX.utils.book_append_sheet(wb, aba(posts, MAPA_POSTS), 'Calendário Posts');
+  XLSX.utils.book_append_sheet(wb, aba(stories, MAPA_STORIES), 'Calendário Stories');
+  XLSX.writeFile(wb, 'Backup_Calendario_Editorial_' + localDateStrCE(new Date()) + '.xlsx');
+}
+
 async function importarPlanilha(){
   const arquivo = document.getElementById('arquivoCalendario').files[0];
   const status = document.getElementById('statusImportacao');
-  if(!arquivo){ status.textContent = 'Escolhe o arquivo primeiro.'; status.style.color = 'var(--burgundy)'; return; }
+  const erroMsg = (t) => { status.textContent = t; status.style.color = 'var(--burgundy)'; };
+  if(!arquivo){ erroMsg('Escolhe o arquivo primeiro.'); return; }
 
   status.textContent = 'Lendo planilha...'; status.style.color = 'var(--gray)';
 
@@ -426,57 +483,101 @@ async function importarPlanilha(){
 
   const abaPosts = workbook.Sheets['Calendário Posts'];
   const abaStories = workbook.Sheets['Calendário Stories'];
-  if(!abaPosts && !abaStories){
-    status.textContent = 'Não encontrei as abas "Calendário Posts" nem "Calendário Stories" nesse arquivo.';
-    status.style.color = 'var(--burgundy)';
-    return;
-  }
+  if(!abaPosts && !abaStories){ erroMsg('Não encontrei as abas "Calendário Posts" nem "Calendário Stories" nesse arquivo.'); return; }
 
-  const posts = abaPosts ? extrairLinhasDaPlanilha(abaPosts, 'Data', {
-    data: 'Data', dia_semana: 'Dia', pilar_editorial: 'Pilar Editorial', relacao_produto: 'Relação com Produto',
-    campanha_vinculada: 'Campanha vinculada', produto_relacionado: 'Produto relacionado', objetivo: 'Objetivo',
-    formato: 'Formato', ideia_pauta: 'Ideia / Pauta', cta: 'CTA', tipo: 'Tipo',
-    status_producao: 'Status produção', observacoes: 'Observações'
-  }) : [];
+  const posts = abaPosts ? extrairLinhasDaPlanilha(abaPosts, 'Data', MAPA_POSTS) : [];
+  const stories = abaStories ? extrairLinhasDaPlanilha(abaStories, 'Data', MAPA_STORIES) : [];
+  if(!posts.length && !stories.length){ erroMsg('Não encontrei nenhuma linha com data válida nas abas do calendário.'); return; }
 
-  const stories = abaStories ? extrairLinhasDaPlanilha(abaStories, 'Data', {
-    data: 'Data', dia_semana: 'Dia', produto_pressao: 'Produto / Pressão comercial', bastidor_rotina: 'Bastidor / Rotina',
-    interacao: 'Interação', faq_objecao: 'FAQ / Objeção', oferta_cta: 'Oferta / CTA',
-    prova_autoridade: 'Prova / Autoridade', responsavel: 'Responsável', observacoes: 'Observações'
-  }) : [];
-
-  if(!posts.length && !stories.length){
-    status.textContent = 'Não encontrei nenhuma linha com data válida nas abas do calendário.';
-    status.style.color = 'var(--burgundy)';
-    return;
-  }
-
-  const datasPosts = [...new Set(posts.map(p=>p.data))];
-  const datasStories = [...new Set(stories.map(s=>s.data))];
-  if(!confirm(`Isso vai substituir:\n- ${posts.length} post(s) em ${datasPosts.length} dia(s)\n- ${stories.length} stories em ${datasStories.length} dia(s)\n\nConfirma a importação?`)) return;
-
-  status.textContent = 'Importando...'; status.style.color = 'var(--gray)';
+  const modo = (document.querySelector('input[name="modoImport"]:checked') || {}).value || 'adicionar';
   const { data: { session } } = await supa.auth.getSession();
+  const marcar = lista => lista.map(x => ({ ...x, importado_por: session.user.id }));
 
-  if(datasPosts.length) await supa.from('calendario_posts').delete().in('data', datasPosts);
-  if(posts.length){
-    const { error } = await supa.from('calendario_posts').insert(posts.map(p => ({ ...p, importado_por: session.user.id })));
-    if(error){ status.textContent = 'Erro ao importar posts: '+error.message; status.style.color = 'var(--burgundy)'; return; }
+  let atuaisPosts, atuaisStories;
+  try{
+    atuaisPosts = await lerTudoCE('calendario_posts');
+    atuaisStories = await lerTudoCE('calendario_stories');
+  }catch(e){ erroMsg('Não consegui ler o calendário atual: ' + e.message); return; }
+
+  // ---------- ADICIONAR ----------
+  if(modo === 'adicionar'){
+    const jaPosts = new Set(atuaisPosts.map(p => assinaturaCE(p, MAPA_POSTS)));
+    const jaStories = new Set(atuaisStories.map(s => assinaturaCE(s, MAPA_STORIES)));
+    const novosPosts = posts.filter(p => !jaPosts.has(assinaturaCE(p, MAPA_POSTS)));
+    const novosStories = stories.filter(s => !jaStories.has(assinaturaCE(s, MAPA_STORIES)));
+    const ignP = posts.length - novosPosts.length, ignS = stories.length - novosStories.length;
+    if(!novosPosts.length && !novosStories.length){ erroMsg('Nada novo: todos os itens dessa planilha já estão no calendário.'); return; }
+    const aviso = (ignP || ignS) ? `\n\n${ignP} post(s) e ${ignS} stories já existem iguais e serão ignorados.` : '';
+    if(!confirm(`Adicionar ao calendário:\n- ${novosPosts.length} post(s)\n- ${novosStories.length} stories${aviso}\n\nNada do que já está no calendário será apagado. Confirma?`)) return;
+
+    status.textContent = 'Adicionando...'; status.style.color = 'var(--gray)';
+    if(novosPosts.length){
+      const { error } = await supa.from('calendario_posts').insert(marcar(novosPosts));
+      if(error){ erroMsg('Erro ao adicionar posts: ' + error.message); return; }
+    }
+    if(novosStories.length){
+      const { error } = await supa.from('calendario_stories').insert(marcar(novosStories));
+      if(error){ erroMsg('Erro ao adicionar stories (os posts já foram adicionados): ' + error.message); return; }
+    }
+    status.textContent = `Adicionado! ${novosPosts.length} post(s) e ${novosStories.length} stories novos` + ((ignP || ignS) ? ` (${ignP + ignS} já existiam e foram ignorados).` : '.');
+    status.style.color = 'var(--good)';
   }
 
-  if(datasStories.length) await supa.from('calendario_stories').delete().in('data', datasStories);
-  if(stories.length){
-    const { error } = await supa.from('calendario_stories').insert(stories.map(s => ({ ...s, importado_por: session.user.id })));
-    if(error){ status.textContent = 'Erro ao importar stories: '+error.message; status.style.color = 'var(--burgundy)'; return; }
+  // ---------- SUBSTITUIR TUDO ----------
+  else{
+    if(!confirm(`SUBSTITUIR TUDO\n\nIsso APAGA os ${atuaisPosts.length} post(s) e ${atuaisStories.length} stories que estão hoje no calendário (com o status do quadro e as marcações de "feito") e coloca no lugar os ${posts.length} post(s) e ${stories.length} stories da planilha.\n\nAntes de apagar, o Hub baixa uma cópia do calendário atual.\n\nConfirma?`)) return;
+
+    status.textContent = 'Baixando a cópia e substituindo...'; status.style.color = 'var(--gray)';
+    try{ baixarBackupCalendario(atuaisPosts, atuaisStories); }
+    catch(e){ erroMsg('Não consegui gerar a cópia do calendário atual, então não apaguei nada: ' + e.message); return; }
+
+    const apagarTudo = async (tabela, esperado) => {
+      if(!esperado) return;
+      const { data, error } = await supa.from(tabela).delete().not('id', 'is', null).select('id');
+      if(error) throw new Error(error.message);
+      if(!data || data.length < esperado) throw new Error(`só consegui apagar ${data ? data.length : 0} de ${esperado} em ${tabela} (sem permissão?)`);
+    };
+    try{
+      await apagarTudo('calendario_posts', atuaisPosts.length);
+      await apagarTudo('calendario_stories', atuaisStories.length);
+      if(posts.length){
+        const { error } = await supa.from('calendario_posts').insert(marcar(posts));
+        if(error) throw new Error('posts: ' + error.message);
+      }
+      if(stories.length){
+        const { error } = await supa.from('calendario_stories').insert(marcar(stories));
+        if(error) throw new Error('stories: ' + error.message);
+      }
+    }catch(e){
+      // Tenta devolver o que existia antes (a cópia em planilha também foi baixada).
+      let restaurou = true;
+      if(atuaisPosts.length){ const r = await supa.from('calendario_posts').upsert(atuaisPosts); if(r.error) restaurou = false; }
+      if(atuaisStories.length){ const r = await supa.from('calendario_stories').upsert(atuaisStories); if(r.error) restaurou = false; }
+      erroMsg('Erro ao substituir: ' + e.message + '. ' + (restaurou ? 'O calendário anterior foi devolvido.' : 'Não consegui devolver tudo: use a planilha de cópia que foi baixada para reimportar.'));
+      await carregarMes();
+      return;
+    }
+    status.textContent = `Substituído! O calendário agora tem ${posts.length} post(s) e ${stories.length} stories (a cópia do anterior foi baixada).`;
+    status.style.color = 'var(--good)';
   }
 
-  status.textContent = `Importado! ${posts.length} post(s) e ${stories.length} stories atualizados.`;
-  status.style.color = 'var(--good)';
   document.getElementById('arquivoCalendario').value = '';
   await carregarMes();
   if(diaSelecionado) renderDetalhe(diaSelecionado);
 }
 window.importarPlanilha = importarPlanilha;
+
+// ---------- Excluir um post ou os stories de um dia ----------
+async function excluirItemCalendario(tipo, id){
+  const rotulo = tipo === 'post' ? 'este post' : 'estes stories';
+  if(!confirm(`Excluir ${rotulo} do calendário?\n\nNão dá para desfazer.`)) return;
+  const tabela = tipo === 'post' ? 'calendario_posts' : 'calendario_stories';
+  const { data, error } = await supa.from(tabela).delete().eq('id', id).select('id');
+  if(error){ alert('Erro ao excluir: ' + error.message); return; }
+  if(!data || !data.length){ alert('Não consegui excluir: sem permissão ou o item já tinha sido apagado.'); return; }
+  await carregarMes();
+}
+window.excluirItemCalendario = excluirItemCalendario;
 
 // ============================================================
 // EDIÇÃO INLINE (post e story)
