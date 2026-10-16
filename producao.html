@@ -161,6 +161,7 @@
     <div style="display:flex;gap:10px;align-items:center">
       <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
       <button onclick="logout()" class="btn secondary">Sair</button>
+      <button class="btn secondary" id="btnPrazos" style="display:none" onclick="abrirModalPrazos()">⏱️ Prazos</button>
       <button class="btn" id="toggleForm">+ Nova ordem</button>
     </div>
   </header>
@@ -279,6 +280,19 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modalPrazos">
+  <div class="modal" style="max-width:440px">
+    <h3>⏱️ Prazos por prioridade</h3>
+    <p style="font-size:12.5px;color:var(--gray);margin:-6px 0 14px;line-height:1.5;">Quantos dias cada prioridade dá, contados a partir do dia em que a ordem foi criada. A mudança vale para <strong>todas as ordens abertas</strong>, inclusive as que já existem, e aparece na hora para quem for criar uma ordem.</p>
+    <div class="form-grid" id="prazosCampos"></div>
+    <div id="prazosErro" style="color:var(--bad);font-size:12.5px;margin-top:10px;min-height:16px;"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="document.getElementById('modalPrazos').classList.remove('show')">Cancelar</button>
+      <button class="btn" id="btnSalvarPrazos" onclick="salvarPrazos()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="prazoPopupOverlay">
   <div class="modal" style="max-width:520px">
     <h3>⏱️ Prazos das ordens em andamento</h3>
@@ -326,7 +340,8 @@ let prazosPorPrioridade = { urgente:3, alta:5, media:7, baixa:10 };
 let contadorLinhasOrdem = 0;
 
 async function init(){
-  await requireRole(['chefia','laboratorio','conferencia','atendente']);
+  const { papel } = await requireRole(['chefia','laboratorio','conferencia','atendente']);
+  if(papel === 'chefia') document.getElementById('btnPrazos').style.display = '';
   await carregarPrazos();
   document.getElementById('toggleForm').addEventListener('click', ()=>{
     document.getElementById('addForm').classList.toggle('show');
@@ -348,6 +363,49 @@ async function carregarPrazos(){
   }
   rotularPrioridades();
 }
+
+// ---------- Prazos por prioridade (só a chefia altera; o banco também só aceita a chefia) ----------
+const ORDEM_PRIOS = ['urgente','alta','media','baixa'];
+
+function abrirModalPrazos(){
+  document.getElementById('prazosCampos').innerHTML = ORDEM_PRIOS.map(p =>
+    `<div><label>${PRIO_LABELS[p]} (dias)</label><input type="number" min="1" max="90" step="1" id="prazo_${p}" value="${prazosPorPrioridade[p] ?? ''}"></div>`).join('');
+  document.getElementById('prazosErro').textContent = '';
+  document.getElementById('modalPrazos').classList.add('show');
+}
+window.abrirModalPrazos = abrirModalPrazos;
+
+async function salvarPrazos(){
+  const erro = document.getElementById('prazosErro');
+  const novos = {};
+  for(const p of ORDEM_PRIOS){
+    const v = Number(document.getElementById('prazo_'+p).value);
+    if(!Number.isInteger(v) || v < 1 || v > 90){ erro.textContent = `Use um número inteiro de 1 a 90 em "${PRIO_LABELS[p]}".`; return; }
+    novos[p] = v;
+  }
+  const fora = ORDEM_PRIOS.some((p,i) => i > 0 && novos[p] < novos[ORDEM_PRIOS[i-1]]);
+  if(fora && !confirm('Atenção: uma prioridade mais urgente ficou com MAIS dias do que outra menos urgente.\n\nSalvar mesmo assim?')) return;
+
+  const btn = document.getElementById('btnSalvarPrazos');
+  btn.disabled = true; erro.textContent = '';
+  for(const p of ORDEM_PRIOS){
+    // Atualiza; se a linha não existir, cria. Sem permissão, o banco devolve 0 linhas (e não dá erro), por isso conferimos.
+    let r = await supa.from('prazos_producao').update({ dias_prazo: novos[p] }).eq('prioridade', p).select('prioridade');
+    if(!r.error && (!r.data || !r.data.length)){
+      r = await supa.from('prazos_producao').insert({ prioridade: p, dias_prazo: novos[p] }).select('prioridade');
+    }
+    if(r.error || !r.data || !r.data.length){
+      erro.textContent = 'Não consegui salvar' + (r.error ? ': ' + r.error.message : ': só a chefia pode alterar os prazos.') + ' Recarregue a página para ver os valores que ficaram.';
+      btn.disabled = false; return;
+    }
+  }
+  btn.disabled = false;
+  prazosPorPrioridade = { ...prazosPorPrioridade, ...novos };
+  rotularPrioridades();
+  document.getElementById('modalPrazos').classList.remove('show');
+  await loadBoard();
+}
+window.salvarPrazos = salvarPrazos;
 
 // Mostra, na frente do nome de cada prioridade, quantos dias ela dá de prazo (vem da tabela prazos_producao).
 function rotularPrioridades(){
