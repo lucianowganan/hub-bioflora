@@ -346,6 +346,20 @@ async function carregarPrazos(){
     prazosPorPrioridade = {};
     data.forEach(p => { prazosPorPrioridade[p.prioridade] = p.dias_prazo; });
   }
+  rotularPrioridades();
+}
+
+// Mostra, na frente do nome de cada prioridade, quantos dias ela dá de prazo (vem da tabela prazos_producao).
+function rotularPrioridades(){
+  ['fPrioridade','editPrioridade'].forEach(id => {
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    Array.from(sel.options).forEach(op => {
+      const dias = prazosPorPrioridade[op.value];
+      const nome = PRIO_LABELS[op.value] || op.value;
+      op.textContent = (dias == null) ? nome : `${nome} (${dias} ${Number(dias) === 1 ? 'dia' : 'dias'})`;
+    });
+  });
 }
 
 function adicionarLinhaOrdem(){
