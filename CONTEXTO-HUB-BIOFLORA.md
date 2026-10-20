@@ -311,3 +311,9 @@ Decisão: **sem app nativo/loja**. Caminho: responsivo por módulo + **PWA** (in
 **Próximas etapas combinadas:** (2) builder no módulo "Instagram" do Hub (aba Fluxos com canvas e simulador usando o mesmo `engine.js`; aba Conexões); (3) renovação do token e tela Conexões; (4) Contatos e DMs; (5) trocar LN por Bioflora (aceitar convite, token, decidir o ManyChat). Fora do semanal da chefia, vem depois. Pipeline e dashboard de insights são fases posteriores.
 
 **Decisões abertas:** clique em botão antigo hoje é ignorado (retomar?); nome real do contato (a Meta só manda o @ nas DMs; dá para buscar por chamada extra); LN/FourLab terão conta própria no mesmo motor.
+
+## 16. RH · cadastro único, histórico e pagamentos (migração 89)
+- `colaboradores` é a fonte única. `colaborador_apelidos` liga qualquer grafia de nome usada nos módulos (ponto, avaliações, férias, erros, inclusões, ordens, manipulação/pesagem) a UM colaborador (`norm_nome` = sem acento/caixa). Registros antigos não são alterados; o histórico os junta via apelidos.
+- `rh_historico(colaborador)` = linha do tempo (avaliações/RNC/advertência, férias, ponto, erros, inclusões, produção, documentos, avisos lidos, pagamentos). `rh_nomes_soltos()`, `rh_logins()`, `rh_vincular_nome()`, `rh_vincular_login()` alimentam a tela "Vincular nomes" (`rh-identidade.js`).
+- **Tudo isso é SÓ da chefia** (funções com `is_chefia()`; nem o RH lê). `colaborador_pagamentos` e `colaboradores_salarios_historico` idem (RLS + revoke anon). Chat/DM nunca entra; só avisos oficiais.
+- Pendente: seletores com busca ao digitar (`lista_nomes_colaboradores()`) nos módulos que ainda têm nome livre; decidir tipo de documento "financeiro" só-chefia (o bucket `colaboradores-docs` ainda é legível pelo RH).
