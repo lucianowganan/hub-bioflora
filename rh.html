@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="auth-guard.js"></script>
+<script src="permissoes.js"></script>
 <style>
   :root{
     --burgundy:#8B1A3A; --burgundy-dark:#5E1027; --burgundy-tint:#F7E9EE;
@@ -451,10 +452,14 @@ const PODE_ADMIN_RH = ['chefia','rh']; // colaboradores, ponto (entrada), avalia
 const PODE_VER_PONTO = ['chefia','rh','gestao'];
 const PODE_RELATORIOS = ['chefia']; // visão geral só da chefia
 const PODE_APROVAR_FERIAS = ['chefia']; // nem o RH aprova
+let podeLancarFerias = false; // permissão "rh.ferias.lancar" (Cargos & Permissões): chefia e liderança
 
 async function init(){
-  const { papel } = await requireRole(['chefia','rh','gestao','laboratorio','recepcao','conferencia','atendente','cpd']);
+  const { papel } = await requireRole(['chefia','rh','gestao','lideranca','laboratorio','recepcao','conferencia','atendente','cpd']);
   meuPapelRH = papel;
+  // Quem pode lançar férias vem da permissão do cargo (o banco confere a mesma permissão). Se não der para ler, só a chefia.
+  const permsRH = await buscarMinhasPermissoes(supa, papel);
+  podeLancarFerias = permsRH ? permsRH.has('rh.ferias.lancar') : papel === 'chefia';
 
   if(!PODE_ADMIN_RH.includes(papel)){
     document.querySelector('.rh-nav-item[data-tab="colaboradores"]').style.display = 'none';
@@ -1236,6 +1241,23 @@ async function renderAbaFerias(){
       <p>${souChefiaAprovador ? 'Gerencie as solicitações da equipe.' : 'Solicite suas férias e acompanhe a aprovação.'}</p>
     </div>
 
+    ${podeLancarFerias ? `
+    <div class="panel-white" style="margin-top:18px;">
+      <h2>Lançar férias</h2>
+      <p class="desc">Para férias que já estão definidas pela chefia ou pela liderança. O lançamento entra <strong>direto como aprovado</strong>, sem passar pela análise da chefia.</p>
+      <div class="ferias-form" style="max-width:520px;">
+        <label>Nome do colaborador</label>
+        <input id="lNomeFerias" list="listaNomesColabFerias" placeholder="Nome de quem vai tirar as férias" autocomplete="off">
+        <datalist id="listaNomesColabFerias">${(todosColaboradores||[]).filter(c=>c.status!=='desligado').map(c=>`<option value="${String(c.nome_completo||'').replace(/"/g,'&quot;')}">`).join('')}</datalist>
+        <label>Data de início</label><input type="date" id="lInicioFerias" onchange="conferirConflitoLancar()">
+        <label>Data de fim</label><input type="date" id="lFimFerias" onchange="conferirConflitoLancar()">
+        <label>Observação (opcional)</label><textarea id="lMotivoFerias" placeholder="Ex: período combinado com a chefia"></textarea>
+        <div id="avisoConflitoLancar"></div>
+        <div id="confirmacaoLancar"></div>
+        <button class="btn" onclick="lancarFerias()">Lançar férias</button>
+      </div>
+    </div>` : ''}
+
     <div class="ferias-grid" style="margin-top:18px;">
       <div class="panel-white">
         <h2>Solicitar</h2>
@@ -1366,6 +1388,73 @@ async function solicitarFerias(){
 }
 window.solicitarFerias = solicitarFerias;
 
+// ---------- Lançar férias já definidas (chefia e liderança) ----------
+const normNomeRH = t => String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+
+// Avisa (não bloqueia) se já há férias/ausências nesse período entre as que esta pessoa consegue ver.
+function conferirConflitoLancar(){
+  const inicio = document.getElementById('lInicioFerias')?.value;
+  const fim = document.getElementById('lFimFerias')?.value;
+  const nome = normNomeRH(document.getElementById('lNomeFerias')?.value);
+  const el = document.getElementById('avisoConflitoLancar');
+  if(!el) return;
+  if(!inicio || !fim){ el.innerHTML=''; return; }
+  const sobrepondo = feriasCache.filter(s =>
+    s.status !== 'rejeitada' && s.status !== 'cancelada' && s.data_inicio <= fim && s.data_fim >= inicio);
+  const mesmaPessoa = sobrepondo.filter(s => nome && normNomeRH(s.solicitante_nome) === nome);
+  el.innerHTML = mesmaPessoa.length
+    ? `<div class="aviso-conflito">⚠️ ${mesmaPessoa[0].solicitante_nome} já tem ${mesmaPessoa.length} registro(s) que se sobrepõe(m) a esse período.</div>`
+    : (sobrepondo.length ? `<div class="aviso-conflito">⚠️ Há ${sobrepondo.length} registro(s) nesse período: ${[...new Set(sobrepondo.map(s=>s.solicitante_nome))].join(', ')}.</div>` : '');
+}
+window.conferirConflitoLancar = conferirConflitoLancar;
+
+async function lancarFerias(){
+  const nome = (document.getElementById('lNomeFerias').value || '').trim();
+  const inicio = document.getElementById('lInicioFerias').value;
+  const fim = document.getElementById('lFimFerias').value;
+  const motivo = document.getElementById('lMotivoFerias').value.trim() || null;
+  if(!nome){ alert('Preencha o nome do colaborador.'); return; }
+  if(!inicio || !fim){ alert('Escolha as datas de início e fim.'); return; }
+  if(fim < inicio){ alert('A data de fim não pode ser antes da data de início.'); return; }
+
+  const { data: { session } } = await supa.auth.getSession();
+  // Quem não é da chefia não lança as próprias férias: isso precisa de aprovação (use "Solicitar").
+  if(meuPapelRH !== 'chefia'){
+    const { data: perfil } = await supa.from('perfis').select('nome_exibicao').eq('id', session.user.id).maybeSingle();
+    if(perfil?.nome_exibicao && normNomeRH(perfil.nome_exibicao) === normNomeRH(nome)){
+      alert('Para as suas próprias férias, use "Solicitar" mais abaixo, para a chefia aprovar.');
+      return;
+    }
+  }
+
+  const dias = diasEntre(inicio, fim);
+  if(!confirm(`Lançar férias de ${nome}\n${fmtDataBR(inicio)} a ${fmtDataBR(fim)} (${dias} dia${dias===1?'':'s'})?\n\nEntra direto como aprovada.`)) return;
+
+  const { data, error } = await supa.from('ferias_solicitacoes').insert({
+    solicitante_id: session.user.id,
+    solicitante_nome: nome,
+    tipo: 'ferias',
+    data_inicio: inicio, data_fim: fim,
+    dias_totais: dias,
+    motivo,
+    status: 'aprovada',
+    aprovado_por: session.user.id,
+    aprovado_em: new Date().toISOString()
+  }).select('id');
+  if(error || !data || !data.length){
+    alert('Não consegui lançar: ' + (error ? (/row-level security/.test(error.message) ? 'seu cargo não tem permissão para lançar férias.' : error.message) : 'sem permissão.'));
+    return;
+  }
+
+  ['lNomeFerias','lInicioFerias','lFimFerias','lMotivoFerias'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('avisoConflitoLancar').innerHTML = '';
+  const c = document.getElementById('confirmacaoLancar');
+  c.innerHTML = `<div style="font-size:12.5px;background:var(--good-tint);color:var(--good);border-radius:8px;padding:9px 12px;margin-bottom:10px;">✅ Férias de ${nome} lançadas e já aprovadas.</div>`;
+  setTimeout(()=>{ c.innerHTML=''; }, 6000);
+  await carregarDadosFerias();
+}
+window.lancarFerias = lancarFerias;
+
 // Avisa (não bloqueia) se já tem gente com férias sobrepondo o período digitado
 function conferirConflitoFerias(){
   const inicio = document.getElementById('fInicioFerias')?.value;
@@ -1407,6 +1496,9 @@ function renderListaSolicitacoes(){
         ${(souChefiaAprovador && s.status==='aprovada') ? `<div class="solic-actions">
           <button class="rejeitar" onclick="rejeitarFerias('${s.id}')">Reprovar</button>
           <button class="rejeitar" onclick="excluirFerias('${s.id}')">Excluir</button>
+        </div>` : ''}
+        ${(!souChefiaAprovador && podeLancarFerias && s.status==='aprovada' && s.solicitante_id===meuUserId && s.aprovado_por===meuUserId) ? `<div class="solic-actions">
+          <button class="rejeitar" onclick="excluirFerias('${s.id}')">Desfazer lançamento</button>
         </div>` : ''}
         ${(!souChefiaAprovador && s.status==='pendente' && s.solicitante_id===meuUserId) ? `<div class="solic-actions">
           <button class="rejeitar" onclick="cancelarFerias('${s.id}')">Cancelar pedido</button>
@@ -1460,8 +1552,9 @@ window.rejeitarFerias = rejeitarFerias;
 
 async function excluirFerias(id){
   if(!confirm('Excluir essa solicitação de vez? Não dá pra desfazer.')) return;
-  const { error } = await supa.from('ferias_solicitacoes').delete().eq('id', id);
+  const { data, error } = await supa.from('ferias_solicitacoes').delete().eq('id', id).select('id');
   if(error){ alert('Erro: '+error.message); return; }
+  if(!data || !data.length){ alert('Não consegui excluir: sem permissão ou o registro já foi apagado.'); return; }
   await carregarDadosFerias();
 }
 window.excluirFerias = excluirFerias;
