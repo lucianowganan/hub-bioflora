@@ -120,6 +120,24 @@
   }
   .social-btn:active{transform:scale(0.92);}
 
+
+  /* ---- CHAMA ACESA (destaque do evento) ---- */
+  .chama{display:block;margin:24px 20px 0;border-radius:24px;overflow:hidden;position:relative;text-decoration:none;text-align:left;color:#fbf3ea;background:#2a0a0c;box-shadow:0 18px 38px rgba(79,17,35,0.42);min-height:330px;}
+  .chama-photo{position:absolute;inset:0;background:url('card-chama-acesa.jpg') center 30%/cover no-repeat;transform:scale(1.04);animation:chamaZoom 14s ease-in-out infinite alternate;}
+  @keyframes chamaZoom{to{transform:scale(1.12);}}
+  .chama::before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg, rgba(23,5,4,0.15) 0%, rgba(23,5,4,0.55) 42%, rgba(23,5,4,0.94) 100%), radial-gradient(circle at 15% 100%, rgba(211,72,15,0.45), transparent 55%);}
+  .chama-in{position:relative;z-index:2;padding:20px 20px 22px;display:flex;flex-direction:column;min-height:330px;}
+  .chama-tag{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;background:#d3480f;color:#fff;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;padding:6px 12px;border-radius:999px;}
+  .chama-tag i{width:7px;height:7px;border-radius:50%;background:#fff;animation:chamaPulse 1.4s ease-in-out infinite;}
+  @keyframes chamaPulse{50%{opacity:.25;}}
+  .chama-kicker{margin-top:auto;font-size:11.5px;font-weight:700;letter-spacing:2.5px;color:#e8c27a;text-transform:uppercase;}
+  .chama h3{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:400;font-size:40px;line-height:1;margin:6px 0 8px;color:#fbf3ea;}
+  .chama h3 span{color:#f0743a;}
+  .chama p{font-size:14.5px;line-height:1.45;opacity:.9;max-width:300px;}
+  .chama-info{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 16px;}
+  .chama-info span{font-size:12px;font-weight:700;padding:6px 11px;border-radius:999px;background:rgba(251,243,234,0.12);border:1px solid rgba(232,194,122,0.45);color:#fbf3ea;}
+  .chama-go{align-self:stretch;text-align:center;background:linear-gradient(135deg,#f0743a,#d3480f);color:#fff;font-weight:800;font-size:15.5px;padding:14px 18px;border-radius:999px;box-shadow:0 8px 22px rgba(211,72,15,0.45);}
+
   /* ---- QUIZ BANNER ---- */
   .quiz-banner{
     margin:22px 20px 0;
@@ -397,6 +415,19 @@
       </a>
       <div class="social-hint" id="socialHint"></div>
     </div>
+
+    <!-- CHAMA ACESA (evento, destaque principal) -->
+    <a class="chama fade-in" href="https://chamaacesa.farmaciabioflora.com.br/?utm_source=instagram&amp;utm_medium=linkbio&amp;utm_campaign=chama2" target="_blank" onclick="track('chama_acesa_click')">
+      <div class="chama-photo"></div>
+      <div class="chama-in">
+        <span class="chama-tag"><i></i>Inscrições abertas</span>
+        <div class="chama-kicker">2ª edição · só para mulheres</div>
+        <h3>Chama <span>Acesa</span></h3>
+        <p>Uma noite para falar de saúde, autoestima e tudo o que muda depois dos 35, com quem entende do assunto.</p>
+        <div class="chama-info"><span>📅 25/11 · 19h</span><span>📍 Shitake · Itajubá</span><span>🍣 Jantar incluso</span></div>
+        <span class="chama-go">Garanta seu ingresso →</span>
+      </div>
+    </a>
 
     <div class="quiz-banner fade-in" onclick="openChat()">
       <h3>Não sabe por onde começar?</h3>
