@@ -72,6 +72,7 @@
     { href: 'email-marketing.html', icone: 'email', label: 'Email Marketing', perm: 'modulo.email_marketing' },
     { href: 'instagram.html', icone: 'instagram', label: 'Instagram', perm: 'modulo.instagram' },
     { href: 'embalagens.html', icone: 'caixa', label: 'Controle de Embalagens', perm: 'modulo.embalagens' },
+    { href: 'conferencia-formulas.html', icone: 'prancheta', label: 'Conferência de Fórmulas', perm: 'modulo.conferencia' },
     { href: 'admin.html', icone: 'escudo', label: 'Administração', perm: 'modulo.admin' },
     { href: 'cargos.html', icone: 'escudoCheck', label: 'Cargos & Permissões', perm: 'modulo.admin' },
   ];

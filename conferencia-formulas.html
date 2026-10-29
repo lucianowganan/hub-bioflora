@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<title>Conferência de Fórmulas — Hub Bioflora</title>
+<style>
+:root{--cap:rgb(139,26,58);--der:rgb(16,112,184);--bg:var(--cap)}
+body.dermato{--bg:var(--der)}
+*{box-sizing:border-box}
+html,body,main,.lista{overflow-anchor:none} /* evita que o navegador compense a animação de subida rolando a página */
+html,body{margin:0}
+html{height:100%}
+body{min-height:100%;background:var(--bg);color:#fff;font-family:"Segoe UI",system-ui,Arial,sans-serif;transition:background .25s;display:flex;flex-direction:column}
+body.nada{background:#c9c9c9;color:#000}
+.i{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.14em;flex:none}
+/* header fixo: fundo opaco (cor da página + película escura) para o conteúdo rolado não aparecer por baixo */
+header{position:sticky;top:0;z-index:8;display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:10px 20px;background-color:var(--bg);box-shadow:inset 0 0 0 100vmax rgba(0,0,0,.28);transition:background-color .25s;font-size:18px}
+body.nada header{background-color:#c9c9c9;box-shadow:inset 0 0 0 100vmax rgba(0,0,0,.12);color:#333}
+.marca{font-weight:700;font-size:20px;display:flex;gap:8px;align-items:center;margin-right:10px}
+header a,header button{color:inherit;text-decoration:none;padding:8px 14px;border-radius:10px;font-weight:600;display:flex;gap:8px;align-items:center;font-size:18px;background:none;border:0;cursor:pointer;font-family:inherit}
+header a.on{background:rgba(255,255,255,.25)}body.nada header a.on{background:rgba(0,0,0,.12)}
+header .esp{flex:1}
+.vol{display:flex;align-items:center;gap:8px;font-size:22px}
+.vol input[type=range]{width:110px;accent-color:#fff}
+body.nada .vol input[type=range]{accent-color:#444}
+.user{display:flex;gap:8px;align-items:center;font-size:20px}
+.user #usuario{font-size:16px}
+#pend{font-size:15px;opacity:.9;min-width:110px;text-align:right}
+main{flex:1;display:none;flex-direction:column;align-items:center;padding:16px}
+main.on{display:flex}
+.sw{display:flex;align-items:center;gap:22px;font-size:40px;font-weight:600;margin-top:10px;cursor:pointer;user-select:none}
+.sw .trilho{width:140px;height:68px;border-radius:34px;background:rgba(255,255,255,.3);position:relative;border:2px solid rgba(255,255,255,.7)}
+.sw .bola{position:absolute;top:6px;left:6px;width:50px;height:50px;border-radius:50%;background:#fff;transition:left .2s}
+body.dermato .sw .bola{left:78px}
+.sw span{opacity:.55;display:flex;gap:10px;align-items:center}.sw span.at{opacity:1}
+.sw.peq{font-size:22px;gap:12px;margin:0}.sw.peq .trilho{width:76px;height:38px;border-width:1px}.sw.peq .bola{width:26px;height:26px;top:5px;left:5px}body.dermato .sw.peq .bola{left:43px}
+.centro{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%}
+.campo{width:min(900px,92%);font-size:88px;text-align:center;padding:22px;border-radius:22px;border:0;font-weight:700;color:#222;letter-spacing:4px;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25);outline:none;font-family:inherit}
+body.nada .campo{background:#efefef;color:#555;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+body.nada .campo::placeholder{color:#999}
+.msg{min-height:64px;margin-top:22px;font-size:30px;font-weight:600;text-align:center;display:flex;gap:10px;align-items:center}
+.msg.erro{background:#fff;color:#b00020;padding:10px 24px;border-radius:12px}
+.leg{text-align:center;font-size:17px;opacity:.92;padding:4px}
+kbd{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);border-radius:6px;padding:1px 8px;font-family:inherit;font-weight:600}
+.info{margin-top:22px;font-size:16px;text-align:center;line-height:1.7;max-width:800px;min-height:30px}
+.ctl{display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center;font-size:24px;margin:10px 0}
+.ctl input[type=date],.ctl select{font-size:22px;padding:8px 10px;border-radius:10px;border:0;font-family:inherit}
+.lista{width:min(560px,95%);display:flex;flex-direction:column;gap:8px;overflow:auto;font-size:28px;margin-top:10px}
+.lista .l{background:rgba(255,255,255,.16);padding:8px 14px 8px 20px;border-radius:12px;display:flex;align-items:center;gap:16px}
+.lista .l b{flex:1}.lista small{font-size:18px;opacity:.85}
+.del,.mov{background:none;border:0;color:#fff;font-size:26px;padding:8px;border-radius:10px;cursor:pointer;display:flex}
+.del:hover,.mov:hover{background:rgba(255,255,255,.25)}
+/* Destaque "estou aqui": um único pulso suave de fundo, sem mudar o tamanho nem a cor do texto.
+   Sobe rápido e desce devagar; o pico é de apenas +12% de branco, para o texto branco manter contraste de 3:1 ou mais nas duas cores */
+.lista .l.achada{animation:pisca .7s ease-in-out .15s}
+@keyframes pisca{0%,100%{background:rgba(255,255,255,.16)}35%{background:rgba(255,255,255,.28)}}
+@media (prefers-reduced-motion:reduce){.lista .l.achada{animation:pisca-reduzido .7s ease-out}@keyframes pisca-reduzido{0%{background:rgba(255,255,255,.28)}100%{background:rgba(255,255,255,.16)}}}
+.resbtns{display:flex;flex-direction:column;gap:8px;align-items:center;margin-top:14px}
+.resbtns .btn{font-size:16px;padding:8px 16px}
+.resbtns .btn .i{font-size:22px}
+#modal{display:none;position:fixed;inset:0;z-index:9;align-items:center;justify-content:center;flex-direction:column;gap:22px;text-align:center;padding:24px}
+#modal{background:rgba(0,0,0,.6)}
+#modal.on{display:flex}
+#mtxt{font-size:22px;max-width:700px;line-height:1.5}
+#mbtns{display:flex;gap:14px;flex-direction:row}
+#mbtns button{font-size:24px;padding:14px 30px;border-radius:14px;border:0;cursor:pointer;font-weight:600;font-family:inherit}
+#caixa{background:#fff;color:#222;padding:32px 40px;border-radius:20px;display:flex;flex-direction:column;gap:22px;align-items:center}
+#mexcl{background:#b00020;color:#fff}
+.painel{display:flex;flex-direction:column;gap:14px;align-items:center;width:min(900px,95%);margin-bottom:10px}
+.ups{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;width:100%}
+.up{flex:1;min-width:280px;background:rgba(255,255,255,.16);border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.up h3{margin:0;font-size:24px;display:flex;gap:10px;align-items:center}
+.up .st{font-size:16px;min-height:44px;line-height:1.4}
+.btn{font-family:inherit;font-size:18px;font-weight:600;padding:10px 18px;border-radius:12px;border:0;cursor:pointer;display:inline-flex;gap:8px;align-items:center;background:#fff;color:#222}
+.btn.s{background:rgba(255,255,255,.25);color:inherit}
+.linha{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center;font-size:18px}
+.linha input[type=text]{font-size:18px;padding:8px 12px;border-radius:10px;border:0;width:320px;font-family:inherit}
+main#busca .lim{margin-top:20px}
+.lim{display:flex;flex-direction:column;gap:8px;max-width:640px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);border-radius:14px;padding:10px 16px;font-size:16px}
+.limrow{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.limtxt{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.45;opacity:.95;border-top:1px solid rgba(255,255,255,.3);padding-top:8px}
+.limtxt .i{margin-top:2px}
+.lim input{font-size:16px;padding:6px 8px;border-radius:8px;border:0;font-family:inherit}
+.lim .btn{font-size:15px;padding:7px 14px}
+.msg.dup{flex-direction:column;gap:6px;font-size:30px;text-align:center}
+.msg.dup .sub2{font-size:22px;font-weight:500}
+#romsum{font-size:17px;text-align:center;min-height:24px}
+#folhas{width:100%;overflow:auto}
+#folhas .folha{margin:16px auto;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+@media print{
+  @page{size:A4;margin:0}
+  html,body{background:#fff!important;height:auto;display:block}
+  header,main:not(#romaneio),.painel,#modal{display:none!important}
+  main#romaneio{display:block;padding:0}
+  #folhas{overflow:visible}
+  #folhas .folha{margin:0;box-shadow:none}
+}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M8 7v10M12 7v10M16 7v10"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></symbol>
+<symbol id="i-vol" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></symbol>
+<symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6"/></symbol>
+<symbol id="i-ok" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M9 11l3 3L22 4"/></symbol>
+<symbol id="i-pill" viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7ZM8.5 8.5l7 7"/></symbol>
+<symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+<symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M8 2h8v4H8zM16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M12 11h4M12 16h4M8 11h.01M8 16h.01"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+<symbol id="i-swap" viewBox="0 0 24 24"><path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+</defs></svg>
+<header>
+  <div class="marca"><svg class="i"><use href="#i-scan"/></svg>Fórmulas bipadas</div>
+  <a href="#bipar" data-t="bipar"><svg class="i"><use href="#i-scan"/></svg>Bipar</a>
+  <a href="#busca" data-t="busca"><svg class="i"><use href="#i-search"/></svg>Buscar</a>
+  <a href="#tabela" data-t="tabela"><svg class="i"><use href="#i-list"/></svg>Tabela</a>
+  <a href="#romaneio" data-t="romaneio"><svg class="i"><use href="#i-clip"/></svg>Relatório</a>
+  <span class="esp"></span>
+  <span id="pend"></span>
+  <div class="vol"><button id="mudo" title="Silenciar / restaurar som" style="padding:4px;font-size:22px"><svg class="i" id="icVol"><use href="#i-vol"/></svg></button><input type="range" id="vol" min="0" max="100" title="Volume"></div>
+  <span class="user"><svg class="i"><use href="#i-user"/></svg><span id="usuario">…</span></span>
+  <button id="imp" title="Importar registros.jsonl antigo" style="font-size:15px"><svg class="i"><use href="#i-upload"/></svg>Importar</button><input type="file" id="arqimp" accept=".jsonl,.json,.txt" style="display:none">
+</header>
+
+<main id="bipar">
+  <div class="sw" id="sw1"><span id="l1" class="at"><svg class="i"><use href="#i-pill"/></svg>Cápsulas</span><div class="trilho"><div class="bola"></div></div><span id="l2"><svg class="i"><use href="#i-drop"/></svg>Dermato</span></div>
+  <div class="centro">
+    <input id="campo" class="campo" autocomplete="off" inputmode="numeric" placeholder="Bipe ou digite">
+    <div id="msg" class="msg"></div>
+  </div>
+  <div class="leg"><kbd>F2</kbd> alterna entre cápsulas e dermato</div>
+  <div class="leg"><kbd>Ctrl</kbd>+<kbd>Z</kbd> desfaz o último registro</div>
+</main>
+
+<main id="busca">
+  <div class="centro">
+    <input id="q" class="campo" autocomplete="off" inputmode="numeric" placeholder="Nº da requisição">
+    <div id="res" class="info"></div>
+  </div>
+  <div class="lim"><div class="limrow"><svg class="i"><use href="#i-cal"/></svg><span>Pesquisar desde</span><input type="date" class="limdt"><button class="btn s limbtn"></button></div><div class="limtxt"><svg class="i"><use href="#i-info"/></svg><span class="limex" data-ctx="busca"></span></div></div>
+</main>
+
+<main id="tabela">
+  <div class="ctl">
+    <input type="date" id="dt">
+    <div class="sw peq" id="sw2"><span id="m1" class="at"><svg class="i"><use href="#i-pill"/></svg>Cáps.</span><div class="trilho"><div class="bola"></div></div><span id="m2"><svg class="i"><use href="#i-drop"/></svg>Derm.</span></div>
+  </div>
+  <div class="ctl">
+    Ordenar por
+    <select id="ord"><option value="num">Número</option><option value="hora">Data e hora</option></select>
+    <select id="dir"><option value="asc">Crescente</option><option value="desc">Decrescente</option></select>
+    <b id="tot"></b>
+  </div>
+  <div class="lista" id="lista"></div>
+</main>
+
+<main id="romaneio">
+  <div class="painel">
+    <div class="linha"><button class="btn" id="romdois"><svg class="i"><use href="#i-upload"/></svg>Selecionar relatórios do Fórmula Certa (.HTM)</button><span style="font-size:15px">o laboratório é identificado pelo campo LAB do relatório</span></div>
+    <input type="file" id="arqrom2" accept=".htm,.html" multiple style="display:none">
+    <div class="ups">
+      <div class="up"><h3><svg class="i"><use href="#i-pill"/></svg>Cápsulas</h3><div class="st" id="st_cap">Nenhum relatório carregado.</div>
+        <div class="linha"><button class="btn" data-lab="cap">Selecionar .HTM</button><button class="btn s" data-lab="cap" data-rm="1">Remover</button></div></div>
+      <div class="up"><h3><svg class="i"><use href="#i-drop"/></svg>Dermato</h3><div class="st" id="st_der">Nenhum relatório carregado.</div>
+        <div class="linha"><button class="btn" data-lab="der">Selecionar .HTM</button><button class="btn s" data-lab="der" data-rm="1">Remover</button></div></div>
+    </div>
+    <input type="file" id="arqrom" accept=".htm,.html" style="display:none">
+    <div class="linha">Gerar relatório de: <select id="romsel" style="font-size:18px;padding:8px 10px;border-radius:10px;border:0;font-family:inherit"><option value="ambos">Cápsulas e Dermato</option><option value="cap">Somente Cápsulas</option><option value="der">Somente Dermato</option></select></div>
+    <div class="linha">Título: <input type="text" id="romtit" value="Relatório de receitas">
+      <button class="btn s" id="romatu"><svg class="i"><use href="#i-refresh"/></svg>Atualizar conferência</button>
+      <button class="btn" id="romimp"><svg class="i"><use href="#i-printer"/></svg>Imprimir / PDF</button>
+      <button class="btn s" id="romdl"><svg class="i"><use href="#i-download"/></svg>Baixar HTML</button></div>
+    <div class="linha" style="font-size:16px"><div class="lim"><div class="limrow"><svg class="i"><use href="#i-cal"/></svg><span>Pesquisar desde</span><input type="date" class="limdt"><button class="btn s limbtn"></button></div><div class="limtxt"><svg class="i"><use href="#i-info"/></svg><span class="limex" data-ctx="rel"></span></div></div></div>
+    <div id="romsum"></div>
+  </div>
+  <div id="folhas"></div>
+</main>
+<div id="modal"><div id="caixa"><svg class="i" style="font-size:44px;color:#b00020"><use href="#i-trash"/></svg><div id="mtxt"></div>
+<div id="mbtns"><button id="mcanc">Cancelar</button><button id="mexcl">Excluir</button></div></div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const ic=n=>'<svg class="i"><use href="#i-'+n+'"/></svg>';
+const COOLDOWN=400; // ms sem novas bipagens até gravar a fila no banco
+
+// DATA-LAYER-START
+// Dados no Supabase (tabela conferencia_formulas). Cada requisição é única no banco; a RLS libera só chefia e conferência.
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+let MEU_ID=null,NOME_USUARIO='não identificado';
+const dbReg=r=>({id:r.id,data:r.conferida_em,dia:r.dia,requisicao:r.requisicao,laboratorio:r.laboratorio,usuario:r.usuario_nome});
+const COLS='id,requisicao,laboratorio,usuario_nome,conferida_em,dia';
+function converter13(s){return s.slice(4,10)+'-'+s.slice(11,12);}
+function normalizar(d){if(/^\d{7}$/.test(d))return d.slice(0,6)+'-'+d.slice(6);if(/^\d{13}$/.test(d))return converter13(d);return null;}
+function diaDe(dt){const p=n=>String(n).padStart(2,'0');return dt.getFullYear()+'-'+p(dt.getMonth()+1)+'-'+p(dt.getDate());}
+function novoReg(rq,laboratorio,usuario){const ag=new Date();return {id:ag.getTime()+'-'+Math.random().toString(36).slice(2,6),data:ag.toISOString(),dia:diaDe(ag),requisicao:rq,laboratorio:laboratorio==='dermato'?'dermato':'capsulas',usuario:usuario||'não identificado'};}
+let fila=[],flushing=null,timer=null,onPend=()=>{},onErro=()=>{};
+let indice=new Map();
+function indexar(regs){regs.forEach(r=>{if(!indice.has(r.requisicao))indice.set(r.requisicao,r);});}
+// Lê tudo que casa com o filtro, em páginas de 1000 (limite do servidor)
+async function paginar(montar){
+  const out=[];
+  for(let de=0;;de+=1000){
+    const {data,error}=await montar(supa.from('conferencia_formulas').select(COLS).order('conferida_em',{ascending:true}).range(de,de+999));
+    if(error)throw error;out.push(...data.map(dbReg));if(data.length<1000)break;
+  }
+  return out;
+}
+// Índice de duplicatas: últimos 120 dias em memória; o que for mais antigo o banco barra pela chave única
+async function carregarIndice(){
+  try{const ini=new Date();ini.setDate(ini.getDate()-120);indexar(await paginar(q=>q.gte('dia',diaDe(ini))));}catch(e){}
+}
+function umMesAtras(){const d=new Date(),y=d.getFullYear(),m=d.getMonth()-1,ult=new Date(y,m+1,0).getDate();return diaDe(new Date(y,m,Math.min(d.getDate(),ult)));}
+let limite=umMesAtras();
+function agendar(){clearTimeout(timer);timer=setTimeout(flush,COOLDOWN);if(fila.length>=30)flush();onPend();}
+const paraLinha=r=>({requisicao:r.requisicao,laboratorio:r.laboratorio,usuario_nome:r.usuario,conferida_em:r.data,dia:r.dia});
+async function flush(){
+  clearTimeout(timer);
+  if(flushing)return flushing;
+  if(!fila.length)return;
+  flushing=(async()=>{
+    try{
+      while(fila.length){
+        const lote=fila.slice();
+        let {error}=await supa.from('conferencia_formulas').insert(lote.map(paraLinha));
+        if(error&&error.code==='23505'){
+          // alguma requisição já existia (outro computador ou mais de 120 dias): grava uma a uma e avisa das repetidas
+          for(const r of lote){
+            const e1=(await supa.from('conferencia_formulas').insert(paraLinha(r))).error;
+            if(e1&&e1.code==='23505'){
+              const {data}=await supa.from('conferencia_formulas').select(COLS).eq('requisicao',r.requisicao).maybeSingle();
+              if(data){indice.set(r.requisicao,dbReg(data));onErro('A requisição '+r.requisicao+' já tinha sido conferida por '+data.usuario_nome+' em '+fmtDH(data.conferida_em)+'.');}
+            }else if(e1)throw e1;
+          }
+          error=null;
+        }
+        if(error)throw error;
+        fila.splice(0,lote.length);
+      }
+    }catch(e){onErro(falha(e));}
+    finally{flushing=null;onPend();}
+  })();
+  return flushing;
+}
+async function opDesfazer(usuario){
+  if(!flushing){
+    let k=fila.length-1;
+    if(k>=0){const [r]=fila.splice(k,1);indice.delete(r.requisicao);onPend();return {ok:true,d:r};}
+  }
+  await flush();
+  const {data,error}=await supa.from('conferencia_formulas').select(COLS).eq('usuario_id',MEU_ID).order('conferida_em',{ascending:false}).limit(1);
+  if(error)throw error;
+  if(!data.length)return {ok:false,d:{erro:'Nenhum registro para desfazer.'}};
+  const rem=dbReg(data[0]);
+  const del=await supa.from('conferencia_formulas').delete().eq('id',rem.id).select('id');
+  if(del.error)throw del.error;
+  if(!del.data.length)throw new Error('Sem permissão para desfazer.');
+  indice.delete(rem.requisicao);return {ok:true,d:rem};
+}
+async function opBuscar(q){
+  q=String(q||'').replace(/\D/g,'');
+  if(q.length<6)throw new Error('Digite ao menos 6 dígitos.');
+  await flush();
+  const alvo=q.length===13?converter13(q):(q.length>=7?q.slice(0,6)+'-'+q.slice(6,7):q);
+  return paginar(c=>{let x=alvo.length===6?c.like('requisicao',alvo+'-%'):c.eq('requisicao',alvo);return limite?x.gte('dia',limite):x;});
+}
+async function opTabela(d,l){await flush();return paginar(c=>c.eq('dia',d).eq('laboratorio',l));}
+async function opTrocarLab(id,novo){
+  await flush();
+  const {data,error}=await supa.from('conferencia_formulas').update({laboratorio:novo==='dermato'?'dermato':'capsulas'}).eq('id',id).select('id');
+  if(error)throw error;if(!data.length)throw new Error('Registro não encontrado ou sem permissão.');
+}
+async function opExcluir(id){
+  await flush();
+  const {data,error}=await supa.from('conferencia_formulas').delete().eq('id',id).select('id,requisicao');
+  if(error)throw error;if(!data.length)throw new Error('Registro não encontrado ou sem permissão.');
+  indice.delete(data[0].requisicao);
+}
+async function lerRegs(){return paginar(c=>limite?c.gte('dia',limite):c);}
+function falha(e){return 'Erro ao acessar o banco de dados: '+(e&&e.message||e);}
+// DATA-LAYER-END
+
+
+
+// preferências por usuário (switch cápsulas/dermato e volume), guardadas no banco
+let lab='capsulas';
+const getUsuario=()=>NOME_USUARIO;
+const prefsAtuais=()=>({user_id:MEU_ID,lab,vol,atualizado_em:new Date().toISOString()});
+let prefsTimer=null;
+function salvarPrefs(){clearTimeout(prefsTimer);prefsTimer=setTimeout(descarregarPrefs,400);}
+function descarregarPrefs(){clearTimeout(prefsTimer);if(MEU_ID)supa.from('conferencia_prefs').upsert(prefsAtuais()).then(()=>{},()=>{});}
+async function aplicarPrefsDoUsuario(){
+  const {data}=await supa.from('conferencia_prefs').select('lab,vol').eq('user_id',MEU_ID).maybeSingle();
+  if(!data){descarregarPrefs();return;}
+  if(data.lab==='dermato'||data.lab==='capsulas')lab=data.lab;
+  if(Number.isFinite(data.vol)){vol=data.vol;if(vol>0)volAntes=vol;}
+  aplicarLab();aplicarVol();
+}
+window.addEventListener('pagehide',descarregarPrefs);
+
+// volume
+let vol=60,volAntes=60;
+function aplicarVol(){$('vol').value=vol;$('icVol').innerHTML='<use href="#i-'+(vol>0?'vol':'mute')+'"/>';}
+$('vol').oninput=()=>{vol=+$('vol').value;if(vol>0)volAntes=vol;aplicarVol();salvarPrefs();};
+$('mudo').onclick=()=>{if(vol>0){volAntes=vol;vol=0;}else vol=volAntes||60;aplicarVol();salvarPrefs();$('campo').focus();};
+aplicarVol();
+let ac;
+function bip(ok){
+  if(vol<=0)return;
+  ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+  const seq=ok?[[880,.12],[1320,.18]]:[[220,.25],[160,.35]];
+  let t=ac.currentTime;
+  seq.forEach(([f,d])=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.type=ok?'sine':'square';g.gain.value=.3*(vol/100)**2;o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d);t+=d;});
+}
+
+function aplicarLab(){
+  document.body.classList.toggle('dermato',lab==='dermato');
+  ['l1','m1'].forEach(i=>$(i).classList.toggle('at',lab==='capsulas'));
+  ['l2','m2'].forEach(i=>$(i).classList.toggle('at',lab==='dermato'));
+}
+function alternar(){lab=lab==='capsulas'?'dermato':'capsulas';aplicarLab();salvarPrefs();if(tela==='tabela')carregarTabela();}
+$('sw1').onclick=()=>{alternar();$('campo').focus();};
+$('sw2').onclick=alternar;
+
+let tela='bipar';
+function ir(){
+  tela=(location.hash||'#bipar').slice(1);if(!$(tela))tela='bipar';
+  document.querySelectorAll('main').forEach(m=>m.classList.toggle('on',m.id===tela));
+  document.querySelectorAll('header a').forEach(a=>a.classList.toggle('on',a.dataset.t===tela));
+  document.body.classList.remove('nada');aplicarLab();
+  if(tela==='bipar')$('campo').focus();
+  if(tela==='busca'){$('q').value='';$('q').focus();$('res').textContent='';}
+  if(tela==='tabela')carregarTabela();
+  if(tela==='romaneio')gerarRomaneio();
+}
+window.onhashchange=ir;
+
+// campo com hífen no 7º dígito
+function com7(el){el.addEventListener('input',()=>{const d=el.value.replace(/\D/g,'');el.value=d.length===7?d.slice(0,6)+'-'+d.slice(6):d;});}
+
+// bipagem
+const campo=$('campo');com7(campo);
+function aviso(t,erro){document.body.classList.remove('nada');const m=$('msg');m.innerHTML=(erro?'':ic('ok')+' ')+t;m.className='msg'+(erro?' erro':'');clearTimeout(aviso.t);aviso.t=setTimeout(()=>{m.innerHTML='';m.className='msg'},erro?6000:2500);}
+onPend=()=>{$('pend').textContent=fila.length?(flushing?'Gravando… ':'')+fila.length+' a gravar':'';};
+onErro=t=>{const m=$('msg');m.textContent=t;m.className='msg erro';};
+const fmtDH=iso=>{const d=new Date(iso),p=n=>String(n).padStart(2,'0');return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' às '+p(d.getHours())+':'+p(d.getMinutes());};
+function duplicada(ex){
+  clearTimeout(aviso.t);
+  document.body.classList.add('nada');
+  const m=$('msg');m.className='msg dup';
+  m.innerHTML='<div><b>Requisição '+escH(ex.requisicao)+' já foi conferida.</b></div><div class="sub2">'+nomeLab(ex.laboratorio)+' · '+escH(ex.usuario)+' · '+fmtDH(ex.data)+'</div>';
+  bip(false);
+}
+campo.addEventListener('input',()=>{if(document.body.classList.contains('nada')){document.body.classList.remove('nada');$('msg').innerHTML='';$('msg').className='msg';}});
+campo.addEventListener('keydown',async e=>{
+  if(e.key!=='Enter')return;
+  e.preventDefault();
+  const d=campo.value.replace(/\D/g,'');campo.value='';
+  const rq=normalizar(d);
+  if(!rq){aviso('Quantidade de dígitos inválida ('+d.length+'). Digite 7 dígitos ou bipe o código de 13.',true);bip(false);return;}
+  const ex=indice.get(rq);
+  if(ex){duplicada(ex);return;}
+  const rec=novoReg(rq,lab,getUsuario());
+  fila.push(rec);indice.set(rq,rec);
+  aviso(rq+' registrada',false);bip(true);agendar();
+});
+document.addEventListener('keydown',async e=>{
+  if(e.key==='F2'){e.preventDefault();alternar();}
+  if(e.ctrlKey&&e.key.toLowerCase()==='z'&&tela==='bipar'){
+    e.preventDefault();
+    try{const {ok,d}=await opDesfazer(getUsuario());ok?aviso('Desfeito: '+d.requisicao,false):aviso(d.erro,true);}
+    catch(err){aviso(falha(err),true);}
+  }
+});
+window.addEventListener('beforeunload',e=>{if(fila.length){flush();e.preventDefault();e.returnValue='';}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)flush();});
+
+// busca
+const nomeLab=l=>l==='dermato'?'Dermato':'Cápsulas';
+const fmt=iso=>new Date(iso).toLocaleString('pt-BR');
+const q=$('q');com7(q);
+function fmtReq(v){const d=String(v).replace(/\D/g,'');return d.length===13?converter13(d):d.length===7?d.slice(0,6)+'-'+d.slice(6):d;}
+q.addEventListener('keydown',async e=>{
+  if(e.key!=='Enter')return;
+  const val=q.value;q.value='';
+  let d=null,erro=null;
+  try{d=await opBuscar(val);}catch(err){erro=falha(err);}
+  if(d&&d.length){
+    document.body.classList.remove('nada');
+    lab=d[d.length-1].laboratorio;aplicarLab();
+    $('res').innerHTML=d.map(x=>'<b>'+x.requisicao+'</b> — '+nomeLab(x.laboratorio)+' — '+fmt(x.data)+' — '+escH(x.usuario)).join('<br>')
+      +'<div class="resbtns">'+d.map(x=>'<button class="btn s vertab" data-dia="'+x.dia+'" data-lab="'+x.laboratorio+'" data-req="'+x.requisicao+'">'+(d.length>1?'Ver '+x.requisicao+' na Tabela':'Ver na Tabela')+ic('arrow')+ic('list')+'</button>').join('')+'</div>';
+    bip(true);
+  }else{
+    document.body.classList.add('nada');
+    $('res').textContent=erro||'Requisição '+fmtReq(val)+' não encontrada.';
+    bip(false);
+  }
+});
+q.addEventListener('input',()=>{document.body.classList.remove('nada');$('res').textContent='';});
+$('res').addEventListener('click',e=>{
+  const b=e.target.closest('.vertab');if(!b)return;
+  lab=b.dataset.lab==='dermato'?'dermato':'capsulas';aplicarLab();
+  $('dt').value=b.dataset.dia;destacar=b.dataset.req;
+  location.hash='#tabela';
+});
+
+// tabela
+const hoje=()=>diaDe(new Date());
+$('dt').value=hoje();
+let destacar='';
+async function carregarTabela(){
+  if(!$('dt').value)return;
+  let d;
+  try{d=await opTabela($('dt').value,lab);}
+  catch(err){$('tot').textContent='';$('lista').innerHTML='<div class="l">'+falha(err)+'</div>';return;}
+  const k=$('ord').value,f=$('dir').value==='asc'?1:-1;
+  d.sort((a,b)=>f*(k==='num'?a.requisicao.localeCompare(b.requisicao):a.data.localeCompare(b.data)));
+  $('tot').textContent=d.length+' fórmula(s)';
+  const outro=lab==='dermato'?'Cápsulas':'Dermato';
+  $('lista').innerHTML=d.map(x=>'<div class="l" data-id="'+x.id+'" data-req="'+x.requisicao+'"><b>'+x.requisicao+'</b><small>'+new Date(x.data).toLocaleTimeString('pt-BR')+' · '+escH(x.usuario)+'</small><button class="mov" title="Mover para '+outro+'">'+ic('swap')+'</button><button class="del" title="Excluir" data-id="'+x.id+'" data-r="'+x.requisicao+'">'+ic('trash')+'</button></div>').join('')||'<div class="l">Nenhuma fórmula.</div>';
+  if(destacar){
+    const el=Array.from($('lista').children).find(c=>c.dataset.req===destacar);destacar='';
+    if(el){el.scrollIntoView({block:'center'});el.classList.add('achada');el.addEventListener('animationend',()=>el.classList.remove('achada'),{once:true});}
+  }
+}
+// Cor final da linha na troca de laboratório: mesmo tom (azul / vinho) de cada laboratório, mas com a mesma luminosidade percebida
+// (OKLCH L=0,47) e croma moderado (0,13), para as duas direções terem o mesmo "peso" visual. Contraste com o texto branco: 6,8:1 e 7,3:1 (WCAG AAA).
+const COR_FIM={dermato:'rgb(6,93,160)',capsulas:'rgb(149,52,74)'};
+// Animação de saída de uma linha (0,6 s): encolhe (0–30%), pausa (30–45%), some (45–60%) e as linhas de baixo sobem (60–100%).
+// Com 'cor', a linha também muda para a cor do outro laboratório (troca); sem 'cor', a cor não muda (exclusão).
+async function sairDaLista(row,cor,operacao){
+  row.dataset.anim='1';row.style.overflow='hidden';row.style.pointerEvents='none';
+  const falhou=operacao.then(()=>null,e=>e);
+  const h=row.getBoundingClientRect().height+'px',base={height:h,paddingTop:'8px',paddingBottom:'8px',marginTop:'0px'},bg=cor||'rgba(255,255,255,.16)';
+  const a=row.animate([
+    Object.assign({offset:0,transform:'scale(1)',backgroundColor:'rgba(255,255,255,.16)',opacity:1,easing:'ease-out'},base),
+    Object.assign({offset:.3,transform:'scale(.93)',backgroundColor:bg,opacity:1},base),
+    Object.assign({offset:.45,transform:'scale(.93)',backgroundColor:bg,opacity:1,easing:'ease-in'},base),
+    Object.assign({offset:.6,transform:'scale(.85)',backgroundColor:bg,opacity:0,easing:'ease-in-out'},base),
+    {offset:1,transform:'scale(.85)',backgroundColor:bg,opacity:0,height:'0px',paddingTop:'0px',paddingBottom:'0px',marginTop:'-8px'}
+  ],{duration:600,fill:'forwards'});
+  try{await a.finished;}catch(e){}
+  const err=await falhou;
+  row.remove();
+  if(err){carregarTabela();$('tot').textContent='Erro: '+falha(err);return;}
+  const n=$('lista').querySelectorAll('.l[data-id]').length;
+  $('tot').textContent=n+' fórmula(s)';
+  if(!n)$('lista').innerHTML='<div class="l">Nenhuma fórmula.</div>';
+}
+function trocarLab(btn){
+  const row=btn.closest('.l');if(!row||row.dataset.anim)return;
+  const novo=lab==='dermato'?'capsulas':'dermato';
+  sairDaLista(row,COR_FIM[novo],opTrocarLab(row.dataset.id,novo));
+}
+['dt','ord','dir'].forEach(i=>$(i).onchange=carregarTabela);
+let excluirId=null;
+$('lista').addEventListener('click',e=>{
+  const m=e.target.closest('.mov');if(m){trocarLab(m);return;}
+  const b=e.target.closest('.del');if(!b)return;
+  excluirId=b.dataset.id;
+  $('mtxt').textContent='Deseja realmente excluir o registro da requisição '+b.dataset.r+'? Esta ação não pode ser desfeita.';
+  $('modal').classList.add('on');$('mcanc').focus();
+});
+$('mcanc').onclick=()=>{$('modal').classList.remove('on');excluirId=null;};
+$('mexcl').onclick=()=>{
+  $('modal').classList.remove('on');
+  const id=excluirId,row=Array.from($('lista').children).find(c=>c.dataset.id===id);excluirId=null;
+  if(row&&!row.dataset.anim)sairDaLista(row,null,opExcluir(id));
+};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('mcanc').click();});
+
+// ROMANEIO-LOGIC-START
+const ROW_MM=7.02; // altura fixa de cada linha, em todas as páginas
+const ROM_MAX=Math.floor(224/ROW_MM); // linhas que cabem por página (31)
+const CHK='<svg viewBox="0 0 10 10"><path d="M1.5 5.5 4 8 8.5 2" fill="none" stroke="#000" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CSS_REL='.folha{box-sizing:border-box;width:210mm;height:296mm;padding:11mm 12mm 8mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:column;overflow:hidden;break-after:page;page-break-after:always}'
++'.folha:last-child{break-after:auto;page-break-after:auto}'
++'.folha h1{margin:0 0 3mm;font-size:17pt;text-align:center;letter-spacing:.5px}'
++'.folha .sub{margin-bottom:4mm;border-bottom:1.5px solid #000;padding-bottom:2mm}'
++'.folha .l1{display:flex;justify-content:space-between;font-size:12pt;font-weight:bold}'
++'.folha .ger{text-align:right;font-size:8.5pt;color:#333;margin-top:1mm}'
++'.folha table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10pt}'
++'.folha th{border:1px solid #000;padding:1mm 2mm;background:#f0f0f0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
++'.folha th.dest{font-size:13pt;text-align:left;padding:2mm 3mm;background:#dcdcdc}'
++'.folha th.c{font-size:8pt;text-transform:uppercase}'
++'.folha .dh{display:flex;justify-content:space-between;align-items:baseline}.folha .fn{font-size:11pt;font-weight:normal}'
++'.folha td{border:1px solid #888;padding:0 2mm;height:var(--rh);font-size:var(--fs,10pt);line-height:1.1;overflow:hidden;white-space:nowrap;text-overflow:clip}'
++'.folha td.c{text-align:center;padding:0}.folha td.r{font-family:Consolas,"Courier New",monospace;font-weight:400;text-align:center;padding:0}.folha td.h{text-align:center}'
++'.folha tr.sep td{border-top:2px solid #000}'
++'.folha .cb{display:inline-block;box-sizing:border-box;width:var(--cb,4.4mm);height:var(--cb,4.4mm);border:1.2px solid #000;vertical-align:middle;padding:.3mm}'
++'.folha .cb svg{display:block;width:100%;height:100%}'
++'.folha .rod{margin-top:auto;padding-top:2mm;font-size:8pt;color:#333;text-align:right}';
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function parseRomaneio(htm){
+  const els=[],re=/<div([^>]*)>([\s\S]*?)<\/div>/gi;let m;
+  while((m=re.exec(htm))){
+    const t=m[1].match(/top:\s*(\d+)/i),l=m[1].match(/left:\s*(\d+)/i);if(!t||!l)continue;
+    const tx=m[2].replace(/<[^>]*>/g,'').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&lt;/gi,'<').replace(/&gt;/gi,'>').replace(/\s+/g,' ').trim();
+    if(tx)els.push({top:+t[1],left:+l[1],tx});
+  }
+  els.sort((a,b)=>a.top-b.top||a.left-b.left);
+  const itens=[];let dest='(SEM DESTINO)',destNum='',data='',labRel='',row=null;
+  for(const e of els){
+    let x;
+    if((x=e.tx.match(/^Fil\.\s*Destino:\s*(?:(\d+)\s*-\s*)?(.+)$/i))){dest=x[2].trim();destNum=x[1]?String(parseInt(x[1],10)):'';}
+    else if((x=e.tx.match(/DATA RETIRADA\s*-\s*(\d{2}\/\d{2}\/(\d{2,4}))/i))){if(!data){data=x[1];if(x[2].length===2)data=data.slice(0,6)+'20'+x[2];}}
+    else if((x=e.tx.match(/LAB:\s*(.+)$/i))){if(!labRel)labRel=x[1].trim();}
+    if(/^\d{6}-\d$/.test(e.tx)&&e.left<200){row={top:e.top,dest,destNum,req:e.tx,paciente:'',hora:''};itens.push(row);}
+    else if(row&&e.top===row.top){
+      if(!row.paciente&&e.left>=210&&e.left<475)row.paciente=e.tx;
+      else if(/^\d{1,2}:\d{2}$/.test(e.tx))row.hora=e.tx.padStart(5,'0');
+    }
+  }
+  return {itens,data,labRel};
+}
+// Une os dois relatórios do Fórmula Certa e usa o banco de dados para decidir o laboratório de cada requisição.
+// Se o banco diz que a requisição é do outro laboratório, ela vai para as páginas desse laboratório
+// (na mesma filial de destino em que veio) e, por padrão, sem hora e sem paciente.
+function resolverLabs(rc,rd,labMap,comDados){
+  const src=[];
+  (rc?rc.itens:[]).forEach(i=>src.push(Object.assign({origem:'cap'},i)));
+  (rd?rd.itens:[]).forEach(i=>src.push(Object.assign({origem:'der'},i)));
+  const porReq=new Map();
+  src.forEach(i=>{const a=porReq.get(i.req),alvo=labMap.get(i.req);if(!a||(alvo&&i.origem===alvo&&a.origem!==alvo))porReq.set(i.req,i);});
+  const proprias={cap:[],der:[]},movidas={cap:[],der:[]};let nMov=0;
+  porReq.forEach(i=>{
+    const lab=labMap.get(i.req)||i.origem;
+    if(lab===i.origem)proprias[lab].push(i);
+    else{nMov++;movidas[lab].push(comDados?i:Object.assign({},i,{paciente:'',hora:''}));}
+  });
+  const out={movidas:nMov};
+  ['cap','der'].forEach(l=>{
+    const itens=proprias[l].concat(movidas[l]);
+    const own=l==='cap'?rc:rd,outro=l==='cap'?rd:rc;
+    out[l]=itens.length?{itens,data:(own&&own.data)||(outro&&outro.data)||''}:null;
+  });
+  return out;
+}
+const nReq=n=>n+(n===1?' requisição':' requisições');
+function paginasLab(rel,nomeLab,conf,titulo,ger){
+  const grupos=new Map();
+  rel.itens.forEach(it=>{const k=(it.destNum||'')+'|'+it.dest;if(!grupos.has(k))grupos.set(k,{dest:it.dest,num:it.destNum||'',itens:[]});grupos.get(k).itens.push(it);});
+  const pgs=[];
+  grupos.forEach(g=>{
+    const arr=g.itens.slice().sort((a,b)=>(a.hora||'99:99').localeCompare(b.hora||'99:99')); // horário crescente
+    const np=Math.ceil(arr.length/ROM_MAX),per=Math.ceil(arr.length/np);
+    for(let i=0;i<np;i++)pgs.push({dest:g.dest,num:g.num,total:arr.length,itens:arr.slice(i*per,(i+1)*per),i,np});
+  });
+  return pgs.map(p=>{
+    const n=p.itens.length,ok=p.itens.filter(i=>conf.has(i.req)).length;
+    const rh=ROW_MM,fs=10,cb=4.4;
+    const linhas=p.itens.map((i,k)=>'<tr'+(k>0&&i.hora!==p.itens[k-1].hora?' class="sep"':'')+'><td class="c"><span class="cb">'+(conf.has(i.req)?CHK:'')+'</span></td><td class="r">'+i.req+'</td><td>'+escH(i.paciente)+'</td><td class="h">'+i.hora+'</td><td></td></tr>').join('');
+    return '<section class="folha" style="--rh:'+rh+'mm;--fs:'+fs+'pt;--cb:'+cb+'mm"><h1>'+escH(titulo)+'</h1><div class="sub"><div class="l1"><span>Laboratório: '+nomeLab+' — '+nReq(rel.itens.length)+'</span><span>Data de retirada: '+escH(rel.data)+'</span></div><div class="ger">Gerado em '+escH(ger)+'</div></div>'
+    +'<table><colgroup><col style="width:10mm"><col style="width:25mm"><col style="width:68mm"><col style="width:19mm"><col></colgroup><thead><tr><th class="dest" colspan="5"><div class="dh"><span>Filial de destino: '+escH(p.dest)+(p.np>1?' ('+(p.i+1)+'/'+p.np+')':'')+'</span>'+(p.num?'<span class="fn">Filial nº '+escH(p.num)+' · '+nReq(p.total)+'</span>':'<span class="fn">'+nReq(p.total)+'</span>')+'</div></th></tr>'
+    +'<tr><th></th><th class="c">Requisição</th><th class="c">Paciente</th><th class="c">Retirada</th><th class="c">Observações</th></tr></thead><tbody>'+linhas+'</tbody></table>'
+    +'<div class="rod">Conferidas: '+ok+' de '+n+'</div></section>';
+  }).join('');
+}
+// ROMANEIO-LOGIC-END
+document.head.insertAdjacentHTML('beforeend','<style>'+CSS_REL+'</style>');
+const REL={cap:null,der:null},NOMES={cap:'Cápsulas',der:'Dermato'};
+let romSlot=null;
+document.querySelectorAll('#romaneio .btn[data-lab]').forEach(b=>b.onclick=()=>{
+  const l=b.dataset.lab;
+  if(b.dataset.rm){REL[l]=null;$('st_'+l).textContent='Nenhum relatório carregado.';gerarRomaneio();return;}
+  romSlot=l;$('arqrom').value='';$('arqrom').click();
+});
+let romMsg='';
+// l = 'cap' | 'der'; sem l, o laboratório é identificado pelo campo LAB do relatório
+async function carregarRel(f,l){
+  const rel=parseRomaneio(new TextDecoder('windows-1252').decode(await f.arrayBuffer()));
+  const lr=rel.labRel.toUpperCase(),det=lr.startsWith('CAP')?'cap':lr.startsWith('DER')?'der':null;
+  if(!l)l=det;
+  if(!l)return '"'+f.name+'": não foi possível identificar o laboratório (LAB: '+(rel.labRel||'ausente')+'). Use o botão do laboratório.';
+  if(!rel.itens.length){REL[l]=null;$('st_'+l).textContent='Nenhuma requisição encontrada em "'+f.name+'". Verifique se é o relatório correto.';return '';}
+  REL[l]=rel;
+  $('st_'+l).textContent=f.name+' — '+rel.itens.length+' requisições, retirada em '+rel.data+'.'+(det&&det!==l?' ⚠ O relatório indica LAB: '+rel.labRel+'.':'');
+  return '';
+}
+$('arqrom').onchange=async()=>{
+  const f=$('arqrom').files[0];if(!f||!romSlot)return;
+  romMsg=await carregarRel(f,romSlot);gerarRomaneio();
+};
+$('romdois').onclick=()=>{$('arqrom2').value='';$('arqrom2').click();};
+$('arqrom2').onchange=async()=>{
+  const msgs=[];
+  for(const f of Array.from($('arqrom2').files)){const m=await carregarRel(f,null);if(m)msgs.push(m);}
+  romMsg=msgs.join(' ');gerarRomaneio();
+};
+function sincLimite(){
+  document.querySelectorAll('.limdt').forEach(i=>i.value=limite||'');
+  document.querySelectorAll('.limbtn').forEach(b=>b.textContent=limite?'Sem limite':'Voltar a 1 mês');
+  const dt=limite?limite.split('-').reverse().join('/'):'';
+  document.querySelectorAll('.limex').forEach(e=>{
+    const rel=e.dataset.ctx==='rel';
+    e.textContent=limite
+      ?(rel?'O relatório considera só requisições conferidas a partir de '+dt+' (para marcar as checkboxes e definir o laboratório). ':'A busca considera só requisições conferidas a partir de '+dt+'. ')+'Conferências mais antigas são ignoradas. Esta data volta a ser 1 mês atrás sempre que a aplicação é aberta.'
+      :'Sem limite: a pesquisa considera todo o histórico de conferências. Clique em "Voltar a 1 mês" para restaurar o padrão.';
+  });
+}
+function aoMudarLimite(){sincLimite();if(tela==='romaneio')gerarRomaneio();}
+document.querySelectorAll('.limdt').forEach(i=>i.onchange=()=>{limite=i.value||'';aoMudarLimite();});
+document.querySelectorAll('.limbtn').forEach(b=>b.onclick=()=>{limite=limite?'':umMesAtras();aoMudarLimite();});
+sincLimite();
+async function gerarRomaneio(){
+  const conf=new Set(),labMap=new Map();let semBase='',regs=[];
+  try{await flush();regs=await lerRegs();regs.filter(r=>!limite||r.dia>=limite).forEach(r=>{conf.add(r.requisicao);labMap.set(r.requisicao,r.laboratorio==='dermato'?'der':'cap');});}
+  catch(e){semBase=' (sem acesso ao banco de dados: nenhuma checkbox marcada)';}
+  const t=$('romtit').value.trim()||'Relatório de receitas';
+  const d=new Date(),p2=n=>String(n).padStart(2,'0');
+  const ger=p2(d.getDate())+'/'+p2(d.getMonth()+1)+'/'+d.getFullYear()+' às '+p2(d.getHours())+':'+p2(d.getMinutes());
+  const res=resolverLabs(REL.cap,REL.der,labMap,true);
+  let html='',tot=0,ok=0;
+  const sel=$('romsel').value;
+  ['cap','der'].forEach(l=>{const r=res[l];if(!r||(sel!=='ambos'&&sel!==l))return;html+=paginasLab(r,NOMES[l],conf,t,ger);tot+=r.itens.length;ok+=r.itens.filter(i=>conf.has(i.req)).length;});
+  $('folhas').innerHTML=html;
+  $('romsum').textContent=(tot?tot+' requisições no relatório, '+ok+' já conferidas'+(res.movidas?'; '+res.movidas+' movida(s) de laboratório conforme o banco de dados':'')+semBase+'.':((REL.cap||REL.der)?'Não há requisições de '+(sel==='cap'?'Cápsulas':'Dermato')+' nos relatórios carregados.':'Carregue os relatórios do Fórmula Certa (.HTM) de Cápsulas e Dermato.'))+(REL.cap&&REL.der&&REL.cap.data!==REL.der.data?' ⚠ Os relatórios têm datas de retirada diferentes: Cápsulas '+REL.cap.data+' e Dermato '+REL.der.data+'.':'')+(romMsg?' '+romMsg:'');
+}
+$('romatu').onclick=gerarRomaneio;
+$('romtit').oninput=gerarRomaneio;$('romsel').onchange=gerarRomaneio;
+$('romimp').onclick=async()=>{if(!$('folhas').children.length)return;await gerarRomaneio();window.print();};
+$('romdl').onclick=()=>{
+  if(!$('folhas').children.length)return;
+  const d=(REL.cap||REL.der).data.split('/').reverse().join('-');
+  const doc='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório '+d+'</title><style>@page{size:A4;margin:0}body{margin:0;background:#888}.folha{margin:12px auto}@media print{body{background:#fff}.folha{margin:0}}'+CSS_REL+'</style></head><body>'+$('folhas').innerHTML+'</body></html>';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([doc],{type:'text/html'}));a.download='relatorio_'+d+($('romsel').value==='cap'?'_capsulas':$('romsel').value==='der'?'_dermato':'')+'.html';a.click();
+};
+
+
+// importação do registros.jsonl usado antes desta versão (só entram requisições novas; as repetidas são ignoradas)
+$('imp').onclick=()=>{$('arqimp').value='';$('arqimp').click();};
+$('arqimp').onchange=async()=>{
+  const f=$('arqimp').files[0];if(!f)return;
+  const linhas=(await f.text()).split('\n').filter(Boolean).map(l=>{try{return JSON.parse(l);}catch(e){return null;}}).filter(r=>r&&/^\d{6}-\d$/.test(r.requisicao));
+  if(!linhas.length){aviso('Nenhum registro válido no arquivo.',true);return;}
+  if(!confirm('Importar '+linhas.length+' registros de "'+f.name+'"? Requisições que já existem no banco são ignoradas.'))return;
+  let novos=0;
+  try{
+    for(let i=0;i<linhas.length;i+=500){
+      const lote=linhas.slice(i,i+500).map(r=>({requisicao:r.requisicao,laboratorio:r.laboratorio==='dermato'?'dermato':'capsulas',usuario_nome:String(r.usuario||'não identificado').slice(0,120),conferida_em:r.data||new Date().toISOString(),dia:r.dia||diaDe(new Date(r.data||Date.now()))}));
+      const {data,error}=await supa.from('conferencia_formulas').upsert(lote,{onConflict:'requisicao',ignoreDuplicates:true}).select('id');
+      if(error)throw error;novos+=data.length;
+    }
+    await carregarIndice();aviso(novos+' registros importados ('+(linhas.length-novos)+' já existiam).',false);
+  }catch(e){aviso(falha(e),true);}
+};
+async function iniciar(){
+  const r=await requireRole(['chefia','conferencia']);
+  MEU_ID=r.session.user.id;
+  const {data:p}=await supa.from('perfis').select('nome_exibicao').eq('id',MEU_ID).maybeSingle();
+  NOME_USUARIO=(p&&p.nome_exibicao)||'não identificado';$('usuario').textContent=NOME_USUARIO;
+  await aplicarPrefsDoUsuario();
+  await carregarIndice();
+  ir();
+}
+iniciar();
+</script><script>(function(){var s=document.createElement("script");s.src="hub-sidebar.js?t="+Date.now();document.body.appendChild(s);})();</script>
+</body></html>

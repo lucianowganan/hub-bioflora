@@ -317,3 +317,7 @@ Decisão: **sem app nativo/loja**. Caminho: responsivo por módulo + **PWA** (in
 - `rh_historico(colaborador)` = linha do tempo (avaliações/RNC/advertência, férias, ponto, erros, inclusões, produção, documentos, avisos lidos, pagamentos). `rh_nomes_soltos()`, `rh_logins()`, `rh_vincular_nome()`, `rh_vincular_login()` alimentam a tela "Vincular nomes" (`rh-identidade.js`).
 - **Tudo isso é SÓ da chefia** (funções com `is_chefia()`; nem o RH lê). `colaborador_pagamentos` e `colaboradores_salarios_historico` idem (RLS + revoke anon). Chat/DM nunca entra; só avisos oficiais.
 - Pendente: seletores com busca ao digitar (`lista_nomes_colaboradores()`) nos módulos que ainda têm nome livre; decidir tipo de documento "financeiro" só-chefia (o bucket `colaboradores-docs` ainda é legível pelo RH).
+
+## 17. Conferência de Fórmulas e nomes (migração 90)
+- `conferencia-formulas.html` (permissão `modulo.conferencia`: chefia e conferência): bipagem de requisições (cápsulas/dermato), busca, tabela do dia (trocar lab/excluir), relatório de retirada a partir dos .HTM do Fórmula Certa. Dados em `conferencia_formulas` (requisição única), preferências em `conferencia_prefs`; botão "Importar" lê o `registros.jsonl` antigo.
+- `perfis.nome_exibicao` nunca é e-mail: trigger usa o nome do colaborador vinculado (Vincular nomes no RH) ou a parte antes do @. Chat: clique na imagem abre pré-visualização.

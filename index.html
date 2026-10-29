@@ -406,6 +406,7 @@ const SIDE_MODULOS = [
   { href:'email-marketing.html', icone:'email', label:'Email Marketing', perm:'modulo.email_marketing' },
   { href:'instagram.html', icone:'instagram', label:'Instagram', perm:'modulo.instagram' },
   { href:'embalagens.html', icone:'caixa', label:'Controle de Embalagens', perm:'modulo.embalagens' },
+  { href:'conferencia-formulas.html', icone:'prancheta', label:'Conferência de Fórmulas', perm:'modulo.conferencia' },
   { href:'admin.html', icone:'escudo', label:'Administração', perm:'modulo.admin' },
   { href:'cargos.html', icone:'escudoCheck', label:'Cargos & Permissões', perm:'modulo.admin' },
 ];
@@ -776,6 +777,14 @@ const MODULOS_HOME = [
   "grupo": "Comercial e marketing"
  },
  {
+  "href": "conferencia-formulas.html",
+  "perm": "modulo.conferencia",
+  "titulo": "Conferência de Fórmulas",
+  "desc": "Bipagem das fórmulas conferidas, busca, tabela e relatório de retirada.",
+  "icone": "prancheta",
+  "grupo": "Operação"
+ },
+ {
   "href": "embalagens.html",
   "perm": "modulo.embalagens",
   "titulo": "Controle de Embalagens",
@@ -1124,7 +1133,7 @@ async function renderWidgets(papel, perfil){
 }
 
 // ---------- Módulos por área, com busca ----------
-const ORDEM_MODULOS_HOME = ['producao','controle-producao','formulas-complexas','reaproveitamento','rotulos','embalagens',
+const ORDEM_MODULOS_HOME = ['producao','controle-producao','formulas-complexas','reaproveitamento','rotulos','embalagens','conferencia-formulas',
   'erros','inclusoes','meus-erros','rh','tarefas','calendario-interno','chat',
   'cliente-fiel','vendas-yampi','email-marketing','instagram','calendario-editorial','visitas-medicas','wanessia','admin','cargos'];
 function renderModulosHome(temPerm){
