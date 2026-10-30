@@ -93,6 +93,38 @@ main#busca .lim{margin-top:20px}
 #romsum{font-size:13.5px;text-align:center;min-height:24px;color:var(--gray)}
 #folhas{width:100%;overflow:auto}
 #folhas .folha{margin:16px auto;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+/* Fundo por laboratório (vinho / azul) e modo "desligado" (cinza) quando a busca não encontra ou a requisição é duplicada */
+:root{--bg:#8B1A3A;--on:#fff}
+body.dermato{--bg:#1070B8}
+body{background:var(--bg);color:var(--on);transition:background .25s,color .25s}
+body.nada{--bg:#c9c9c9;--on:#333;--acc:#6b6b6b;--acc-tint:#e4e4e4}
+.marca,.marca .i{color:var(--on)}
+header a:hover,header button:hover{color:var(--bg)}
+header a.on{background:rgba(0,0,0,.3);color:#fff}
+body.nada header a.on{background:rgba(0,0,0,.15);color:#333}
+.vol input[type=range]{accent-color:var(--bg)}
+.sw{color:var(--on)}
+.sw .trilho{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.85)}
+.sw .bola{background:#fff}
+.sw span.at{color:var(--on)}
+body.nada .sw .trilho{background:rgba(0,0,0,.08);border-color:#8a8a8a}
+body.nada .sw .bola{background:#8a8a8a}
+.campo{border-color:transparent;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.campo:focus{box-shadow:0 0 0 5px rgba(255,255,255,.35),0 10px 30px rgba(0,0,0,.25)}
+body.nada .campo{background:#efefef;color:#555;box-shadow:0 4px 14px rgba(0,0,0,.12);border-color:transparent}
+body.nada .campo::placeholder{color:#999}
+.msg{color:var(--on)}
+.msg.erro,.msg.dup{background:#fff;color:#b00020}
+.leg,#romsum,.ctl,.ctl b,.linha{color:var(--on)}
+.up .linha{color:var(--gray)}
+kbd{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.55);color:inherit}
+body.nada kbd{background:#e4e4e4;border-color:#aaa}
+.info{background:#fff;color:var(--ink)}
+body.nada .info{background:#efefef;color:#555;font-weight:600}
+body.nada header a,body.nada header button,body.nada .vol,body.nada .user{background:#e3e3e3;color:#555}
+body.nada header a.on{background:rgba(0,0,0,.2);color:#333}
+body.nada .lim,body.nada .up,body.nada .lista .l{background:#ececec;color:#555}
+body.nada .lim .btn.s{background:#ddd}
 @media (max-width:720px){
   header{padding:18px 16px 6px}.marca{font-size:20px;width:100%;margin:0}
   header a,header button,.user{padding:8px 12px;font-size:13px}
