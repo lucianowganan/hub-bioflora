@@ -321,3 +321,7 @@ Decisão: **sem app nativo/loja**. Caminho: responsivo por módulo + **PWA** (in
 ## 17. Conferência de Fórmulas e nomes (migração 90)
 - `conferencia-formulas.html` (permissão `modulo.conferencia`: chefia e conferência): bipagem de requisições (cápsulas/dermato), busca, tabela do dia (trocar lab/excluir), relatório de retirada a partir dos .HTM do Fórmula Certa. Dados em `conferencia_formulas` (requisição única), preferências em `conferencia_prefs`; botão "Importar" lê o `registros.jsonl` antigo.
 - `perfis.nome_exibicao` nunca é e-mail: trigger usa o nome do colaborador vinculado (Vincular nomes no RH) ou a parte antes do @. Chat: clique na imagem abre pré-visualização.
+
+## 18. Permissões reais (migração 91)
+- Acesso a cada página: `auth-guard.js` consulta a permissão `modulo.*` do cargo (mapa `PERMISSAO_DA_PAGINA`); a lista fixa de papéis só vale sem permissão cadastrada ou se a consulta falhar. Chefia sempre entra. Ao dar um módulo novo a um cargo, os dados ainda dependem das regras de banco (RLS) da tabela do módulo.
+- RH: `rh.ponto.ver_dashboard` (ver Ponto) e `rh.ponto.enviar_planilha` (enviar/alterar) valem no banco (folhas_ponto, funcionarios) e na tela; `rh.ferias.aprovar` (ver todas as solicitações e aprovar/recusar/desfazer); `rh.colaboradores.ver_salario` (só leitura; editar é da chefia); `rh.ferias.lancar` e `inclusoes.ver_desempenho` já valiam.

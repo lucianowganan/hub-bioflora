@@ -452,9 +452,9 @@ let colabEmEdicaoId = null;
 let meuPapelRH = null;
 
 const PODE_ADMIN_RH = ['chefia','rh']; // colaboradores, ponto (entrada), avaliações
-const PODE_VER_PONTO = ['chefia','rh','gestao'];
 const PODE_RELATORIOS = ['chefia']; // visão geral só da chefia
-const PODE_APROVAR_FERIAS = ['chefia']; // nem o RH aprova
+// Permissões reais (Cargos & Permissões): preenchidas em init(); chefia sempre pode
+let podeVerPonto = false, podeEnviarPonto = false, podeVerSalario = false, podeAprovarFerias = false;
 let podeLancarFerias = false; // permissão "rh.ferias.lancar" (Cargos & Permissões): chefia e liderança
 
 async function init(){
@@ -463,12 +463,17 @@ async function init(){
   // Quem pode lançar férias vem da permissão do cargo (o banco confere a mesma permissão). Se não der para ler, só a chefia.
   const permsRH = await buscarMinhasPermissoes(supa, papel);
   podeLancarFerias = permsRH ? permsRH.has('rh.ferias.lancar') : papel === 'chefia';
+  const tenho = (chave, antigos) => papel === 'chefia' || (permsRH ? permsRH.has(chave) : antigos.includes(papel));
+  podeVerPonto = tenho('rh.ponto.ver_dashboard', ['rh','gestao']) || tenho('rh.ponto.enviar_planilha', ['rh']);
+  podeEnviarPonto = tenho('rh.ponto.enviar_planilha', ['rh']);
+  podeVerSalario = tenho('rh.colaboradores.ver_salario', []);
+  podeAprovarFerias = tenho('rh.ferias.aprovar', []);
 
   if(!PODE_ADMIN_RH.includes(papel)){
     document.querySelector('.rh-nav-item[data-tab="colaboradores"]').style.display = 'none';
     document.querySelector('.rh-nav-item[data-tab="avaliacoes"]').style.display = 'none';
   }
-  if(!PODE_VER_PONTO.includes(papel)){
+  if(!podeVerPonto){
     document.querySelector('.rh-nav-item[data-tab="ponto"]').style.display = 'none';
   }
   if(!PODE_RELATORIOS.includes(papel)){
@@ -483,7 +488,7 @@ async function init(){
 
 function trocarAba(aba){
   if((aba === 'colaboradores' || aba === 'avaliacoes') && !PODE_ADMIN_RH.includes(meuPapelRH)) return;
-  if(aba === 'ponto' && !PODE_VER_PONTO.includes(meuPapelRH)) return;
+  if(aba === 'ponto' && !podeVerPonto) return;
   if(aba === 'relatorios' && !PODE_RELATORIOS.includes(meuPapelRH)) return;
   if(aba === 'vinculos' && meuPapelRH !== 'chefia') return;
   abaAtiva = aba;
@@ -618,7 +623,7 @@ function renderAbaPonto(){
     <div class="placeholder-tab" style="display:none"></div>
     <h1 style="font-family:var(--headfont);font-size:22px;margin:0 0 20px;">Ponto</h1>
     <div id="prazoBanner" class="config-banner" style="background:var(--bad-tint);border-color:#E8C4B8;color:var(--bad)"></div>
-    <div class="upload-panel" id="uploadPanel">
+    <div class="upload-panel" id="uploadPanel" style="${podeEnviarPonto ? '' : 'display:none'}">
       <h2>Enviar folha de ponto do mês</h2>
       <p class="desc">Faça upload do xlsx exportado do aplicativo de ponto. O sistema calcula tudo automaticamente.</p>
       <div class="upload-zone" id="dropZone">
@@ -915,7 +920,7 @@ async function carregarColaboradores(){
   (cores||[]).forEach(s => { setoresCoresCache[s.nome] = s.cor; });
 
   salariosCache = {};
-  if(meuPapelRH === 'chefia'){
+  if(podeVerSalario){
     const { data: salarios } = await supa.from('colaboradores_salarios').select('colaborador_id,salario');
     (salarios||[]).forEach(s => { salariosCache[s.colaborador_id] = s.salario; });
   }
@@ -1023,7 +1028,8 @@ function abrirModalColab(id){
   document.getElementById('cAdmissao').value = c?.data_admissao || '';
   document.getElementById('cPis').value = c?.pis || '';
   document.getElementById('cEscala').value = c?.escala_horario || '';
-  document.getElementById('campoSalarioColab').style.display = meuPapelRH === 'chefia' ? 'block' : 'none';
+  document.getElementById('campoSalarioColab').style.display = podeVerSalario ? 'block' : 'none';
+  document.getElementById('cSalario').disabled = meuPapelRH !== 'chefia'; // só a chefia altera; quem tem a permissão apenas vê
   document.getElementById('cSalario').value = (c ? salariosCache[c.id] : '') || '';
   document.getElementById('cObs').value = c?.observacoes || '';
   document.getElementById('cPrecisaEmail').checked = c?.precisa_email_bioflora || false;
@@ -1240,7 +1246,7 @@ async function renderAbaFerias(){
   const { data: { session } } = await supa.auth.getSession();
   meuUserId = session.user.id;
 
-  const souChefiaAprovador = PODE_APROVAR_FERIAS.includes(meuPapelRH);
+  const souChefiaAprovador = podeAprovarFerias;
   const possoPreencherEmNomeDeOutro = PODE_ADMIN_RH.includes(meuPapelRH); // chefia + RH
 
   document.getElementById('rhMain').innerHTML = `
@@ -1482,7 +1488,7 @@ function conferirConflitoFerias(){
 }
 
 function renderListaSolicitacoes(){
-  const souChefiaAprovador = PODE_APROVAR_FERIAS.includes(meuPapelRH);
+  const souChefiaAprovador = podeAprovarFerias;
   const lista = souChefiaAprovador ? feriasCache : feriasCache.filter(s => s.solicitante_id === meuUserId);
 
   if(souChefiaAprovador){
@@ -1980,8 +1986,8 @@ function renderGraficoSalarial(ativos){
 // ============================================================
 async function renderDashboardGeralRH(){
   const admin = PODE_ADMIN_RH.includes(meuPapelRH);
-  const aprovador = PODE_APROVAR_FERIAS.includes(meuPapelRH);
-  const vePonto = PODE_VER_PONTO.includes(meuPapelRH);
+  const aprovador = podeAprovarFerias;
+  const vePonto = podeVerPonto;
 
   document.getElementById('rhMain').innerHTML = `<div class="placeholder-tab"><p>Carregando...</p></div>`;
 
