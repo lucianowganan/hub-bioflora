@@ -93,38 +93,42 @@ main#busca .lim{margin-top:20px}
 #romsum{font-size:13.5px;text-align:center;min-height:24px;color:var(--gray)}
 #folhas{width:100%;overflow:auto}
 #folhas .folha{margin:16px auto;box-shadow:0 6px 24px rgba(0,0,0,.25)}
-/* Fundo por laboratório (vinho / azul) e modo "desligado" (cinza) quando a busca não encontra ou a requisição é duplicada */
-:root{--bg:#8B1A3A;--on:#fff}
-body.dermato{--bg:#1070B8}
+/* Cores: vinho/azul só na tela Bipar; o resto usa o padrão do Hub. Modo "desligado" (cinza) na busca não encontrada e na requisição duplicada. */
+:root{--bg:#F4EFEC;--on:#2B2118}
+body.tela-bipar{--bg:#8B1A3A;--on:#fff}
+body.tela-bipar.dermato{--bg:#1070B8}
+body.nada{--bg:#c9c9c9 !important;--on:#333 !important;--acc:#6b6b6b;--acc-tint:#e4e4e4}
 body{background:var(--bg);color:var(--on);transition:background .25s,color .25s}
-body.nada{--bg:#c9c9c9;--on:#333;--acc:#6b6b6b;--acc-tint:#e4e4e4}
-.marca,.marca .i{color:var(--on)}
-header a:hover,header button:hover{color:var(--bg)}
-header a.on{background:rgba(0,0,0,.3);color:#fff}
-body.nada header a.on{background:rgba(0,0,0,.15);color:#333}
-.vol input[type=range]{accent-color:var(--bg)}
-.sw{color:var(--on)}
-.sw .trilho{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.85)}
-.sw .bola{background:#fff}
-.sw span.at{color:var(--on)}
+header{position:sticky;top:0;z-index:30;background:var(--bg);transition:background .25s}
+/* tela Tabela: data, laboratório e ordenação ficam fixos embaixo do cabeçalho enquanto a lista rola */
+.ctlbox{position:sticky;top:var(--hh,0px);z-index:20;background:var(--bg);width:100%;display:flex;flex-direction:column;align-items:center;padding:6px 0 8px;transition:background .25s}
+.ctlbox .ctl{margin:4px 0}
+/* tela Bipar (fundo colorido: texto branco, contraste 5:1 ou mais sobre vinho e azul) */
+body.tela-bipar .marca,body.tela-bipar .marca .i{color:var(--on)}
+body.tela-bipar header a.on{background:rgba(0,0,0,.3);color:#fff}
+body.tela-bipar header a:hover,body.tela-bipar header button:hover{color:var(--bg)}
+body.tela-bipar .vol input[type=range]{accent-color:var(--bg)}
+body.tela-bipar .sw{color:var(--on)}
+body.tela-bipar .sw .trilho{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.85)}
+body.tela-bipar .sw .bola{background:#fff}
+body.tela-bipar .sw span.at{color:var(--on)}
+body.tela-bipar .campo{border-color:transparent;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+body.tela-bipar .campo:focus{box-shadow:0 0 0 5px rgba(255,255,255,.35),0 10px 30px rgba(0,0,0,.25)}
+body.tela-bipar .msg{color:var(--on)}
+body.tela-bipar .msg.erro,body.tela-bipar .msg.dup{background:#fff;color:#b00020}
+body.tela-bipar .leg{color:var(--on)}
+body.tela-bipar kbd{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.55);color:inherit}
+/* modo desligado (cinza) */
 body.nada .sw .trilho{background:rgba(0,0,0,.08);border-color:#8a8a8a}
 body.nada .sw .bola{background:#8a8a8a}
-.campo{border-color:transparent;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-.campo:focus{box-shadow:0 0 0 5px rgba(255,255,255,.35),0 10px 30px rgba(0,0,0,.25)}
 body.nada .campo{background:#efefef;color:#555;box-shadow:0 4px 14px rgba(0,0,0,.12);border-color:transparent}
-body.nada .campo::placeholder{color:#999}
-.msg{color:var(--on)}
-.msg.erro,.msg.dup{background:#fff;color:#b00020}
-.leg,#romsum,.ctl,.ctl b,.linha{color:var(--on)}
-.up .linha{color:var(--gray)}
-kbd{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.55);color:inherit}
-body.nada kbd{background:#e4e4e4;border-color:#aaa}
-.info{background:#fff;color:var(--ink)}
-body.nada .info{background:#efefef;color:#555;font-weight:600}
-body.nada header a,body.nada header button,body.nada .vol,body.nada .user{background:#e3e3e3;color:#555}
-body.nada header a.on{background:rgba(0,0,0,.2);color:#333}
-body.nada .lim,body.nada .up,body.nada .lista .l{background:#ececec;color:#555}
-body.nada .lim .btn.s{background:#ddd}
+body.nada .campo::placeholder{color:#8a8a8a}
+body.nada kbd{background:#e4e4e4;border-color:#aaa;color:#333}
+body.nada .info{background:#efefef;color:#444;font-weight:600}
+body.nada header a,body.nada header button,body.nada .vol,body.nada .user{background:#e3e3e3;color:#444}
+body.nada header a.on{background:rgba(0,0,0,.2);color:#222}
+body.nada .lim,body.nada .up,body.nada .lista .l{background:#ececec;color:#444}
+body.nada .msg.dup,body.nada .msg.erro{background:#fff;color:#b00020}
 @media (max-width:720px){
   header{padding:18px 16px 6px}.marca{font-size:20px;width:100%;margin:0}
   header a,header button,.user{padding:8px 12px;font-size:13px}
@@ -197,6 +201,7 @@ body.nada .lim .btn.s{background:#ddd}
 </main>
 
 <main id="tabela">
+  <div class="ctlbox">
   <div class="ctl">
     <input type="date" id="dt">
     <div class="sw peq" id="sw2"><span id="m1" class="at"><svg class="i"><use href="#i-pill"/></svg>Cáps.</span><div class="trilho"><div class="bola"></div></div><span id="m2"><svg class="i"><use href="#i-drop"/></svg>Derm.</span></div>
@@ -206,6 +211,7 @@ body.nada .lim .btn.s{background:#ddd}
     <select id="ord"><option value="num">Número</option><option value="hora">Data e hora</option></select>
     <select id="dir"><option value="asc">Crescente</option><option value="desc">Decrescente</option></select>
     <b id="tot"></b>
+  </div>
   </div>
   <div class="lista" id="lista"></div>
 </main>
@@ -380,11 +386,13 @@ $('sw1').onclick=()=>{alternar();$('campo').focus();};
 $('sw2').onclick=alternar;
 
 let tela='bipar';
+function medirCabecalho(){document.documentElement.style.setProperty('--hh',document.querySelector('header').offsetHeight+'px');}
+window.addEventListener('resize',medirCabecalho);
 function ir(){
   tela=(location.hash||'#bipar').slice(1);if(!$(tela))tela='bipar';
   document.querySelectorAll('main').forEach(m=>m.classList.toggle('on',m.id===tela));
   document.querySelectorAll('header a').forEach(a=>a.classList.toggle('on',a.dataset.t===tela));
-  document.body.classList.remove('nada');aplicarLab();
+  document.body.classList.remove('nada');document.body.classList.toggle('tela-bipar',tela==='bipar');aplicarLab();medirCabecalho();
   if(tela==='bipar')$('campo').focus();
   if(tela==='busca'){$('q').value='';$('q').focus();$('res').textContent='';}
   if(tela==='tabela')carregarTabela();
