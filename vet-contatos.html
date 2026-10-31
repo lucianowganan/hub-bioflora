@@ -53,7 +53,7 @@ tr.det td{background:#FBF8F9;font-size:13px;color:var(--gray)}
     <button class="btn s" id="btnLink">Copiar link do formulário</button>
     <button class="btn" id="btnCsv">Exportar planilha (CSV)</button>
   </div>
-  <div class="tab"><table><thead><tr><th>Data</th><th>Contato</th><th>WhatsApp</th><th>Pet</th><th>Interesses</th><th title="Amostra de biscoito entregue">Amostra</th><th title="Brinde da próxima compra entregue">Brinde</th><th></th></tr></thead><tbody id="corpo"></tbody></table><div id="vazio" class="vazio" style="display:none">Nenhum cadastro encontrado.</div></div>
+  <div class="tab"><table><thead><tr><th>Data</th><th>Contato</th><th>WhatsApp</th><th>Pet</th><th>Interesses</th><th title="Mensagem automática de boas-vindas pelo WhatsApp">Mensagem</th><th title="Amostra de biscoito entregue">Amostra</th><th title="Brinde da próxima compra entregue">Brinde</th><th></th></tr></thead><tbody id="corpo"></tbody></table><div id="vazio" class="vazio" style="display:none">Nenhum cadastro encontrado.</div></div>
 </div>
 <script>
 const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
@@ -95,13 +95,16 @@ function desenhar(){
       <td><a href="https://wa.me/55${d.whatsapp}" target="_blank" rel="noopener">${fmtZap(d.whatsapp)}</a></td>
       <td>${d.pet_nome ? esc(d.pet_nome) : '—'}${d.pet_especie ? ' <small>(' + ESP[d.pet_especie] + ')</small>' : ''}</td>
       <td>${(d.interesses || []).map(i => INTER[i] || i).join(', ') || '—'}</td>
+      <td>${msgStatus(d)}</td>
       <td><input class="ck" type="checkbox" ${d.amostra_entregue ? 'checked' : ''} onchange="marcar('${d.id}','amostra_entregue',this.checked,this)"></td>
       <td><input class="ck" type="checkbox" ${d.brinde_resgatado ? 'checked' : ''} onchange="marcar('${d.id}','brinde_resgatado',this.checked,this)"></td>
       <td style="white-space:nowrap"><button class="mais" onclick="alternar('${d.id}')">${abertos.has(d.id) ? '− menos' : '+ mais'}</button> <button class="x" title="Excluir" onclick="excluir('${d.id}')">🗑</button></td></tr>
-    ${abertos.has(d.id) ? `<tr class="det"><td colspan="8">
+    ${abertos.has(d.id) ? `<tr class="det"><td colspan="9">
       ${[['Evento', d.evento], ['E-mail', d.email], ['Clínica', d.clinica], ['CRMV', d.crmv], ['Raça', d.pet_raca], ['Idade', d.pet_idade], ['Porte', PORTE[d.pet_porte]], ['Já usa manipulado', MANIP[d.usa_manipulado]], ['Obs.', d.observacao]]
         .filter(x => x[1]).map(x => `<b>${x[0]}:</b> ${esc(x[1])}`).join(' &nbsp;·&nbsp; ')}</td></tr>` : ''}`).join('');
 }
+const MSG = {pendente:['Aguardando','#8F6210'], enviando:['Enviando…','#8F6210'], enviado:['Enviada ✓','#2F7A5F'], erro:['Erro','#B4472F'], ignorado:['—','#6E6258']};
+function msgStatus(d){ const m = MSG[d.whats_status] || MSG.pendente; return `<span style="font-weight:700;color:${m[1]}" ${d.whats_erro ? `title="${esc(d.whats_erro)}"` : ''}>${m[0]}</span>`; }
 function alternar(id){ abertos.has(id) ? abertos.delete(id) : abertos.add(id); desenhar(); }
 async function marcar(id, campo, valor, el){
   const { data, error } = await supa.from('vet_contatos').update({[campo]: valor}).eq('id', id).select('id');
