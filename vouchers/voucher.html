@@ -16,24 +16,24 @@ body{margin:0;background:#fff}
 .corte.a{top:-14px}.corte.b{bottom:-14px}
 .corpo{flex:1;padding:44px 56px 40px 60px;display:flex;flex-direction:column;justify-content:space-between}
 .corpo img{height:92px;width:auto;align-self:flex-start}
-.titulo{font:700 40px 'Space Grotesk',sans-serif;letter-spacing:-.02em;color:var(--marrom);margin:0}
+.titulo{font:700 34px/1.15 'Space Grotesk',sans-serif;letter-spacing:-.02em;color:var(--marrom);margin:0;max-width:640px}
 .evento{font:600 17px 'Maven Pro',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--ouro-esc);margin-top:6px}
 .campos{display:flex;gap:36px}
 .campo{flex:1}
 .campo .l{font:600 13px 'Maven Pro',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--gray)}
 .campo .linha{border-bottom:2px solid #D8C7A8;height:34px}
-.rodape{font:500 15px 'Maven Pro',sans-serif;color:var(--gray)}
+.rodape{font:500 14px 'Maven Pro',sans-serif;color:var(--gray);display:flex;gap:12px;flex-wrap:wrap;border-top:1px solid #E5D8BF;padding-top:12px}.rodape i{font-style:normal;color:var(--ouro)}
 .faixa{position:absolute;left:0;right:0;bottom:0;height:8px;background:var(--ouro)}
 </style></head>
 <body>
 <div class="voucher" id="v">
-  <div class="valor"><div class="pre">Vale-compra</div><div class="num"><small>R$</small><span id="valor">150</span></div><div class="off">de desconto</div></div>
+  <div class="valor"><div class="pre">Vale-compra</div><div class="num"><small>R$</small><span id="valor">100</span></div><div class="off">de desconto</div></div>
   <div class="corte a"></div><div class="corte b"></div>
   <div class="corpo">
     <img src="../logo-bioflora-vet.svg" alt="Bioflora Vet">
-    <div><h1 class="titulo">Seu voucher chegou</h1><div class="evento">Evento Veterinário · Farmácia Bioflora</div></div>
-    <div class="campos"><div class="campo"><div class="l">Nome</div><div class="linha"></div></div><div class="campo" style="flex:.6"><div class="l">Válido até</div><div class="linha"></div></div></div>
-    <div class="rodape">Apresente este voucher na Farmácia Bioflora e use na sua compra.</div>
+    <div><h1 class="titulo">Você ganhou um voucher para usar na Farmácia Bioflora</h1><div class="evento">Válido em 30 dias</div></div>
+    <div class="campos"><div class="campo"><div class="l">Nome</div><div class="linha"></div></div><div class="campo" style="flex:.6"><div class="l">Data de entrega</div><div class="linha"></div></div></div>
+    <div class="rodape"><span>WhatsApp 35 98449-3997</span><i>•</i><span>Rua Francisco Masseli, 426, Centro</span><i>•</i><span>@bioflorafarmacia</span></div>
   </div>
   <div class="faixa"></div>
 </div>
