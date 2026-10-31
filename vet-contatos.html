@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Contatos Veterinários — Hub Bioflora</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"><link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#8B1A3A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<style>
+:root{--burgundy:#8B1A3A;--burgundy-tint:#F7E9EE;--ink:#111;--paper:#F4EFEC;--line:#D9CFD2;--gray:#4A4245;--good:#2F7A5F;--good-tint:#E6F2EC;--bad:#B4472F;--bad-tint:#FBEBE6;--warn-tint:#FBF1E0;--headfont:'Space Grotesk','Maven Pro',sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding:32px 28px 80px}
+h1{font:600 26px var(--headfont);letter-spacing:-.02em;margin:0 0 2px}
+.sub{color:var(--gray);font-size:13.5px;margin:0 0 20px}
+.kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.kpi{background:#fff;border-radius:20px;padding:14px 20px;box-shadow:0 2px 10px rgba(94,16,39,.06);min-width:140px}
+.kpi b{display:block;font:700 26px var(--headfont);color:var(--burgundy)}.kpi span{font-size:12.5px;color:var(--gray)}
+.barra{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.barra input,.barra select{font:500 14px 'Maven Pro',sans-serif;padding:10px 14px;border:1.5px solid var(--line);border-radius:14px;background:#fff}
+.barra input[type=search]{min-width:240px;flex:1}
+.btn{font:600 13.5px 'Maven Pro',sans-serif;padding:10px 20px;border-radius:30px;border:0;background:var(--burgundy);color:#fff;cursor:pointer}
+.btn.s{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.tab{background:#fff;border-radius:22px;box-shadow:0 2px 10px rgba(94,16,39,.06);overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{text-align:left;font-size:12px;color:var(--gray);padding:12px 12px;border-bottom:1.5px solid var(--line);white-space:nowrap;background:#fff;position:sticky;top:0}
+td{padding:11px 12px;border-bottom:1px solid #EFE8EA;vertical-align:top}
+tr.det td{background:#FBF8F9;font-size:13px;color:var(--gray)}
+.tag{display:inline-block;border-radius:20px;padding:2px 10px;font-size:11.5px;font-weight:700;background:var(--burgundy-tint);color:var(--burgundy)}
+.tag.vet{background:var(--good-tint);color:var(--good)}
+.ck{width:22px;height:22px;accent-color:var(--good);cursor:pointer}
+.x{border:0;background:none;color:var(--bad);cursor:pointer;font-size:16px}
+.mais{border:0;background:none;color:var(--burgundy);cursor:pointer;font-weight:700}
+.vazio{padding:40px;text-align:center;color:var(--gray)}
+@media (max-width:720px){.wrap{padding:20px 14px 100px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Contatos Veterinários</h1>
+  <p class="sub">Cadastros feitos pelo formulário <b>Bioflora Vet</b> nos eventos. Marque a amostra e o brinde conforme forem entregues.</p>
+  <div class="kpis" id="kpis"></div>
+  <div class="barra">
+    <input type="search" id="busca" placeholder="Buscar por nome, WhatsApp, pet, cidade…">
+    <select id="fEvento"><option value="">Todos os eventos</option></select>
+    <select id="fTipo"><option value="">Todos</option><option value="tutor">Tutores</option><option value="veterinario">Veterinários</option><option value="outro">Outros</option></select>
+    <select id="fAmostra"><option value="">Amostra: todas</option><option value="nao">Amostra pendente</option><option value="sim">Amostra entregue</option></select>
+    <button class="btn s" id="btnLink">Copiar link do formulário</button>
+    <button class="btn" id="btnCsv">Exportar planilha (CSV)</button>
+  </div>
+  <div class="tab"><table><thead><tr><th>Data</th><th>Contato</th><th>WhatsApp</th><th>Pet</th><th>Interesses</th><th title="Amostra de biscoito entregue">Amostra</th><th title="Brinde da próxima compra entregue">Brinde</th><th></th></tr></thead><tbody id="corpo"></tbody></table><div id="vazio" class="vazio" style="display:none">Nenhum cadastro encontrado.</div></div>
+</div>
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ESP = {cao:'Cão', gato:'Gato', outro:'Outro'}, PORTE = {pequeno:'Pequeno', medio:'Médio', grande:'Grande'};
+const INTER = {articulacoes:'Articulações', pele_pelagem:'Pele e pelagem', ansiedade:'Ansiedade', digestivo:'Digestivo', peso:'Peso', idoso:'Pet idoso', suplementos:'Suplementos', medicamento_continuo:'Uso contínuo'};
+const TIPO = {tutor:'Tutor(a)', veterinario:'Veterinário(a)', outro:'Outro'}, MANIP = {sim:'Sim', nao:'Não', nao_sei:'Não sabe'};
+let dados = [], abertos = new Set();
+const fmtZap = w => w.length === 11 ? `(${w.slice(0,2)}) ${w.slice(2,7)}-${w.slice(7)}` : w.length === 10 ? `(${w.slice(0,2)}) ${w.slice(2,6)}-${w.slice(6)}` : w;
+const fmtData = iso => new Date(iso).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+
+async function init(){
+  await requireRole(['chefia']);
+  const { data, error } = await supa.from('vet_contatos').select('*').order('criado_em', {ascending:false}).limit(5000);
+  if(error){ $('vazio').style.display = 'block'; $('vazio').textContent = 'Erro ao carregar: ' + error.message; return; }
+  dados = data || [];
+  const eventos = [...new Set(dados.map(d => d.evento))];
+  $('fEvento').innerHTML = '<option value="">Todos os eventos</option>' + eventos.map(e => `<option>${esc(e)}</option>`).join('');
+  desenhar();
+}
+function filtrados(){
+  const t = $('busca').value.trim().toLowerCase(), ev = $('fEvento').value, tp = $('fTipo').value, am = $('fAmostra').value;
+  return dados.filter(d => (!ev || d.evento === ev) && (!tp || d.tipo_contato === tp) && (!am || (am === 'sim') === d.amostra_entregue)
+    && (!t || [d.nome, d.whatsapp, d.pet_nome, d.pet_raca, d.cidade, d.clinica, d.email].some(v => (v || '').toLowerCase().includes(t))));
+}
+function desenhar(){
+  const l = filtrados();
+  $('kpis').innerHTML = [
+    [dados.length, 'cadastros'], [dados.filter(d => d.tipo_contato === 'tutor').length, 'tutores'], [dados.filter(d => d.tipo_contato === 'veterinario').length, 'veterinários'],
+    [dados.filter(d => !d.amostra_entregue).length, 'amostras pendentes'], [dados.filter(d => d.brinde_resgatado).length, 'brindes entregues']
+  ].map(([n, t]) => `<div class="kpi"><b>${n}</b><span>${t}</span></div>`).join('');
+  $('vazio').style.display = l.length ? 'none' : 'block';
+  $('corpo').innerHTML = l.map(d => `
+    <tr><td>${fmtData(d.criado_em)}</td>
+      <td><b>${esc(d.nome)}</b><br><span class="tag ${d.tipo_contato === 'veterinario' ? 'vet' : ''}">${TIPO[d.tipo_contato]}</span>${d.cidade ? ' · ' + esc(d.cidade) : ''}</td>
+      <td><a href="https://wa.me/55${d.whatsapp}" target="_blank" rel="noopener">${fmtZap(d.whatsapp)}</a></td>
+      <td>${d.pet_nome ? esc(d.pet_nome) : '—'}${d.pet_especie ? ' <small>(' + ESP[d.pet_especie] + ')</small>' : ''}</td>
+      <td>${(d.interesses || []).map(i => INTER[i] || i).join(', ') || '—'}</td>
+      <td><input class="ck" type="checkbox" ${d.amostra_entregue ? 'checked' : ''} onchange="marcar('${d.id}','amostra_entregue',this.checked,this)"></td>
+      <td><input class="ck" type="checkbox" ${d.brinde_resgatado ? 'checked' : ''} onchange="marcar('${d.id}','brinde_resgatado',this.checked,this)"></td>
+      <td style="white-space:nowrap"><button class="mais" onclick="alternar('${d.id}')">${abertos.has(d.id) ? '− menos' : '+ mais'}</button> <button class="x" title="Excluir" onclick="excluir('${d.id}')">🗑</button></td></tr>
+    ${abertos.has(d.id) ? `<tr class="det"><td colspan="8">
+      ${[['Evento', d.evento], ['E-mail', d.email], ['Clínica', d.clinica], ['CRMV', d.crmv], ['Raça', d.pet_raca], ['Idade', d.pet_idade], ['Porte', PORTE[d.pet_porte]], ['Já usa manipulado', MANIP[d.usa_manipulado]], ['Obs.', d.observacao]]
+        .filter(x => x[1]).map(x => `<b>${x[0]}:</b> ${esc(x[1])}`).join(' &nbsp;·&nbsp; ')}</td></tr>` : ''}`).join('');
+}
+function alternar(id){ abertos.has(id) ? abertos.delete(id) : abertos.add(id); desenhar(); }
+async function marcar(id, campo, valor, el){
+  const { data, error } = await supa.from('vet_contatos').update({[campo]: valor}).eq('id', id).select('id');
+  if(error || !data || !data.length){ alert('Não foi possível salvar.'); el.checked = !valor; return; }
+  dados.find(d => d.id === id)[campo] = valor; desenhar();
+}
+async function excluir(id){
+  const d = dados.find(x => x.id === id);
+  if(!confirm('Excluir o cadastro de ' + d.nome + '? Não dá para desfazer.')) return;
+  const { data, error } = await supa.from('vet_contatos').delete().eq('id', id).select('id');
+  if(error || !data || !data.length){ alert('Não foi possível excluir.'); return; }
+  dados = dados.filter(x => x.id !== id); desenhar();
+}
+['busca','fEvento','fTipo','fAmostra'].forEach(i => $(i).addEventListener('input', desenhar));
+$('btnLink').onclick = async () => {
+  const url = new URL('vet-cadastro.html', location.href); const ev = prompt('Nome do evento para esta lista (aparece na coluna de eventos):', 'Evento veterinário');
+  if(ev === null) return; url.search = '?evento=' + encodeURIComponent(ev);
+  try{ await navigator.clipboard.writeText(url.href); alert('Link copiado:\n' + url.href); }catch(e){ prompt('Copie o link:', url.href); }
+};
+$('btnCsv').onclick = () => {
+  const cab = ['Data','Evento','Tipo','Nome','WhatsApp','E-mail','Cidade','Clínica','CRMV','Pet','Espécie','Raça','Idade','Porte','Interesses','Já usa manipulado','Observação','Amostra entregue','Brinde entregue'];
+  const cel = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const linhas = filtrados().map(d => [new Date(d.criado_em).toLocaleString('pt-BR'), d.evento, TIPO[d.tipo_contato], d.nome, d.whatsapp, d.email, d.cidade, d.clinica, d.crmv, d.pet_nome, ESP[d.pet_especie], d.pet_raca, d.pet_idade, PORTE[d.pet_porte], (d.interesses || []).map(i => INTER[i] || i).join(' / '), MANIP[d.usa_manipulado], d.observacao, d.amostra_entregue ? 'sim' : 'não', d.brinde_resgatado ? 'sim' : 'não'].map(cel).join(';'));
+  const blob = new Blob(['﻿' + [cab.map(cel).join(';'), ...linhas].join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'contatos-veterinarios-' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+};
+init();
+</script>
+<script>(function(){var s=document.createElement("script");s.src="acessibilidade.js?t="+Date.now();document.body.appendChild(s);})();</script>
+<script>(function(){var s=document.createElement("script");s.src="hub-sidebar.js?t="+Date.now();document.body.appendChild(s);})();</script>
+</body>
+</html>

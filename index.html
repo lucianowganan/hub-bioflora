@@ -405,6 +405,7 @@ const SIDE_MODULOS = [
   { href:'vendas-yampi.html', icone:'vendas', label:'Vendas (Yampi)', perm:'modulo.vendas' },
   { href:'email-marketing.html', icone:'email', label:'Email Marketing', perm:'modulo.email_marketing' },
   { href:'instagram.html', icone:'instagram', label:'Instagram', perm:'modulo.instagram' },
+  { href:'vet-contatos.html', icone:'prancheta', label:'Contatos Veterinários', perm:'modulo.vet' },
   { href:'embalagens.html', icone:'caixa', label:'Controle de Embalagens', perm:'modulo.embalagens' },
   { href:'conferencia-formulas.html', icone:'prancheta', label:'Conferência de Fórmulas', perm:'modulo.conferencia' },
   { href:'admin.html', icone:'escudo', label:'Administração', perm:'modulo.admin' },
@@ -766,6 +767,14 @@ const MODULOS_HOME = [
   "titulo": "Email Marketing",
   "desc": "Dispara campanha pra base do Cliente Fiel, via Brevo.",
   "icone": "email",
+  "grupo": "Comercial e marketing"
+ },
+ {
+  "href": "vet-contatos.html",
+  "perm": "modulo.vet",
+  "titulo": "Contatos Veterinários",
+  "desc": "Cadastros do formulário Bioflora Vet nos eventos, amostras e brindes.",
+  "icone": "prancheta",
   "grupo": "Comercial e marketing"
  },
  {
@@ -1135,7 +1144,7 @@ async function renderWidgets(papel, perfil){
 // ---------- Módulos por área, com busca ----------
 const ORDEM_MODULOS_HOME = ['producao','controle-producao','formulas-complexas','reaproveitamento','rotulos','embalagens','conferencia-formulas',
   'erros','inclusoes','meus-erros','rh','tarefas','calendario-interno','chat',
-  'cliente-fiel','vendas-yampi','email-marketing','instagram','calendario-editorial','visitas-medicas','wanessia','admin','cargos'];
+  'cliente-fiel','vendas-yampi','email-marketing','instagram','vet-contatos','calendario-editorial','visitas-medicas','wanessia','admin','cargos'];
 function renderModulosHome(temPerm){
   const alvo = document.getElementById('modules');
   const pos = (m) => { const i = ORDEM_MODULOS_HOME.indexOf(m.href.replace('.html','')); return i < 0 ? 99 : i; };

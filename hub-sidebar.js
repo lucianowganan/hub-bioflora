@@ -71,6 +71,7 @@
     { href: 'vendas-yampi.html', icone: 'vendas', label: 'Vendas (Yampi)', perm: 'modulo.vendas' },
     { href: 'email-marketing.html', icone: 'email', label: 'Email Marketing', perm: 'modulo.email_marketing' },
     { href: 'instagram.html', icone: 'instagram', label: 'Instagram', perm: 'modulo.instagram' },
+    { href: 'vet-contatos.html', icone: 'prancheta', label: 'Contatos Veterinários', perm: 'modulo.vet' },
     { href: 'embalagens.html', icone: 'caixa', label: 'Controle de Embalagens', perm: 'modulo.embalagens' },
     { href: 'conferencia-formulas.html', icone: 'prancheta', label: 'Conferência de Fórmulas', perm: 'modulo.conferencia' },
     { href: 'admin.html', icone: 'escudo', label: 'Administração', perm: 'modulo.admin' },

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bioflora Vet · Cadastro</title>
+<link rel="icon" href="favicon.png">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* Identidade: vinho Bioflora + verde-folha para o lado vet. Trocar só as variáveis abaixo se a marca vet tiver outras cores. */
+:root{--vinho:#8B1A3A;--vinho-tint:#F7E9EE;--verde:#2F7A5F;--verde-tint:#E6F2EC;--ink:#2A2224;--gray:#6B6266;--bg:#F4EFEC;--line:#D9CFD2;--bad:#B4472F;
+  --head:'Space Grotesk','Maven Pro',sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Maven Pro',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.topo{background:linear-gradient(135deg,var(--vinho),#5E1027);color:#fff;padding:22px 20px 70px}
+.topo .marca{display:flex;align-items:center;gap:12px;max-width:760px;margin:0 auto}
+.topo img{width:52px;height:52px;border-radius:14px;background:#fff;padding:4px}
+.topo .nome{font:700 24px var(--head);letter-spacing:-.02em;line-height:1.1}
+.topo .nome span{color:#BFE5D3}
+.topo p{margin:2px 0 0;font-size:14px;opacity:.9}
+main{max-width:760px;margin:-46px auto 0;padding:0 16px 60px}
+.cartao{background:#fff;border-radius:26px;padding:22px 20px;box-shadow:0 4px 18px rgba(94,16,39,.10);margin-bottom:16px}
+.cartao h2{font:700 19px var(--head);margin:0 0 4px;color:var(--vinho)}
+.cartao .sub{font-size:13.5px;color:var(--gray);margin:0 0 14px}
+.brinde{background:var(--verde-tint);border:1.5px solid #BFE0CF;color:#1F5A44;border-radius:18px;padding:12px 16px;font-size:15px;font-weight:600;margin-bottom:16px;display:flex;gap:10px;align-items:center}
+label.l{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+label.l small{font-weight:500;color:var(--gray)}
+input[type=text],input[type=tel],input[type=email],textarea{width:100%;font:500 19px 'Maven Pro',sans-serif;padding:15px 16px;border:2px solid var(--line);border-radius:16px;background:#fff;color:var(--ink)}
+textarea{min-height:76px;resize:vertical}
+input:focus,textarea:focus{outline:none;border-color:var(--vinho);box-shadow:0 0 0 4px rgba(139,26,58,.12)}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer;margin:0}
+.chip span{display:block;padding:14px 20px;border:2px solid var(--line);border-radius:30px;font-weight:600;font-size:17px;background:#fff;user-select:none}
+.chip input:checked + span{background:var(--vinho);border-color:var(--vinho);color:#fff}
+.chip input:focus-visible + span{box-shadow:0 0 0 4px rgba(139,26,58,.2)}
+.chips.verde .chip input:checked + span{background:var(--verde);border-color:var(--verde)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.aceite{display:flex;gap:12px;align-items:flex-start;font-size:14px;line-height:1.45;color:var(--ink);padding:6px 0}
+.aceite input{width:26px;height:26px;flex:none;accent-color:var(--vinho);margin-top:2px}
+.btn{width:100%;border:0;border-radius:30px;background:var(--vinho);color:#fff;font:700 21px var(--head);padding:20px;cursor:pointer;margin-top:10px;box-shadow:0 4px 14px rgba(139,26,58,.3)}
+.btn:disabled{opacity:.6}
+.erro{background:#FBEBE6;color:var(--bad);border-radius:14px;padding:12px 16px;font-weight:600;font-size:15px;margin:12px 0 0;display:none}
+.erro.on{display:block}
+.fila{position:fixed;left:12px;right:12px;bottom:12px;background:#FFF3D6;color:#7A5C15;border-radius:14px;padding:10px 14px;font-size:13.5px;font-weight:600;display:none;text-align:center;z-index:5}
+.fila.on{display:block}
+.sumir{display:none !important}
+#obrigado{display:none;text-align:center;padding:36px 20px}
+#obrigado.on{display:block}
+#obrigado .grande{font-size:64px}
+#obrigado h2{font:700 28px var(--head);color:var(--vinho);margin:8px 0}
+#obrigado p{font-size:18px;line-height:1.5;margin:8px 0}
+#obrigado .btn{max-width:420px;margin:22px auto 0;display:block;background:var(--verde);box-shadow:0 4px 14px rgba(47,122,95,.3)}
+.hp{position:absolute;left:-9999px;opacity:0}
+</style>
+</head>
+<body>
+<div class="topo"><div class="marca"><img src="logo-b.png" alt="Bioflora"><div><div class="nome">Bioflora <span>Vet</span></div><p>Medicamentos manipulados para o seu pet</p></div></div></div>
+
+<main>
+  <div id="formArea">
+    <div class="brinde">🎁 <div>Ao finalizar você ganha uma <b>amostra de biscoito veterinário</b> e um <b>brinde na sua próxima compra</b>!</div></div>
+
+    <form id="f" autocomplete="off" novalidate>
+      <div class="cartao">
+        <h2>Quem é você?</h2>
+        <div class="chips" id="tipoChips">
+          <label class="chip"><input type="radio" name="tipo" value="tutor" checked><span>🐾 Tutor(a) de pet</span></label>
+          <label class="chip"><input type="radio" name="tipo" value="veterinario"><span>🩺 Veterinário(a)</span></label>
+          <label class="chip"><input type="radio" name="tipo" value="outro"><span>Outro</span></label>
+        </div>
+        <label class="l" for="nome">Seu nome *</label>
+        <input type="text" id="nome" autocapitalize="words" placeholder="Nome completo">
+        <label class="l" for="whats">WhatsApp (com DDD) *</label>
+        <input type="tel" id="whats" inputmode="tel" placeholder="(35) 99999-9999">
+        <div class="grid2">
+          <div><label class="l" for="cidade">Cidade</label><input type="text" id="cidade" autocapitalize="words"></div>
+          <div><label class="l" for="email">E-mail <small>(opcional)</small></label><input type="email" id="email" inputmode="email"></div>
+        </div>
+        <div id="blocoVet" class="sumir">
+          <div class="grid2">
+            <div><label class="l" for="clinica">Clínica / local de atuação</label><input type="text" id="clinica"></div>
+            <div><label class="l" for="crmv">CRMV <small>(opcional)</small></label><input type="text" id="crmv"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cartao" id="cartaoPet">
+        <h2>Seu pet</h2>
+        <p class="sub" id="subPet">Conte um pouco para a gente conhecer melhor.</p>
+        <div class="chips verde">
+          <label class="chip"><input type="radio" name="especie" value="cao"><span>🐶 Cão</span></label>
+          <label class="chip"><input type="radio" name="especie" value="gato"><span>🐱 Gato</span></label>
+          <label class="chip"><input type="radio" name="especie" value="outro"><span>Outro</span></label>
+        </div>
+        <div class="grid2">
+          <div><label class="l" for="petNome">Nome do pet</label><input type="text" id="petNome" autocapitalize="words"></div>
+          <div><label class="l" for="petRaca">Raça <small>(ou SRD)</small></label><input type="text" id="petRaca" autocapitalize="words"></div>
+          <div><label class="l" for="petIdade">Idade <small>(ex.: 3 anos)</small></label><input type="text" id="petIdade"></div>
+          <div><label class="l">Porte</label>
+            <div class="chips verde">
+              <label class="chip"><input type="radio" name="porte" value="pequeno"><span>Pequeno</span></label>
+              <label class="chip"><input type="radio" name="porte" value="medio"><span>Médio</span></label>
+              <label class="chip"><input type="radio" name="porte" value="grande"><span>Grande</span></label>
+            </div></div>
+        </div>
+      </div>
+
+      <div class="cartao">
+        <h2>O que mais interessa?</h2>
+        <p class="sub">Pode marcar mais de um.</p>
+        <div class="chips verde" id="interesses">
+          <label class="chip"><input type="checkbox" value="articulacoes"><span>Articulações</span></label>
+          <label class="chip"><input type="checkbox" value="pele_pelagem"><span>Pele e pelagem</span></label>
+          <label class="chip"><input type="checkbox" value="ansiedade"><span>Ansiedade / comportamento</span></label>
+          <label class="chip"><input type="checkbox" value="digestivo"><span>Digestivo</span></label>
+          <label class="chip"><input type="checkbox" value="peso"><span>Peso</span></label>
+          <label class="chip"><input type="checkbox" value="idoso"><span>Pet idoso</span></label>
+          <label class="chip"><input type="checkbox" value="suplementos"><span>Suplementos</span></label>
+          <label class="chip"><input type="checkbox" value="medicamento_continuo"><span>Medicamento de uso contínuo</span></label>
+        </div>
+        <label class="l">Seu pet já usa medicamento manipulado?</label>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="manip" value="sim"><span>Sim</span></label>
+          <label class="chip"><input type="radio" name="manip" value="nao"><span>Não</span></label>
+          <label class="chip"><input type="radio" name="manip" value="nao_sei"><span>Não sei</span></label>
+        </div>
+        <label class="l" for="obs">Algo que queira contar? <small>(opcional)</small></label>
+        <textarea id="obs" maxlength="500"></textarea>
+      </div>
+
+      <div class="cartao">
+        <label class="aceite"><input type="checkbox" id="aceite"><span>Autorizo a Farmácia Bioflora a entrar em contato comigo por WhatsApp, telefone ou e-mail para falar sobre produtos e novidades para pets, e a guardar estes dados para esse fim. Posso pedir a exclusão a qualquer momento. *</span></label>
+        <input type="text" id="site" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="erro" id="erro"></div>
+        <button type="submit" class="btn" id="btnEnviar">Finalizar e ganhar meu brinde 🎁</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="obrigado" class="cartao">
+    <div class="grande">🐾</div>
+    <h2>Cadastro feito, obrigado!</h2>
+    <p>Sua <b>amostra de biscoito veterinário</b> está garantida e, na sua próxima compra na Bioflora, você ganha um <b>brinde</b>. Vamos falar com você pelo WhatsApp. 💚</p>
+    <button class="btn" id="btnProximo">Próxima pessoa</button>
+  </div>
+</main>
+<div class="fila" id="fila"></div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+</script>
+<script>
+(function(){
+  // O evento vem do endereço (?evento=Nome) para dar para separar as listas de cada ação depois.
+  const EVENTO = (new URLSearchParams(location.search).get('evento') || 'Evento veterinário').slice(0,120);
+  const $ = id => document.getElementById(id);
+  const FILA_KEY = 'vet_fila_envio';
+  let supa = null;
+  try{ supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }catch(e){}
+
+  const lerFila = () => { try{ return JSON.parse(localStorage.getItem(FILA_KEY) || '[]'); }catch(e){ return []; } };
+  const gravarFila = f => { try{ localStorage.setItem(FILA_KEY, JSON.stringify(f)); }catch(e){} atualizarAviso(); };
+  function atualizarAviso(){
+    const n = lerFila().length;
+    $('fila').classList.toggle('on', n > 0);
+    $('fila').textContent = n + (n === 1 ? ' cadastro guardado' : ' cadastros guardados') + ' no tablet, aguardando internet para enviar. Não feche esta página.';
+  }
+
+  // Envio com fila local: sem sinal, o cadastro fica no tablet e segue sozinho quando a internet voltar.
+  async function enviarUm(linha){
+    if(!supa) return false;
+    const { error } = await supa.from('vet_contatos').insert(linha);
+    if(!error) return true;
+    return /violates|check constraint|row-level/i.test(error.message || '') ? 'invalido' : false;
+  }
+  let enviandoFila = false;
+  async function drenarFila(){
+    if(enviandoFila) return; enviandoFila = true;
+    try{
+      let fila = lerFila();
+      while(fila.length){
+        const r = await enviarUm(fila[0]);
+        if(r === false) break;          // sem internet: tenta depois
+        fila.shift(); gravarFila(fila);  // enviado (ou recusado por dado inválido: não adianta repetir)
+      }
+    } finally { enviandoFila = false; }
+  }
+  window.addEventListener('online', drenarFila);
+  setInterval(drenarFila, 20000);
+  atualizarAviso(); drenarFila();
+
+  const tipo = () => document.querySelector('input[name=tipo]:checked').value;
+  const radio = n => { const e = document.querySelector('input[name='+n+']:checked'); return e ? e.value : null; };
+  document.querySelectorAll('input[name=tipo]').forEach(r => r.addEventListener('change', () => {
+    const vet = tipo() === 'veterinario';
+    $('blocoVet').classList.toggle('sumir', !vet);
+    $('subPet').textContent = vet ? 'Opcional: algum pet seu, se quiser contar.' : 'Conte um pouco para a gente conhecer melhor.';
+  }));
+
+  $('whats').addEventListener('input', e => {
+    let d = e.target.value.replace(/\D/g,'').slice(0,11);
+    e.target.value = d.length > 6 ? '('+d.slice(0,2)+') '+d.slice(2, d.length > 10 ? 7 : 6)+'-'+d.slice(d.length > 10 ? 7 : 6)
+      : d.length > 2 ? '('+d.slice(0,2)+') '+d.slice(2) : d;
+  });
+
+  function mostrarErro(t){ const e = $('erro'); e.textContent = t; e.classList.add('on'); e.scrollIntoView({behavior:'smooth', block:'center'}); }
+
+  $('f').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    $('erro').classList.remove('on');
+    if($('site').value) { mostrarObrigado(); return; } // campo-isca: robô preenche, pessoa não
+    const nome = $('nome').value.trim();
+    const whats = $('whats').value.replace(/\D/g,'');
+    if(nome.length < 2){ mostrarErro('Digite o nome.'); $('nome').focus(); return; }
+    if(whats.length < 10 || whats.length > 11){ mostrarErro('Confira o WhatsApp: precisa do DDD + número.'); $('whats').focus(); return; }
+    const email = $('email').value.trim();
+    if(email && !/^\S+@\S+\.\S+$/.test(email)){ mostrarErro('Confira o e-mail ou deixe em branco.'); $('email').focus(); return; }
+    if(!$('aceite').checked){ mostrarErro('Marque a autorização de contato para finalizar.'); return; }
+    const vazio = v => (v && v.trim()) ? v.trim() : null;
+    const linha = {
+      evento: EVENTO, tipo_contato: tipo(), nome, whatsapp: whats, email: vazio(email), cidade: vazio($('cidade').value),
+      clinica: tipo() === 'veterinario' ? vazio($('clinica').value) : null, crmv: tipo() === 'veterinario' ? vazio($('crmv').value) : null,
+      pet_nome: vazio($('petNome').value), pet_especie: radio('especie'), pet_raca: vazio($('petRaca').value),
+      pet_idade: vazio($('petIdade').value), pet_porte: radio('porte'),
+      interesses: [...document.querySelectorAll('#interesses input:checked')].map(i => i.value),
+      usa_manipulado: radio('manip'), observacao: vazio($('obs').value), consentimento: true
+    };
+    $('btnEnviar').disabled = true;
+    const r = await enviarUm(linha);
+    if(r === false){ const f = lerFila(); f.push(linha); gravarFila(f); }   // sem internet: guarda e segue
+    else if(r === 'invalido'){ $('btnEnviar').disabled = false; mostrarErro('Não foi possível salvar. Confira os campos e tente de novo.'); return; }
+    mostrarObrigado();
+  });
+
+  let timerReset = null;
+  function mostrarObrigado(){
+    $('formArea').style.display = 'none'; $('obrigado').classList.add('on'); window.scrollTo(0,0);
+    clearTimeout(timerReset); timerReset = setTimeout(novo, 15000);
+  }
+  function novo(){
+    clearTimeout(timerReset);
+    $('f').reset(); $('blocoVet').classList.add('sumir'); $('btnEnviar').disabled = false;
+    $('obrigado').classList.remove('on'); $('formArea').style.display = ''; window.scrollTo(0,0);
+  }
+  $('btnProximo').addEventListener('click', novo);
+})();
+</script>
+</body>
+</html>

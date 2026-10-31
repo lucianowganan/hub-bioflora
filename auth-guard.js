@@ -7,7 +7,7 @@ const PERMISSAO_DA_PAGINA = {
   'email-marketing':'modulo.email_marketing','embalagens':'modulo.embalagens','erros':'modulo.erros','formulas-complexas':'modulo.formulas_complexas',
   'inclusoes':'modulo.inclusoes','instagram':'modulo.instagram','meus-erros':'modulo.meus_erros','producao':'modulo.producao',
   'reaproveitamento':'modulo.reaproveitamento','rh':'modulo.rh','rotulos':'modulo.rotulos','tarefas':'modulo.tarefas',
-  'vendas-yampi':'modulo.vendas','visitas-medicas':'modulo.visitas','wanessia':'modulo.wanessia','cargos':'modulo.admin'
+  'vendas-yampi':'modulo.vendas','visitas-medicas':'modulo.visitas','wanessia':'modulo.wanessia','cargos':'modulo.admin','vet-contatos':'modulo.vet'
 };
 
 async function requireRole(allowedRoles){
