@@ -1,0 +1,15 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Folha de vouchers A4</title>
+<style>
+@page{size:A4;margin:0}
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff}
+.folha{width:210mm;height:297mm;padding:10mm 10mm;display:flex;flex-direction:column;justify-content:space-between;align-items:center}
+.folha img{width:190mm;height:76mm;display:block}
+.corte{width:190mm;border-top:1px dashed #b9b0a0}
+@media screen{body{background:#ddd}.folha{margin:10px auto;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.2)}}
+</style></head><body>
+<div class="folha">
+  <img src="voucher-bioflora-100.png" alt="Voucher R$ 100"><div class="corte"></div>
+  <img src="voucher-bioflora-70.png" alt="Voucher R$ 70"><div class="corte"></div>
+  <img src="voucher-bioflora-50.png" alt="Voucher R$ 50">
+</div></body></html>
