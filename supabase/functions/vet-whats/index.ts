@@ -8,6 +8,7 @@ const TOKEN = Deno.env.get('TOTALK_TOKEN') ?? '';
 const API = 'https://api.app.totalk.chat/chat';
 const REST = `${SUPABASE_URL}/rest/v1`;
 const H = { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json' };
+const CANAL_PADRAO = 'd72d4f73-84e4-49d3-925f-62e54dc4cd29'; // CloudAPI (oficial) 35 98449-3997, o mesmo do Chama Acesa
 const JANELA_HORAS = 72; // não manda para cadastros mais antigos que isso
 
 async function db(metodo: string, caminho: string, corpo?: unknown, prefer?: string): Promise<any> {
@@ -24,12 +25,22 @@ function primeiroNome(nome: string): string {
   return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
 }
 
-async function enviarModelo(canal: string, templateId: string, numero: string, nome: string): Promise<{ ok: boolean; erro?: string }> {
+// Procura o modelo aprovado pelo nome (como no chama-whats): só aparece depois que a Meta aprova.
+async function acharModelo(canal: string, nome: string): Promise<{ id: string; params: string[] } | null> {
+  const r = await fetch(`${API}/v1/template?Name=${encodeURIComponent(nome)}&ApprovedOnly=true&ChannelId=${canal}&IncludeDetails=Params&PageSize=100`, { headers: { Authorization: `Bearer ${TOKEN}` } });
+  const j = await r.json().catch(() => ({}));
+  const t = (j.items ?? []).find((x: any) => x.name === nome);
+  return t ? { id: t.id, params: (t.params ?? []).map((p: any) => String(p.name).replace(/[\[\]]/g, '')) } : null;
+}
+
+async function enviarModelo(canal: string, modelo: { id: string; params: string[] }, numero: string, nome: string): Promise<{ ok: boolean; erro?: string }> {
   try {
+    const valores: Record<string, string> = { primeiro_nome: primeiroNome(nome) };
+    const parameters = Object.fromEntries(modelo.params.map((k) => [k, valores[k] ?? '']));
     const r = await fetch(`${API}/v1/send/template`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: `+55${numero}`, from: canal, templateId, parameters: { primeiro_nome: primeiroNome(nome) } }),
+      body: JSON.stringify({ to: `+55${numero}`, from: canal, templateId: modelo.id, parameters }),
     });
     if (r.ok) return { ok: true };
     return { ok: false, erro: `${r.status} ${(await r.text()).slice(0, 300)}` };
@@ -42,7 +53,10 @@ Deno.serve(async (req) => {
   const cfg = cfgs?.[0];
   if (!cfg || !k || k !== cfg.chave) return new Response('negado', { status: 401 });
   if (cfg.whats_modo === 'off') return Response.json({ modo: 'off', enviados: 0 });
-  if (!TOKEN || !cfg.canal_id || !cfg.template_id) return Response.json({ erro: 'Falta TOTALK_TOKEN, canal_id ou template_id.' }, { status: 200 });
+  const canal = cfg.canal_id || CANAL_PADRAO;
+  if (!TOKEN) return Response.json({ erro: 'TOTALK_TOKEN ausente.' });
+  const modelo = await acharModelo(canal, cfg.template_nome || 'vet_boas_vindas');
+  if (!modelo) return Response.json({ modo: cfg.whats_modo, enviados: 0, aviso: 'Modelo ainda não aprovado na To Talk.' });
 
   const desde = new Date(Date.now() - JANELA_HORAS * 3600_000).toISOString();
   let filtro = `whats_status=eq.pendente&criado_em=gte.${desde}`;
@@ -55,7 +69,7 @@ Deno.serve(async (req) => {
   const lote = await db('PATCH', `vet_contatos?${filtro}&order=criado_em.asc&limit=20`, { whats_status: 'enviando' }, 'return=representation');
   let enviados = 0, erros = 0;
   for (const c of lote ?? []) {
-    const r = await enviarModelo(cfg.canal_id, cfg.template_id, c.whatsapp, c.nome);
+    const r = await enviarModelo(canal, modelo, c.whatsapp, c.nome);
     await db('PATCH', `vet_contatos?id=eq.${c.id}`, r.ok
       ? { whats_status: 'enviado', whats_enviado_em: new Date().toISOString(), whats_erro: null }
       : { whats_status: 'erro', whats_erro: r.erro });
