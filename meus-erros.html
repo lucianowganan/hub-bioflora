@@ -149,6 +149,54 @@ const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let chartTendencia = null;
 let chartRanking = null;
 let chartComparacao = null;
+let cmp = { dias: [], equipeTotal: {}, pessoas: 0, voce: {}, rotulo: 'Você' };
+let cmpPeriodo = 'semana', cmpMetrica = 'media';
+let nomeEhProprio = true; // false quando a chefia está olhando outra pessoa
+
+function cmpMudar(chave, valor){ if(chave === 'periodo') cmpPeriodo = valor; else cmpMetrica = valor; desenharComparacao(); }
+window.cmpMudar = cmpMudar;
+const fmtNum = n => (Math.round(n*10)/10).toLocaleString('pt-BR');
+
+// "Média por pessoa" = erros do resto da equipe no dia ÷ nº de pessoas da equipe (sem você). "Total" = erros do resto da equipe no dia.
+function desenharComparacao(){
+  const dias = cmp.dias.slice(cmpPeriodo === 'semana' ? -7 : -30);
+  if(!dias.length || !document.getElementById('chartComparacao')) return;
+  const n = Math.max(cmp.pessoas, 1);
+  const voce = dias.map(d => cmp.voce[d] || 0);
+  const eqTotal = dias.map(d => cmp.equipeTotal[d] || 0);
+  const eqMedia = eqTotal.map(t => t / n);
+  const serieEq = cmpMetrica === 'media' ? eqMedia : eqTotal;
+  document.querySelectorAll('[data-cp]').forEach(b => b.classList.toggle('active', b.dataset.cp === cmpPeriodo));
+  document.querySelectorAll('[data-cm]').forEach(b => b.classList.toggle('active', b.dataset.cm === cmpMetrica));
+  const periodoTxt = cmpPeriodo === 'semana' ? 'dos últimos 7 dias' : 'dos últimos 30 dias';
+  document.getElementById('cmpDesc').textContent = cmpMetrica === 'media'
+    ? `Cada ponto é um dia. A linha da equipe é a média de erros por pessoa (erros do restante da equipe ÷ ${cmp.pessoas} pessoas), sem contar ${nomeEhProprio ? 'os seus erros' : cmp.rotulo}.`
+    : `Cada ponto é um dia. A linha da equipe é o total de erros do restante da equipe (${cmp.pessoas} pessoas), sem contar ${nomeEhProprio ? 'os seus erros' : cmp.rotulo}. Como a equipe é maior, esta linha tende a ficar acima.`;
+  // veredito: sempre pela média por pessoa (comparação justa), no período escolhido
+  const somaVoce = voce.reduce((a,b)=>a+b, 0), mediaEq = eqMedia.reduce((a,b)=>a+b, 0);
+  const el = document.getElementById('cmpVeredito');
+  const sujeito = nomeEhProprio ? 'Seus erros' : `Os erros de ${cmp.rotulo}`;
+  let txt, cor, fundo;
+  if(cmp.pessoas === 0){ txt = 'Não há outras pessoas na equipe para comparar.'; cor = '#4A4245'; fundo = '#F1ECEC'; }
+  else if(somaVoce === 0 && mediaEq === 0){ txt = `Ninguém registrou erros ${periodoTxt}.`; cor = '#3F7A57'; fundo = '#E8F3EC'; }
+  else if(mediaEq === 0){ txt = `${sujeito} estão acima da equipe ${periodoTxt}: ${somaVoce} contra 0 de média por pessoa.`; cor = '#B4472F'; fundo = '#FBEBE6'; }
+  else {
+    const pct = (somaVoce - mediaEq) / mediaEq * 100, detalhe = ` (${nomeEhProprio ? 'você' : cmp.rotulo}: ${somaVoce} · média por pessoa da equipe: ${fmtNum(mediaEq)})`;
+    if(Math.abs(pct) < 5){ txt = `${sujeito} estão em linha com a média da equipe ${periodoTxt}${detalhe}.`; cor = '#4A4245'; fundo = '#F1ECEC'; }
+    else if(pct > 0){ txt = `${sujeito} estão ${Math.round(pct)}% acima da média da equipe ${periodoTxt}${detalhe}.`; cor = '#B4472F'; fundo = '#FBEBE6'; }
+    else { txt = `${sujeito} estão ${Math.round(-pct)}% abaixo da média da equipe ${periodoTxt}${detalhe}.`; cor = '#3F7A57'; fundo = '#E8F3EC'; }
+  }
+  el.textContent = txt; el.style.color = cor; el.style.background = fundo;
+  if(chartComparacao) chartComparacao.destroy();
+  chartComparacao = new Chart(document.getElementById('chartComparacao'), {
+    type:'line',
+    data:{ labels: dias.map(d => d.slice(8) + '/' + d.slice(5,7)), datasets:[
+      { label: cmp.rotulo, data: voce, borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.25, fill:true, pointRadius:3 },
+      { label: cmpMetrica === 'media' ? 'Média por pessoa da equipe (sem ' + (nomeEhProprio ? 'você' : cmp.rotulo) + ')' : 'Total da equipe (sem ' + (nomeEhProprio ? 'você' : cmp.rotulo) + ')', data: serieEq, borderColor:'#3E6B93', backgroundColor:'rgba(62,107,147,.06)', tension:.25, fill:true, pointRadius:3 }
+    ]},
+    options:{ responsive:true, plugins:{legend:{display:true, position:'bottom'}}, scales:{y:{beginAtZero:true, ticks:{precision: cmpMetrica === 'media' ? 1 : 0}}} }
+  });
+}
 let chartMensal = null;
 let chartSemanaPizza = null;
 let chartSemanaBarra = null;
@@ -183,6 +231,7 @@ async function init(){
 
   if(papel === 'chefia'){
     const { data: atendentes } = await supa.from('atendentes_erros').select('nome').order('nome');
+    nomeEhProprio = false;
     renderSelector((atendentes||[]).map(a=>a.nome));
   } else if(perfil.atendente_vinculado){
     renderFixed(perfil.atendente_vinculado);
@@ -343,21 +392,18 @@ async function loadDashboard(nome){
   const { data, error } = await supa.from('erros_registrados').select('tipo_erro,registrado_em').eq('atendente', nome).order('registrado_em');
   if(error){ console.error(error); return; }
 
-  const { data: equipeData, error: equipeError } = await supa.rpc('erros_equipe_diarios', { dias_atras: 60 });
+  // Comparação com a equipe: erros do resto da equipe (grupo principal, sem a pessoa), por dia, + quantas pessoas são
+  const { data: equipeData, error: equipeError } = await supa.rpc('erros_equipe_comparacao', { dias_atras: 30, excluir: nome });
   if(equipeError) console.error(equipeError);
-  const equipeDiaria = {};
-  (equipeData||[]).forEach(r => { equipeDiaria[r.dia] = r.total; });
+  cmp = { dias: (equipeData||[]).map(r => r.dia), equipeTotal: {}, pessoas: (equipeData && equipeData[0] ? equipeData[0].pessoas : 0), voce: {}, rotulo: nomeEhProprio ? 'Você' : nome };
+  (equipeData||[]).forEach(r => { cmp.equipeTotal[r.dia] = Number(r.total); });
+  data.forEach(r => { const k = localDateStrME(new Date(r.registrado_em)); cmp.voce[k] = (cmp.voce[k]||0)+1; });
 
   const days60 = lastNDays(60);
   const dailyCounts = {};
   data.forEach(r => { const k = r.registrado_em.slice(0,10); dailyCounts[k] = (dailyCounts[k]||0)+1; });
 
-  // "Equipe" nunca deve incluir os próprios erros de quem está olhando
-  const equipeSemMim = {};
-  days60.forEach(dia => { equipeSemMim[dia] = Math.max(0, (equipeDiaria[dia]||0) - (dailyCounts[dia]||0)); });
-
   const ma = movingAverage7(dailyCounts, days60);
-  const maEquipe = movingAverage7(equipeSemMim, days60);
 
   const { inicio, fim, label } = limitesPeriodoMeusErros();
   const recentes = data.filter(d => d.registrado_em >= inicio && d.registrado_em <= fim);
@@ -416,8 +462,16 @@ async function loadDashboard(nome){
       <canvas id="chartRanking"></canvas>
     </div>
     <div class="panel">
-      <h2>Você vs. a equipe (últimos 7 dias)</h2>
-      <p class="desc">Cada ponto é a média dos 7 dias anteriores. "Equipe" é o resto da equipe, sem contar os seus próprios erros</p>
+      <h2 id="cmpTitulo">Seus erros vs. o restante da equipe</h2>
+      <p class="desc" id="cmpDesc"></p>
+      <div id="cmpVeredito" style="border-radius:14px;padding:12px 16px;font-size:14px;font-weight:600;margin-bottom:14px;"></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+        <button class="btn secondary period-btn" data-cp="semana" onclick="cmpMudar('periodo','semana')">Semana</button>
+        <button class="btn secondary period-btn" data-cp="mes" onclick="cmpMudar('periodo','mes')">Mês</button>
+        <span style="flex:1"></span>
+        <button class="btn secondary period-btn" data-cm="media" onclick="cmpMudar('metrica','media')">Média por pessoa</button>
+        <button class="btn secondary period-btn" data-cm="total" onclick="cmpMudar('metrica','total')">Total de erros</button>
+      </div>
       <canvas id="chartComparacao"></canvas>
     </div>
     <div class="panel">
@@ -455,15 +509,7 @@ async function loadDashboard(nome){
     options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, ticks:{stepSize:1, precision:0}}} }
   });
 
-  if(chartComparacao) chartComparacao.destroy();
-  chartComparacao = new Chart(document.getElementById('chartComparacao'), {
-    type:'line',
-    data:{ labels: days60.slice(-7).map(d=>d.slice(5)), datasets:[
-      { label:'Você', data:ma.slice(-7), borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.3, fill:true, pointRadius:3 },
-      { label:'Equipe (sem você)', data:maEquipe.slice(-7), borderColor:'#3E6B93', backgroundColor:'rgba(62,107,147,.06)', tension:.3, fill:true, pointRadius:3 }
-    ]},
-    options:{ responsive:true, plugins:{legend:{display:true, position:'bottom'}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1, precision:0}}} }
-  });
+  desenharComparacao();
 
   if(chartMensal) chartMensal.destroy();
   chartMensal = new Chart(document.getElementById('chartMensal'), {
