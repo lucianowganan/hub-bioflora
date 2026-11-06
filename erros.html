@@ -302,6 +302,17 @@
     <canvas id="chartIndividualTendencia"></canvas>
     <h2 style="margin-top:22px">O que mais está errando</h2>
     <canvas id="chartIndividualRanking"></canvas>
+    <h2 style="margin-top:22px" id="cmpTitulo">Erros vs. o restante da equipe</h2>
+    <p class="desc" id="cmpDesc"></p>
+    <div id="cmpVeredito" style="border-radius:14px;padding:12px 16px;font-size:14px;font-weight:600;margin-bottom:14px;"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+      <button class="btn secondary period-btn" data-cp="semana" onclick="cmpMudar('periodo','semana')">Semana</button>
+      <button class="btn secondary period-btn" data-cp="mes" onclick="cmpMudar('periodo','mes')">Mês</button>
+      <span style="flex:1"></span>
+      <button class="btn secondary period-btn" data-cm="media" onclick="cmpMudar('metrica','media')">Média por pessoa</button>
+      <button class="btn secondary period-btn" data-cm="total" onclick="cmpMudar('metrica','total')">Total de erros</button>
+    </div>
+    <canvas id="chartComparacao"></canvas>
   </div>
 
 </div>
@@ -740,6 +751,56 @@ function renderTopErrosChart(){
 let chartIndividualTendenciaInstance = null;
 let chartIndividualRankingInstance = null;
 
+// ---------- Comparação: erros da pessoa vs. restante da equipe (mesma lógica do Meus Erros) ----------
+// Média por pessoa = erros do restante da equipe no dia ÷ nº de pessoas da equipe (grupo principal, sem a pessoa). Total = erros do restante da equipe.
+let chartComparacao = null;
+let cmp = { dias: [], equipeTotal: {}, pessoas: 0, voce: {}, rotulo: '' };
+let cmpPeriodo = 'semana', cmpMetrica = 'media';
+const fmtNum = n => (Math.round(n*10)/10).toLocaleString('pt-BR');
+function cmpMudar(chave, valor){ if(chave === 'periodo') cmpPeriodo = valor; else cmpMetrica = valor; desenharComparacao(); }
+window.cmpMudar = cmpMudar;
+
+function desenharComparacao(){
+  const dias = cmp.dias.slice(cmpPeriodo === 'semana' ? -7 : -30);
+  if(!dias.length || !document.getElementById('chartComparacao')) return;
+  const n = Math.max(cmp.pessoas, 1);
+  const voce = dias.map(d => cmp.voce[d] || 0);
+  const eqTotal = dias.map(d => cmp.equipeTotal[d] || 0);
+  const eqMedia = eqTotal.map(t => t / n);
+  const serieEq = cmpMetrica === 'media' ? eqMedia : eqTotal;
+  document.querySelectorAll('[data-cp]').forEach(b => b.classList.toggle('active', b.dataset.cp === cmpPeriodo));
+  document.querySelectorAll('[data-cm]').forEach(b => b.classList.toggle('active', b.dataset.cm === cmpMetrica));
+  document.getElementById('cmpTitulo').textContent = `${cmp.rotulo} vs. o restante da equipe`;
+  const periodoTxt = cmpPeriodo === 'semana' ? 'dos últimos 7 dias' : 'dos últimos 30 dias';
+  document.getElementById('cmpDesc').textContent = cmpMetrica === 'media'
+    ? `Cada ponto é um dia. A linha da equipe é a média de erros por pessoa (erros do restante da equipe ÷ ${cmp.pessoas} pessoas), sem contar ${cmp.rotulo}.`
+    : `Cada ponto é um dia. A linha da equipe é o total de erros do restante da equipe (${cmp.pessoas} pessoas), sem contar ${cmp.rotulo}. Como a equipe é maior, esta linha tende a ficar acima.`;
+  // veredito: sempre pela média por pessoa (comparação justa), no período escolhido
+  const somaVoce = voce.reduce((a,b)=>a+b, 0), mediaEq = eqMedia.reduce((a,b)=>a+b, 0);
+  const el = document.getElementById('cmpVeredito');
+  const sujeito = `Os erros de ${cmp.rotulo}`;
+  let txt, cor, fundo;
+  if(cmp.pessoas === 0){ txt = 'Não há outras pessoas na equipe para comparar.'; cor = '#4A4245'; fundo = '#F1ECEC'; }
+  else if(somaVoce === 0 && mediaEq === 0){ txt = `Ninguém registrou erros ${periodoTxt}.`; cor = '#3F7A57'; fundo = '#E8F3EC'; }
+  else if(mediaEq === 0){ txt = `${sujeito} estão acima da equipe ${periodoTxt}: ${somaVoce} contra 0 de média por pessoa.`; cor = '#B4472F'; fundo = '#FBEBE6'; }
+  else {
+    const pct = (somaVoce - mediaEq) / mediaEq * 100, detalhe = ` (${cmp.rotulo}: ${somaVoce} · média por pessoa da equipe: ${fmtNum(mediaEq)})`;
+    if(Math.abs(pct) < 5){ txt = `${sujeito} estão em linha com a média da equipe ${periodoTxt}${detalhe}.`; cor = '#4A4245'; fundo = '#F1ECEC'; }
+    else if(pct > 0){ txt = `${sujeito} estão ${Math.round(pct)}% acima da média da equipe ${periodoTxt}${detalhe}.`; cor = '#B4472F'; fundo = '#FBEBE6'; }
+    else { txt = `${sujeito} estão ${Math.round(-pct)}% abaixo da média da equipe ${periodoTxt}${detalhe}.`; cor = '#3F7A57'; fundo = '#E8F3EC'; }
+  }
+  el.textContent = txt; el.style.color = cor; el.style.background = fundo;
+  if(chartComparacao) chartComparacao.destroy();
+  chartComparacao = new Chart(document.getElementById('chartComparacao'), {
+    type:'line',
+    data:{ labels: dias.map(d => d.slice(8) + '/' + d.slice(5,7)), datasets:[
+      { label: cmp.rotulo, data: voce, borderColor:'#8B1A3A', backgroundColor:'rgba(139,26,58,.08)', tension:.25, fill:true, pointRadius:3 },
+      { label: (cmpMetrica === 'media' ? 'Média por pessoa da equipe' : 'Total da equipe') + ' (sem ' + cmp.rotulo + ')', data: serieEq, borderColor:'#3E6B93', backgroundColor:'rgba(62,107,147,.06)', tension:.25, fill:true, pointRadius:3 }
+    ]},
+    options:{ responsive:true, plugins:{legend:{display:true, position:'bottom'}}, scales:{y:{beginAtZero:true, ticks:{precision: cmpMetrica === 'media' ? 1 : 0}}} }
+  });
+}
+
 async function loadIndividual(){
   const sel = document.getElementById('selectAtendenteIndividual');
   if(sel.options.length === 0){
@@ -757,6 +818,12 @@ async function renderIndividual(nome){
   const dailyCounts = {};
   data.forEach(r => { const k = localDayKey(r.registrado_em); dailyCounts[k] = (dailyCounts[k]||0)+1; });
   const ma = movingAverage7(dailyCounts, days60);
+
+  const { data: eqData, error: eqErro } = await supa.rpc('erros_equipe_comparacao', { dias_atras: 30, excluir: nome });
+  if(eqErro) console.error(eqErro);
+  cmp = { dias: (eqData||[]).map(r => r.dia), equipeTotal: {}, pessoas: (eqData && eqData[0] ? eqData[0].pessoas : 0), voce: {}, rotulo: nome };
+  (eqData||[]).forEach(r => { cmp.equipeTotal[r.dia] = Number(r.total); });
+  data.forEach(r => { const k = localDayKey(localDateStr(new Date(r.registrado_em))); cmp.voce[k] = (cmp.voce[k]||0)+1; });
 
   const umMesAtras = new Date(); umMesAtras.setDate(umMesAtras.getDate()-30);
   const { inicioISO, fimISO, label } = limitesPeriodoResumo();
@@ -788,6 +855,8 @@ async function renderIndividual(nome){
     data:{ labels: ranking.map(r=>r[0]), datasets:[{ data: ranking.map(r=>r[1]), backgroundColor:'#8B1A3A' }]},
     options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true, ticks:{stepSize:1, precision:0}}} }
   });
+
+  desenharComparacao();
 }
 
 loadCatalogos();
