@@ -613,6 +613,63 @@ async function marcarCanalComoLido(canalId){
   }
 }
 
+// ============================================================
+// SINCRONIZAÇÃO AUTOMÁTICA (computador do CPD e qualquer tela que fique aberta o dia todo)
+// O tempo real pode cair (internet oscila, computador dorme). Por isso, além dele: a cada 8 s busca mensagens novas da conversa aberta,
+// a cada 30 s atualiza a lista/contadores, e ao voltar para a aba, ou quando a internet volta, sincroniza e reconecta na hora.
+// ============================================================
+let cursorSync = null;
+let sincronizando = false, ultimaListaSync = 0;
+async function sincronizarAgora(forcarLista){
+  if(!meuUserId || sincronizando) return;
+  sincronizando = true;
+  try{
+    if(alvoAtivoId && cursorSync){
+      const desde = new Date(new Date(cursorSync).getTime() - 2000).toISOString();
+      let novas = [];
+      if(modoAtual === 'canal'){
+        const { data } = await supa.from('mensagens_chat').select('*').eq('canal_id', alvoAtivoId).gte('criado_em', desde).order('criado_em');
+        novas = (data||[]).filter(m => !document.getElementById('msg_'+m.id));
+        novas.forEach(m => { inserirMensagemNaTela(m, 'canal'); if(m.autor_id !== meuUserId) notificarMensagemNova(m, 'canal'); });
+        if(novas.length) await marcarCanalComoLido(alvoAtivoId);
+      } else if(modoAtual === 'dm'){
+        const { data } = await supa.from('dm_mensagens').select('*')
+          .or(`and(remetente_id.eq.${meuUserId},destinatario_id.eq.${alvoAtivoId}),and(remetente_id.eq.${alvoAtivoId},destinatario_id.eq.${meuUserId})`)
+          .gte('criado_em', desde).order('criado_em');
+        novas = (data||[]).filter(m => !document.getElementById('msg_'+m.id));
+        novas.forEach(m => { inserirMensagemNaTela({...m, autor_id: m.remetente_id}, 'dm'); if(m.remetente_id !== meuUserId) notificarMensagemNova({...m, autor_id: m.remetente_id}, 'dm'); });
+        const idsNaoLidas = novas.filter(m => m.destinatario_id === meuUserId && !m.lida).map(m => m.id);
+        if(idsNaoLidas.length) await supa.from('dm_mensagens').update({ lida: true }).in('id', idsNaoLidas);
+      }
+    }
+    if(forcarLista || Date.now() - ultimaListaSync > 30000){
+      ultimaListaSync = Date.now();
+      await carregarNaoLidosCanais();
+      await carregarConversasDm();
+      if(modoAtual === 'canal' && alvoAtivoId) contadorNaoLidosCanais[alvoAtivoId] = 0; // a conversa aberta já está lida
+      renderSidebar();
+    }
+  }catch(e){ console.error('sincronizarAgora', e); }
+  finally{ sincronizando = false; }
+}
+function reconectarTempoReal(){
+  try{
+    assinarTempoRealGlobal();
+    if(modoAtual === 'canal' && alvoAtivoId) assinarTempoRealCanal();
+    else if(modoAtual === 'dm' && alvoAtivoId) assinarTempoRealDm();
+  }catch(e){}
+}
+let ultimoOculto = 0;
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden){ ultimoOculto = Date.now(); return; }
+  if(Date.now() - ultimoOculto > 60000) reconectarTempoReal();
+  sincronizarAgora(true);
+});
+window.addEventListener('online', () => { reconectarTempoReal(); sincronizarAgora(true); });
+setInterval(() => { if(!document.hidden) sincronizarAgora(false); }, 8000);
+// reconecta sozinho se o canal de tempo real der erro (sem laço: o fechamento normal não conta)
+const aoStatus = (refazer) => (status) => { if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setTimeout(refazer, 4000); };
+
 function assinarTempoRealGlobal(){
   if(subscricaoGlobal) supa.removeChannel(subscricaoGlobal);
   subscricaoGlobal = supa.channel('chat-global-'+meuUserId)
@@ -636,7 +693,7 @@ function assinarTempoRealGlobal(){
       renderSidebar();
       notificarMensagemNova({...m, autor_id: m.remetente_id}, 'dm');
     })
-    .subscribe();
+    .subscribe(aoStatus(() => assinarTempoRealGlobal()));
 }
 
 async function carregarConversasDm(){
@@ -896,6 +953,7 @@ async function abrirCanal(canalId){
   await marcarCanalComoLido(canalId);
   renderSidebar();
   mostrarConversaMobile();
+  rolarParaFim(); // agora que o painel está visível (celular)
 }
 window.abrirCanal = abrirCanal;
 
@@ -914,6 +972,7 @@ async function abrirDm(userId){
   await carregarMensagensDm();
   assinarTempoRealDm();
   mostrarConversaMobile();
+  rolarParaFim(); // agora que o painel está visível (celular)
 }
 window.abrirDm = abrirDm;
 
@@ -962,6 +1021,24 @@ let ultimoHorarioRenderizado = null;
 let ultimaDataRenderizada = null;
 const JANELA_AGRUPAMENTO_MS = 5 * 60 * 1000; // 5 minutos
 
+// Rola para a última mensagem. Roda de novo depois que a conversa fica visível (no celular o painel só aparece depois de carregar)
+// e a cada imagem/vídeo que termina de carregar (a altura cresce depois), por até 6 s, parando se a pessoa rolar a tela.
+function rolarParaFim(area){
+  area = area || document.getElementById('mensagensArea');
+  if(!area) return;
+  let parou = false;
+  const descer = () => { if(!parou) area.scrollTop = area.scrollHeight; };
+  ['wheel','touchstart','keydown'].forEach(ev => area.addEventListener(ev, () => { parou = true; }, { once: true, passive: true }));
+  descer();
+  requestAnimationFrame(descer);
+  setTimeout(descer, 300);
+  const ate = Date.now() + 6000;
+  area.querySelectorAll('img,video').forEach(m => {
+    const f = () => { if(Date.now() < ate) descer(); };
+    m.addEventListener('load', f, { once: true }); m.addEventListener('loadedmetadata', f, { once: true });
+  });
+}
+
 function resetAgrupamento(){
   ultimoAutorRenderizado = null;
   ultimoHorarioRenderizado = null;
@@ -997,7 +1074,8 @@ async function carregarMensagensCanal(){
   await carregarReacoesPara((data||[]).map(m=>m.id), 'canal');
   const area = document.getElementById('mensagensArea');
   area.innerHTML = (data||[]).length ? renderListaMensagens(data, 'canal') : '<div class="empty-state">Nenhuma mensagem ainda. Manda a primeira!</div>';
-  area.scrollTop = area.scrollHeight;
+  cursorSync = (data && data.length) ? data[data.length-1].criado_em : new Date().toISOString();
+  rolarParaFim(area);
 }
 
 function assinarTempoRealCanal(){
@@ -1020,7 +1098,7 @@ function assinarTempoRealCanal(){
     .on('broadcast', { event: 'digitando' }, (payload) => {
       if(payload.payload.userId !== meuUserId) mostrarDigitando(payload.payload.nome);
     })
-    .subscribe();
+    .subscribe(aoStatus(() => { if(modoAtual === 'canal') assinarTempoRealCanal(); }));
 }
 
 async function carregarMensagensDm(){
@@ -1033,7 +1111,8 @@ async function carregarMensagensDm(){
   await carregarReacoesPara((data||[]).map(m=>m.id), 'dm');
   const area = document.getElementById('mensagensArea');
   area.innerHTML = comAutor.length ? renderListaMensagens(comAutor, 'dm') : '<div class="empty-state">Nenhuma mensagem ainda. Manda a primeira!</div>';
-  area.scrollTop = area.scrollHeight;
+  cursorSync = comAutor.length ? comAutor[comAutor.length-1].criado_em : new Date().toISOString();
+  rolarParaFim(area);
 
   // Marca como lidas as mensagens que essa pessoa me mandou
   const naoLidasIds = (data||[]).filter(m => m.destinatario_id===meuUserId && !m.lida).map(m=>m.id);
@@ -1071,7 +1150,7 @@ function assinarTempoRealDm(){
     .on('broadcast', { event: 'digitando' }, (payload) => {
       if(payload.payload.userId !== meuUserId) mostrarDigitando(payload.payload.nome);
     })
-    .subscribe();
+    .subscribe(aoStatus(() => { if(modoAtual === 'dm') assinarTempoRealDm(); }));
 }
 
 function inserirMensagemNaTela(m, tipo){
@@ -1080,10 +1159,12 @@ function inserirMensagemNaTela(m, tipo){
   const area = document.getElementById('mensagensArea');
   const vazio = area.querySelector('.empty-state');
   if(vazio) vazio.remove();
+  const noFim = area.scrollHeight - area.scrollTop - area.clientHeight < 300 || m.autor_id === meuUserId;
   const agrupada = deveAgrupar(m);
   area.insertAdjacentHTML('beforeend', renderMensagem(m, tipo, agrupada));
   marcarComoRenderizada(m);
-  area.scrollTop = area.scrollHeight;
+  if(m.criado_em && (!cursorSync || m.criado_em > cursorSync)) cursorSync = m.criado_em;
+  if(noFim) rolarParaFim(area);
 }
 
 // Formatação estilo WhatsApp: *negrito*, _itálico_, ~riscado~.
@@ -1673,14 +1754,33 @@ init();
   .a11y-panel{ bottom: 150px !important; }
 </style>
 <script>(function(){var s=document.createElement("script");s.src="hub-sidebar.js?t="+Date.now();document.body.appendChild(s);})();</script>
-<div id="lightboxImg" onclick="if(event.target===this)fecharLightbox()"><img id="lightboxFoto" alt="Imagem"><div class="lb-barra"><a id="lbAbrir" target="_blank" rel="noopener">Abrir em nova guia</a><a id="lbBaixar" download>Baixar</a><button onclick="fecharLightbox()">Fechar ✕</button></div></div>
+<div id="lightboxImg" onclick="if(event.target===this)fecharLightbox()"><img id="lightboxFoto" alt="Imagem"><div class="lb-barra"><a id="lbAbrir" target="_blank" rel="noopener">Abrir em nova guia</a><a id="lbBaixar" href="#" onclick="baixarImagemLightbox(event)">Baixar</a><button onclick="fecharLightbox()">Fechar ✕</button></div></div>
 <script>
 function abrirLightbox(url){
   document.getElementById('lightboxFoto').src = url;
   document.getElementById('lbAbrir').href = url;
-  document.getElementById('lbBaixar').href = url;
+  document.getElementById('lbBaixar').dataset.url = url;
   document.getElementById('lightboxImg').classList.add('show');
 }
+// Baixa direto: busca o arquivo e salva com o nome original (o atributo "download" não funciona com links de outro domínio).
+async function baixarImagemLightbox(ev){
+  ev.preventDefault();
+  const url = document.getElementById('lbBaixar').dataset.url;
+  if(!url) return;
+  const nome = decodeURIComponent((url.split('?')[0].split('/').pop() || 'imagem.jpg')).replace(/^\d+[-_]/, '') || 'imagem.jpg';
+  try{
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('http ' + r.status);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(await r.blob()); a.download = nome;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }catch(e){
+    // plano B: o armazenamento do Supabase força o download com ?download=nome
+    location.href = url + (url.includes('?') ? '&' : '?') + 'download=' + encodeURIComponent(nome);
+  }
+}
+window.baixarImagemLightbox = baixarImagemLightbox;
 function fecharLightbox(){ document.getElementById('lightboxImg').classList.remove('show'); document.getElementById('lightboxFoto').removeAttribute('src'); }
 document.addEventListener('click', e => { const im = e.target.closest('.msg-anexo img'); if(im){ e.preventDefault(); abrirLightbox(im.src); } });
 document.addEventListener('keydown', e => { if(e.key === 'Escape') fecharLightbox(); });
