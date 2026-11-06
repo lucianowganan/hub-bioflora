@@ -124,6 +124,19 @@
     .filter-row select,.filter-row input{flex:1;min-width:120px;}
     .pagination{gap:10px;}
   }
+  .previsao-hoje{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;background:#fff;border-radius:22px;padding:16px 22px;margin-bottom:18px;box-shadow:0 2px 10px rgba(94,16,39,.08);border-left:8px solid #8B1A3A}
+  .previsao-hoje .pv-titulo{display:flex;gap:12px;align-items:center;font-size:22px}
+  .previsao-hoje .pv-titulo b{display:block;font-family:var(--headfont);font-size:17px;color:#111}
+  .previsao-hoje .pv-titulo small{display:block;font-size:12.5px;color:var(--gray);margin-top:2px}
+  .previsao-hoje .pv-nums{display:flex;gap:12px;flex-wrap:wrap}
+  .previsao-hoje .pv-num{display:flex;align-items:baseline;gap:12px;border-radius:16px;padding:10px 20px}
+  .previsao-hoje .pv-num.cap{background:#F7E9EE;color:#8B1A3A}
+  .previsao-hoje .pv-num.der{background:#E3EFF9;color:#0B5A99}
+  .previsao-hoje .pv-rot{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .previsao-hoje .pv-num b{font-family:var(--headfont);font-size:40px;line-height:1;font-weight:700}
+  .previsao-hoje.vazia{border-left-color:#C9922B}
+  .previsao-hoje.vazia .pv-num{background:#F1ECEC;color:#4A4245}
+  @media(max-width:720px){.previsao-hoje{padding:14px 16px}.previsao-hoje .pv-nums{width:100%}.previsao-hoje .pv-num{flex:1;justify-content:space-between}.previsao-hoje .pv-num b{font-size:34px}}
 </style>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" href="favicon.png">
@@ -182,6 +195,15 @@
 
   <div id="configBanner" class="config-banner">
     ⚠️ Configure SUPABASE_URL e SUPABASE_ANON_KEY no início do código antes de usar.
+  </div>
+
+  <!-- Previsão de fórmulas para hoje (a mesma do aviso que aparece ao entrar no Hub), sempre visível em todas as abas -->
+  <div class="previsao-hoje" id="previsaoHoje" aria-live="polite">
+    <div class="pv-titulo"><span>📋</span><div><b>Previsão de fórmulas para hoje</b><small id="pvSub">carregando…</small></div></div>
+    <div class="pv-nums">
+      <div class="pv-num cap"><span class="pv-rot">💊 Cápsulas</span><b id="pvCapsula">–</b></div>
+      <div class="pv-num der"><span class="pv-rot">🧴 Dermato</span><b id="pvDermato">–</b></div>
+    </div>
   </div>
 
   <div class="tabs">
@@ -679,8 +701,26 @@ async function carregarDashboardProd(){
   });
 }
 
+
+// Previsão de fórmulas para hoje: é o número que a recepção registra em Inclusões no dia anterior (mesmo dado do aviso do Hub)
+async function carregarPrevisaoHoje(){
+  try{
+    const ontem = new Date(); ontem.setDate(ontem.getDate()-1);
+    const { data, error } = await supa.from('formulas_dia_seguinte').select('capsula,dermato').eq('data', localDateStrProd(ontem)).maybeSingle();
+    const box = document.getElementById('previsaoHoje');
+    if(error) throw error;
+    const ok = !!data;
+    box.classList.toggle('vazia', !ok);
+    document.getElementById('pvCapsula').textContent = ok ? data.capsula : '–';
+    document.getElementById('pvDermato').textContent = ok ? data.dermato : '–';
+    document.getElementById('pvSub').textContent = ok ? 'registrada ontem em Inclusões' : 'ainda não registrada (a recepção lança em Inclusões)';
+  }catch(e){ document.getElementById('pvSub').textContent = 'não foi possível carregar'; }
+}
+setInterval(() => { if(!document.hidden) carregarPrevisaoHoje(); }, 300000);
+
 async function init(){
   await requireRole(['chefia','laboratorio']);
+  carregarPrevisaoHoje();
   atualizarAreaManip();
   atualizarAreaPesagem();
   document.getElementById('mData').value = localDateStrProd(new Date());
