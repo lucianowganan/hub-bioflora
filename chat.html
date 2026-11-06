@@ -619,6 +619,7 @@ async function marcarCanalComoLido(canalId){
 // a cada 30 s atualiza a lista/contadores, e ao voltar para a aba, ou quando a internet volta, sincroniza e reconecta na hora.
 // ============================================================
 let cursorSync = null;
+let manterRolagemAoCarregar = false;
 let sincronizando = false, ultimaListaSync = 0;
 async function sincronizarAgora(forcarLista){
   if(!meuUserId || sincronizando) return;
@@ -1075,7 +1076,7 @@ async function carregarMensagensCanal(){
   const area = document.getElementById('mensagensArea');
   area.innerHTML = (data||[]).length ? renderListaMensagens(data, 'canal') : '<div class="empty-state">Nenhuma mensagem ainda. Manda a primeira!</div>';
   cursorSync = (data && data.length) ? data[data.length-1].criado_em : new Date().toISOString();
-  rolarParaFim(area);
+  if(!manterRolagemAoCarregar) rolarParaFim(area);
 }
 
 function assinarTempoRealCanal(){
@@ -1112,7 +1113,7 @@ async function carregarMensagensDm(){
   const area = document.getElementById('mensagensArea');
   area.innerHTML = comAutor.length ? renderListaMensagens(comAutor, 'dm') : '<div class="empty-state">Nenhuma mensagem ainda. Manda a primeira!</div>';
   cursorSync = comAutor.length ? comAutor[comAutor.length-1].criado_em : new Date().toISOString();
-  rolarParaFim(area);
+  if(!manterRolagemAoCarregar) rolarParaFim(area);
 
   // Marca como lidas as mensagens que essa pessoa me mandou
   const naoLidasIds = (data||[]).filter(m => m.destinatario_id===meuUserId && !m.lida).map(m=>m.id);
@@ -1371,13 +1372,19 @@ window.expandirMensagem = expandirMensagem;
 async function carregarReacoesPara(mensagemIds, tipo){
   if(!mensagemIds.length) return;
   const { data } = await supa.from('chat_reacoes').select('*').eq('tipo_mensagem', tipo).in('mensagem_id', mensagemIds);
-  (data||[]).forEach(r => {
-    const chave = r.mensagem_id+'_'+tipo;
-    (reacoesCache[chave] ||= []).push(r);
-  });
+  // SUBSTITUI (não acrescenta) as reações dessas mensagens: carregar duas vezes seguidas não pode contar a mesma reação em dobro
+  const novas = {};
+  (data||[]).forEach(r => { (novas[r.mensagem_id+'_'+tipo] ||= []).push(r); });
+  mensagemIds.forEach(id => { reacoesCache[id+'_'+tipo] = novas[id+'_'+tipo] || []; });
 }
 
+let reagindo = false; // trava: dois cliques rápidos não disparam duas reações ao mesmo tempo
 async function reagir(mensagemId, tipo, reacao){
+  if(reagindo) return;
+  reagindo = true;
+  try{ await reagirInterno(mensagemId, tipo, reacao); } finally { reagindo = false; }
+}
+async function reagirInterno(mensagemId, tipo, reacao){
   const chave = mensagemId+'_'+tipo;
   const atual = (reacoesCache[chave]||[]).find(r=>r.usuario_id===meuUserId);
 
@@ -1387,9 +1394,15 @@ async function reagir(mensagemId, tipo, reacao){
     await supa.from('chat_reacoes').upsert({ mensagem_id: mensagemId, tipo_mensagem: tipo, usuario_id: meuUserId, reacao });
   }
 
-  reacoesCache = {};
-  if(modoAtual === 'canal') await carregarMensagensCanal();
-  else await carregarMensagensDm();
+  // recarrega mantendo a posição da conversa (reagir a uma mensagem antiga não leva a tela para o fim)
+  const area = document.getElementById('mensagensArea');
+  const topo = area ? area.scrollTop : 0;
+  manterRolagemAoCarregar = true;
+  try{
+    if(modoAtual === 'canal') await carregarMensagensCanal();
+    else await carregarMensagensDm();
+  } finally { manterRolagemAoCarregar = false; }
+  if(area) area.scrollTop = topo;
 }
 window.reagir = reagir;
 
