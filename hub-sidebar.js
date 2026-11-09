@@ -78,6 +78,7 @@
     { href: 'conferencia-formulas.html', icone: 'prancheta', label: 'Conferência de Fórmulas', perm: 'modulo.conferencia' },
     { href: 'admin.html', icone: 'escudo', label: 'Administração', perm: 'modulo.admin' },
     { href: 'cargos.html', icone: 'escudoCheck', label: 'Cargos & Permissões', perm: 'modulo.admin' },
+    { href: 'resumo-semanal.html', icone: 'grafico', label: 'Resumo Semanal', perm: 'modulo.resumo' },
     { href: 'rastreabilidade.html', icone: 'grafico', label: 'Rastreabilidade', perm: 'modulo.rastreio' },
   ];
 

@@ -410,6 +410,7 @@ const SIDE_MODULOS = [
   { href:'conferencia-formulas.html', icone:'prancheta', label:'Conferência de Fórmulas', perm:'modulo.conferencia' },
   { href:'admin.html', icone:'escudo', label:'Administração', perm:'modulo.admin' },
   { href:'cargos.html', icone:'escudoCheck', label:'Cargos & Permissões', perm:'modulo.admin' },
+  { href:'resumo-semanal.html', icone:'grafico', label:'Resumo Semanal', perm:'modulo.resumo' },
   { href:'rastreabilidade.html', icone:'grafico', label:'Rastreabilidade', perm:'modulo.rastreio' },
 ];
 
@@ -811,6 +812,14 @@ const MODULOS_HOME = [
   "grupo": "Gestão"
  },
  {
+  "href": "resumo-semanal.html",
+  "perm": "modulo.resumo",
+  "titulo": "Resumo Semanal",
+  "desc": "Como foi a semana: produção, conferência, erros, pessoas e uso do Hub (só chefia).",
+  "icone": "grafico",
+  "grupo": "Administração"
+ },
+ {
   "href": "rastreabilidade.html",
   "perm": "modulo.rastreio",
   "titulo": "Rastreabilidade",
@@ -1153,7 +1162,7 @@ async function renderWidgets(papel, perfil){
 // ---------- Módulos por área, com busca ----------
 const ORDEM_MODULOS_HOME = ['producao','controle-producao','formulas-complexas','reaproveitamento','rotulos','embalagens','conferencia-formulas',
   'erros','inclusoes','meus-erros','rh','tarefas','calendario-interno','chat',
-  'cliente-fiel','vendas-yampi','email-marketing','instagram','vet-contatos','calendario-editorial','visitas-medicas','wanessia','admin','cargos','rastreabilidade'];
+  'cliente-fiel','vendas-yampi','email-marketing','instagram','vet-contatos','calendario-editorial','visitas-medicas','wanessia','admin','cargos','resumo-semanal','rastreabilidade'];
 function renderModulosHome(temPerm){
   const alvo = document.getElementById('modules');
   const pos = (m) => { const i = ORDEM_MODULOS_HOME.indexOf(m.href.replace('.html','')); return i < 0 ? 99 : i; };

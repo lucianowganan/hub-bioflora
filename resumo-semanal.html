@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Resumo Semanal — Hub Bioflora</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"><link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#8B1A3A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<style>
+:root{--burgundy:#8B1A3A;--burgundy-tint:#F7E9EE;--ink:#111;--paper:#F4EFEC;--line:#D9CFD2;--gray:#4A4245;--good:#2F7A5F;--good-tint:#E6F2EC;--bad:#B4472F;--bad-tint:#FBEBE6;--warn:#8F6210;--warn-tint:#FBF1E0;--azul:#0B5A99;--azul-tint:#E3EFF9;--headfont:'Space Grotesk','Maven Pro',sans-serif;--sombra:0 2px 10px rgba(94,16,39,.06)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1150px;margin:0 auto;padding:32px 28px 90px}
+h1{font:600 26px var(--headfont);letter-spacing:-.02em;margin:0 0 2px}
+.sub{color:var(--gray);font-size:13.5px;margin:0 0 18px}
+.barra{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.btn{font:600 13.5px 'Maven Pro',sans-serif;padding:10px 18px;border-radius:30px;border:0;background:#fff;color:var(--ink);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.btn.p{background:var(--burgundy);color:#fff}
+.semana{font:600 17px var(--headfont);padding:0 8px}
+.destaques{background:#fff;border-radius:22px;box-shadow:var(--sombra);padding:18px 22px;margin-bottom:16px;border-left:8px solid var(--burgundy)}
+.destaques h2{font:600 17px var(--headfont);margin:0 0 8px}
+.destaques ul{margin:0;padding-left:20px;line-height:1.7;font-size:14.5px}
+.bloco{background:#fff;border-radius:22px;box-shadow:var(--sombra);padding:18px 22px;margin-bottom:16px}
+.bloco h2{font:600 18px var(--headfont);margin:0 0 4px;display:flex;gap:8px;align-items:center}
+.bloco .d{font-size:12.5px;color:var(--gray);margin:0 0 14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:var(--paper);border-radius:16px;padding:12px 16px}
+.kpi b{display:block;font:700 26px var(--headfont);color:var(--burgundy);line-height:1.15}
+.kpi span{font-size:12.5px;color:var(--gray)}
+.delta{display:inline-block;font-size:12px;font-weight:700;border-radius:20px;padding:1px 9px;margin-top:4px}
+.delta.bom{background:var(--good-tint);color:var(--good)}.delta.ruim{background:var(--bad-tint);color:var(--bad)}.delta.neutro{background:#EFE8EA;color:var(--gray)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{text-align:left;font-size:12px;color:var(--gray);padding:9px 10px;border-bottom:1.5px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid #EFE8EA}
+th.n,td.n{text-align:right}
+.tag{display:inline-block;border-radius:20px;padding:2px 10px;font-size:11.5px;font-weight:700}
+.t-bom{background:var(--good-tint);color:var(--good)}.t-ruim{background:var(--bad-tint);color:var(--bad)}.t-neutro{background:#EFE8EA;color:var(--gray)}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.duas{grid-template-columns:1fr}.wrap{padding:20px 14px 100px}}
+.alerta{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:14px;margin-bottom:8px;text-decoration:none;color:var(--ink);font-size:14px;font-weight:600}
+.alerta.on{background:var(--bad-tint)}.alerta.off{background:var(--good-tint)}
+.alerta b{font:700 20px var(--headfont)}
+.nota{font-size:12.5px;color:var(--gray);margin-top:10px}
+.vazio{padding:20px;text-align:center;color:var(--gray)}
+@media print{.barra,.hub-sidebar,#hub-a11y,.a11y-btn{display:none !important}body{background:#fff;padding:0 !important}.wrap{padding:0}.bloco,.destaques{box-shadow:none;border:1px solid #ddd;break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Resumo Semanal</h1>
+  <p class="sub">Como foi a semana na farmácia: produção, conferência, qualidade, pessoas, Cliente Fiel e uso do Hub. Só a chefia vê. A comparação é sempre com a semana anterior.</p>
+  <div class="barra">
+    <button class="btn" id="bAnt">‹ Semana anterior</button>
+    <span class="semana" id="semanaLabel">…</span>
+    <button class="btn" id="bProx">Próxima ›</button>
+    <button class="btn" id="bUltima">Última semana completa</button>
+    <span style="flex:1"></span>
+    <button class="btn p" id="bImprimir">Imprimir / salvar PDF</button>
+  </div>
+  <div id="conteudo"><div class="vazio">Carregando…</div></div>
+</div>
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = n => Number(n || 0).toLocaleString('pt-BR');
+const dec = n => (Math.round(Number(n || 0) * 10) / 10).toLocaleString('pt-BR');
+const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+const fmtD = s => s ? s.slice(8) + '/' + s.slice(5,7) : '—';
+const fmtDA = s => s ? s.slice(8) + '/' + s.slice(5,7) + '/' + s.slice(0,4) : '—';
+const DIAS = ['dom','seg','ter','qua','qui','sex','sáb'];
+const diaSem = s => DIAS[new Date(s + 'T12:00:00').getDay()];
+function segundaDe(d){ const x = new Date(d); x.setHours(12,0,0,0); const k = (x.getDay() + 6) % 7; x.setDate(x.getDate() - k); return x; }
+function tempo(s){ s = Number(s)||0; const m = Math.round(s/60); return m < 60 ? m + ' min' : Math.floor(m/60) + 'h ' + String(m%60).padStart(2,'0') + 'min'; }
+function hm(min){ min = Number(min)||0; const a = Math.abs(min); return (min < 0 ? '−' : '+') + Math.floor(a/60) + 'h' + String(a%60).padStart(2,'0'); }
+const MODULOS = {index:'Início', tarefas:'Quadro de Tarefas', 'calendario-interno':'Calendário Interno', rh:'Central de RH', rotulos:'Rótulos', producao:'Ordem de Produção', 'controle-producao':'Controle de Produção', reaproveitamento:'Reaproveitamento', erros:'Registro de Erros', inclusoes:'Inclusões', 'calendario-editorial':'Calendário Editorial', 'formulas-complexas':'Fórmulas Complexas', 'meus-erros':'Meus Erros', chat:'Chat', wanessia:'Wanessia', 'vendas-yampi':'Vendas (Yampi)', 'email-marketing':'Email Marketing', instagram:'Instagram', embalagens:'Embalagens', 'conferencia-formulas':'Conferência de Fórmulas', 'vet-contatos':'Contatos Vet', 'cliente-fiel':'Cliente Fiel', 'visitas-medicas':'Visitas Médicas', admin:'Administração', cargos:'Cargos', rastreabilidade:'Rastreabilidade', 'resumo-semanal':'Resumo Semanal'};
+
+let inicio = null, dados = null;
+// compara com a semana anterior; "ruimSobe" = quando o número sobe, é ruim (erros, tempo de ordem)
+function delta(a, b, ruimSobe){
+  a = Number(a||0); b = Number(b||0);
+  if(a === b) return '<span class="delta neutro">= igual</span>';
+  if(!b) return '<span class="delta neutro">novo</span>';
+  const p = (a - b) / b * 100, sobe = p > 0, bom = ruimSobe ? !sobe : sobe;
+  return `<span class="delta ${Math.abs(p) < 2 ? 'neutro' : bom ? 'bom' : 'ruim'}">${sobe ? '▲' : '▼'} ${Math.abs(Math.round(p))}% vs. anterior</span>`;
+}
+const kpi = (rot, val, d) => `<div class="kpi"><b>${val}</b><span>${rot}</span>${d ? '<br>' + d : ''}</div>`;
+
+async function init(){
+  await requireRole(['chefia']);
+  inicio = ultimaCompleta();
+  $('bAnt').onclick = () => mover(-7); $('bProx').onclick = () => mover(7);
+  $('bUltima').onclick = () => { inicio = ultimaCompleta(); carregar(); };
+  $('bImprimir').onclick = () => window.print();
+  carregar();
+}
+function ultimaCompleta(){ const s = segundaDe(new Date()); s.setDate(s.getDate() - 7); return s; }
+function mover(dias){ const d = new Date(inicio); d.setDate(d.getDate() + dias); inicio = d; carregar(); }
+
+async function carregar(){
+  const ini = iso(inicio), fimD = new Date(inicio); fimD.setDate(fimD.getDate() + 6), fim = iso(fimD);
+  $('semanaLabel').textContent = 'Semana de ' + fmtDA(ini).slice(0,5) + ' a ' + fmtDA(fim);
+  $('conteudo').innerHTML = '<div class="vazio">Carregando…</div>';
+  const { data, error } = await supa.rpc('resumo_semanal', { p_inicio: ini });
+  if(error || !data){ $('conteudo').innerHTML = '<div class="vazio">Não foi possível carregar o resumo' + (error ? ': ' + esc(error.message) : '') + '</div>'; return; }
+  dados = data; desenhar(ini, fim);
+}
+
+function desenhar(ini, fim){
+  const A = dados.atual, B = dados.anterior;
+  const parcial = fim >= iso(new Date());
+  const manA = Number(A.producao.manipulado.capsula) + Number(A.producao.manipulado.dermato), manB = Number(B.producao.manipulado.capsula) + Number(B.producao.manipulado.dermato);
+  const pesA = Number(A.producao.pesado.capsula) + Number(A.producao.pesado.dermato), pesB = Number(B.producao.pesado.capsula) + Number(B.producao.pesado.dermato);
+  const confA = Number(A.conferencia.capsulas) + Number(A.conferencia.dermato), confB = Number(B.conferencia.capsulas) + Number(B.conferencia.dermato);
+  const taxaA = Number(A.qualidade.inclusoes) ? Number(A.qualidade.erros) / Number(A.qualidade.inclusoes) * 100 : 0, taxaB = Number(B.qualidade.inclusoes) ? Number(B.qualidade.erros) / Number(B.qualidade.inclusoes) * 100 : 0;
+  const al = dados.alertas, og = dados.ordens_agora;
+
+  // destaques em frases
+  const pc = (a, b) => b ? Math.round((a - b) / b * 100) : null;
+  const frase = (txt, a, b, ruimSobe) => { const p = pc(a, b); return p === null ? txt : `${txt} (${p >= 0 ? '+' : ''}${p}% vs. semana anterior)`; };
+  const dest = [
+    frase(`<b>${num(manA)}</b> fórmulas manipuladas e <b>${num(pesA)}</b> pesadas`, manA, manB),
+    frase(`<b>${num(confA)}</b> fórmulas conferidas (${num(A.conferencia.capsulas)} cápsulas, ${num(A.conferencia.dermato)} dermato)`, confA, confB),
+    `<b>${num(A.qualidade.erros)}</b> erros em <b>${num(A.qualidade.inclusoes)}</b> inclusões: <b>${dec(taxaA)}</b> erros por 100 inclusões` + (taxaB ? ` (semana anterior: ${dec(taxaB)})` : ''),
+    `<b>${num(A.ordens.liberadas)}</b> ordens de produção liberadas; hoje há <b>${num(og.ordens_abertas)}</b> abertas, <b>${num(og.ordens_atrasadas)}</b> atrasadas`,
+    `<b>${num(A.uso.pessoas_ativas)}</b> de ${num(dados.usuarios_total)} pessoas usaram o Hub (${tempo(A.uso.seg_ativo)} de uso ativo)`
+  ];
+  const atenc = [];
+  if(Number(og.ordens_atrasadas)) atenc.push(`${og.ordens_atrasadas} ordens atrasadas`);
+  if(Number(al.manipulados_vencendo)) atenc.push(`${al.manipulados_vencendo} manipulados vencendo em 5 dias`);
+  if(Number(al.ferias_pendentes)) atenc.push(`${al.ferias_pendentes} férias aguardando aprovação`);
+  if(Number(al.fc_pendentes)) atenc.push(`${al.fc_pendentes} fórmulas complexas aguardando`);
+
+  // previsto x conferido
+  const dias = A.dias.filter(d => d.tem_prev || Number(d.conf_capsula) + Number(d.conf_dermato) > 0);
+  const tabPrev = dias.length ? `<table><thead><tr><th>Dia</th><th class="n">Previsto</th><th class="n">Conferido</th><th class="n">Realizado</th></tr></thead><tbody>${dias.map(d => {
+      const prev = Number(d.prev_capsula) + Number(d.prev_dermato), conf = Number(d.conf_capsula) + Number(d.conf_dermato);
+      return `<tr><td>${diaSem(d.dia)} ${fmtD(d.dia)}</td><td class="n">${d.tem_prev ? num(prev) + ` <small style="color:var(--gray)">(${d.prev_capsula} cáps · ${d.prev_dermato} derm)</small>` : '—'}</td><td class="n">${num(conf)} <small style="color:var(--gray)">(${d.conf_capsula} cáps · ${d.conf_dermato} derm)</small></td><td class="n">${d.tem_prev && prev ? Math.round(conf/prev*100) + '%' : '—'}</td></tr>`; }).join('')}</tbody></table>
+      <p class="nota">A previsão lançada no dia anterior em Inclusões vale para o dia seguinte. “Realizado” compara o que foi conferido com o que foi previsto.</p>` : '<div class="vazio">Sem previsão nem conferência nesta semana.</div>';
+
+  // qualidade por pessoa
+  const principais = A.por_pessoa.filter(p => p.principal);
+  const totE = principais.reduce((a,p) => a + Number(p.erros), 0), totI = principais.reduce((a,p) => a + Number(p.inclusoes), 0), taxaEq = totI ? totE / totI * 100 : 0;
+  const pessoas = A.por_pessoa.filter(p => Number(p.erros) || Number(p.inclusoes)).map(p => {
+    const t = Number(p.inclusoes) ? Number(p.erros) / Number(p.inclusoes) * 100 : null;
+    let tag = '<span class="tag t-neutro">—</span>';
+    if(t !== null && p.principal && taxaEq){ const d = (t - taxaEq) / taxaEq * 100; tag = Math.abs(d) < 10 ? '<span class="tag t-neutro">na média</span>' : d > 0 ? `<span class="tag t-ruim">${Math.round(d)}% acima da equipe</span>` : `<span class="tag t-bom">${Math.round(-d)}% abaixo da equipe</span>`; }
+    return `<tr><td><b>${esc(p.nome)}</b></td><td class="n">${p.erros}</td><td class="n">${num(p.inclusoes)}</td><td class="n">${t === null ? '—' : dec(t)}</td><td>${tag}</td></tr>`; }).join('');
+
+  // RH
+  const ausentes = A.ausentes.length ? A.ausentes.map(a => `<li><b>${esc(a.nome)}</b> · ${a.tipo === 'ausencia' ? 'ausência' : 'férias'} (${fmtD(a.inicio)} a ${fmtD(a.fim)})</li>`).join('') : '<li>Ninguém em férias ou ausência nesta semana.</li>';
+  const ponto = dados.ponto || [], periodoPonto = ponto.length ? ponto.map(p => p.periodo_fim).sort().slice(-1)[0] : null;
+  const neg = ponto.filter(p => p.saldo_min < 0).slice(0, 5), pos = ponto.filter(p => p.saldo_min > 0).slice(-5).reverse();
+  const atrasosTot = ponto.reduce((a,p) => a + Number(p.atrasos_leve) + Number(p.atrasos_grave), 0);
+  const linhaPonto = p => `<tr><td>${esc(p.nome)}</td><td class="n">${hm(p.saldo_min)}</td></tr>`;
+
+  const F = A.fidelidade, FB = B.fidelidade, U = A.uso, UB = B.uso;
+  const topMod = (A.uso_modulos || []).map(m => `<tr><td>${esc(MODULOS[m.pagina] || m.pagina)}</td><td class="n">${tempo(m.seg_ativo)}</td></tr>`).join('');
+  const alerta = (n, txt, href, ruim) => `<a class="alerta ${Number(n) && ruim ? 'on' : 'off'}" href="${href}"><span>${txt}</span><b>${num(n)}</b></a>`;
+
+  $('conteudo').innerHTML = `
+    ${parcial ? '<div class="bloco" style="background:var(--warn-tint)"><b>Semana ainda em andamento.</b> Os números estão parciais. Para fechar a semana, veja a “Última semana completa”.</div>' : ''}
+    <div class="destaques"><h2>Destaques da semana</h2><ul>${dest.map(d => `<li>${d}</li>`).join('')}</ul>${atenc.length ? `<p class="nota" style="margin-top:10px"><b>Atenção agora:</b> ${atenc.join(' · ')}</p>` : ''}</div>
+
+    <div class="bloco"><h2>🏭 Produção</h2><p class="d">Registros diários de manipulação e pesagem e ordens de produção.</p>
+      <div class="kpis">
+        ${kpi('fórmulas manipuladas', num(manA), delta(manA, manB))}
+        ${kpi('fórmulas pesadas', num(pesA), delta(pesA, pesB))}
+        ${kpi('manipulação: cápsulas / dermato', num(A.producao.manipulado.capsula) + ' / ' + num(A.producao.manipulado.dermato), '')}
+        ${kpi('ordens liberadas', num(A.ordens.liberadas), delta(A.ordens.liberadas, B.ordens.liberadas))}
+        ${kpi('ordens criadas', num(A.ordens.criadas), delta(A.ordens.criadas, B.ordens.criadas))}
+        ${kpi('tempo médio ordem → liberação', A.ordens.tempo_medio_dias == null ? '—' : dec(A.ordens.tempo_medio_dias) + ' dias', delta(A.ordens.tempo_medio_dias, B.ordens.tempo_medio_dias, true))}
+      </div>
+      <p class="nota">Agora: <b>${num(og.ordens_abertas)}</b> ordens abertas, <b>${num(og.ordens_atrasadas)}</b> atrasadas (pelos prazos por prioridade). Dias com registro na semana: ${A.producao.dias_com_registro}.</p></div>
+
+    <div class="bloco"><h2>✅ Conferência</h2><p class="d">Fórmulas bipadas no módulo Conferência de Fórmulas.</p>
+      <div class="kpis">
+        ${kpi('fórmulas conferidas', num(confA), delta(confA, confB))}
+        ${kpi('cápsulas', num(A.conferencia.capsulas), delta(A.conferencia.capsulas, B.conferencia.capsulas))}
+        ${kpi('dermato', num(A.conferencia.dermato), delta(A.conferencia.dermato, B.conferencia.dermato))}
+        ${kpi('média por dia de conferência', A.conferencia.dias ? num(Math.round(confA / A.conferencia.dias)) : '—', '')}
+      </div>${tabPrev}</div>
+
+    <div class="bloco"><h2>🎯 Qualidade e atendimento</h2><p class="d">Erros registrados e inclusões lançadas. “Erros por 100 inclusões” é o número mais justo para comparar semanas e pessoas.</p>
+      <div class="kpis">
+        ${kpi('erros registrados', num(A.qualidade.erros), delta(A.qualidade.erros, B.qualidade.erros, true))}
+        ${kpi('inclusões lançadas', num(A.qualidade.inclusoes), delta(A.qualidade.inclusoes, B.qualidade.inclusoes))}
+        ${kpi('erros por 100 inclusões', dec(taxaA), delta(taxaA, taxaB, true))}
+      </div>
+      <div class="duas">
+        <div><h3 style="font:600 14px var(--headfont);margin:0 0 8px">Erros mais frequentes</h3>${A.top_erros.length ? `<table><tbody>${A.top_erros.map(t => `<tr><td>${esc(t.tipo)}</td><td class="n"><b>${t.n}</b></td></tr>`).join('')}</tbody></table>` : '<div class="vazio">Sem erros na semana.</div>'}</div>
+        <div><h3 style="font:600 14px var(--headfont);margin:0 0 8px">Por pessoa (equipe: ${dec(taxaEq)} erros por 100 inclusões)</h3>${pessoas ? `<table><thead><tr><th>Pessoa</th><th class="n">Erros</th><th class="n">Inclusões</th><th class="n">Por 100</th><th>vs. equipe</th></tr></thead><tbody>${pessoas}</tbody></table>` : '<div class="vazio">Sem registros.</div>'}</div>
+      </div></div>
+
+    <div class="bloco"><h2>👥 Pessoas (RH)</h2><p class="d">Férias e ausências da semana e o banco de horas da última folha enviada.</p>
+      <ul style="margin:0 0 12px;padding-left:20px;line-height:1.7;font-size:14.5px">${ausentes}</ul>
+      ${ponto.length ? `<div class="duas"><div><h3 style="font:600 14px var(--headfont);margin:0 0 8px">Maiores saldos negativos</h3><table><tbody>${neg.map(linhaPonto).join('') || '<tr><td>Nenhum saldo negativo.</td></tr>'}</tbody></table></div>
+        <div><h3 style="font:600 14px var(--headfont);margin:0 0 8px">Maiores saldos positivos</h3><table><tbody>${pos.map(linhaPonto).join('') || '<tr><td>Nenhum saldo positivo.</td></tr>'}</tbody></table></div></div>
+        <p class="nota">Dados do ponto até <b>${fmtDA(periodoPonto)}</b> (última folha enviada). Atrasos no período: ${num(atrasosTot)}. Se estiver desatualizado, envie a planilha do mês em RH → Ponto.</p>` : '<div class="vazio">Sem folha de ponto enviada.</div>'}</div>
+
+    <div class="bloco"><h2>💎 Cliente Fiel</h2><div class="kpis">
+        ${kpi('novos clientes', num(F.novos), delta(F.novos, FB.novos))}
+        ${kpi('pontos ganhos', num(F.pontos_ganhos), delta(F.pontos_ganhos, FB.pontos_ganhos))}
+        ${kpi('pontos resgatados', num(F.pontos_resgatados), delta(F.pontos_resgatados, FB.pontos_resgatados))}
+        ${kpi('movimentos', num(F.movimentos), delta(F.movimentos, FB.movimentos))}</div></div>
+
+    <div class="bloco"><h2>📊 Uso do Hub</h2><p class="d">Detalhes em Rastreabilidade.</p><div class="kpis">
+        ${kpi('pessoas que usaram', num(U.pessoas_ativas) + ' de ' + num(dados.usuarios_total), delta(U.pessoas_ativas, UB.pessoas_ativas))}
+        ${kpi('tempo ativo total', tempo(U.seg_ativo), delta(U.seg_ativo, UB.seg_ativo))}
+        ${kpi('aberturas de módulos', num(U.aberturas), delta(U.aberturas, UB.aberturas))}</div>
+      ${topMod ? `<table><thead><tr><th>Módulos mais usados</th><th class="n">Tempo ativo</th></tr></thead><tbody>${topMod}</tbody></table>` : '<div class="vazio">Sem uso registrado nesta semana (a coleta começou há poucos dias).</div>'}</div>
+
+    <div class="bloco"><h2>🚨 Alertas de agora</h2>
+      ${alerta(og.ordens_atrasadas, 'Ordens de produção atrasadas', 'producao.html', true)}
+      ${alerta(al.manipulados_vencendo, 'Manipulados vencendo em até 5 dias', 'reaproveitamento.html', true)}
+      ${alerta(al.rotulos_a_comprar, 'Rótulos a comprar', 'rotulos.html', false)}
+      ${alerta(al.fc_pendentes, 'Fórmulas complexas aguardando aprovação', 'formulas-complexas.html', true)}
+      ${alerta(al.ferias_pendentes, 'Férias aguardando aprovação', 'rh.html', true)}</div>`;
+}
+init();
+</script>
+<script>(function(){var s=document.createElement("script");s.src="acessibilidade.js?t="+Date.now();document.body.appendChild(s);})();</script>
+<script>(function(){var s=document.createElement("script");s.src="hub-sidebar.js?t="+Date.now();document.body.appendChild(s);})();</script>
+</body>
+</html>

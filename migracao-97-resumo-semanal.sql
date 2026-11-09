@@ -1,0 +1,5 @@
+-- Migração 97: Resumo Semanal (só chefia). Já aplicada.
+-- resumo_semanal(p_inicio date) devolve jsonb com a semana (seg–dom) e a semana anterior: produção, ordens, conferência (previsto x conferido por dia),
+-- erros/inclusões (total, top tipos, por pessoa), ausências, Cliente Fiel, uso do Hub, alertas de agora e banco de horas (folha mais recente).
+-- resumo_semanal_periodo(ini, fim) calcula um intervalo. Ambas retornam null para quem não é chefia (is_chefia()).
+-- Permissão: modulo.resumo (chefia). Definições completas no banco (pg_get_functiondef).
