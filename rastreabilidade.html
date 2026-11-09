@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rastreabilidade — Hub Bioflora</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"><link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#8B1A3A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="auth-guard.js"></script>
+<style>
+:root{--burgundy:#8B1A3A;--burgundy-tint:#F7E9EE;--ink:#111;--paper:#F4EFEC;--line:#D9CFD2;--gray:#4A4245;--good:#2F7A5F;--good-tint:#E6F2EC;--bad:#B4472F;--bad-tint:#FBEBE6;--warn:#8F6210;--warn-tint:#FBF1E0;--headfont:'Space Grotesk','Maven Pro',sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1250px;margin:0 auto;padding:32px 28px 90px}
+h1{font:600 26px var(--headfont);letter-spacing:-.02em;margin:0 0 2px}
+.sub{color:var(--gray);font-size:13.5px;margin:0 0 18px;max-width:780px}
+.barra{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.barra select,.barra input{font:500 14px 'Maven Pro',sans-serif;padding:10px 14px;border:1.5px solid var(--line);border-radius:14px;background:#fff;color:var(--ink)}
+.btn{font:600 13.5px 'Maven Pro',sans-serif;padding:10px 18px;border-radius:30px;border:0;background:var(--burgundy);color:#fff;cursor:pointer}
+.btn.s{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.abas{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.aba{border:0;background:#fff;color:var(--gray);padding:9px 18px;border-radius:30px;font:600 13.5px 'Maven Pro',sans-serif;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.aba.on{background:var(--burgundy);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border-radius:20px;padding:14px 18px;box-shadow:0 2px 10px rgba(94,16,39,.06)}
+.kpi b{display:block;font:700 26px var(--headfont);color:var(--burgundy)}.kpi span{font-size:12.5px;color:var(--gray)}
+.cartao{background:#fff;border-radius:22px;box-shadow:0 2px 10px rgba(94,16,39,.06);padding:18px 20px;margin-bottom:16px}
+.cartao h2{font:600 17px var(--headfont);margin:0 0 4px}.cartao .d{font-size:12.5px;color:var(--gray);margin:0 0 12px}
+.tab{overflow:auto;border-radius:22px;background:#fff;box-shadow:0 2px 10px rgba(94,16,39,.06)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{text-align:left;font-size:12px;color:var(--gray);padding:11px 12px;border-bottom:1.5px solid var(--line);white-space:nowrap;position:sticky;top:0;background:#fff;cursor:pointer}
+th.n,td.n{text-align:right}
+td{padding:10px 12px;border-bottom:1px solid #EFE8EA;vertical-align:middle}
+.tag{display:inline-block;border-radius:20px;padding:2px 10px;font-size:11.5px;font-weight:700}
+.t-ok{background:var(--good-tint);color:var(--good)}.t-baixo{background:var(--warn-tint);color:var(--warn)}.t-zero{background:var(--bad-tint);color:var(--bad)}
+.barraUso{height:8px;border-radius:6px;background:#EFE8EA;min-width:90px;overflow:hidden}.barraUso i{display:block;height:100%;background:var(--burgundy)}
+.link{border:0;background:none;color:var(--burgundy);font-weight:700;cursor:pointer;padding:0;font:inherit}
+.mat td.c{text-align:center;font-size:12px;min-width:74px}
+.vazio{padding:30px;text-align:center;color:var(--gray)}
+.aviso{background:var(--warn-tint);border-radius:14px;padding:12px 16px;font-size:12.5px;color:#6B4A0C;margin-top:16px}
+@media(max-width:720px){.wrap{padding:20px 14px 100px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Rastreabilidade</h1>
+  <p class="sub">O que a equipe usa no Hub: quem entra, em quais módulos, por quanto tempo e o que clica. Serve para medir o que realmente é útil. Só a chefia vê esta área.</p>
+  <div class="barra">
+    <select id="fPeriodo"><option value="hoje">Hoje</option><option value="7" selected>Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="custom">Personalizado…</option></select>
+    <span id="boxCustom" style="display:none"><input type="date" id="fIni"> até <input type="date" id="fFim"></span>
+    <select id="fPessoa"><option value="">Todas as pessoas</option></select>
+    <select id="fModulo"><option value="">Todos os módulos</option></select>
+    <button class="btn s" id="btnCsv">Exportar planilha (CSV)</button>
+  </div>
+  <div class="abas" id="abas">
+    <button class="aba on" data-a="geral">Visão geral</button><button class="aba" data-a="modulos">Módulos</button><button class="aba" data-a="pessoas">Pessoas</button><button class="aba" data-a="matriz">Pessoa × módulo</button><button class="aba" data-a="log">Atividade detalhada</button>
+  </div>
+  <div id="conteudo"><div class="vazio">Carregando…</div></div>
+  <div class="aviso">🔒 O registro guarda <b>qual módulo</b> foi aberto, <b>quanto tempo</b> ficou aberto e ativo (mexendo, não só com a aba aberta) e <b>o nome curto dos botões clicados</b>. Não guarda o que foi digitado, mensagens, valores nem senhas. Os dados começaram a ser coletados quando esta área entrou no ar e ficam guardados por 400 dias. Avise a equipe de que o uso do Hub é acompanhado.</div>
+</div>
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MODULOS = {index:'Início (Home)', tarefas:'Quadro de Tarefas', 'calendario-interno':'Calendário Interno', rh:'Central de RH', rotulos:'Controle de Rótulos', producao:'Ordem de Produção', 'controle-producao':'Controle de Produção', reaproveitamento:'Reaproveitamento', erros:'Registro de Erros', inclusoes:'Inclusões & Performance', 'calendario-editorial':'Calendário Editorial', 'formulas-complexas':'Fórmulas Complexas', 'meus-erros':'Meus Erros', chat:'Chat Interno', wanessia:'Wanessia', 'vendas-yampi':'Vendas (Yampi)', 'email-marketing':'Email Marketing', instagram:'Instagram', embalagens:'Controle de Embalagens', 'conferencia-formulas':'Conferência de Fórmulas', 'vet-contatos':'Contatos Veterinários', 'cliente-fiel':'Cliente Fiel', 'visitas-medicas':'Visitas Médicas', admin:'Administração', cargos:'Cargos & Permissões', rastreabilidade:'Rastreabilidade', 'banco-de-horas':'Banco de Horas', 'alterar-senha':'Alterar senha'};
+const nomeMod = s => MODULOS[s] || s;
+const CARGOS = {chefia:'Chefia', rh:'RH', gestao:'Gestão', laboratorio:'Laboratório', recepcao:'Recepção', conferencia:'Conferência', atendente:'Atendente', cpd:'CPD', lideranca:'Liderança'};
+const TIPOS = {clique:'Clique', envio:'Envio de formulário', entrada:'Entrada no Hub'};
+function fmtTempo(s){ s = Number(s)||0; if(s < 60) return s + ' s'; const m = Math.round(s/60); if(m < 60) return m + ' min'; return Math.floor(m/60) + 'h ' + String(m%60).padStart(2,'0') + 'min'; }
+const fmtDH = iso => iso ? new Date(iso).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '—';
+const fmtD = iso => iso ? new Date(iso).toLocaleDateString('pt-BR') : '—';
+const nivel = d => d < 1 ? 'Hoje' : d < 2 ? 'Ontem' : 'há ' + Math.floor(d) + ' dias';
+let aba = 'geral', pessoas = [], chart = null, cache = {};
+
+function periodo(){
+  const p = $('fPeriodo').value, hoje = new Date(); hoje.setHours(0,0,0,0);
+  let ini, fim = new Date(hoje.getTime() + 86400000);
+  if(p === 'hoje') ini = hoje; else if(p === 'custom'){ ini = $('fIni').value ? new Date($('fIni').value + 'T00:00:00') : new Date(hoje.getTime() - 7*86400000); if($('fFim').value) fim = new Date(new Date($('fFim').value + 'T00:00:00').getTime() + 86400000); }
+  else ini = new Date(hoje.getTime() - (Number(p) - 1) * 86400000);
+  return { ini: ini.toISOString(), fim: fim.toISOString(), dias: Math.max(1, Math.round((fim - ini)/86400000)) };
+}
+async function rpc(nome, args){ const { data, error } = await supa.rpc(nome, args); if(error){ console.error(nome, error); throw error; } return data || []; }
+
+async function init(){
+  await requireRole(['chefia']);
+  const { data } = await supa.from('perfis').select('id,nome_exibicao,papel').neq('papel','sem_papel').order('nome_exibicao');
+  $('fPessoa').innerHTML = '<option value="">Todas as pessoas</option>' + (data||[]).map(p => `<option value="${p.id}">${esc(p.nome_exibicao)}</option>`).join('');
+  $('fModulo').innerHTML = '<option value="">Todos os módulos</option>' + Object.entries(MODULOS).sort((a,b)=>a[1].localeCompare(b[1])).map(([k,v]) => `<option value="${k}">${esc(v)}</option>`).join('');
+  ['fPeriodo','fIni','fFim','fPessoa','fModulo'].forEach(i => $(i).addEventListener('change', () => { $('boxCustom').style.display = $('fPeriodo').value === 'custom' ? 'inline' : 'none'; carregar(); }));
+  document.querySelectorAll('.aba').forEach(b => b.onclick = () => { aba = b.dataset.a; document.querySelectorAll('.aba').forEach(x => x.classList.toggle('on', x === b)); desenhar(); });
+  $('btnCsv').onclick = exportarCsv;
+  carregar();
+}
+
+async function carregar(){
+  $('conteudo').innerHTML = '<div class="vazio">Carregando…</div>';
+  const { ini, fim } = periodo(), uid = $('fPessoa').value || null;
+  try{
+    const [mods, usrs, dia, mat, log] = await Promise.all([
+      rpc('rastreio_modulos', { p_ini: ini, p_fim: fim, p_usuario: uid }),
+      rpc('rastreio_usuarios', { p_ini: ini, p_fim: fim }),
+      rpc('rastreio_diario', { p_ini: ini, p_fim: fim }),
+      rpc('rastreio_matriz', { p_ini: ini, p_fim: fim }),
+      rpc('rastreio_log', { p_ini: ini, p_fim: fim, p_usuario: uid, p_pagina: $('fModulo').value || null, p_limite: 500 })
+    ]);
+    cache = { mods, usrs, dia, mat, log };
+    desenhar();
+  }catch(e){ $('conteudo').innerHTML = '<div class="vazio">Não foi possível carregar: ' + esc(e.message || e) + '</div>'; }
+}
+
+function situacao(m){
+  if(!m || !m.visitas) return '<span class="tag t-zero">Sem uso</span>';
+  if(Number(m.usuarios) <= 1 || Number(m.seg_ativo) < 600) return '<span class="tag t-baixo">Pouco usado</span>';
+  return '<span class="tag t-ok">Em uso</span>';
+}
+function modulosCompletos(){
+  const mapa = {}; (cache.mods||[]).forEach(m => mapa[m.pagina] = m);
+  const filtro = $('fModulo').value;
+  const nomes = new Set([...Object.keys(MODULOS).filter(k => !['index','alterar-senha','rastreabilidade'].includes(k)), ...Object.keys(mapa)]);
+  return [...nomes].filter(n => !filtro || n === filtro).map(n => mapa[n] || { pagina: n, usuarios: 0, visitas: 0, seg_ativo: 0, seg_aberta: 0, cliques: 0, ultima: null });
+}
+
+function desenhar(){
+  if(!cache.mods) return;
+  const box = $('conteudo');
+  const uid = $('fPessoa').value;
+  if(aba === 'geral'){
+    const ativos = cache.usrs.filter(u => Number(u.visitas) > 0), total = cache.usrs.length;
+    const seg = cache.usrs.reduce((a,u) => a + Number(u.seg_ativo), 0), vis = cache.usrs.reduce((a,u) => a + Number(u.visitas), 0), cli = cache.usrs.reduce((a,u) => a + Number(u.cliques), 0);
+    const top = modulosCompletos().sort((a,b) => Number(b.seg_ativo) - Number(a.seg_ativo)).slice(0,6);
+    const maxTop = Math.max(1, ...top.map(t => Number(t.seg_ativo)));
+    const sem = cache.usrs.filter(u => !Number(u.visitas));
+    box.innerHTML = `
+      <div class="kpis">
+        <div class="kpi"><b>${ativos.length}<small style="font-size:15px;color:var(--gray)"> de ${total}</small></b><span>pessoas que usaram o Hub</span></div>
+        <div class="kpi"><b>${fmtTempo(seg)}</b><span>tempo ativo total</span></div>
+        <div class="kpi"><b>${ativos.length ? fmtTempo(seg/ativos.length) : '—'}</b><span>tempo ativo por pessoa</span></div>
+        <div class="kpi"><b>${vis}</b><span>aberturas de módulos</span></div>
+        <div class="kpi"><b>${cli}</b><span>cliques registrados</span></div>
+      </div>
+      <div class="cartao"><h2>Uso por dia</h2><p class="d">Pessoas diferentes que usaram o Hub e horas de uso ativo em cada dia.</p><canvas id="graf" height="90"></canvas></div>
+      <div class="cartao"><h2>Módulos mais usados (tempo ativo)</h2><p class="d">Veja a aba Módulos para todos, inclusive os sem uso.</p>
+        ${top.filter(t => Number(t.seg_ativo) > 0).map(t => `<div style="display:flex;gap:12px;align-items:center;margin:8px 0"><div style="width:200px;font-weight:600">${esc(nomeMod(t.pagina))}</div><div class="barraUso" style="flex:1"><i style="width:${Math.round(Number(t.seg_ativo)/maxTop*100)}%"></i></div><div style="width:90px;text-align:right">${fmtTempo(t.seg_ativo)}</div></div>`).join('') || '<div class="vazio">Ainda sem uso registrado neste período.</div>'}</div>
+      ${sem.length ? `<div class="cartao"><h2>Não usaram o Hub neste período</h2><p class="d">${sem.map(u => esc(u.nome)).join(' · ')}</p></div>` : ''}`;
+    const dias = cache.dia;
+    if(chart) chart.destroy();
+    if(dias.length) chart = new Chart($('graf'), { type: 'bar', data: { labels: dias.map(d => d.dia.slice(8) + '/' + d.dia.slice(5,7)), datasets: [
+      { type: 'line', label: 'Horas de uso ativo', data: dias.map(d => Math.round(Number(d.seg_ativo)/36)/100), borderColor: '#8B1A3A', backgroundColor: 'rgba(139,26,58,.1)', yAxisID: 'y1', tension: .25, fill: true },
+      { label: 'Pessoas', data: dias.map(d => Number(d.usuarios)), backgroundColor: '#3E6B93', yAxisID: 'y' } ] },
+      options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Pessoas' } }, y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Horas' } } } } });
+  }
+  else if(aba === 'modulos'){
+    const l = modulosCompletos().sort((a,b) => Number(b.seg_ativo) - Number(a.seg_ativo));
+    box.innerHTML = `<div class="tab"><table><thead><tr><th>Módulo</th><th>Situação</th><th class="n">Pessoas</th><th class="n">Aberturas</th><th class="n">Tempo ativo</th><th class="n">Tempo aberto</th><th class="n">Ativo por abertura</th><th class="n">Cliques</th><th>Último uso</th></tr></thead><tbody>
+      ${l.map(m => `<tr><td><b>${esc(nomeMod(m.pagina))}</b></td><td>${situacao(m)}</td><td class="n">${m.usuarios}</td><td class="n">${m.visitas}</td><td class="n">${fmtTempo(m.seg_ativo)}</td><td class="n">${fmtTempo(m.seg_aberta)}</td><td class="n">${Number(m.visitas) ? fmtTempo(Number(m.seg_ativo)/Number(m.visitas)) : '—'}</td><td class="n">${m.cliques}</td><td>${fmtDH(m.ultima)}</td></tr>`).join('')}</tbody></table></div>
+      <p class="sub" style="margin-top:10px"><b>Tempo ativo</b> = com a aba à vista e mexendo (mouse, teclado, rolagem ou toque nos últimos 60 s). <b>Tempo aberto</b> = aba à vista, mesmo parada. "Pouco usado" = só uma pessoa usou ou menos de 10 min ativos no período.</p>`;
+  }
+  else if(aba === 'pessoas'){
+    const l = cache.usrs.filter(u => !uid || u.usuario_id === uid).sort((a,b) => Number(b.seg_ativo) - Number(a.seg_ativo));
+    const dias = periodo().dias;
+    box.innerHTML = `<div class="tab"><table><thead><tr><th>Pessoa</th><th>Cargo</th><th class="n">Dias com uso</th><th class="n">Tempo ativo</th><th class="n">Aberturas</th><th class="n">Módulos usados</th><th class="n">Cliques</th><th>Último uso</th><th>Último login</th></tr></thead><tbody>
+      ${l.map(u => `<tr><td><button class="link" onclick="verPessoa('${u.usuario_id}')">${esc(u.nome)}</button></td><td>${esc(CARGOS[u.papel] || u.papel)}</td><td class="n">${u.dias_ativos} de ${dias}</td><td class="n">${Number(u.visitas) ? fmtTempo(u.seg_ativo) : '<span class="tag t-zero">não usou</span>'}</td><td class="n">${u.visitas}</td><td class="n">${u.modulos}</td><td class="n">${u.cliques}</td><td>${fmtDH(u.ultima)}</td><td>${fmtDH(u.ultimo_login)}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+  else if(aba === 'matriz'){
+    const paginas = [...new Set(cache.mat.map(m => m.pagina))].sort((a,b) => nomeMod(a).localeCompare(nomeMod(b)));
+    const nomes = [...new Map(cache.mat.map(m => [m.usuario_id, m.nome])).entries()].filter(([id]) => !uid || id === uid).sort((a,b) => a[1].localeCompare(b[1]));
+    const max = Math.max(1, ...cache.mat.map(m => Number(m.seg_ativo)));
+    const celula = {}; cache.mat.forEach(m => celula[m.usuario_id + '|' + m.pagina] = m);
+    box.innerHTML = nomes.length ? `<div class="tab"><table class="mat"><thead><tr><th>Pessoa</th>${paginas.map(p => `<th style="white-space:normal;min-width:80px">${esc(nomeMod(p))}</th>`).join('')}</tr></thead><tbody>
+      ${nomes.map(([id, nome]) => `<tr><td><b>${esc(nome)}</b></td>${paginas.map(p => { const c = celula[id + '|' + p]; if(!c) return '<td class="c" style="color:#C9BFC1">–</td>'; const a = Math.min(1, .12 + Number(c.seg_ativo)/max*.88); return `<td class="c" style="background:rgba(139,26,58,${a.toFixed(2)});color:${a > .5 ? '#fff' : '#111'}" title="${c.visitas} aberturas">${fmtTempo(c.seg_ativo)}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div><p class="sub" style="margin-top:10px">Tempo ativo de cada pessoa em cada módulo. Quanto mais escuro, mais tempo.</p>` : '<div class="vazio">Sem uso registrado neste período.</div>';
+  }
+  else {
+    box.innerHTML = cache.log.length ? `<div class="tab"><table><thead><tr><th>Quando</th><th>Pessoa</th><th>Módulo</th><th>Tipo</th><th>O que fez</th></tr></thead><tbody>
+      ${cache.log.map(e => `<tr><td>${fmtDH(e.criado_em)}</td><td>${esc(e.nome)}</td><td>${esc(nomeMod(e.pagina))}</td><td>${esc(TIPOS[e.tipo] || e.tipo)}</td><td>${esc(e.alvo || '')}</td></tr>`).join('')}</tbody></table></div><p class="sub" style="margin-top:10px">Mostrando as ${cache.log.length} ações mais recentes do filtro. Use a planilha para mais.</p>` : '<div class="vazio">Nenhuma ação registrada neste período.</div>';
+  }
+}
+function verPessoa(id){ $('fPessoa').value = id; aba = 'modulos'; document.querySelectorAll('.aba').forEach(x => x.classList.toggle('on', x.dataset.a === aba)); carregar(); }
+window.verPessoa = verPessoa;
+
+function exportarCsv(){
+  const cel = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  let cab, linhas;
+  if(aba === 'pessoas'){ cab = ['Pessoa','Cargo','Dias com uso','Tempo ativo (s)','Aberturas','Módulos','Cliques','Último uso','Último login']; linhas = cache.usrs.map(u => [u.nome, CARGOS[u.papel]||u.papel, u.dias_ativos, u.seg_ativo, u.visitas, u.modulos, u.cliques, u.ultima, u.ultimo_login]); }
+  else if(aba === 'log'){ cab = ['Quando','Pessoa','Cargo','Módulo','Tipo','O que fez']; linhas = cache.log.map(e => [e.criado_em, e.nome, CARGOS[e.papel]||e.papel, nomeMod(e.pagina), TIPOS[e.tipo]||e.tipo, e.alvo]); }
+  else if(aba === 'matriz'){ cab = ['Pessoa','Módulo','Tempo ativo (s)','Aberturas']; linhas = cache.mat.map(m => [m.nome, nomeMod(m.pagina), m.seg_ativo, m.visitas]); }
+  else { cab = ['Módulo','Pessoas','Aberturas','Tempo ativo (s)','Tempo aberto (s)','Cliques','Último uso']; linhas = modulosCompletos().map(m => [nomeMod(m.pagina), m.usuarios, m.visitas, m.seg_ativo, m.seg_aberta, m.cliques, m.ultima]); }
+  const blob = new Blob(['﻿' + [cab.map(cel).join(';'), ...linhas.map(l => l.map(cel).join(';'))].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'rastreabilidade-' + aba + '-' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+}
+init();
+</script>
+<script>(function(){var s=document.createElement("script");s.src="acessibilidade.js?t="+Date.now();document.body.appendChild(s);})();</script>
+<script>(function(){var s=document.createElement("script");s.src="hub-sidebar.js?t="+Date.now();document.body.appendChild(s);})();</script>
+</body>
+</html>

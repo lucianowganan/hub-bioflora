@@ -410,6 +410,7 @@ const SIDE_MODULOS = [
   { href:'conferencia-formulas.html', icone:'prancheta', label:'Conferência de Fórmulas', perm:'modulo.conferencia' },
   { href:'admin.html', icone:'escudo', label:'Administração', perm:'modulo.admin' },
   { href:'cargos.html', icone:'escudoCheck', label:'Cargos & Permissões', perm:'modulo.admin' },
+  { href:'rastreabilidade.html', icone:'grafico', label:'Rastreabilidade', perm:'modulo.rastreio' },
 ];
 
 let sideModoEdicao = false;
@@ -810,6 +811,14 @@ const MODULOS_HOME = [
   "grupo": "Gestão"
  },
  {
+  "href": "rastreabilidade.html",
+  "perm": "modulo.rastreio",
+  "titulo": "Rastreabilidade",
+  "desc": "Quem usa o quê no Hub, por quanto tempo e o que clica (só chefia).",
+  "icone": "grafico",
+  "grupo": "Administração"
+ },
+ {
   "href": "cargos.html",
   "perm": "modulo.admin",
   "titulo": "Cargos & Permissões",
@@ -1144,7 +1153,7 @@ async function renderWidgets(papel, perfil){
 // ---------- Módulos por área, com busca ----------
 const ORDEM_MODULOS_HOME = ['producao','controle-producao','formulas-complexas','reaproveitamento','rotulos','embalagens','conferencia-formulas',
   'erros','inclusoes','meus-erros','rh','tarefas','calendario-interno','chat',
-  'cliente-fiel','vendas-yampi','email-marketing','instagram','vet-contatos','calendario-editorial','visitas-medicas','wanessia','admin','cargos'];
+  'cliente-fiel','vendas-yampi','email-marketing','instagram','vet-contatos','calendario-editorial','visitas-medicas','wanessia','admin','cargos','rastreabilidade'];
 function renderModulosHome(temPerm){
   const alvo = document.getElementById('modules');
   const pos = (m) => { const i = ORDEM_MODULOS_HOME.indexOf(m.href.replace('.html','')); return i < 0 ? 99 : i; };

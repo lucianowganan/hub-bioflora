@@ -12,6 +12,8 @@
 // mostra o nome de cada módulo ao lado do ícone.
 
 (function(){
+  // coletor de uso (Rastreabilidade): carregado em todo módulo que usa a barra lateral
+  try{ var rs = document.createElement('script'); rs.src = 'rastreio.js?t=' + Date.now(); document.head.appendChild(rs); }catch(e){}
   const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 
@@ -76,6 +78,7 @@
     { href: 'conferencia-formulas.html', icone: 'prancheta', label: 'Conferência de Fórmulas', perm: 'modulo.conferencia' },
     { href: 'admin.html', icone: 'escudo', label: 'Administração', perm: 'modulo.admin' },
     { href: 'cargos.html', icone: 'escudoCheck', label: 'Cargos & Permissões', perm: 'modulo.admin' },
+    { href: 'rastreabilidade.html', icone: 'grafico', label: 'Rastreabilidade', perm: 'modulo.rastreio' },
   ];
 
   // Barra de endereço sem ".html" (só visual -- o GitHub Pages serve o mesmo arquivo em /chat e /chat.html)

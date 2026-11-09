@@ -1,0 +1,6 @@
+-- Migração 96: Rastreabilidade de uso do Hub (só chefia lê). Já aplicada.
+-- uso_visitas: uma linha por abertura de módulo (tempo aberto/ativo e cliques, atualizada a cada 30 s).
+-- uso_eventos: cliques (rótulo curto do botão), envios de formulário e entrada na sessão. Nunca guarda texto digitado.
+-- Gatilho força usuario_id e papel = quem está logado (ninguém registra por outra pessoa). Sem DELETE para usuários; limpeza diária (400 dias) pelo cron "uso-limpeza".
+-- Funções rastreio_modulos / _usuarios / _diario / _matriz / _log alimentam rastreabilidade.html (todas exigem is_chefia()).
+-- (Definições completas no banco: pg_get_functiondef.) Permissão: modulo.rastreio, concedida à chefia.
