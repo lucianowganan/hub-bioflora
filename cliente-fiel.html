@@ -587,7 +587,8 @@ async function salvarBrinde(){
   if(arquivo){
     const extensoesValidas = ['image/png','image/jpeg','image/webp'];
     if(!extensoesValidas.includes(arquivo.type)){ alert('Formato inválido. Use PNG, JPEG ou WEBP.'); return; }
-    const caminho = `${Date.now()}_${arquivo.name}`;
+    const extArq = ((arquivo.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg');
+    const caminho = `${Date.now()}.${extArq}`;   // nome limpo: o original pode ter acento/espaço e o storage recusa
     const { error: erroUpload } = await supa.storage.from('brindes-imagens').upload(caminho, arquivo);
     if(erroUpload){ alert('Erro ao enviar imagem: '+erroUpload.message); return; }
     imagem_url = supa.storage.from('brindes-imagens').getPublicUrl(caminho).data.publicUrl;
