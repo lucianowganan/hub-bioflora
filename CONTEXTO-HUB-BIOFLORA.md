@@ -352,3 +352,11 @@ Decisão: **sem app nativo/loja**. Caminho: responsivo por módulo + **PWA** (in
 - Avisos push (`sw.js` + função `fiel-push`): equipe (novo pedido) e cliente (aprovado/recusado). **Dependem das chaves VAPID** (segredos `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` + `fiel_config.vapid_public`); sem elas o app funciona e o botão de avisos fica oculto.
 - Material: `cliente-fiel-material/` (cartaz A4 com QR Code do balcão). Catálogo de brindes ainda vazio: cadastrar em Cliente Fiel → Brindes.
 - **Cadastro pelo app**: quem não é encontrado vê ajuda (WhatsApp 35 98449-3997) e pode se cadastrar (nome, CPF, telefone, e-mail, nascimento, gênero + autorização). Vira cliente `tipo_cadastro='App'` **sem código Fórmula Certa** (a equipe vincula na ficha; aparece em Pedidos → Cadastros do app). Quem já está na lista vê, no 1º acesso, "Confirme seus dados" com TODOS os campos vazios e obrigatórios (nunca mostra os valores salvos; o cadastro da farmácia também pode estar errado). O app só preenche o que estava vazio; dado diferente do cadastrado vira pendência para a equipe (`fiel_atualizacoes`), evitando que alguém sobrescreva telefone/CPF de outra pessoa.
+
+
+## 24. Cliente Fiel: nova interface do app (fiel.html)
+- Layout em 4 abas inferiores: Início (banners, saldo, régua até o próximo brinde, últimos movimentos), Brindes, Extrato, Perfil. Sem emojis (ícones SVG).
+- Régua: nós = brindes cadastrados (disponíveis); sem brindes, cai para a régua de nível. Catálogo de brindes ainda está VAZIO (cadastrar em Cliente Fiel → Brindes).
+- Perfil: foto opcional (recorte quadrado 256px, JPEG, `fiel_foto_salvar`), dados mascarados (`fiel_extras`), botão "Conferir e atualizar meus dados" (formulário completo de confirmação), avisos push (depende das chaves VAPID, ainda não criadas), Sair.
+- Banners: aba "Banners" no Cliente Fiel da equipe (`cliente-fiel-banners.js`), tabela `fiel_banners` (período, ordem, cor ou imagem, link https). Imagens no bucket público `fiel`.
+- `PEDIDOS_ATIVOS=false` continua: sem "Meus pedidos" e sem botão de pedir brinde. Migração: `migracao-99-cliente-fiel-perfil-banners.sql`.

@@ -764,6 +764,7 @@ const ABAS_CF = [
   { id:'analises', rotulo:'Análises', icone:'analise' },
   { id:'brindes', rotulo:'Brindes', icone:'presente' },
   { id:'niveis', rotulo:'Níveis', icone:'estrela' },
+  { id:'banners', rotulo:'Banners', icone:'presente' },
 ];
 
 async function init(){
@@ -789,6 +790,7 @@ function trocarAbaCF(aba, opcoes){
   else if(aba==='pedidos') renderPedidosCF();
   else if(aba==='brindes') renderBrindesCF();
   else if(aba==='niveis') renderNiveisCF();
+  else if(aba==='banners') renderBannersCF();
   window.scrollTo({ top:0 });
 }
 window.trocarAbaCF = trocarAbaCF;
@@ -1589,6 +1591,7 @@ window.baixarPendenciasCF = baixarPendenciasCF;
 init();
 </script>
 <script src="cliente-fiel-pedidos.js?v=1"></script>
+<script src="cliente-fiel-banners.js?v=1"></script>
 <script>(function(){var s=document.createElement("script");s.src="acessibilidade.js?t="+Date.now();document.body.appendChild(s);})();</script>
 <script>(function(){var s=document.createElement("script");s.src="hub-sidebar.js?t="+Date.now();document.body.appendChild(s);})();</script>
 </body>
