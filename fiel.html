@@ -154,7 +154,7 @@ input[type=date],input[type=email]{width:100%;font:600 20px 'Maven Pro',sans-ser
     <div class="aviso warn oculto" id="avVence"></div>
     <div class="card oculto" id="cardPush"><b>Receba avisos no celular</b><p class="sub" style="margin:4px 0 0" id="pushTxt">Avisamos quando a equipe responder o seu pedido.</p><button class="btn s" id="btnPush" type="button">Ativar avisos</button></div>
 
-    <div class="abas"><button class="aba on" data-a="brindes">Brindes</button><button class="aba" data-a="pedidos">Meus pedidos <span id="badgePed"></span></button><button class="aba" data-a="hist">Histórico</button></div>
+    <div class="abas"><button class="aba on" data-a="brindes">Brindes</button><button class="aba" data-a="pedidos" id="abaPedidos">Meus pedidos <span id="badgePed"></span></button><button class="aba" data-a="hist">Histórico</button></div>
     <div id="secBrindes"></div><div id="secPedidos" class="oculto"></div><div id="secHist" class="oculto"></div>
     <div class="rodape"><button class="link" id="btnMeusDados" type="button">Meus dados</button><br>Dúvidas? Fale com a gente: <a href="https://wa.me/5535984493997" target="_blank" rel="noopener">WhatsApp (35) 98449-3997</a></div>
   </div>
@@ -178,6 +178,8 @@ const ler = k => { try{ return localStorage.getItem(k); }catch(e){ return null; 
 function aviso(t){ const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(aviso.t); aviso.t = setTimeout(() => el.classList.remove('on'), 3500); }
 function mostrarLogin(msg){ token = null; guardar('fiel_token', null); clearInterval(timer); $('telaPainel').classList.add('oculto'); $('telaLogin').classList.remove('oculto'); $('btnSair').classList.add('oculto'); if(msg) erroLogin(msg); }
 const ZAP = '5535984493997';
+// Pedidos pelo app (aba "Meus pedidos" e botão "Quero este brinde"): desligados por enquanto. Para religar, troque para true.
+const PEDIDOS_ATIVOS = false;
 function mostrarAjuda(motivo){
   $('ajudaTxt').textContent = motivo === 'nao_encontrado' ? 'Confira os números e tente de novo, ou faça o seu cadastro agora. Se preferir, a gente ajuda pelo WhatsApp.' : motivo === 'varios' ? 'Use o seu CPF para entrar. Se precisar, a gente ajuda pelo WhatsApp.' : 'A gente ajuda você pelo WhatsApp.';
   $('btnIrCadastro').style.display = motivo === 'nao_encontrado' ? 'block' : 'none';
@@ -267,7 +269,7 @@ function desenhar(){
   $('hOla').textContent = 'Olá, ' + d.nome + '!';
   $('hNivel').textContent = 'Nível ' + NIVEL(d.nivel);
   $('hPts').textContent = num(d.saldo);
-  $('hRes').textContent = d.reservado > 0 ? num(d.reservado) + ' pontos reservados em pedidos aguardando a equipe' : '';
+  $('hRes').textContent = PEDIDOS_ATIVOS && d.reservado > 0 ? num(d.reservado) + ' pontos reservados em pedidos aguardando a equipe' : '';
   if(d.proximo_nivel){
     const atual = (d.niveis.filter(n => n.nivel === d.nivel)[0] || { minimo: 0 }).minimo, prox = d.saldo + d.falta_proximo;
     const pct = Math.max(4, Math.min(100, Math.round((d.saldo - atual) / Math.max(1, prox - atual) * 100)));
@@ -286,7 +288,7 @@ function desenhar(){
   const livre = d.saldo - d.reservado;
   $('secBrindes').innerHTML = d.brindes.length ? d.brindes.map(b => {
     const falta = b.pontos - livre;
-    const btn = !b.disponivel ? '<button class="btn s" disabled>Sem estoque agora</button>' : falta > 0 ? `<button class="btn s" disabled>Faltam ${num(falta)} pontos</button>` : `<button class="btn" onclick="pedir('${b.id}')">Quero este brinde</button>`;
+    const btn = !b.disponivel ? '<button class="btn s" disabled>Sem estoque agora</button>' : falta > 0 ? `<button class="btn s" disabled>Faltam ${num(falta)} pontos</button>` : PEDIDOS_ATIVOS ? `<button class="btn" onclick="pedir('${b.id}')">Quero este brinde</button>` : '<div class="chip c-ok" style="margin-top:10px">Você já pode resgatar! Peça na farmácia.</div>';
     return `<div class="card brinde"><div class="img">${b.imagem ? `<img src="${esc(b.imagem)}" alt="" loading="lazy">` : '🎁'}</div><div style="flex:1"><div class="nome">${esc(b.nome)}</div>${b.descricao ? `<div class="desc">${esc(b.descricao)}</div>` : ''}<div class="pts">${num(b.pontos)} pontos</div>${btn}</div></div>`; }).join('') : '<div class="card vazio">Os brindes estarão aqui em breve. 🎁</div>';
 
   // pedidos
@@ -300,7 +302,8 @@ function desenhar(){
   mostrarAba(aba);
   prepararPush();
 }
-function mostrarAba(a){ aba = a; document.querySelectorAll('.aba').forEach(b => b.classList.toggle('on', b.dataset.a === a)); $('secBrindes').classList.toggle('oculto', a !== 'brindes'); $('secPedidos').classList.toggle('oculto', a !== 'pedidos'); $('secHist').classList.toggle('oculto', a !== 'hist'); }
+function mostrarAba(a){ if(a === 'pedidos' && !PEDIDOS_ATIVOS) a = 'brindes'; aba = a; document.querySelectorAll('.aba').forEach(b => b.classList.toggle('on', b.dataset.a === a)); $('secBrindes').classList.toggle('oculto', a !== 'brindes'); $('secPedidos').classList.toggle('oculto', a !== 'pedidos'); $('secHist').classList.toggle('oculto', a !== 'hist'); }
+if(!PEDIDOS_ATIVOS) $('abaPedidos').classList.add('oculto');
 document.querySelectorAll('.aba').forEach(b => b.onclick = () => mostrarAba(b.dataset.a));
 
 function pedir(id){
