@@ -233,7 +233,7 @@ input:focus,select:focus{outline:none;border-color:var(--burgundy);box-shadow:0 
     </section>
 
     <!-- BRINDES -->
-    <section id="vBrindes" class="oculto vista"><div class="secao" style="margin-top:4px"><h2>Brindes</h2></div><div id="secBrindes"></div></section>
+    <section id="vBrindes" class="oculto vista"><div id="secBrindes"></div></section>
 
     <!-- EXTRATO -->
     <section id="vExtrato" class="oculto vista"><div class="secao" style="margin-top:4px"><h2>Extrato de pontos</h2></div><div id="secHist"></div></section>
@@ -265,7 +265,7 @@ input:focus,select:focus{outline:none;border-color:var(--burgundy);box-shadow:0 
   <button type="button" data-v="perfil"><svg class="ico"><use href="#i-user"/></svg>Perfil</button>
 </div></nav>
 
-<div class="fundo" id="fundoPedir"><div class="folha"><h2 id="pdTitulo"></h2><p id="pdTxt" style="margin:0 0 6px"></p><p class="nota" style="margin:0">A equipe confirma e avisa você. Seus pontos só são usados quando o pedido for aprovado.</p><button class="btn" id="pdOk">Pedir este brinde</button><button class="btn s" id="pdNao">Agora não</button></div></div>
+<div class="fundo" id="fundoPedir"><div class="folha"><h2 id="pdTitulo"></h2><p id="pdTxt" style="margin:0 0 6px"></p><p class="nota" style="margin:0">Os pontos ficam reservados e o brinde, separado. Eles só são descontados quando você retirar na farmácia. Dá para cancelar a reserva quando quiser.</p><button class="btn" id="pdOk">Confirmar reserva</button><button class="btn s" id="pdNao">Agora não</button></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -279,8 +279,8 @@ const fmtD = s => s ? new Date(s.length <= 10 ? s + 'T12:00:00' : s).toLocaleDat
 const ic = (n, cls) => `<svg class="ico ${cls||''}"><use href="#i-${n}"/></svg>`;
 const NIVEL = n => ({bronze:'Bronze', prata:'Prata', ouro:'Ouro', diamante:'Diamante'}[n] || (n ? n.charAt(0).toUpperCase() + n.slice(1) : ''));
 const ZAP = '5535984493997';
-// Pedidos pelo app (aba "Meus pedidos" e botão "Quero este brinde"): desligados por enquanto. Para religar, troque para true.
-const PEDIDOS_ATIVOS = false;
+// Reserva de brinde pelo app (botão "Trocar" + "Minhas reservas"). Para desligar, troque para false.
+const PEDIDOS_ATIVOS = true;
 let cadModo = 'novo', token = null, dados = null, extras = null, vista = 'inicio', pedindo = null, timer = null, bnTimer = null;
 const guardar = (k, v) => { try{ v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); }catch(e){} };
 const ler = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
@@ -419,7 +419,7 @@ function desenhar(){
   $('hero').className = 'hero' + (['bronze','prata','ouro','diamante'].includes(d.nivel) ? ' n-' + d.nivel : '');
   $('hNivel').textContent = 'Nível ' + NIVEL(d.nivel);
   $('hPts').textContent = num(d.saldo);
-  $('hRes').textContent = PEDIDOS_ATIVOS && d.reservado > 0 ? num(d.reservado) + ' pontos reservados em pedidos aguardando a equipe' : '';
+  $('hRes').textContent = PEDIDOS_ATIVOS && d.reservado > 0 ? num(d.reservado) + ' pontos reservados para a retirada' : '';
   $('hRegua').innerHTML = reguaBrindes(d);
   const cd = d.cadastro || { confirmado: true, faltando: [], aguardando_codigo: false };
   $('avAtivar').classList.toggle('oculto', !cd.aguardando_codigo);
@@ -435,10 +435,12 @@ function desenhar(){
 
   // brindes
   const livre = d.saldo - (PEDIDOS_ATIVOS ? d.reservado : 0);
-  $('secBrindes').innerHTML = d.brindes.length ? d.brindes.map(b => {
+  const ST = { pendente: ['c-pend','Reservado, retire na farmácia'], entregue: ['c-ok','Entregue'], recusado: ['c-bad','Não aprovado'], cancelado: ['c-cinza','Cancelado'] };
+  const reservas = PEDIDOS_ATIVOS && (d.pedidos || []).length ? '<div class="secao" style="margin-top:4px"><h2>Minhas reservas</h2></div>' + d.pedidos.slice(0, 6).map(p => { const st = ST[p.status] || ['c-cinza', p.status]; return `<div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><div class="nome" style="font:700 18px var(--head)">${esc(p.brinde)}</div><div style="font-size:13px;color:var(--gray)">${num(p.pontos)} pontos · ${fmtD(p.quando)}</div></div><span class="chip ${st[0]}">${st[1]}</span></div>${p.resposta ? `<div class="nota" style="margin-top:8px">${esc(p.resposta)}</div>` : ''}${p.status === 'pendente' ? `<button class="btn s pq" onclick="cancelarReserva('${p.id}')">Cancelar reserva</button>` : ''}</div>`; }).join('') + '<div class="secao"><h2>Brindes</h2></div>' : '<div class="secao" style="margin-top:4px"><h2>Brindes</h2></div>';
+  $('secBrindes').innerHTML = reservas + (d.brindes.length ? d.brindes.map(b => {
     const falta = b.pontos - livre, pct = Math.max(3, Math.min(100, Math.round(livre / b.pontos * 100)));
-    const estado = !b.disponivel ? '<span class="chip c-cinza">Sem estoque agora</span>' : falta > 0 ? `<div class="mini"><i style="width:${pct}%"></i></div><div class="d" style="font-size:13px;color:var(--gray);margin-top:4px">Faltam ${num(falta)} pontos</div>` : PEDIDOS_ATIVOS ? `<button class="btn pq" onclick="pedir('${b.id}')">Quero este brinde</button>` : `<span class="chip c-ok">${ic('check')} Você já pode resgatar. Peça na farmácia.</span>`;
-    return `<div class="card brinde"><div class="img">${b.imagem ? `<img src="${esc(b.imagem)}" alt="" loading="lazy">` : ic('gift')}</div><div style="flex:1;min-width:0"><div class="nome">${esc(b.nome)}</div>${b.descricao ? `<div class="desc">${esc(b.descricao)}</div>` : ''}<div class="pts">${num(b.pontos)} pontos</div>${estado}</div></div>`; }).join('') : '<div class="card vazio">Os brindes estarão aqui em breve.</div>';
+    const estado = !b.disponivel ? '<span class="chip c-cinza">Sem estoque agora</span>' : falta > 0 ? `<div class="mini"><i style="width:${pct}%"></i></div><div class="d" style="font-size:13px;color:var(--gray);margin-top:4px">Faltam ${num(falta)} pontos</div>` : PEDIDOS_ATIVOS ? `<button class="btn pq" onclick="pedir('${b.id}')">${ic('gift')}Trocar e reservar</button>` : `<span class="chip c-ok">${ic('check')} Você já pode resgatar. Peça na farmácia.</span>`;
+    return `<div class="card brinde"><div class="img">${b.imagem ? `<img src="${esc(b.imagem)}" alt="" loading="lazy">` : ic('gift')}</div><div style="flex:1;min-width:0"><div class="nome">${esc(b.nome)}</div>${b.descricao ? `<div class="desc">${esc(b.descricao)}</div>` : ''}<div class="pts">${num(b.pontos)} pontos</div>${estado}</div></div>`; }).join('') : '<div class="card vazio">Os brindes estarão aqui em breve.</div>');
 
   desenharPerfil(); prepararPush(); irPara(vista, true);
 }
@@ -497,7 +499,7 @@ $('btnTirarFoto').onclick = async () => { await sb.rpc('fiel_foto_salvar', { p_t
 // ---------- pedidos (desligados por enquanto: PEDIDOS_ATIVOS) ----------
 function pedir(id){
   const b = dados.brindes.find(x => x.id === id); if(!b) return;
-  pedindo = id; $('pdTitulo').textContent = b.nome; $('pdTxt').textContent = 'Pedir este brinde por ' + num(b.pontos) + ' pontos?'; $('fundoPedir').classList.add('on');
+  pedindo = id; $('pdTitulo').textContent = b.nome; $('pdTxt').textContent = 'Reservar este brinde por ' + num(b.pontos) + ' pontos? Ele fica separado para você retirar na farmácia.'; $('fundoPedir').classList.add('on');
 }
 window.pedir = pedir;
 $('pdNao').onclick = () => { $('fundoPedir').classList.remove('on'); pedindo = null; };
@@ -506,9 +508,16 @@ $('pdOk').onclick = async () => {
   const { data, error } = await sb.rpc('fiel_solicitar', { p_token: token, p_brinde: pedindo });
   $('pdOk').disabled = false; $('fundoPedir').classList.remove('on'); pedindo = null;
   if(error || !data){ aviso('Não foi possível pedir agora. Tente de novo.'); return; }
-  if(!data.ok){ aviso({ sessao: 'Entre de novo, por favor.', brinde_indisponivel: 'Esse brinde não está mais disponível.', sem_estoque: 'Esse brinde está sem estoque agora.', muitos_pendentes: 'Você já tem 3 pedidos aguardando. Espere a equipe responder.', saldo_insuficiente: 'Pontos insuficientes para este brinde.' }[data.erro] || 'Não foi possível pedir.'); if(data.erro === 'sessao') mostrarLogin(); await carregar(false); return; }
-  aviso('Pedido enviado! A equipe vai avisar você.'); await carregar(false);
+  if(!data.ok){ aviso({ sessao: 'Entre de novo, por favor.', brinde_indisponivel: 'Esse brinde não está mais disponível.', sem_estoque: 'Esse brinde está sem estoque agora.', muitos_pendentes: 'Você já tem 3 reservas aguardando retirada.', saldo_insuficiente: 'Pontos insuficientes para este brinde.' }[data.erro] || 'Não foi possível pedir.'); if(data.erro === 'sessao') mostrarLogin(); await carregar(false); return; }
+  aviso('Brinde reservado! Retire na farmácia.'); irPara('brindes', true); await carregar(false);
 };
+
+async function cancelarReserva(id){
+  if(!confirm('Cancelar esta reserva? Os pontos voltam a ficar livres.')) return;
+  const { data } = await sb.rpc('fiel_cancelar', { p_token: token, p_pedido: id });
+  aviso(data && data.ok ? 'Reserva cancelada.' : 'Não foi possível cancelar.'); await carregar(false);
+}
+window.cancelarReserva = cancelarReserva;
 
 // ---------- avisos (push) ----------
 function b64ParaBytes(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); const p = '='.repeat((4 - s.length % 4) % 4); const r = atob(s + p); return Uint8Array.from([...r].map(c => c.charCodeAt(0))); }
