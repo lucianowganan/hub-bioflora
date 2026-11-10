@@ -258,7 +258,7 @@ async function carregar(primeira){
   if(!data || !data.ok){ mostrarLogin(primeira ? 'Entre de novo, por favor.' : null); return; }
   dados = data;
   clearInterval(timer); timer = setInterval(() => { if(!document.hidden && $('telaCadastro').classList.contains('oculto')) carregar(false); }, 60000);
-  if(!data.cadastro.confirmado){ abrirCadastro('confirmar'); return; }   // 1º acesso de quem já está na lista: confirmar TODOS os dados   // 1ª vez de quem já está na lista: confirmar/completar os dados
+  if(data.cadastro && !data.cadastro.confirmado){ abrirCadastro('confirmar'); return; }   // 1º acesso de quem já está na lista: confirmar TODOS os dados   // 1ª vez de quem já está na lista: confirmar/completar os dados
   desenhar();
 }
 document.addEventListener('visibilitychange', () => { if(!document.hidden && token) carregar(false); });
