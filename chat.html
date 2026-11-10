@@ -1371,11 +1371,17 @@ window.expandirMensagem = expandirMensagem;
 
 async function carregarReacoesPara(mensagemIds, tipo){
   if(!mensagemIds.length) return;
-  const { data } = await supa.from('chat_reacoes').select('*').eq('tipo_mensagem', tipo).in('mensagem_id', mensagemIds);
+  // Busca em lotes: com muitas mensagens a lista de ids estourava o tamanho do endereço (erro 400) e as reações não apareciam depois de clicar.
+  const LOTE = 60, lotes = [];
+  for(let i = 0; i < mensagemIds.length; i += LOTE) lotes.push(mensagemIds.slice(i, i + LOTE));
+  const respostas = await Promise.all(lotes.map(l => supa.from('chat_reacoes').select('*').eq('tipo_mensagem', tipo).in('mensagem_id', l)));
   // SUBSTITUI (não acrescenta) as reações dessas mensagens: carregar duas vezes seguidas não pode contar a mesma reação em dobro
   const novas = {};
-  (data||[]).forEach(r => { (novas[r.mensagem_id+'_'+tipo] ||= []).push(r); });
-  mensagemIds.forEach(id => { reacoesCache[id+'_'+tipo] = novas[id+'_'+tipo] || []; });
+  respostas.forEach((resp, idx) => {
+    if(resp.error){ console.error('reações', resp.error); lotes[idx] = null; return; } // lote com erro: mantém o que já estava na tela
+    (resp.data||[]).forEach(r => { (novas[r.mensagem_id+'_'+tipo] ||= []).push(r); });
+  });
+  lotes.forEach(l => { if(l) l.forEach(id => { reacoesCache[id+'_'+tipo] = novas[id+'_'+tipo] || []; }); });
 }
 
 let reagindo = false; // trava: dois cliques rápidos não disparam duas reações ao mesmo tempo
