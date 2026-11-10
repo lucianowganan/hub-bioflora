@@ -71,6 +71,18 @@ input:focus{outline:none;border-color:var(--burgundy);box-shadow:0 0 0 4px rgba(
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:30px;font-weight:600;z-index:60;display:none;max-width:90%;text-align:center}
 .toast.on{display:block}
 .oculto{display:none !important}
+.ajuda{background:var(--tint);border-radius:20px;padding:16px 18px;margin-top:14px;display:none}
+.ajuda.on{display:block}
+.ajuda p{margin:0 0 10px;font-weight:600}
+.ajuda .btn{margin-top:8px;padding:14px;font-size:17px}
+.btn.wa{background:#1F7A4D;box-shadow:0 6px 16px rgba(31,122,77,.25)}
+select{width:100%;font:600 19px 'Maven Pro',sans-serif;padding:15px 16px;border:2px solid var(--line);border-radius:18px;background:#fff;color:var(--ink)}
+input[type=date],input[type=email]{width:100%;font:600 20px 'Maven Pro',sans-serif;padding:15px 16px;border:2px solid var(--line);border-radius:18px;background:#fff;color:var(--ink)}
+.campo{margin-bottom:14px}
+.campo .dica{font-size:13px;font-weight:600;margin:-4px 0 8px;color:var(--gray)}.campo .dica:empty{display:none}
+.campo .dica.ok{color:var(--good)}.campo .dica.falta{color:var(--warn)}
+.aceite{display:flex;gap:12px;align-items:flex-start;font-size:14px;line-height:1.4;margin:8px 0 4px}
+.aceite input{width:26px;height:26px;flex:none;accent-color:var(--burgundy);margin-top:2px}
 .rodape{text-align:center;font-size:13.5px;color:var(--gray);margin-top:26px}
 .rodape a{color:var(--burgundy);font-weight:700}
 </style>
@@ -102,8 +114,28 @@ input:focus{outline:none;border-color:var(--burgundy);box-shadow:0 0 0 4px rgba(
       <label for="ident">Seu CPF ou telefone</label>
       <input type="tel" id="ident" inputmode="numeric" autocomplete="tel" placeholder="CPF ou (35) 9 9999-9999">
       <div class="erro" id="erroLogin"></div>
+      <div class="ajuda" id="ajudaLogin"><p id="ajudaTxt">Não encontramos seu cadastro.</p><button class="btn" type="button" id="btnIrCadastro">Fazer meu cadastro agora</button><a class="btn wa" id="btnZapAjuda" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Falar com a equipe no WhatsApp</a></div>
       <button class="btn" id="btnEntrar" type="submit">Entrar</button>
       <p class="nota">Só usamos para encontrar o seu cadastro.</p>
+    </form>
+    <button class="link" id="btnNovoCad" type="button" style="display:block;margin:6px auto 0">Ainda não tenho cadastro</button>
+  </div>
+
+  <!-- CADASTRO (novo ou confirmação) -->
+  <div id="telaCadastro" class="oculto">
+    <h1 id="cdTitulo">Seu cadastro</h1>
+    <p class="sub" id="cdSub"></p>
+    <form class="card" id="formCadastro" autocomplete="on" novalidate>
+      <div class="campo"><label for="cNome">Nome completo</label><div class="dica" id="dNome"></div><input type="text" id="cNome" autocomplete="name" autocapitalize="words"></div>
+      <div class="campo"><label for="cCpf">CPF</label><div class="dica" id="dCpf"></div><input type="tel" id="cCpf" inputmode="numeric" placeholder="000.000.000-00"></div>
+      <div class="campo"><label for="cTel">Telefone com DDD</label><div class="dica" id="dTel"></div><input type="tel" id="cTel" inputmode="tel" autocomplete="tel" placeholder="(35) 99999-9999"></div>
+      <div class="campo"><label for="cEmail">E-mail <small style="font-weight:500">(opcional)</small></label><div class="dica" id="dEmail"></div><input type="email" id="cEmail" autocomplete="email" inputmode="email"></div>
+      <div class="campo"><label for="cNasc">Data de nascimento</label><div class="dica" id="dNasc"></div><input type="date" id="cNasc"></div>
+      <div class="campo"><label for="cGen">Gênero <small style="font-weight:500">(opcional)</small></label><div class="dica" id="dGen"></div><select id="cGen"><option value="">Prefiro não informar</option><option value="F">Feminino</option><option value="M">Masculino</option></select></div>
+      <label class="aceite"><input type="checkbox" id="cAceite"><span style="font-weight:500">Autorizo a Farmácia Bioflora a usar meus dados para o programa Cliente Fiel e a falar comigo sobre ele.</span></label>
+      <div class="erro" id="erroCad"></div>
+      <button class="btn" id="btnSalvarCad" type="submit">Salvar</button>
+      <button class="btn s" id="btnAgoraNao" type="button">Agora não</button>
     </form>
   </div>
 
@@ -116,13 +148,15 @@ input:focus{outline:none;border-color:var(--burgundy);box-shadow:0 0 0 4px rgba(
       <div class="res" id="hRes"></div>
       <div id="hProx"></div>
     </div>
+    <div class="aviso warn oculto" id="avAtivar">📋 <b>Cadastro recebido!</b> A equipe vai ativar o seu Cliente Fiel e vincular o seu código de cliente. Assim que estiver pronto, seus pontos aparecem aqui.</div>
+    <div class="aviso warn oculto" id="avCompletar"><span id="avCompletarTxt"></span> <button class="link" id="btnCompletar" type="button">Completar agora</button></div>
     <div class="aviso fest oculto" id="avAniv">🎂 Feliz aniversário! A Bioflora deseja um dia muito especial para você.</div>
     <div class="aviso warn oculto" id="avVence"></div>
     <div class="card oculto" id="cardPush"><b>Receba avisos no celular</b><p class="sub" style="margin:4px 0 0" id="pushTxt">Avisamos quando a equipe responder o seu pedido.</p><button class="btn s" id="btnPush" type="button">Ativar avisos</button></div>
 
     <div class="abas"><button class="aba on" data-a="brindes">Brindes</button><button class="aba" data-a="pedidos">Meus pedidos <span id="badgePed"></span></button><button class="aba" data-a="hist">Histórico</button></div>
     <div id="secBrindes"></div><div id="secPedidos" class="oculto"></div><div id="secHist" class="oculto"></div>
-    <div class="rodape">Dúvidas? Fale com a gente: <a href="https://wa.me/5535984493997" target="_blank" rel="noopener">WhatsApp (35) 98449-3997</a></div>
+    <div class="rodape"><button class="link" id="btnMeusDados" type="button">Meus dados</button><br>Dúvidas? Fale com a gente: <a href="https://wa.me/5535984493997" target="_blank" rel="noopener">WhatsApp (35) 98449-3997</a></div>
   </div>
 </div>
 
@@ -138,12 +172,19 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp
 const num = n => Number(n||0).toLocaleString('pt-BR');
 const fmtD = s => s ? new Date(s.length <= 10 ? s + 'T12:00:00' : s).toLocaleDateString('pt-BR') : '';
 const NIVEL = n => ({bronze:'Bronze', prata:'Prata', ouro:'Ouro', diamante:'Diamante'}[n] || (n ? n.charAt(0).toUpperCase() + n.slice(1) : ''));
-let token = null, dados = null, aba = 'brindes', pedindo = null, timer = null;
+let cadModo = 'novo', token = null, dados = null, aba = 'brindes', pedindo = null, timer = null;
 const guardar = (k, v) => { try{ v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); }catch(e){} };
 const ler = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
 function aviso(t){ const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(aviso.t); aviso.t = setTimeout(() => el.classList.remove('on'), 3500); }
 function mostrarLogin(msg){ token = null; guardar('fiel_token', null); clearInterval(timer); $('telaPainel').classList.add('oculto'); $('telaLogin').classList.remove('oculto'); $('btnSair').classList.add('oculto'); if(msg) erroLogin(msg); }
-function erroLogin(t){ const e = $('erroLogin'); e.textContent = t; e.classList.add('on'); }
+const ZAP = '5535984493997';
+function mostrarAjuda(motivo){
+  $('ajudaTxt').textContent = motivo === 'nao_encontrado' ? 'Confira os números e tente de novo, ou faça o seu cadastro agora. Se preferir, a gente ajuda pelo WhatsApp.' : motivo === 'varios' ? 'Use o seu CPF para entrar. Se precisar, a gente ajuda pelo WhatsApp.' : 'A gente ajuda você pelo WhatsApp.';
+  $('btnIrCadastro').style.display = motivo === 'nao_encontrado' ? 'block' : 'none';
+  $('btnZapAjuda').href = 'https://wa.me/' + ZAP + '?text=' + encodeURIComponent('Olá! Não consegui entrar no Cliente Fiel da Bioflora. Pode me ajudar?');
+  $('ajudaLogin').classList.add('on');
+}
+function erroLogin(t){ $('ajudaLogin').classList.remove('on'); const e = $('erroLogin'); e.textContent = t; e.classList.add('on'); }
 
 $('formLogin').addEventListener('submit', async ev => {
   ev.preventDefault(); $('erroLogin').classList.remove('on');
@@ -154,11 +195,57 @@ $('formLogin').addEventListener('submit', async ev => {
   $('btnEntrar').disabled = false;
   if(error || !data){ erroLogin('Não foi possível entrar agora. Tente de novo.'); return; }
   if(!data.ok){
-    erroLogin({ invalido: 'Digite o CPF (11 números) ou o telefone com DDD.', nao_encontrado: 'Não encontramos seu cadastro. Confira os números ou fale com a gente na farmácia.', varios: 'Esse telefone está em mais de um cadastro. Use o seu CPF.', bloqueado: 'Muitas tentativas. Espere alguns minutos e tente de novo.' }[data.erro] || 'Não foi possível entrar.');
+    erroLogin({ invalido: 'Digite o CPF (11 números) ou o telefone com DDD.', nao_encontrado: 'Não encontramos seu cadastro com esses números.', varios: 'Esse telefone está em mais de um cadastro. Use o seu CPF.', bloqueado: 'Muitas tentativas. Espere alguns minutos e tente de novo.' }[data.erro] || 'Não foi possível entrar.');
+    if(['nao_encontrado','varios','bloqueado'].includes(data.erro)) mostrarAjuda(data.erro);
     return;
   }
   token = data.token; guardar('fiel_token', token); $('ident').value = '';
   await carregar(true);
+});
+function abrirCadastro(modo){
+  cadModo = modo; $('erroCad').classList.remove('on'); $('formCadastro').reset();
+  $('telaLogin').classList.add('oculto'); $('telaPainel').classList.add('oculto'); $('telaCadastro').classList.remove('oculto');
+  const novo = modo === 'novo', falt = (dados && dados.cadastro && dados.cadastro.faltando) || [];
+  $('cdTitulo').textContent = novo ? 'Faça seu cadastro' : 'Confirme seus dados';
+  $('cdSub').textContent = novo ? 'Preencha seus dados para participar do Cliente Fiel.' : 'Para manter seu cadastro em dia, preencha seus dados. Por segurança, não mostramos o que já temos.';
+  $('btnAgoraNao').classList.toggle('oculto', novo); $('btnSalvarCad').textContent = novo ? 'Criar meu cadastro' : 'Salvar meus dados';
+  const dica = (id, campo) => { const e = $(id); if(novo){ e.textContent = ''; return; } const falta = falt.includes(campo); e.textContent = falta ? 'Ainda falta no seu cadastro' : '✓ Já temos (digite de novo só se mudou)'; e.className = 'dica ' + (falta ? 'falta' : 'ok'); };
+  $('dNome').textContent = ''; dica('dCpf','cpf'); dica('dTel','telefone'); dica('dEmail','email'); dica('dNasc','nascimento'); dica('dGen','genero');
+  if(novo) $('btnSalvarCad').disabled = false;
+  window.scrollTo(0, 0);
+}
+$('btnNovoCad').onclick = () => abrirCadastro('novo');
+$('btnIrCadastro').onclick = () => abrirCadastro('novo');
+$('btnMeusDados').onclick = () => abrirCadastro('confirmar');
+$('btnCompletar').onclick = () => abrirCadastro('confirmar');
+$('btnAgoraNao').onclick = () => { try{ sessionStorage.setItem('fiel_pulou', '1'); }catch(e){} $('telaCadastro').classList.add('oculto'); desenhar(); };
+const mascaraCpf = v => { const d = v.replace(/\D/g,'').slice(0,11); return d.replace(/^(\d{3})(\d)/,'$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1-$2'); };
+const mascaraTel = v => { const d = v.replace(/\D/g,'').slice(0,11); return d.length > 6 ? '(' + d.slice(0,2) + ') ' + d.slice(2, d.length > 10 ? 7 : 6) + '-' + d.slice(d.length > 10 ? 7 : 6) : d.length > 2 ? '(' + d.slice(0,2) + ') ' + d.slice(2) : d; };
+$('cCpf').addEventListener('input', e => { e.target.value = mascaraCpf(e.target.value); });
+$('cTel').addEventListener('input', e => { e.target.value = mascaraTel(e.target.value); });
+$('formCadastro').addEventListener('submit', async ev => {
+  ev.preventDefault(); const er = $('erroCad'); er.classList.remove('on');
+  const d = { nome: $('cNome').value, cpf: $('cCpf').value, telefone: $('cTel').value, email: $('cEmail').value, nascimento: $('cNasc').value, genero: $('cGen').value, consentimento: $('cAceite').checked ? 'true' : 'false' };
+  const msg = t => { er.textContent = t; er.classList.add('on'); er.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+  if(cadModo === 'novo'){
+    if(d.nome.trim().split(/\s+/).length < 2) return msg('Digite o nome completo.');
+    if(d.cpf.replace(/\D/g,'').length !== 11) return msg('Digite o CPF com 11 números.');
+    if(d.telefone.replace(/\D/g,'').length < 10) return msg('Digite o telefone com DDD.');
+  }
+  if(!$('cAceite').checked) return msg('Marque a autorização para continuar.');
+  $('btnSalvarCad').disabled = true;
+  const r = cadModo === 'novo' ? await sb.rpc('fiel_cadastrar', { p_dados: d }) : await sb.rpc('fiel_atualizar_cadastro', { p_token: token, p_dados: d });
+  $('btnSalvarCad').disabled = false;
+  const data = r.data;
+  if(r.error || !data) return msg('Não foi possível salvar agora. Tente de novo.');
+  if(!data.ok){
+    if(data.erro === 'ja_cadastrado'){ $('telaCadastro').classList.add('oculto'); $('telaLogin').classList.remove('oculto'); erroLogin('Você já está na nossa lista. Entre com o seu CPF ou telefone.'); return; }
+    if(data.erro === 'sessao'){ mostrarLogin('Entre de novo, por favor.'); $('telaCadastro').classList.add('oculto'); return; }
+    return msg({ nome: 'Digite o nome completo.', cpf: 'Confira o CPF.', telefone: 'Confira o telefone com DDD.', email: 'Confira o e-mail.', nascimento: 'Confira a data de nascimento.', consentimento: 'Marque a autorização para continuar.', bloqueado: 'Muitas tentativas. Espere um pouco e tente de novo.', cpf_em_uso: 'Esse CPF já está em outro cadastro. Fale com a gente pelo WhatsApp.' }[data.erro] || 'Não foi possível salvar.');
+  }
+  if(cadModo === 'novo'){ token = data.token; guardar('fiel_token', token); aviso('Cadastro recebido! 🎉'); }
+  else aviso(data.pendentes && data.pendentes.length ? 'Salvo! Alguns dados são diferentes dos que temos: a equipe vai conferir.' : 'Cadastro atualizado. Obrigado!');
+  $('telaCadastro').classList.add('oculto'); await carregar(true);
 });
 $('btnSair').onclick = async () => { if(token) sb.rpc('fiel_sair', { p_token: token }); mostrarLogin(); };
 
@@ -166,8 +253,11 @@ async function carregar(primeira){
   const { data, error } = await sb.rpc('fiel_painel', { p_token: token });
   if(error){ if(primeira) mostrarLogin('Sem conexão. Tente de novo.'); return; }
   if(!data || !data.ok){ mostrarLogin(primeira ? 'Entre de novo, por favor.' : null); return; }
-  dados = data; desenhar();
-  clearInterval(timer); timer = setInterval(() => { if(!document.hidden) carregar(false); }, 60000);
+  dados = data;
+  clearInterval(timer); timer = setInterval(() => { if(!document.hidden && $('telaCadastro').classList.contains('oculto')) carregar(false); }, 60000);
+  let pulou = false; try{ pulou = sessionStorage.getItem('fiel_pulou') === '1'; }catch(e){}
+  if(!data.cadastro.confirmado && primeira && !pulou){ abrirCadastro('confirmar'); return; }   // 1ª vez de quem já está na lista: confirmar/completar os dados
+  desenhar();
 }
 document.addEventListener('visibilitychange', () => { if(!document.hidden && token) carregar(false); });
 
@@ -183,6 +273,11 @@ function desenhar(){
     const pct = Math.max(4, Math.min(100, Math.round((d.saldo - atual) / Math.max(1, prox - atual) * 100)));
     $('hProx').innerHTML = `<div class="barra"><i style="width:${pct}%"></i></div><div class="falta">Faltam <b>${num(d.falta_proximo)}</b> pontos para o nível ${NIVEL(d.proximo_nivel)}</div>`;
   } else $('hProx').innerHTML = '<div class="falta" style="margin-top:12px">Você está no nível mais alto. 🎉</div>';
+  const cd = d.cadastro || { confirmado: true, faltando: [], aguardando_codigo: false };
+  $('avAtivar').classList.toggle('oculto', !cd.aguardando_codigo);
+  const ROT = { cpf: 'CPF', telefone: 'telefone', email: 'e-mail', nascimento: 'data de nascimento', genero: 'gênero' };
+  $('avCompletar').classList.toggle('oculto', !(cd.confirmado && cd.faltando.length > 0));
+  $('avCompletarTxt').textContent = 'Complete seu cadastro: falta ' + cd.faltando.map(f => ROT[f]).join(', ') + '.';
   $('avAniv').classList.toggle('oculto', !d.aniversario_hoje);
   const av = $('avVence'); av.classList.toggle('oculto', !(d.vencendo > 0));
   if(d.vencendo > 0) av.innerHTML = `⏳ <b>${num(d.vencendo)} pontos</b> vencem ${d.vence_em ? 'a partir de ' + fmtD(d.vence_em) : 'nos próximos 30 dias'}. Aproveite!`;

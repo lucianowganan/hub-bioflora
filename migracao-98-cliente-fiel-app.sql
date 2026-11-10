@@ -6,3 +6,8 @@
 -- aprovar baixa os pontos (fidelidade_transacoes), cria o resgate e desconta o estoque; só roda para chefia/recepção/conferência/atendente.
 -- Avisos (push): gatilho fiel_pedido_notifica chama a função fiel-push (pg_net); chaves VAPID nos segredos VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY e a pública em fiel_config.vapid_public.
 -- (Definições completas no banco: pg_get_functiondef.)
+
+-- Parte 2 (cadastro pelo app): colunas cadastro_app_em/consentimento_app_em em clientes_fidelidade; tabela fiel_atualizacoes (dados informados que diferem
+-- dos cadastrados ficam PENDENTES para a equipe aprovar: o app só PREENCHE campos vazios, nunca sobrescreve); funções fiel_cpf_valido, fiel_fone_normal,
+-- fiel_cpf_formatado, fiel_cadastrar (novo cliente, tipo_cadastro 'App', sem código Fórmula Certa até a equipe vincular), fiel_atualizar_cadastro,
+-- fiel_aplicar_atualizacao (equipe). fiel_painel passou a devolver "cadastro" (confirmado, faltando, aguardando_codigo), sem valores.

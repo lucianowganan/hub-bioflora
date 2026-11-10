@@ -1,13 +1,16 @@
 // Cliente Fiel · pedidos de resgate feitos pelos clientes no app (fiel.html). Usado por cliente-fiel.html.
 // A equipe aprova (os pontos saem e o brinde fica reservado), recusa (com motivo) ou marca como retirado.
 // Depende das globais de cliente-fiel.html: supa, escapar, abaAtivaCF, desenharAbasCF, trocarAbaCF.
-let pedidosPendentesCF = 0, filtroPedidosCF = 'pendente';
+let pedidosPendentesCF = 0, cadastrosPendentesCF = 0, filtroPedidosCF = 'pendente';
 
 async function carregarBadgePedidosCF(){
   try{
-    const { count } = await supa.from('fidelidade_pedidos').select('id', { count: 'exact', head: true }).eq('status', 'pendente');
-    const novo = count || 0, subiu = novo > pedidosPendentesCF;
-    pedidosPendentesCF = novo;
+    const [a, b, c] = await Promise.all([
+      supa.from('fidelidade_pedidos').select('id', { count: 'exact', head: true }).eq('status', 'pendente'),
+      supa.from('clientes_fidelidade').select('id', { count: 'exact', head: true }).eq('tipo_cadastro', 'App').is('codigo_formula_certa', null),
+      supa.from('fiel_atualizacoes').select('id', { count: 'exact', head: true }).eq('status', 'pendente')]);
+    const novo = (a.count || 0) + (b.count || 0) + (c.count || 0), subiu = novo > pedidosPendentesCF;
+    pedidosPendentesCF = novo; cadastrosPendentesCF = (b.count || 0) + (c.count || 0);
     desenharAbasCF(abaAtivaCF);
     if(subiu && abaAtivaCF === 'pedidos') renderPedidosCF();
   }catch(e){}
@@ -22,6 +25,7 @@ async function renderPedidosCF(){
   const { data, error } = await supa.from('fidelidade_pedidos').select('*, clientes_fidelidade(nome,telefone), fidelidade_brindes(nome)').order('criado_em', { ascending: false }).limit(200);
   if(error){ main.innerHTML = '<div class="empty-state">Erro ao carregar: ' + escapar(error.message) + '</div>'; return; }
   const todos = data || [];
+  if(filtroPedidosCF === 'cadastros'){ await renderCadastrosAppCF(main, todos); return; }
   const lista = todos.filter(p => filtroPedidosCF === 'pendente' ? p.status === 'pendente' : filtroPedidosCF === 'aprovado' ? p.status === 'aprovado' : ['entregue', 'recusado', 'cancelado'].includes(p.status));
   const cont = s => todos.filter(p => s === 'hist' ? ['entregue', 'recusado', 'cancelado'].includes(p.status) : p.status === s).length;
   const filtro = (id, rot) => `<button class="btn ${filtroPedidosCF === id ? '' : 'secondary'} small" onclick="filtroPedidosCF='${id}';renderPedidosCF()">${rot} (${cont(id)})</button>`;
@@ -29,7 +33,7 @@ async function renderPedidosCF(){
     <h1 style="font-family:var(--headfont);font-size:22px;margin:0 0 4px;">Pedidos de resgate</h1>
     <p style="font-size:13px;color:var(--gray);margin:0 0 14px;">Pedidos feitos pelos clientes no app Cliente Fiel. Ao aprovar, os pontos saem do cliente e o brinde fica reservado para retirada.</p>
     <div id="boxPushEquipe"></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">${filtro('pendente', 'Aguardando')}${filtro('aprovado', 'Para retirar')}${filtro('hist', 'Histórico')}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">${filtro('pendente', 'Aguardando')}${filtro('aprovado', 'Para retirar')}${filtro('hist', 'Histórico')}<button class="btn secondary small" onclick="filtroPedidosCF='cadastros';renderPedidosCF()">Cadastros do app (${cadastrosPendentesCF})</button></div>
     ${lista.length ? lista.map(p => {
       const c = p.clientes_fidelidade || {}, b = p.fidelidade_brindes || {}, st = STATUS_PED[p.status];
       const fone = String(c.telefone || '').replace(/\D/g, '');
@@ -76,3 +80,25 @@ async function prepararPushEquipeCF(){
   };
 }
 setInterval(() => { if(!document.hidden && typeof supa !== 'undefined' && supa) carregarBadgePedidosCF(); }, 30000);
+
+// Cadastros feitos pelos clientes no app: novos (aguardando o código de cliente) e dados informados que diferem dos que temos
+const CAMPO_ROT = { nome: 'nome', cpf: 'CPF', telefone: 'telefone', email: 'e-mail', data_nascimento: 'data de nascimento', genero: 'gênero' };
+async function renderCadastrosAppCF(main, todosPedidos){
+  const [novos, atual] = await Promise.all([
+    supa.from('clientes_fidelidade').select('id,nome,cpf,telefone,criado_em').eq('tipo_cadastro', 'App').is('codigo_formula_certa', null).order('criado_em', { ascending: false }),
+    supa.from('fiel_atualizacoes').select('*, clientes_fidelidade(nome)').eq('status', 'pendente').order('criado_em', { ascending: false })]);
+  const botoes = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;"><button class="btn secondary small" onclick="filtroPedidosCF='pendente';renderPedidosCF()">← Pedidos</button><button class="btn small">Cadastros do app (${cadastrosPendentesCF})</button></div>`;
+  const fmt = (c, v) => c === 'data_nascimento' ? new Date(v + 'T12:00:00').toLocaleDateString('pt-BR') : c === 'genero' ? (v === 'F' ? 'Feminino' : 'Masculino') : v;
+  main.innerHTML = `<h1 style="font-family:var(--headfont);font-size:22px;margin:0 0 4px;">Cadastros feitos pelo app</h1>
+    <p style="font-size:13px;color:var(--gray);margin:0 0 14px;">Clientes que se cadastraram ou completaram os dados no app Cliente Fiel.</p>${botoes}
+    <h2 style="font-size:16px;margin:0 0 8px;">Novos cadastros aguardando o código de cliente (${(novos.data || []).length})</h2>
+    ${(novos.data || []).length ? novos.data.map(c => `<div class="panel" style="margin-bottom:10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;"><div><b>${escapar(c.nome)}</b><div style="font-size:13px;color:var(--gray);">${escapar(c.cpf || '')} · ${escapar(c.telefone || '')} · ${new Date(c.criado_em).toLocaleDateString('pt-BR')}</div></div><button class="btn small" onclick="abrirFichaCliente('${c.id}')">Abrir ficha e vincular o código</button></div>`).join('') : '<div class="empty-state">Nenhum cadastro novo aguardando.</div>'}
+    <h2 style="font-size:16px;margin:18px 0 8px;">Dados informados diferentes dos que temos (${(atual.data || []).length})</h2>
+    ${(atual.data || []).length ? atual.data.map(a => `<div class="panel" style="margin-bottom:10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;"><div><b>${escapar((a.clientes_fidelidade || {}).nome || 'Cliente')}</b> informou outro <b>${CAMPO_ROT[a.campo]}</b>: ${escapar(fmt(a.campo, a.valor))}</div><div style="display:flex;gap:8px;"><button class="btn small" onclick="atenderAtualizacaoCF('${a.id}','aplicar')">Atualizar cadastro</button><button class="btn secondary small" onclick="atenderAtualizacaoCF('${a.id}','ignorar')">Ignorar</button></div></div>`).join('') : '<div class="empty-state">Nenhuma diferença para conferir.</div>'}`;
+}
+async function atenderAtualizacaoCF(id, acao){
+  const { data, error } = await supa.rpc('fiel_aplicar_atualizacao', { p_id: id, p_acao: acao });
+  if(error || !data || !data.ok) alert(data && data.erro === 'cpf_em_uso' ? 'Esse CPF já está em outro cadastro.' : 'Não foi possível concluir.');
+  await carregarBadgePedidosCF(); renderPedidosCF();
+}
+window.atenderAtualizacaoCF = atenderAtualizacaoCF;
