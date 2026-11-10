@@ -129,9 +129,9 @@ input[type=date],input[type=email]{width:100%;font:600 20px 'Maven Pro',sans-ser
       <div class="campo"><label for="cNome">Nome completo</label><div class="dica" id="dNome"></div><input type="text" id="cNome" autocomplete="name" autocapitalize="words"></div>
       <div class="campo"><label for="cCpf">CPF</label><div class="dica" id="dCpf"></div><input type="tel" id="cCpf" inputmode="numeric" placeholder="000.000.000-00"></div>
       <div class="campo"><label for="cTel">Telefone com DDD</label><div class="dica" id="dTel"></div><input type="tel" id="cTel" inputmode="tel" autocomplete="tel" placeholder="(35) 99999-9999"></div>
-      <div class="campo"><label for="cEmail">E-mail <small style="font-weight:500">(opcional)</small></label><div class="dica" id="dEmail"></div><input type="email" id="cEmail" autocomplete="email" inputmode="email"></div>
+      <div class="campo"><label for="cEmail">E-mail</label><div class="dica" id="dEmail"></div><input type="email" id="cEmail" autocomplete="email" inputmode="email"></div>
       <div class="campo"><label for="cNasc">Data de nascimento</label><div class="dica" id="dNasc"></div><input type="date" id="cNasc"></div>
-      <div class="campo"><label for="cGen">Gênero <small style="font-weight:500">(opcional)</small></label><div class="dica" id="dGen"></div><select id="cGen"><option value="">Prefiro não informar</option><option value="F">Feminino</option><option value="M">Masculino</option></select></div>
+      <div class="campo"><label for="cGen">Gênero</label><div class="dica" id="dGen"></div><select id="cGen"><option value="">Selecione</option><option value="F">Feminino</option><option value="M">Masculino</option><option value="N">Prefiro não informar</option></select></div>
       <label class="aceite"><input type="checkbox" id="cAceite"><span style="font-weight:500">Autorizo a Farmácia Bioflora a usar meus dados para o programa Cliente Fiel e a falar comigo sobre ele.</span></label>
       <div class="erro" id="erroCad"></div>
       <button class="btn" id="btnSalvarCad" type="submit">Salvar</button>
@@ -207,10 +207,9 @@ function abrirCadastro(modo){
   $('telaLogin').classList.add('oculto'); $('telaPainel').classList.add('oculto'); $('telaCadastro').classList.remove('oculto');
   const novo = modo === 'novo', falt = (dados && dados.cadastro && dados.cadastro.faltando) || [];
   $('cdTitulo').textContent = novo ? 'Faça seu cadastro' : 'Confirme seus dados';
-  $('cdSub').textContent = novo ? 'Preencha seus dados para participar do Cliente Fiel.' : 'Para manter seu cadastro em dia, preencha seus dados. Por segurança, não mostramos o que já temos.';
-  $('btnAgoraNao').classList.toggle('oculto', novo); $('btnSalvarCad').textContent = novo ? 'Criar meu cadastro' : 'Salvar meus dados';
-  const dica = (id, campo) => { const e = $(id); if(novo){ e.textContent = ''; return; } const falta = falt.includes(campo); e.textContent = falta ? 'Ainda falta no seu cadastro' : '✓ Já temos (digite de novo só se mudou)'; e.className = 'dica ' + (falta ? 'falta' : 'ok'); };
-  $('dNome').textContent = ''; dica('dCpf','cpf'); dica('dTel','telefone'); dica('dEmail','email'); dica('dNasc','nascimento'); dica('dGen','genero');
+  $('cdSub').textContent = novo ? 'Preencha todos os dados para participar do Cliente Fiel.' : 'Preencha todos os seus dados de novo para confirmar o cadastro. Por segurança, não mostramos o que já temos: assim conferimos se está tudo certo.';
+  $('btnAgoraNao').classList.add('oculto'); $('btnSalvarCad').textContent = novo ? 'Criar meu cadastro' : 'Confirmar meus dados';
+  ['dNome','dCpf','dTel','dEmail','dNasc','dGen'].forEach(id => { $(id).textContent = ''; });
   if(novo) $('btnSalvarCad').disabled = false;
   window.scrollTo(0, 0);
 }
@@ -227,11 +226,13 @@ $('formCadastro').addEventListener('submit', async ev => {
   ev.preventDefault(); const er = $('erroCad'); er.classList.remove('on');
   const d = { nome: $('cNome').value, cpf: $('cCpf').value, telefone: $('cTel').value, email: $('cEmail').value, nascimento: $('cNasc').value, genero: $('cGen').value, consentimento: $('cAceite').checked ? 'true' : 'false' };
   const msg = t => { er.textContent = t; er.classList.add('on'); er.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
-  if(cadModo === 'novo'){
-    if(d.nome.trim().split(/\s+/).length < 2) return msg('Digite o nome completo.');
-    if(d.cpf.replace(/\D/g,'').length !== 11) return msg('Digite o CPF com 11 números.');
-    if(d.telefone.replace(/\D/g,'').length < 10) return msg('Digite o telefone com DDD.');
-  }
+  // todos os dados são obrigatórios (também na confirmação: o nosso cadastro pode estar desatualizado ou errado)
+  if(d.nome.trim().split(/\s+/).length < 2) return msg('Digite o nome completo.');
+  if(d.cpf.replace(/\D/g,'').length !== 11) return msg('Digite o CPF com 11 números.');
+  if(d.telefone.replace(/\D/g,'').length < 10) return msg('Digite o telefone com DDD.');
+  if(!/^\S+@\S+\.\S+$/.test(d.email.trim())) return msg('Digite o seu e-mail.');
+  if(!d.nascimento) return msg('Informe a data de nascimento.');
+  if(!d.genero) return msg('Escolha uma opção em Gênero.');
   if(!$('cAceite').checked) return msg('Marque a autorização para continuar.');
   $('btnSalvarCad').disabled = true;
   const r = cadModo === 'novo' ? await sb.rpc('fiel_cadastrar', { p_dados: d }) : await sb.rpc('fiel_atualizar_cadastro', { p_token: token, p_dados: d });
@@ -255,8 +256,7 @@ async function carregar(primeira){
   if(!data || !data.ok){ mostrarLogin(primeira ? 'Entre de novo, por favor.' : null); return; }
   dados = data;
   clearInterval(timer); timer = setInterval(() => { if(!document.hidden && $('telaCadastro').classList.contains('oculto')) carregar(false); }, 60000);
-  let pulou = false; try{ pulou = sessionStorage.getItem('fiel_pulou') === '1'; }catch(e){}
-  if(!data.cadastro.confirmado && primeira && !pulou){ abrirCadastro('confirmar'); return; }   // 1ª vez de quem já está na lista: confirmar/completar os dados
+  if(!data.cadastro.confirmado){ abrirCadastro('confirmar'); return; }   // 1º acesso de quem já está na lista: confirmar TODOS os dados   // 1ª vez de quem já está na lista: confirmar/completar os dados
   desenhar();
 }
 document.addEventListener('visibilitychange', () => { if(!document.hidden && token) carregar(false); });
@@ -276,7 +276,7 @@ function desenhar(){
   const cd = d.cadastro || { confirmado: true, faltando: [], aguardando_codigo: false };
   $('avAtivar').classList.toggle('oculto', !cd.aguardando_codigo);
   const ROT = { cpf: 'CPF', telefone: 'telefone', email: 'e-mail', nascimento: 'data de nascimento', genero: 'gênero' };
-  $('avCompletar').classList.toggle('oculto', !(cd.confirmado && cd.faltando.length > 0));
+  $('avCompletar').classList.add('oculto');
   $('avCompletarTxt').textContent = 'Complete seu cadastro: falta ' + cd.faltando.map(f => ROT[f]).join(', ') + '.';
   $('avAniv').classList.toggle('oculto', !d.aniversario_hoje);
   const av = $('avVence'); av.classList.toggle('oculto', !(d.vencendo > 0));
