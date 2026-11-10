@@ -1,0 +1,8 @@
+-- Migração 98: app do Cliente Fiel para os clientes (fiel.html) + pedidos de resgate. Já aplicada.
+-- Segurança: o cliente (anon) NÃO lê nenhuma tabela. Entra por fiel_login (CPF ou telefone; limite de tentativas), recebe um token
+-- (guardado só como hash em fiel_sessoes, 90 dias) e todas as telas vêm de funções que devolvem SÓ os dados daquele cliente:
+-- fiel_painel, fiel_solicitar, fiel_cancelar, fiel_push_salvar, fiel_sair, fiel_vapid.
+-- Equipe: tabela fidelidade_pedidos (RLS por cargo) e fiel_atender_pedido(pedido, 'aprovar'|'recusar'|'retirado', resposta):
+-- aprovar baixa os pontos (fidelidade_transacoes), cria o resgate e desconta o estoque; só roda para chefia/recepção/conferência/atendente.
+-- Avisos (push): gatilho fiel_pedido_notifica chama a função fiel-push (pg_net); chaves VAPID nos segredos VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY e a pública em fiel_config.vapid_public.
+-- (Definições completas no banco: pg_get_functiondef.)

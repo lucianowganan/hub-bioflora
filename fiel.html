@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cliente Fiel · Farmácia Bioflora</title>
+<meta name="description" content="Veja seus pontos, seu nível e peça seus brindes na Farmácia Bioflora.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#8B1A3A">
+<link rel="icon" type="image/svg+xml" href="favicon.svg"><link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest-fiel.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cliente Fiel"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--burgundy:#8B1A3A;--burgundy-dark:#5E1027;--tint:#F7E9EE;--paper:#F4EFEC;--ink:#111;--gray:#4A4245;--line:#E1D6D9;--good:#2F7A5F;--good-tint:#E6F2EC;--bad:#B4472F;--bad-tint:#FBEBE6;--warn:#8F6210;--warn-tint:#FBF1E0;--head:'Space Grotesk','Maven Pro',sans-serif;--sombra:0 4px 16px rgba(94,16,39,.09)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',-apple-system,sans-serif;font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.app{max-width:560px;margin:0 auto;padding:max(18px,env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom))}
+.topo{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.logo{height:34px;width:auto;color:var(--burgundy)}
+.link{border:0;background:none;color:var(--burgundy);font:700 15px 'Maven Pro',sans-serif;cursor:pointer;padding:8px 4px;text-decoration:underline}
+h1{font:700 30px/1.15 var(--head);letter-spacing:-.02em;margin:0 0 6px}
+.sub{color:var(--gray);margin:0 0 22px}
+.card{background:#fff;border-radius:26px;box-shadow:var(--sombra);padding:22px;margin-bottom:16px}
+label{display:block;font-weight:700;margin-bottom:8px}
+input[type=text],input[type=tel]{width:100%;font:600 22px 'Maven Pro',sans-serif;padding:16px 18px;border:2px solid var(--line);border-radius:18px;background:#fff;color:var(--ink);letter-spacing:.5px}
+input:focus{outline:none;border-color:var(--burgundy);box-shadow:0 0 0 4px rgba(139,26,58,.14)}
+.btn{display:block;width:100%;border:0;border-radius:40px;background:var(--burgundy);color:#fff;font:700 19px var(--head);padding:17px;cursor:pointer;margin-top:14px;box-shadow:0 6px 16px rgba(139,26,58,.25)}
+.btn:disabled{opacity:.5;box-shadow:none}
+.btn.s{background:#fff;color:var(--burgundy);border:2px solid var(--burgundy);box-shadow:none}
+.erro{background:var(--bad-tint);color:var(--bad);border-radius:16px;padding:12px 16px;font-weight:600;margin-top:14px;display:none}
+.erro.on{display:block}
+.nota{font-size:13.5px;color:var(--gray);margin-top:14px}
+.hero{background:linear-gradient(135deg,var(--burgundy),var(--burgundy-dark));color:#fff;border-radius:28px;padding:24px;margin-bottom:16px;box-shadow:0 10px 26px rgba(94,16,39,.28)}
+.hero .ola{font:600 18px var(--head);opacity:.95}
+.hero .nivel{display:inline-block;background:rgba(255,255,255,.2);border-radius:30px;padding:4px 14px;font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;margin-top:8px}
+.hero .pts{font:700 54px/1.05 var(--head);letter-spacing:-.03em;margin:10px 0 2px}
+.hero .pts small{font-size:20px;font-weight:600;opacity:.9;letter-spacing:0}
+.hero .res{font-size:14px;opacity:.9}
+.barra{height:12px;border-radius:8px;background:rgba(255,255,255,.25);overflow:hidden;margin:16px 0 6px}
+.barra i{display:block;height:100%;background:#fff;border-radius:8px}
+.hero .falta{font-size:15px}
+.aviso{border-radius:20px;padding:14px 18px;margin-bottom:14px;font-weight:600}
+.aviso.warn{background:var(--warn-tint);color:#6B4A0C}
+.aviso.fest{background:var(--tint);color:var(--burgundy)}
+.abas{display:flex;gap:8px;margin:20px 0 14px;overflow-x:auto}
+.aba{flex:1;border:0;background:#fff;color:var(--gray);padding:12px 10px;border-radius:30px;font:700 15px 'Maven Pro',sans-serif;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08);white-space:nowrap}
+.aba.on{background:var(--burgundy);color:#fff}
+.brinde{display:flex;gap:14px;align-items:center}
+.brinde .img{width:72px;height:72px;border-radius:20px;background:var(--tint);display:flex;align-items:center;justify-content:center;font-size:34px;flex:none;overflow:hidden}
+.brinde .img img{width:100%;height:100%;object-fit:cover}
+.brinde .nome{font:700 18px var(--head);line-height:1.2}
+.brinde .desc{font-size:14px;color:var(--gray);margin-top:2px}
+.brinde .pts{font-weight:700;color:var(--burgundy);margin-top:4px}
+.brinde .btn{margin:10px 0 0;padding:12px;font-size:16px}
+.chip{display:inline-block;border-radius:20px;padding:3px 12px;font-size:13px;font-weight:700}
+.c-pend{background:var(--warn-tint);color:var(--warn)}.c-ok{background:var(--good-tint);color:var(--good)}.c-bad{background:var(--bad-tint);color:var(--bad)}.c-cinza{background:#EFE8EA;color:var(--gray)}
+.linha{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.linha:last-child{border-bottom:0}
+.linha .t{font-weight:600}.linha .d{font-size:13px;color:var(--gray)}
+.mais{color:var(--good);font:700 18px var(--head)}.menos{color:var(--bad);font:700 18px var(--head)}
+.vazio{text-align:center;color:var(--gray);padding:22px 10px}
+.fundo{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.fundo.on{display:flex}
+.folha{background:#fff;border-radius:28px 28px 0 0;padding:24px 22px calc(26px + env(safe-area-inset-bottom));width:100%;max-width:560px}
+.folha h2{font:700 22px var(--head);margin:0 0 8px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:30px;font-weight:600;z-index:60;display:none;max-width:90%;text-align:center}
+.toast.on{display:block}
+.oculto{display:none !important}
+.rodape{text-align:center;font-size:13.5px;color:var(--gray);margin-top:26px}
+.rodape a{color:var(--burgundy);font-weight:700}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topo"><svg class="logo" role="img" aria-label="Bioflora Farmácia" viewBox="0 0 31.3 8.7" xmlns="http://www.w3.org/2000/svg">
+        <path fill="currentColor" d="M12.1,3.5s.2-.2.2-.3c.3-.8-.1-1.6-.9-1.7-.3,0-1.5,0-1.8,0-.2,0-.3.2-.4.4,0,1.1,0,2.3,0,3.3,0,.3.1.4.4.5.4,0,1.6,0,1.9,0,.7-.2,1-1,.8-1.6,0-.1-.2-.4-.2-.5ZM11.4,4.6s-.2.1-.2.1h-1.1v-.9h1.2s.1,0,.2.1c.2.2.2.6,0,.7ZM11.4,2.9s-.2.2-.2.2h-1.2v-.7s0,0,0,0h1.1s.2,0,.2.1c.2.1.2.3,0,.5Z"/>
+        <path fill="currentColor" d="M7.1,3.6c0,.1,0,0,0,0,0-.6-.9-.9-1.3-1.1-1.3-.4-2.5,0-3.8-.3S0,1.2,0,0c.5.4.9.6,1.6.8,1.1.2,2.4,0,3.5,0s2.5,1.5,2,2.8Z"/>
+        <path fill="currentColor" d="M7.9,5.9c-.1-.2-.3-.3-.5-.4-1.7-.9-5.3.4-6.4-1.5s-.2-.4,0-.4c.6,0,1.4,0,2,0,1.5,0,3.3-.3,4.4,1s.5.9.4,1.4Z"/>
+        <path fill="currentColor" d="M4.4,7.5C2.3,7.3.8,5.4.3,3.5s-.1-.5,0-.7c0,0,.3.6.4.7.7,1.4,1.8,2.7,3.4,3.1s1.4.2,1.9-.1.4-.7,0-1.1c.5,0,1.8.1,1.9.8.2,1.1-1.3,1.5-2.1,1.5-.1,0-.2,0-.3,0-.2,0-.3,0-.6,0-.1,0-.2,0-.3,0Z"/>
+        <path fill="currentColor" d="M30.5,3.6c-.3-1.2-2-1.6-2.8-.6-.9,1.1,0,2.5,1.3,2.5.2,0,.6,0,.7-.1,0,0,0,0,.2.1.2.1.5,0,.6-.3,0-.3,0-1.4,0-1.7ZM29.1,4.7c-1,.1-1.2-1.3-.2-1.5.9,0,1.1,1.3.2,1.5Z"/>
+        <path fill="currentColor" d="M15.6,2.4c-2.3,0-2,3.6.3,3.1,1.8-.4,1.5-3.2-.3-3.1ZM16.3,4.3c-.3.8-1.6.4-1.4-.5.1-.5.8-.7,1.2-.3.2.2.3.5.2.8Z"/>
+        <path fill="currentColor" d="M23.1,2.5c-1.9.3-1.7,3.3.4,3.2,2.1-.1,1.9-3.5-.4-3.2ZM22.9,4.6c-.5-.4-.3-1.3.4-1.3.3,0,.6.2.7.5.3.7-.5,1.3-1.1.9Z"/>
+        <path fill="currentColor" d="M19,3.2c.7,0,.7.9,0,.9,0,.8.2,1.8-.6,2.3s-1,.1-.9-.4.7-.2.7-.5,0-1,0-1.4c-.7,0-.7-.9,0-.9,0-.6,0-1.3.6-1.6s1.1-.3,1,.4-.7.2-.7.5,0,.6,0,.8Z"/>
+        <path fill="currentColor" d="M20.8,1.6c0,0,.1.3.1.4v2.6c.1.3.4.2.6.3.3.2.1.7-.2.7-.6,0-1.2-.4-1.2-.9,0-.9,0-1.9,0-2.9,0-.3.5-.4.7-.2Z"/>
+        <path fill="currentColor" d="M25.7,2.9c.3-.3,1.2-.7,1.5-.3s.1.4,0,.6c-.3.2-.6,0-.9.4s0,1.2-.1,1.6-.8.4-.8,0,0-1.1,0-1.4.2-.7.4-1Z"/>
+        <path fill="currentColor" d="M13.5,2.6c0,0,.1.2.1.3,0,.7,0,1.6,0,2.4,0,.5-.8.5-.9,0,0-.8,0-1.6,0-2.3s.4-.6.7-.3Z"/>
+        <path fill="currentColor" d="M6.9,3.8c-.4-.2-.8-.3-1.2-.4,0-.2,0-.3,0-.5s-.2-.3-.2-.4c.6.1,1.8.5,1.5,1.3Z"/>
+        <path fill="currentColor" d="M13.1,1.5c.7-.1.7,1,0,.8s-.5-.8,0-.8Z"/>
+        <text x="19.1" y="7.9" font-family="Helvetica, Arial" font-size="1.7" letter-spacing="0.3" fill="currentColor">FARMÁCIA</text>
+      </svg><button class="link oculto" id="btnSair">Sair</button></div>
+
+  <!-- ENTRAR -->
+  <div id="telaLogin">
+    <h1>Cliente Fiel</h1>
+    <p class="sub">Veja seus pontos e peça seus brindes.</p>
+    <form class="card" id="formLogin" autocomplete="on">
+      <label for="ident">Seu CPF ou telefone</label>
+      <input type="tel" id="ident" inputmode="numeric" autocomplete="tel" placeholder="CPF ou (35) 9 9999-9999">
+      <div class="erro" id="erroLogin"></div>
+      <button class="btn" id="btnEntrar" type="submit">Entrar</button>
+      <p class="nota">Só usamos para encontrar o seu cadastro.</p>
+    </form>
+  </div>
+
+  <!-- PAINEL -->
+  <div id="telaPainel" class="oculto">
+    <div class="hero">
+      <div class="ola" id="hOla"></div>
+      <span class="nivel" id="hNivel"></span>
+      <div class="pts"><span id="hPts">0</span> <small>pontos</small></div>
+      <div class="res" id="hRes"></div>
+      <div id="hProx"></div>
+    </div>
+    <div class="aviso fest oculto" id="avAniv">🎂 Feliz aniversário! A Bioflora deseja um dia muito especial para você.</div>
+    <div class="aviso warn oculto" id="avVence"></div>
+    <div class="card oculto" id="cardPush"><b>Receba avisos no celular</b><p class="sub" style="margin:4px 0 0" id="pushTxt">Avisamos quando a equipe responder o seu pedido.</p><button class="btn s" id="btnPush" type="button">Ativar avisos</button></div>
+
+    <div class="abas"><button class="aba on" data-a="brindes">Brindes</button><button class="aba" data-a="pedidos">Meus pedidos <span id="badgePed"></span></button><button class="aba" data-a="hist">Histórico</button></div>
+    <div id="secBrindes"></div><div id="secPedidos" class="oculto"></div><div id="secHist" class="oculto"></div>
+    <div class="rodape">Dúvidas? Fale com a gente: <a href="https://wa.me/5535984493997" target="_blank" rel="noopener">WhatsApp (35) 98449-3997</a></div>
+  </div>
+</div>
+
+<div class="fundo" id="fundoPedir"><div class="folha"><h2 id="pdTitulo"></h2><p id="pdTxt" style="margin:0 0 6px"></p><p class="nota" style="margin:0">A equipe confirma e avisa você. Seus pontos só são usados quando o pedido for aprovado.</p><button class="btn" id="pdOk">Pedir este brinde</button><button class="btn s" id="pdNao">Agora não</button></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = n => Number(n||0).toLocaleString('pt-BR');
+const fmtD = s => s ? new Date(s.length <= 10 ? s + 'T12:00:00' : s).toLocaleDateString('pt-BR') : '';
+const NIVEL = n => ({bronze:'Bronze', prata:'Prata', ouro:'Ouro', diamante:'Diamante'}[n] || (n ? n.charAt(0).toUpperCase() + n.slice(1) : ''));
+let token = null, dados = null, aba = 'brindes', pedindo = null, timer = null;
+const guardar = (k, v) => { try{ v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); }catch(e){} };
+const ler = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
+function aviso(t){ const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(aviso.t); aviso.t = setTimeout(() => el.classList.remove('on'), 3500); }
+function mostrarLogin(msg){ token = null; guardar('fiel_token', null); clearInterval(timer); $('telaPainel').classList.add('oculto'); $('telaLogin').classList.remove('oculto'); $('btnSair').classList.add('oculto'); if(msg) erroLogin(msg); }
+function erroLogin(t){ const e = $('erroLogin'); e.textContent = t; e.classList.add('on'); }
+
+$('formLogin').addEventListener('submit', async ev => {
+  ev.preventDefault(); $('erroLogin').classList.remove('on');
+  const v = $('ident').value;
+  if(v.replace(/\D/g,'').length < 10){ erroLogin('Digite o CPF (11 números) ou o telefone com DDD.'); return; }
+  $('btnEntrar').disabled = true;
+  const { data, error } = await sb.rpc('fiel_login', { p_ident: v });
+  $('btnEntrar').disabled = false;
+  if(error || !data){ erroLogin('Não foi possível entrar agora. Tente de novo.'); return; }
+  if(!data.ok){
+    erroLogin({ invalido: 'Digite o CPF (11 números) ou o telefone com DDD.', nao_encontrado: 'Não encontramos seu cadastro. Confira os números ou fale com a gente na farmácia.', varios: 'Esse telefone está em mais de um cadastro. Use o seu CPF.', bloqueado: 'Muitas tentativas. Espere alguns minutos e tente de novo.' }[data.erro] || 'Não foi possível entrar.');
+    return;
+  }
+  token = data.token; guardar('fiel_token', token); $('ident').value = '';
+  await carregar(true);
+});
+$('btnSair').onclick = async () => { if(token) sb.rpc('fiel_sair', { p_token: token }); mostrarLogin(); };
+
+async function carregar(primeira){
+  const { data, error } = await sb.rpc('fiel_painel', { p_token: token });
+  if(error){ if(primeira) mostrarLogin('Sem conexão. Tente de novo.'); return; }
+  if(!data || !data.ok){ mostrarLogin(primeira ? 'Entre de novo, por favor.' : null); return; }
+  dados = data; desenhar();
+  clearInterval(timer); timer = setInterval(() => { if(!document.hidden) carregar(false); }, 60000);
+}
+document.addEventListener('visibilitychange', () => { if(!document.hidden && token) carregar(false); });
+
+function desenhar(){
+  $('telaLogin').classList.add('oculto'); $('telaPainel').classList.remove('oculto'); $('btnSair').classList.remove('oculto');
+  const d = dados;
+  $('hOla').textContent = 'Olá, ' + d.nome + '!';
+  $('hNivel').textContent = 'Nível ' + NIVEL(d.nivel);
+  $('hPts').textContent = num(d.saldo);
+  $('hRes').textContent = d.reservado > 0 ? num(d.reservado) + ' pontos reservados em pedidos aguardando a equipe' : '';
+  if(d.proximo_nivel){
+    const atual = (d.niveis.filter(n => n.nivel === d.nivel)[0] || { minimo: 0 }).minimo, prox = d.saldo + d.falta_proximo;
+    const pct = Math.max(4, Math.min(100, Math.round((d.saldo - atual) / Math.max(1, prox - atual) * 100)));
+    $('hProx').innerHTML = `<div class="barra"><i style="width:${pct}%"></i></div><div class="falta">Faltam <b>${num(d.falta_proximo)}</b> pontos para o nível ${NIVEL(d.proximo_nivel)}</div>`;
+  } else $('hProx').innerHTML = '<div class="falta" style="margin-top:12px">Você está no nível mais alto. 🎉</div>';
+  $('avAniv').classList.toggle('oculto', !d.aniversario_hoje);
+  const av = $('avVence'); av.classList.toggle('oculto', !(d.vencendo > 0));
+  if(d.vencendo > 0) av.innerHTML = `⏳ <b>${num(d.vencendo)} pontos</b> vencem ${d.vence_em ? 'a partir de ' + fmtD(d.vence_em) : 'nos próximos 30 dias'}. Aproveite!`;
+
+  // brindes
+  const livre = d.saldo - d.reservado;
+  $('secBrindes').innerHTML = d.brindes.length ? d.brindes.map(b => {
+    const falta = b.pontos - livre;
+    const btn = !b.disponivel ? '<button class="btn s" disabled>Sem estoque agora</button>' : falta > 0 ? `<button class="btn s" disabled>Faltam ${num(falta)} pontos</button>` : `<button class="btn" onclick="pedir('${b.id}')">Quero este brinde</button>`;
+    return `<div class="card brinde"><div class="img">${b.imagem ? `<img src="${esc(b.imagem)}" alt="" loading="lazy">` : '🎁'}</div><div style="flex:1"><div class="nome">${esc(b.nome)}</div>${b.descricao ? `<div class="desc">${esc(b.descricao)}</div>` : ''}<div class="pts">${num(b.pontos)} pontos</div>${btn}</div></div>`; }).join('') : '<div class="card vazio">Os brindes estarão aqui em breve. 🎁</div>';
+
+  // pedidos
+  const ST = { pendente: ['Aguardando a equipe', 'c-pend'], aprovado: ['Aprovado: retire na farmácia', 'c-ok'], entregue: ['Retirado', 'c-cinza'], recusado: ['Não aprovado', 'c-bad'], cancelado: ['Cancelado', 'c-cinza'] };
+  const pend = d.pedidos.filter(p => p.status === 'pendente' || p.status === 'aprovado').length;
+  $('badgePed').textContent = pend ? '(' + pend + ')' : '';
+  $('secPedidos').innerHTML = d.pedidos.length ? d.pedidos.map(p => `<div class="card"><div style="display:flex;justify-content:space-between;gap:10px"><b>${esc(p.brinde)}</b><span class="d" style="font-size:13px;color:var(--gray)">${fmtD(p.quando)}</span></div><div style="margin:8px 0 0"><span class="chip ${ST[p.status][1]}">${ST[p.status][0]}</span> <span style="color:var(--gray);font-size:14px">${num(p.pontos)} pontos</span></div>${p.resposta ? `<p class="nota" style="margin:8px 0 0">${esc(p.resposta)}</p>` : ''}${p.status === 'pendente' ? `<button class="link" onclick="cancelar('${p.id}')">Cancelar pedido</button>` : ''}</div>`).join('') : '<div class="card vazio">Você ainda não pediu nenhum brinde.</div>';
+
+  // histórico
+  $('secHist').innerHTML = d.historico.length ? '<div class="card">' + d.historico.map(h => `<div class="linha"><div><div class="t">${esc(h.descricao || (h.tipo === 'ganho' ? 'Pontos ganhos' : h.tipo === 'resgate' ? 'Resgate' : 'Ajuste'))}</div><div class="d">${fmtD(h.quando)}${h.validade && h.pontos > 0 ? ' · válido até ' + fmtD(h.validade) : ''}</div></div><div class="${h.pontos >= 0 ? 'mais' : 'menos'}">${h.pontos >= 0 ? '+' : ''}${num(h.pontos)}</div></div>`).join('') + '</div>' : '<div class="card vazio">Seus pontos vão aparecer aqui.</div>';
+  mostrarAba(aba);
+  prepararPush();
+}
+function mostrarAba(a){ aba = a; document.querySelectorAll('.aba').forEach(b => b.classList.toggle('on', b.dataset.a === a)); $('secBrindes').classList.toggle('oculto', a !== 'brindes'); $('secPedidos').classList.toggle('oculto', a !== 'pedidos'); $('secHist').classList.toggle('oculto', a !== 'hist'); }
+document.querySelectorAll('.aba').forEach(b => b.onclick = () => mostrarAba(b.dataset.a));
+
+function pedir(id){
+  const b = dados.brindes.find(x => x.id === id); if(!b) return;
+  pedindo = id; $('pdTitulo').textContent = b.nome; $('pdTxt').textContent = 'Pedir este brinde por ' + num(b.pontos) + ' pontos?'; $('fundoPedir').classList.add('on');
+}
+window.pedir = pedir;
+$('pdNao').onclick = () => { $('fundoPedir').classList.remove('on'); pedindo = null; };
+$('pdOk').onclick = async () => {
+  if(!pedindo) return; $('pdOk').disabled = true;
+  const { data, error } = await sb.rpc('fiel_solicitar', { p_token: token, p_brinde: pedindo });
+  $('pdOk').disabled = false; $('fundoPedir').classList.remove('on'); pedindo = null;
+  if(error || !data){ aviso('Não foi possível pedir agora. Tente de novo.'); return; }
+  if(!data.ok){ aviso({ sessao: 'Entre de novo, por favor.', brinde_indisponivel: 'Esse brinde não está mais disponível.', sem_estoque: 'Esse brinde está sem estoque agora.', muitos_pendentes: 'Você já tem 3 pedidos aguardando. Espere a equipe responder.', saldo_insuficiente: 'Pontos insuficientes para este brinde.' }[data.erro] || 'Não foi possível pedir.'); if(data.erro === 'sessao') mostrarLogin(); await carregar(false); return; }
+  aviso('Pedido enviado! A equipe vai avisar você.'); aba = 'pedidos'; await carregar(false);
+};
+async function cancelar(id){ if(!confirm('Cancelar este pedido?')) return; await sb.rpc('fiel_cancelar', { p_token: token, p_pedido: id }); aviso('Pedido cancelado.'); await carregar(false); }
+window.cancelar = cancelar;
+
+// ---------- avisos (push) ----------
+function b64ParaBytes(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); const p = '='.repeat((4 - s.length % 4) % 4); const r = atob(s + p); return Uint8Array.from([...r].map(c => c.charCodeAt(0))); }
+async function prepararPush(){
+  const card = $('cardPush');
+  if(!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)){ card.classList.add('oculto'); return; }
+  const { data: chave } = await sb.rpc('fiel_vapid');
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent), standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if(!chave){ card.classList.add('oculto'); return; }
+  if(dados.push_ativo && Notification.permission === 'granted'){ card.classList.add('oculto'); return; }
+  card.classList.remove('oculto');
+  if(ios && !standalone){ $('pushTxt').textContent = 'No iPhone: toque em Compartilhar e em “Adicionar à Tela de Início”. Depois abra o atalho e ative os avisos.'; $('btnPush').classList.add('oculto'); return; }
+  $('btnPush').classList.remove('oculto');
+  $('btnPush').onclick = async () => {
+    try{
+      const perm = await Notification.requestPermission(); if(perm !== 'granted'){ aviso('Sem permissão para avisos.'); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ParaBytes(chave) });
+      await sb.rpc('fiel_push_salvar', { p_token: token, p_sub: sub.toJSON() });
+      aviso('Avisos ativados!'); card.classList.add('oculto');
+    }catch(e){ aviso('Não foi possível ativar os avisos neste aparelho.'); }
+  };
+}
+if('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+
+token = ler('fiel_token');
+if(token) carregar(true); else $('ident').focus();
+</script>
+</body>
+</html>

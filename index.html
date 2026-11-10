@@ -994,13 +994,14 @@ const WIDGETS = {
     const hoje = hojeHome();
     const em5 = new Date(); em5.setDate(em5.getDate()+5);
     const ehRH = ['chefia','rh'].includes(ctx.papel);
-    const [{ data: prazos }, { data: ordens }, fc, rot, venc, ferias] = await Promise.all([
+    const [{ data: prazos }, { data: ordens }, fc, rot, venc, ferias, pedFiel] = await Promise.all([
       supa.from('prazos_producao').select('prioridade,dias_prazo'),
       supa.from('ordens_producao').select('prioridade,data_ordem_criada,status').neq('status','liberado'),
       contar('formulas_complexas_registro', [['eq','status','pendente']]),
       contar('rotulos_kanban', [['eq','status','a_comprar']]),
       contar('manipulados_nao_retirados', [['eq','status','disponivel'],['lte','validade', localDateStr(em5)],['gte','validade', hoje]]),
       ehRH ? contar('ferias_solicitacoes', [['eq','status','pendente']]) : Promise.resolve(0),
+      contar('fidelidade_pedidos', [['eq','status','pendente']]),
     ]);
     const dias = {}; (prazos||[]).forEach(p => { dias[p.prioridade] = p.dias_prazo; });
     const h0 = new Date(); h0.setHours(0,0,0,0);
@@ -1016,6 +1017,7 @@ const WIDGETS = {
       { nome:'Rótulos a comprar', n:rot, href:'rotulos.html', ruim:false },
     ];
     if(ehRH) itens.push({ nome:'Férias aguardando aprovação', n:ferias, href:'rh.html', ruim:true });
+    itens.push({ nome:'Pedidos de resgate (Cliente Fiel) aguardando', n:pedFiel, href:'cliente-fiel.html', ruim:true });
     const corpo = `<div class="hm-lista">${itens.map(i => `
       <a class="hm-item" href="${i.href}"><span class="nome">${i.nome}</span>
         ${i.n ? `<span class="badge ${i.ruim ? 'bad' : 'warn'}">${i.n}</span>` : '<span class="hm-ok">em dia</span>'}</a>`).join('')}</div>`;

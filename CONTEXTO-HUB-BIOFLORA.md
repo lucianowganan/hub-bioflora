@@ -344,3 +344,10 @@ Decisão: **sem app nativo/loja**. Caminho: responsivo por módulo + **PWA** (in
 ## 22. Resumo Semanal (migração 97)
 - `resumo-semanal.html` (`modulo.resumo`, só chefia): semana seg–dom com comparação com a anterior (setas verde/vermelha conforme o número subir ser bom ou ruim), destaques em frases, Produção, Conferência (previsto × conferido por dia), Qualidade (erros por 100 inclusões, top tipos, por pessoa vs. equipe), Pessoas/RH (ausências e banco de horas da última folha), Cliente Fiel, Uso do Hub e Alertas de agora. Padrão = última semana completa; botão imprimir/PDF.
 - Só tela por enquanto. Ideia futura: envio automático toda segunda (WhatsApp pela To Talk ou e-mail) e guardar fotografias semanais.
+
+## 23. App do Cliente Fiel para os clientes (migração 98)
+- `fiel.html` (público, `hub.farmaciabioflora.blog.br/fiel`, instalável: `manifest-fiel.webmanifest`): entra com **CPF ou telefone**, vê pontos, nível e quanto falta para o próximo, pontos vencendo, aniversário, brindes (pede pelo app), meus pedidos e histórico. Mesma identidade do Hub.
+- Segurança: anon não lê tabela; tudo por funções `fiel_*` com token de sessão (hash). Telefone em mais de um cadastro → pede CPF. Limite de tentativas.
+- Equipe: aba **Pedidos** em `cliente-fiel.html` (`cliente-fiel-pedidos.js`) com contador, aprovar/recusar/retirado; alerta "Pedidos aguardando" na Home. Aprovar baixa os pontos, cria o resgate e desconta estoque.
+- Avisos push (`sw.js` + função `fiel-push`): equipe (novo pedido) e cliente (aprovado/recusado). **Dependem das chaves VAPID** (segredos `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` + `fiel_config.vapid_public`); sem elas o app funciona e o botão de avisos fica oculto.
+- Material: `cliente-fiel-material/` (cartaz A4 com QR Code do balcão). Catálogo de brindes ainda vazio: cadastrar em Cliente Fiel → Brindes.

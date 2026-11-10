@@ -758,6 +758,7 @@ function nivelPorSaldo(saldo){
 // ============================================================
 const ABAS_CF = [
   { id:'inicio', rotulo:'Início', icone:'inicio' },
+  { id:'pedidos', rotulo:'Pedidos', icone:'presente' },
   { id:'clientes', rotulo:'Clientes', icone:'clientes' },
   { id:'aniversarios', rotulo:'Aniversários', icone:'bolo' },
   { id:'analises', rotulo:'Análises', icone:'analise' },
@@ -768,11 +769,13 @@ const ABAS_CF = [
 async function init(){
   await requireRole(['chefia','recepcao','conferencia','atendente']);
   trocarAbaCF('inicio');
+  // o script dos pedidos (cliente-fiel-pedidos.js) carrega depois deste: espera a página terminar
+  if(typeof carregarBadgePedidosCF === 'function') carregarBadgePedidosCF(); else window.addEventListener('load', () => carregarBadgePedidosCF());
 }
 
 function desenharAbasCF(aba){
   document.getElementById('cfTabs').innerHTML = ABAS_CF.map(a =>
-    `<button class="cf-tab ${a.id===aba?'active':''}" onclick="trocarAbaCF('${a.id}')">${ico(a.icone)}${a.rotulo}</button>`).join('');
+    `<button class="cf-tab ${a.id===aba?'active':''}" onclick="trocarAbaCF('${a.id}')">${ico(a.icone)}${a.rotulo}${a.id==='pedidos' && typeof pedidosPendentesCF!=='undefined' && pedidosPendentesCF ? ` <span style="background:#B4472F;color:#fff;border-radius:20px;padding:0 8px;font-size:11.5px;margin-left:4px;">${pedidosPendentesCF}</span>` : ''}</button>`).join('');
 }
 
 function trocarAbaCF(aba, opcoes){
@@ -783,6 +786,7 @@ function trocarAbaCF(aba, opcoes){
   else if(aba==='clientes') renderClientesCF();
   else if(aba==='aniversarios') renderAniversariosCF();
   else if(aba==='analises') renderAnalisesCF();
+  else if(aba==='pedidos') renderPedidosCF();
   else if(aba==='brindes') renderBrindesCF();
   else if(aba==='niveis') renderNiveisCF();
   window.scrollTo({ top:0 });
@@ -1584,6 +1588,7 @@ window.baixarPendenciasCF = baixarPendenciasCF;
 
 init();
 </script>
+<script src="cliente-fiel-pedidos.js?v=1"></script>
 <script>(function(){var s=document.createElement("script");s.src="acessibilidade.js?t="+Date.now();document.body.appendChild(s);})();</script>
 <script>(function(){var s=document.createElement("script");s.src="hub-sidebar.js?t="+Date.now();document.body.appendChild(s);})();</script>
 </body>
