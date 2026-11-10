@@ -252,7 +252,7 @@ $('btnSair').onclick = async () => { if(token) sb.rpc('fiel_sair', { p_token: to
 
 async function carregar(primeira){
   const { data, error } = await sb.rpc('fiel_painel', { p_token: token });
-  if(error){ if(primeira) mostrarLogin('Sem conexão. Tente de novo.'); return; }
+  if(error){ if(primeira) mostrarLogin('Não foi possível carregar agora. Tente entrar de novo.'); return; }
   if(!data || !data.ok){ mostrarLogin(primeira ? 'Entre de novo, por favor.' : null); return; }
   dados = data;
   clearInterval(timer); timer = setInterval(() => { if(!document.hidden && $('telaCadastro').classList.contains('oculto')) carregar(false); }, 60000);
