@@ -128,6 +128,13 @@ input:focus,select:focus{outline:none;border-color:var(--burgundy);box-shadow:0 
 .nav button{flex:1;border:0;background:none;color:#6E6258;font:700 12px 'Maven Pro',sans-serif;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:16px;cursor:pointer}
 .nav button .ico{font-size:24px}
 .nav button.on{color:var(--burgundy);background:var(--tint)}
+.brinde .img,.brinde .nome{cursor:pointer}
+.det-img{width:100%;aspect-ratio:4/3;border-radius:22px;background:var(--tint);color:var(--burgundy);display:flex;align-items:center;justify-content:center;font-size:64px;overflow:hidden;margin:2px 0 16px}
+.det-img img{width:100%;height:100%;object-fit:contain;background:#fff}
+.det-nome{font:700 26px/1.15 var(--head);letter-spacing:-.01em;margin:0 0 6px}
+.det-pts{font:700 22px var(--head);color:var(--burgundy);margin:0 0 12px}
+.det-desc{font-size:18px;line-height:1.5;color:#2a2326;margin:0 0 14px;white-space:pre-line}
+.folha.alta{max-height:92vh;overflow-y:auto}
 .fundo{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:50}
 .fundo.on{display:flex}
 .folha{background:#fff;border-radius:28px 28px 0 0;padding:24px 22px calc(26px + env(safe-area-inset-bottom));width:100%;max-width:560px}
@@ -266,6 +273,7 @@ input:focus,select:focus{outline:none;border-color:var(--burgundy);box-shadow:0 
 </div></nav>
 
 <div class="fundo" id="fundoPedir"><div class="folha"><h2 id="pdTitulo"></h2><p id="pdTxt" style="margin:0 0 6px"></p><p class="nota" style="margin:0">Os pontos ficam reservados e o brinde, separado. Eles só são descontados quando você retirar na farmácia. Dá para cancelar a reserva quando quiser.</p><button class="btn" id="pdOk">Confirmar reserva</button><button class="btn s" id="pdNao">Agora não</button></div></div>
+<div class="fundo" id="fundoDet"><div class="folha alta" id="folhaDet"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -440,7 +448,7 @@ function desenhar(){
   $('secBrindes').innerHTML = reservas + (d.brindes.length ? d.brindes.map(b => {
     const falta = b.pontos - livre, pct = Math.max(3, Math.min(100, Math.round(livre / b.pontos * 100)));
     const estado = !b.disponivel ? '<span class="chip c-cinza">Sem estoque agora</span>' : falta > 0 ? `<div class="mini"><i style="width:${pct}%"></i></div><div class="d" style="font-size:13px;color:var(--gray);margin-top:4px">Faltam ${num(falta)} pontos</div>` : PEDIDOS_ATIVOS ? `<button class="btn pq" onclick="pedir('${b.id}')">${ic('gift')}Trocar e reservar</button>` : `<span class="chip c-ok">${ic('check')} Você já pode resgatar. Peça na farmácia.</span>`;
-    return `<div class="card brinde"><div class="img">${b.imagem ? `<img src="${esc(b.imagem)}" alt="" loading="lazy">` : ic('gift')}</div><div style="flex:1;min-width:0"><div class="nome">${esc(b.nome)}</div>${b.descricao ? `<div class="desc">${esc(b.descricao)}</div>` : ''}<div class="pts">${num(b.pontos)} pontos</div>${estado}</div></div>`; }).join('') : '<div class="card vazio">Os brindes estarão aqui em breve.</div>');
+    return `<div class="card brinde"><div class="img" onclick="abrirBrinde('${b.id}')" role="button" aria-label="Ver ${esc(b.nome)}">${b.imagem ? `<img src="${esc(b.imagem)}" alt="" loading="lazy">` : ic('gift')}</div><div style="flex:1;min-width:0"><div class="nome" onclick="abrirBrinde('${b.id}')">${esc(b.nome)}</div>${b.descricao ? `<div class="desc">${esc(b.descricao)}</div>` : ''}<div class="pts">${num(b.pontos)} pontos</div>${estado}</div></div>`; }).join('') : '<div class="card vazio">Os brindes estarão aqui em breve.</div>');
 
   desenharPerfil(); prepararPush(); irPara(vista, true);
 }
@@ -495,6 +503,18 @@ $('arqFoto').onchange = async e => {
   }catch(err){ aviso('Não foi possível usar essa foto. Tente outra.'); }
 };
 $('btnTirarFoto').onclick = async () => { await sb.rpc('fiel_foto_salvar', { p_token: token, p_foto: null }); extras.foto = null; desenhar(); irPara('perfil', true); aviso('Foto removida.'); };
+
+function abrirBrinde(id){
+  const b = dados.brindes.find(x => x.id === id); if(!b) return;
+  const livre = dados.saldo - (PEDIDOS_ATIVOS ? dados.reservado : 0), falta = b.pontos - livre, pct = Math.max(3, Math.min(100, Math.round(livre / b.pontos * 100)));
+  const jaReservado = (dados.pedidos || []).some(p => p.status === 'pendente' && p.brinde === b.nome);
+  const estado = !b.disponivel ? '<span class="chip c-cinza">Sem estoque agora</span>' : falta > 0 ? `<div class="mini"><i style="width:${pct}%"></i></div><p class="nota" style="margin:6px 0 0;font-size:15px">Você tem ${num(livre)} pontos. Faltam <b>${num(falta)}</b> para este brinde.</p>` : PEDIDOS_ATIVOS ? `<button class="btn" onclick="fecharBrinde();pedir('${b.id}')">${ic('gift')}Trocar e reservar</button>` : `<span class="chip c-ok">${ic('check')} Você já pode resgatar. Peça na farmácia.</span>`;
+  $('folhaDet').innerHTML = `<div class="det-img">${b.imagem ? `<img src="${esc(b.imagem)}" alt="${esc(b.nome)}">` : ic('gift')}</div><h2 class="det-nome">${esc(b.nome)}</h2><div class="det-pts">${num(b.pontos)} pontos</div>${b.descricao ? `<p class="det-desc">${esc(b.descricao)}</p>` : ''}${jaReservado ? '<span class="chip c-pend">Você já tem uma reserva deste brinde</span>' : estado}<button class="btn s" onclick="fecharBrinde()">Fechar</button>`;
+  $('fundoDet').classList.add('on');
+}
+function fecharBrinde(){ $('fundoDet').classList.remove('on'); }
+window.abrirBrinde = abrirBrinde; window.fecharBrinde = fecharBrinde;
+$('fundoDet').addEventListener('click', e => { if(e.target.id === 'fundoDet') fecharBrinde(); });
 
 // ---------- pedidos (desligados por enquanto: PEDIDOS_ATIVOS) ----------
 function pedir(id){
