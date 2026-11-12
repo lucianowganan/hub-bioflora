@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Roleta Black November — Bioflora</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#12050A">
+<link rel="icon" type="image/svg+xml" href="favicon.svg"><link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800;900&family=Maven+Pro:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#12050A;--neon:#FF2E6E;--creme:#FBEFE8;--vinho:#8B1A3A;--txt2:#EBCBD4;--f:"Outfit",system-ui,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--creme);font-family:"Maven Pro",system-ui,sans-serif;overflow:hidden;touch-action:manipulation}
+body{background-image:radial-gradient(ellipse at 50% 0,rgba(255,46,110,.28),transparent 60%)}
+.app{height:100%;display:flex;flex-direction:column;padding:max(10px,env(safe-area-inset-top)) 18px max(10px,env(safe-area-inset-bottom))}
+.topo{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{height:38px;filter:brightness(0) invert(1)}
+.abas{display:flex;gap:8px}
+.aba{border:2px solid rgba(255,160,190,.4);background:transparent;color:var(--creme);border-radius:30px;padding:9px 20px;font:700 15px var(--f);cursor:pointer}
+.aba.on{background:var(--neon);border-color:var(--neon);color:#fff}
+.ic{border:2px solid rgba(255,160,190,.35);background:rgba(14,4,8,.6);color:var(--creme);width:44px;height:44px;border-radius:50%;font:700 18px var(--f);cursor:pointer}
+.tela{flex:1;min-height:0;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.tela.on{display:flex}
+h1{font:900 clamp(30px,5.5vh,56px)/1 var(--f);letter-spacing:-.04em;margin:6px 0 0}
+h1 em{font-style:normal;color:var(--neon);text-shadow:0 0 14px var(--neon)}
+.sub{color:var(--txt2);font-size:clamp(14px,2.2vh,19px);margin:4px 0 0}
+.palco{position:relative;margin:10px 0}
+canvas{display:block}
+.pino{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;border-left:20px solid transparent;border-right:20px solid transparent;border-top:44px solid var(--creme);filter:drop-shadow(0 0 8px var(--neon));z-index:3}
+.hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:22%;aspect-ratio:1;border-radius:50%;border:0;background:var(--neon);color:#fff;font:900 clamp(16px,3vh,30px) var(--f);box-shadow:0 0 0 6px var(--bg),0 0 0 9px var(--creme),0 0 30px var(--neon);cursor:pointer;z-index:2}
+.hub:disabled{filter:grayscale(.6);opacity:.8}
+.pill{display:inline-block;font-family:var(--f);font-weight:800;padding:.3em .9em;border-radius:99px;background:var(--creme);color:var(--vinho);box-shadow:.1em .14em 0 var(--neon)}
+.modal{position:fixed;inset:0;background:rgba(5,1,3,.86);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:30;padding:20px}
+.modal.on{display:flex}
+.card{width:100%;max-width:560px;max-height:94vh;overflow:auto;background:linear-gradient(180deg,#2A0C14,#12050A);border:2px solid rgba(255,120,160,.55);border-radius:28px;padding:26px 24px;box-shadow:0 0 50px rgba(255,46,110,.4);text-align:center}
+.card h2{font:900 clamp(26px,5vh,44px)/1.05 var(--f);letter-spacing:-.03em;margin:6px 0 10px}
+.premio{font:900 clamp(34px,7vh,62px)/1 var(--f);letter-spacing:-.04em;color:var(--creme);text-shadow:0 0 18px var(--neon);margin:10px 0}
+.cod{display:inline-block;font:900 34px var(--f);letter-spacing:.12em;border:3px dashed var(--neon);border-radius:16px;padding:8px 22px;margin:6px 0 4px}
+input[type=text],input[type=number],textarea{width:100%;font:600 18px "Maven Pro",sans-serif;padding:13px 16px;border-radius:16px;border:2px solid rgba(255,160,190,.4);background:#0C0306;color:var(--creme);user-select:text;-webkit-user-select:text}
+input:focus,textarea:focus{outline:none;border-color:var(--neon)}
+textarea{min-height:200px;resize:vertical}
+.btn{display:block;width:100%;border:0;border-radius:40px;background:var(--neon);color:#fff;font:800 20px var(--f);padding:15px;cursor:pointer;margin-top:12px;box-shadow:0 0 22px rgba(255,46,110,.4)}
+.btn.s{background:transparent;border:2px solid rgba(255,160,190,.5);box-shadow:none;color:var(--creme);font-size:16px;padding:11px}
+.btn.mini{display:inline-block;width:auto;padding:9px 18px;font-size:14px;margin:4px;box-shadow:none}
+.lbl{display:block;text-align:left;color:var(--txt2);font-size:13px;margin:10px 0 4px;font-weight:700}
+.linha{display:grid;grid-template-columns:1fr 70px 80px 40px;gap:6px;align-items:center;margin-bottom:6px}
+.linha input{padding:9px 10px;font-size:15px;border-radius:12px}
+.linha button{border:0;background:#3A1420;color:var(--creme);height:38px;border-radius:12px;font-size:18px;cursor:pointer}
+.cab{display:grid;grid-template-columns:1fr 70px 80px 40px;gap:6px;color:var(--txt2);font-size:12px;text-align:left;margin-bottom:4px}
+.hist{max-height:30vh;overflow:auto;text-align:left;margin-top:10px;font-size:14px}
+.hist div{display:flex;justify-content:space-between;gap:8px;padding:7px 4px;border-bottom:1px solid rgba(255,160,190,.15)}
+.hist small{color:var(--txt2)}
+.ganhador{font:900 clamp(40px,12vh,120px)/1 var(--f);letter-spacing:-.04em;color:var(--creme);text-shadow:0 0 24px var(--neon),0 0 60px var(--neon);word-break:break-all;margin:14px 0;min-height:1.1em}
+.pool{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:100%;max-width:1000px;align-items:start}
+@media(max-width:760px){.pool{grid-template-columns:1fr}}
+.col{background:rgba(14,4,8,.75);border:1px solid rgba(255,160,190,.25);border-radius:22px;padding:16px;text-align:left}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
+.rodape{text-align:center;color:var(--txt2);font-size:12px;opacity:.8;padding-top:4px}
+.tag{display:inline-block;background:#3A1420;border-radius:20px;padding:3px 12px;font-size:12px;margin:2px;color:var(--txt2)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topo">
+    <img class="logo" id="logo" src="black/img/logo.png" alt="Bioflora" title="Segure 2 segundos para abrir as configurações">
+    <div class="abas"><button class="aba on" data-t="roleta">Roleta</button><button class="aba" data-t="sorteio">Sorteio final</button></div>
+    <div style="display:flex;gap:8px"><button class="ic" id="bSom" title="Som">♪</button><button class="ic" id="bTela" title="Tela cheia">⛶</button></div>
+  </div>
+
+  <section class="tela on" id="tRoleta">
+    <h1 id="titulo">Gire e <em>ganhe</em></h1>
+    <p class="sub" id="subtitulo">Black November Bioflora · toque no centro para girar</p>
+    <div class="palco" id="palco"><div class="pino"></div><canvas id="roda"></canvas><button class="hub" id="bGirar">GIRAR</button></div>
+    <div class="rodape" id="rodape"></div>
+  </section>
+
+  <section class="tela" id="tSorteio">
+    <h1>Sorteio <em>final</em></h1>
+    <p class="sub">Quem comprou na live concorre a um combo extra</p>
+    <div class="pool">
+      <div class="col">
+        <label class="lbl" style="margin-top:0">Participantes (um @ ou nome por linha)</label>
+        <textarea id="lista" placeholder="@maria.silva&#10;@joao&#10;..."></textarea>
+        <div class="sub" id="qtdPart" style="margin-top:6px"></div>
+      </div>
+      <div class="col" style="text-align:center">
+        <div class="sub">Ganhador</div>
+        <div class="ganhador" id="ganhador">—</div>
+        <button class="btn" id="bSortear">SORTEAR</button>
+        <div class="hist" id="ganhadores"></div>
+        <button class="btn s mini" id="bLimparGan">Limpar ganhadores</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- resultado -->
+<div class="modal" id="mRes"><div class="card">
+  <div class="pill" id="resTit">Você ganhou</div>
+  <div class="premio" id="resPremio"></div>
+  <div id="resCodBox"><div class="cod" id="resCod"></div><div class="sub">Mostre este código no caixa</div></div>
+  <div id="resCad">
+    <label class="lbl">Nome (opcional)</label><input type="text" id="resNome" autocomplete="off">
+    <label class="lbl">@ do Instagram ou WhatsApp (opcional)</label><input type="text" id="resContato" autocomplete="off" autocapitalize="none">
+  </div>
+  <button class="btn" id="resOk">Pronto</button>
+</div></div>
+
+<!-- configurações -->
+<div class="modal" id="mCfg"><div class="card" style="max-width:680px;text-align:left">
+  <h2 style="text-align:center">Configurações</h2>
+  <label class="lbl">Título da campanha</label><input type="text" id="cfTitulo">
+  <label class="lbl">Senha para abrir esta tela (4 números, opcional)</label><input type="text" id="cfPin" inputmode="numeric" maxlength="4" placeholder="vazio = sem senha">
+  <label class="lbl">Prêmios (chance = peso; quantidade vazia = ilimitado)</label>
+  <div class="cab"><span>Prêmio</span><span>Chance</span><span>Qtde</span><span></span></div>
+  <div id="cfPremios"></div>
+  <button class="btn s mini" id="cfAdd">+ Adicionar prêmio</button>
+  <div class="sub" style="text-align:left;margin-top:10px">Para uma fatia sem prêmio, comece o nome com <b>(vazio)</b>. Ex.: (vazio) Tente de novo</div>
+  <div class="sub" id="cfSoma" style="text-align:left"></div>
+  <div class="hist" id="cfHist"></div>
+  <div style="text-align:center;margin-top:8px">
+    <button class="btn s mini" id="cfCsv">Baixar giros (planilha)</button>
+    <button class="btn s mini" id="cfZera">Zerar giros e quantidades</button>
+  </div>
+  <button class="btn" id="cfOk">Salvar e fechar</button>
+</div></div>
+<canvas id="fx"></canvas>
+
+<script>
+const KEY = 'roleta_cfg_v2', KEYH = 'roleta_hist_v2', KEYG = 'roleta_gan_v2', KEYL = 'roleta_lista_v2';
+const CORES = ['#FF2E6E','#8B1A3A','#C9195A','#5E1027','#E8478A','#A3173F','#FF6B9A','#7A1230'];
+const PADRAO = {
+  titulo: 'Gire e ganhe',
+  pin: '',
+  premios: [
+    { nome: '10% de desconto', peso: 20, qtd: null },
+    { nome: 'Compre 1 e leve o 2º com 50%', peso: 15, qtd: null },
+    { nome: 'Brinde surpresa', peso: 15, qtd: 30 },
+    { nome: 'Vale R$ 20', peso: 8, qtd: 10 },
+    { nome: 'Pontos Cliente Fiel em dobro', peso: 12, qtd: null },
+    { nome: '(vazio) Tente de novo', peso: 20, qtd: null },
+    { nome: '5% de desconto', peso: 25, qtd: null },
+    { nome: 'Vale R$ 10', peso: 10, qtd: 20 },
+  ]
+};
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ler = (k, d) => { try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } };
+const gravar = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+let cfg = ler(KEY, null) || JSON.parse(JSON.stringify(PADRAO));
+let hist = ler(KEYH, []), ganhadores = ler(KEYG, []);
+let rot = 0, girando = false, som = true, ult = null;
+
+const semPremio = p => /^\(vazio\)/i.test(p.nome);
+const rotulo = p => p.nome.replace(/^\(vazio\)\s*/i, '');
+const disponiveis = () => cfg.premios.filter(p => p.peso > 0 && (p.qtd == null || p.qtd > 0));
+function aleat(){ const a = new Uint32Array(1); (window.crypto || window.msCrypto).getRandomValues(a); return a[0] / 4294967296; }
+
+/* ---------- roda ---------- */
+const cv = $('roda'), ctx = cv.getContext('2d');
+function tamanho(){ const h = $('tRoleta').clientHeight - 150, w = $('tRoleta').clientWidth - 20; return Math.max(240, Math.min(h, w, 720)); }
+function desenhar(){
+  const S = tamanho(), dpr = window.devicePixelRatio || 1;
+  cv.style.width = S + 'px'; cv.style.height = S + 'px'; cv.width = S * dpr; cv.height = S * dpr;
+  $('palco').style.width = S + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, S, S);
+  const P = disponiveis(), n = P.length, R = S / 2 - 8, cx = S / 2, cy = S / 2;
+  if(!n){ ctx.fillStyle = '#FBEFE8'; ctx.font = '700 22px Outfit,sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Prêmios esgotados', cx, cy); return; }
+  const ang = 2 * Math.PI / n;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot);
+  ctx.shadowColor = '#FF2E6E'; ctx.shadowBlur = 24; ctx.beginPath(); ctx.arc(0, 0, R + 4, 0, 7); ctx.fillStyle = '#FBEFE8'; ctx.fill(); ctx.shadowBlur = 0;
+  P.forEach((p, i) => {
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, i * ang - Math.PI / 2 - ang / 2, i * ang - Math.PI / 2 + ang / 2); ctx.closePath();
+    ctx.fillStyle = semPremio(p) ? '#2B0D15' : CORES[i % CORES.length]; ctx.fill();
+    ctx.strokeStyle = '#FBEFE8'; ctx.lineWidth = 3; ctx.stroke();
+    const txt = rotulo(p), fs = Math.max(13, Math.min(30, R / (n > 8 ? 11 : 9)));
+    ctx.font = `800 ${fs}px Outfit,sans-serif`;
+    const palavras = txt.split(' '), linhas = []; let atual = '';
+    palavras.forEach(w => { if((atual + ' ' + w).trim().length > (n > 8 ? 12 : 15) && atual){ linhas.push(atual); atual = w; } else atual = (atual + ' ' + w).trim(); });
+    linhas.push(atual);
+    // texto ao longo do raio (do centro para a borda)
+    ctx.save(); ctx.rotate(i * ang - Math.PI / 2); ctx.textAlign = 'right'; ctx.fillStyle = '#fff'; ctx.font = `800 ${fs}px Outfit,sans-serif`;
+    const disp = R - 18 - R * 0.30;   // espaço do botão central até a borda
+    const larg = Math.max(...linhas.map(l => ctx.measureText(l).width));
+    const f2 = larg > disp ? fs * disp / larg : fs; ctx.font = `800 ${f2}px Outfit,sans-serif`;
+    const lh = f2 * 1.05, y0 = -((linhas.length - 1) * lh) / 2 + f2 * 0.35;
+    linhas.forEach((l, k) => ctx.fillText(l, R - 18, y0 + k * lh));
+    ctx.restore();
+  });
+  ctx.restore();
+  // pinos decorativos
+  for(let i = 0; i < n * 2; i++){ const a = rot + i * Math.PI / n - Math.PI / 2; ctx.beginPath(); ctx.arc(cx + Math.cos(a) * (R + 2), cy + Math.sin(a) * (R + 2), 4, 0, 7); ctx.fillStyle = '#FF2E6E'; ctx.fill(); }
+}
+
+/* ---------- som ---------- */
+let ac = null;
+function bip(freq, dur, vol){ if(!som) return; try{ ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = freq; o.type = 'triangle'; g.gain.value = vol || .06; o.connect(g); g.connect(ac.destination); o.start(); g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + dur); o.stop(ac.currentTime + dur); }catch(e){} }
+$('bSom').onclick = () => { som = !som; $('bSom').style.opacity = som ? 1 : .4; };
+$('bTela').onclick = () => { const d = document.documentElement; if(!document.fullscreenElement) (d.requestFullscreen || d.webkitRequestFullscreen || function(){}).call(d); else (document.exitFullscreen || document.webkitExitFullscreen).call(document); };
+
+/* ---------- giro ---------- */
+function sortear(){
+  const P = disponiveis(); if(!P.length) return null;
+  const total = P.reduce((n, p) => n + p.peso, 0); let r = aleat() * total;
+  for(let i = 0; i < P.length; i++){ r -= P[i].peso; if(r <= 0) return i; }
+  return P.length - 1;
+}
+function girar(){
+  if(girando) return;
+  const P = disponiveis(); if(!P.length){ return; }
+  const idx = sortear(), n = P.length, ang = 2 * Math.PI / n;
+  // fatia idx está centrada em idx*ang a partir do topo; queremos esse ponto sob o pino (topo)
+  const alvo = (2 * Math.PI - idx * ang) + (aleat() - .5) * ang * .7;
+  const atual = ((rot % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  let delta = alvo - atual; while(delta < 0) delta += 2 * Math.PI;
+  const total = delta + 2 * Math.PI * (6 + Math.floor(aleat() * 3)), ini = rot, dur = 6000, t0 = performance.now();
+  girando = true; $('bGirar').disabled = true; let fatiaAnt = -1;
+  (function passo(t){
+    const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 4);
+    rot = ini + total * e; desenhar();
+    const f = Math.floor((((-rot) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / ang + .5) % n;
+    if(f !== fatiaAnt){ if(fatiaAnt !== -1) bip(700 + (1 - k) * 400, .05, .05); fatiaAnt = f; }
+    if(k < 1) requestAnimationFrame(passo); else { girando = false; $('bGirar').disabled = false; resultado(P[idx]); }
+  })(t0);
+}
+$('bGirar').onclick = girar;
+
+function codigo(){ const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s = 'BN-'; for(let i = 0; i < 4; i++) s += c[Math.floor(aleat() * c.length)]; return s; }
+function resultado(p){
+  ult = { t: new Date().toISOString(), premio: rotulo(p), vazio: semPremio(p), codigo: semPremio(p) ? '' : codigo(), nome: '', contato: '', entregue: false };
+  if(p.qtd != null && !semPremio(p)) p.qtd--;
+  if(!semPremio(p)){ hist.unshift(ult); gravar(KEYH, hist); }
+  gravar(KEY, cfg); desenhar(); atualizarRodape();
+  $('resTit').textContent = ult.vazio ? 'Quase!' : 'Você ganhou';
+  $('resPremio').textContent = ult.vazio ? 'Tente de novo' : ult.premio;
+  $('resCodBox').style.display = ult.vazio ? 'none' : 'block'; $('resCad').style.display = ult.vazio ? 'none' : 'block';
+  $('resCod').textContent = ult.codigo; $('resNome').value = ''; $('resContato').value = '';
+  $('mRes').classList.add('on');
+  if(!ult.vazio){ confete(); [660, 880, 1100].forEach((f, i) => setTimeout(() => bip(f, .25, .09), i * 140)); }
+}
+$('resOk').onclick = () => {
+  if(ult && !ult.vazio){ ult.nome = $('resNome').value.trim(); ult.contato = $('resContato').value.trim(); gravar(KEYH, hist); }
+  $('mRes').classList.remove('on');
+};
+
+/* ---------- confete ---------- */
+const fx = $('fx'), fc = fx.getContext('2d');
+function confete(){
+  fx.width = innerWidth; fx.height = innerHeight;
+  const ps = Array.from({ length: 140 }, () => ({ x: innerWidth / 2, y: innerHeight * .45, vx: (Math.random() - .5) * 16, vy: -Math.random() * 16 - 4, c: CORES[Math.floor(Math.random() * CORES.length)], r: 4 + Math.random() * 6, a: Math.random() * 6 }));
+  let f = 0; (function q(){ fc.clearRect(0, 0, fx.width, fx.height); ps.forEach(p => { p.vy += .35; p.x += p.vx; p.y += p.vy; p.a += .2; fc.save(); fc.translate(p.x, p.y); fc.rotate(p.a); fc.fillStyle = p.c; fc.fillRect(-p.r, -p.r / 2, p.r * 2, p.r); fc.restore(); }); if(++f < 140) requestAnimationFrame(q); else fc.clearRect(0, 0, fx.width, fx.height); })();
+}
+
+function atualizarRodape(){
+  const P = cfg.premios.filter(p => p.qtd != null && !semPremio(p));
+  $('rodape').innerHTML = P.length ? P.map(p => `<span class="tag">${esc(rotulo(p))}: ${p.qtd} restantes</span>`).join('') : '';
+  $('titulo').innerHTML = esc(cfg.titulo).replace(/(ganhe)\b/i, '<em>$1</em>');
+}
+
+/* ---------- abas ---------- */
+document.querySelectorAll('.aba').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.aba').forEach(x => x.classList.toggle('on', x === b));
+  $('tRoleta').classList.toggle('on', b.dataset.t === 'roleta'); $('tSorteio').classList.toggle('on', b.dataset.t === 'sorteio');
+  if(b.dataset.t === 'roleta') desenhar();
+});
+
+/* ---------- sorteio final ---------- */
+function participantes(){ return [...new Set($('lista').value.split('\n').map(s => s.trim()).filter(Boolean))].filter(n => !ganhadores.includes(n)); }
+function atualizaPool(){ gravar(KEYL, $('lista').value); $('qtdPart').textContent = participantes().length + ' participante(s) no sorteio'; }
+function desenhaGan(){ $('ganhadores').innerHTML = ganhadores.length ? ganhadores.map((g, i) => `<div><span>${i + 1}º · ${esc(g)}</span></div>`).join('') : ''; }
+$('lista').oninput = atualizaPool;
+$('bSortear').onclick = () => {
+  const P = participantes(); if(!P.length){ $('ganhador').textContent = 'Sem participantes'; return; }
+  const win = P[Math.floor(aleat() * P.length)]; $('bSortear').disabled = true; $('ganhador').style.fontSize = '';
+  let t = 0, passo = 0; const dur = 4200, t0 = performance.now();
+  (function q(now){
+    const k = Math.min(1, (now - t0) / dur);
+    if(now - t >= 60 + k * k * 380){ t = now; $('ganhador').textContent = P[Math.floor(Math.random() * P.length)]; bip(500 + Math.random() * 300, .04, .04); }
+    if(k < 1) requestAnimationFrame(q); else { $('ganhador').textContent = win; ganhadores.push(win); gravar(KEYG, ganhadores); desenhaGan(); atualizaPool(); confete(); [660, 880, 1100, 1320].forEach((f, i) => setTimeout(() => bip(f, .3, .1), i * 150)); $('bSortear').disabled = false; }
+  })(t0);
+};
+$('bLimparGan').onclick = () => { if(confirm('Limpar a lista de ganhadores?')){ ganhadores = []; gravar(KEYG, ganhadores); desenhaGan(); atualizaPool(); $('ganhador').textContent = '—'; } };
+
+/* ---------- configurações (segure a logo 2 s) ---------- */
+let timerLogo = null;
+['pointerdown'].forEach(ev => $('logo').addEventListener(ev, () => { timerLogo = setTimeout(abrirCfg, 1800); }));
+['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('logo').addEventListener(ev, () => clearTimeout(timerLogo)));
+function abrirCfg(){
+  if(cfg.pin){ const t = prompt('Senha das configurações:'); if(t !== cfg.pin) return; }
+  $('cfTitulo').value = cfg.titulo; $('cfPin').value = cfg.pin || ''; desenhaPremiosCfg(); desenhaHistCfg(); $('mCfg').classList.add('on');
+}
+function desenhaPremiosCfg(){
+  $('cfPremios').innerHTML = cfg.premios.map((p, i) => `<div class="linha"><input type="text" value="${esc(p.nome)}" data-i="${i}" data-k="nome"><input type="number" min="0" value="${p.peso}" data-i="${i}" data-k="peso"><input type="number" min="0" value="${p.qtd == null ? '' : p.qtd}" placeholder="∞" data-i="${i}" data-k="qtd"><button data-rm="${i}" aria-label="Remover">×</button></div>`).join('');
+  $('cfPremios').querySelectorAll('input').forEach(el => el.oninput = () => { const p = cfg.premios[+el.dataset.i], k = el.dataset.k; p[k] = k === 'nome' ? el.value : (el.value === '' ? (k === 'qtd' ? null : 0) : Math.max(0, parseInt(el.value, 10) || 0)); somaCfg(); });
+  $('cfPremios').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { cfg.premios.splice(+b.dataset.rm, 1); desenhaPremiosCfg(); });
+  somaCfg();
+}
+function somaCfg(){ const P = cfg.premios.filter(p => p.peso > 0), t = P.reduce((n, p) => n + p.peso, 0); $('cfSoma').innerHTML = t ? P.map(p => `${esc(rotulo(p))}: <b>${(p.peso / t * 100).toFixed(0)}%</b>`).join(' · ') : 'Defina ao menos um prêmio com chance.'; }
+$('cfAdd').onclick = () => { if(cfg.premios.length >= 12){ alert('No máximo 12 prêmios.'); return; } cfg.premios.push({ nome: 'Novo prêmio', peso: 10, qtd: null }); desenhaPremiosCfg(); };
+function desenhaHistCfg(){ $('cfHist').innerHTML = hist.length ? '<b style="font-size:13px;color:var(--txt2)">Últimos prêmios</b>' + hist.slice(0, 40).map((h, i) => `<div><span>${esc(h.codigo)} · ${esc(h.premio)}<br><small>${new Date(h.t).toLocaleString('pt-BR')}${h.nome ? ' · ' + esc(h.nome) : ''}${h.contato ? ' · ' + esc(h.contato) : ''}</small></span><button class="btn s mini" data-e="${i}">${h.entregue ? 'Entregue ✓' : 'Marcar entregue'}</button></div>`).join('') : '';
+  $('cfHist').querySelectorAll('[data-e]').forEach(b => b.onclick = () => { const h = hist[+b.dataset.e]; h.entregue = !h.entregue; gravar(KEYH, hist); desenhaHistCfg(); }); }
+$('cfOk').onclick = () => { cfg.titulo = $('cfTitulo').value.trim() || PADRAO.titulo; cfg.pin = $('cfPin').value.replace(/\D/g, '').slice(0, 4); gravar(KEY, cfg); $('mCfg').classList.remove('on'); atualizarRodape(); desenhar(); };
+$('cfZera').onclick = () => { if(!confirm('Zerar o histórico de giros e voltar as quantidades dos prêmios ao padrão?')) return; hist = []; gravar(KEYH, hist); const t = cfg.titulo, pin = cfg.pin; cfg = JSON.parse(JSON.stringify(PADRAO)); cfg.titulo = t; cfg.pin = pin; gravar(KEY, cfg); desenhaPremiosCfg(); desenhaHistCfg(); atualizarRodape(); desenhar(); };
+$('cfCsv').onclick = () => { const c = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; const L = [['Data','Código','Prêmio','Nome','Contato','Entregue'].map(c).join(';')].concat(hist.map(h => [new Date(h.t).toLocaleString('pt-BR'), h.codigo, h.premio, h.nome, h.contato, h.entregue ? 'sim' : 'não'].map(c).join(';')));
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + L.join('\r\n')], { type: 'text/csv;charset=utf-8' })); a.download = 'roleta-giros.csv'; a.click(); };
+
+$('lista').value = ler(KEYL, '') || ''; if(typeof $('lista').value !== 'string') $('lista').value = '';
+atualizaPool(); desenhaGan(); atualizarRodape(); desenhar();
+addEventListener('resize', desenhar);
+</script>
+</body>
+</html>
