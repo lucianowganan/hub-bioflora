@@ -405,6 +405,7 @@ const SIDE_MODULOS = [
   { href:'vendas-yampi.html', icone:'vendas', label:'Vendas (Yampi)', perm:'modulo.vendas' },
   { href:'email-marketing.html', icone:'email', label:'Email Marketing', perm:'modulo.email_marketing' },
   { href:'instagram.html', icone:'instagram', label:'Instagram', perm:'modulo.instagram' },
+  { href:'pedidos-live.html', icone:'prancheta', label:'Pedidos da Live', perm:'modulo.pedidos_live' },
   { href:'vet-contatos.html', icone:'prancheta', label:'Contatos Veterinários', perm:'modulo.vet' },
   { href:'embalagens.html', icone:'caixa', label:'Controle de Embalagens', perm:'modulo.embalagens' },
   { href:'conferencia-formulas.html', icone:'prancheta', label:'Conferência de Fórmulas', perm:'modulo.conferencia' },
@@ -769,6 +770,14 @@ const MODULOS_HOME = [
   "titulo": "Email Marketing",
   "desc": "Dispara campanha pra base do Cliente Fiel, via Brevo.",
   "icone": "email",
+  "grupo": "Comercial e marketing"
+ },
+ {
+  "href": "pedidos-live.html",
+  "perm": "modulo.pedidos_live",
+  "titulo": "Pedidos da Live",
+  "desc": "Anote o @ do Instagram e o pedido durante a live; a equipe chama no dia seguinte.",
+  "icone": "prancheta",
   "grupo": "Comercial e marketing"
  },
  {
@@ -1164,7 +1173,7 @@ async function renderWidgets(papel, perfil){
 // ---------- Módulos por área, com busca ----------
 const ORDEM_MODULOS_HOME = ['producao','controle-producao','formulas-complexas','reaproveitamento','rotulos','embalagens','conferencia-formulas',
   'erros','inclusoes','meus-erros','rh','tarefas','calendario-interno','chat',
-  'cliente-fiel','vendas-yampi','email-marketing','instagram','vet-contatos','calendario-editorial','visitas-medicas','wanessia','admin','cargos','resumo-semanal','rastreabilidade'];
+  'cliente-fiel','vendas-yampi','email-marketing','instagram','vet-contatos','calendario-editorial','visitas-medicas','wanessia','admin','cargos','resumo-semanal','rastreabilidade','pedidos-live'];
 function renderModulosHome(temPerm){
   const alvo = document.getElementById('modules');
   const pos = (m) => { const i = ORDEM_MODULOS_HOME.indexOf(m.href.replace('.html','')); return i < 0 ? 99 : i; };

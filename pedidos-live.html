@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pedidos da Live — Hub Bioflora</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"><link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#8B1A3A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<style>
+:root{--burgundy:#8B1A3A;--tint:#F7E9EE;--ink:#111;--paper:#F4EFEC;--line:#D9CFD2;--gray:#4A4245;--good:#2F7A5F;--good-tint:#E6F2EC;--bad:#B4472F;--bad-tint:#FBEBE6;--warn:#8F6210;--warn-tint:#FBF1E0;--headfont:'Space Grotesk','Maven Pro',sans-serif;--sombra:0 4px 18px rgba(94,16,39,.08)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1250px;margin:0 auto;padding:26px 24px 90px}
+h1{font:600 26px var(--headfont);letter-spacing:-.02em;margin:0 0 2px}
+.sub{color:var(--gray);font-size:14px;margin:0 0 16px}
+.cols{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr);gap:18px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.bloco{background:#fff;border-radius:22px;box-shadow:var(--sombra);padding:18px 20px;margin-bottom:16px}
+.bloco h2{font:600 18px var(--headfont);margin:0 0 10px}
+label{display:block;font-weight:700;font-size:14px;margin:0 0 6px}
+input[type=text],textarea,select{width:100%;font:600 20px 'Maven Pro',sans-serif;padding:14px 16px;border:2px solid var(--line);border-radius:16px;background:#fff;color:var(--ink)}
+textarea{font-size:17px;min-height:70px;resize:vertical}
+input:focus,textarea:focus{outline:none;border-color:var(--burgundy);box-shadow:0 0 0 4px rgba(139,26,58,.14)}
+.arroba{position:relative}.arroba span{position:absolute;left:16px;top:50%;transform:translateY(-50%);font:700 22px 'Maven Pro';color:var(--burgundy)}
+.arroba input{padding-left:40px}
+.abas{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.aba{border:0;border-radius:30px;padding:10px 18px;font:700 14px 'Maven Pro';background:#EFE8EA;color:var(--gray);cursor:pointer}
+.aba.on{background:var(--burgundy);color:#fff}
+.busca{margin-bottom:12px}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.prod{position:relative;border:2px solid var(--line);border-radius:18px;background:#fff;padding:10px 8px 10px;text-align:center;cursor:pointer;user-select:none;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px}
+.prod img{width:72px;height:72px;object-fit:contain}
+.prod .ph{width:72px;height:72px;border-radius:14px;background:var(--tint);color:var(--burgundy);display:flex;align-items:center;justify-content:center;font:700 22px var(--headfont)}
+.prod b{font:700 13.5px/1.2 'Maven Pro'}
+.prod small{font-size:12px;color:var(--gray)}
+.prod.on{border-color:var(--burgundy);background:var(--tint)}
+.prod .q{position:absolute;top:-8px;right:-8px;min-width:30px;height:30px;border-radius:16px;background:var(--burgundy);color:#fff;font:700 15px 'Maven Pro';display:none;align-items:center;justify-content:center;padding:0 8px}
+.prod.on .q{display:flex}
+.prod.reserva{border-style:dashed;border-color:var(--warn);background:var(--warn-tint)}
+.prod.reserva.on{background:#F6E3BC}
+.sel{display:flex;flex-wrap:wrap;gap:8px;min-height:38px;margin-bottom:12px}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--tint);color:var(--burgundy);border-radius:30px;padding:7px 8px 7px 14px;font-weight:700;font-size:14px}
+.chip button{border:0;background:#fff;color:var(--burgundy);width:26px;height:26px;border-radius:50%;font:700 16px 'Maven Pro';cursor:pointer;line-height:1}
+.btn{display:block;width:100%;border:0;border-radius:40px;background:var(--burgundy);color:#fff;font:700 19px var(--headfont);padding:17px;cursor:pointer;margin-top:12px;box-shadow:0 6px 16px rgba(139,26,58,.25)}
+.btn:disabled{opacity:.5}
+.btn.s{background:#fff;color:var(--burgundy);border:2px solid var(--burgundy);box-shadow:none;font-size:15px;padding:11px;width:auto;display:inline-block;margin:0}
+.aviso{border-radius:14px;padding:10px 14px;font-weight:600;margin-top:10px;display:none}.aviso.ok{display:block;background:var(--good-tint);color:var(--good)}.aviso.er{display:block;background:var(--bad-tint);color:var(--bad)}
+.topo{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}
+.kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.kpi{background:#fff;border-radius:16px;padding:8px 16px;box-shadow:var(--sombra)}.kpi b{font:700 22px var(--headfont);color:var(--burgundy);display:block;line-height:1.1}.kpi span{font-size:12px;color:var(--gray)}
+.ped{border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px;background:#fff}
+.ped .t{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.ped .ig{font:700 18px var(--headfont);color:var(--burgundy);word-break:break-all}
+.ped .h{font-size:12px;color:var(--gray)}
+.ped ul{margin:6px 0;padding-left:18px;font-size:14.5px}
+.ped .ob{font-size:13.5px;color:var(--gray);background:#F8F4F5;border-radius:10px;padding:6px 10px;margin:4px 0}
+.st{display:inline-block;border-radius:20px;padding:3px 12px;font:700 12px 'Maven Pro'}
+.st.novo{background:var(--warn-tint);color:var(--warn)}.st.contatado{background:#E4EEF9;color:#0B5A99}.st.pago{background:var(--good-tint);color:var(--good)}.st.entregue{background:#EFE8EA;color:var(--gray)}.st.cancelado{background:var(--bad-tint);color:var(--bad)}
+.acoes{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.acoes button{border:0;border-radius:20px;padding:7px 12px;font:700 12.5px 'Maven Pro';background:#EFE8EA;color:var(--ink);cursor:pointer}
+.filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.filtros button{border:0;border-radius:20px;padding:7px 13px;font:700 12.5px 'Maven Pro';background:#EFE8EA;color:var(--gray);cursor:pointer}.filtros button.on{background:var(--ink);color:#fff}
+.vazio{color:var(--gray);text-align:center;padding:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topo"><div><h1>Pedidos da Live</h1><p class="sub" style="margin:0">Anote o @ e o pedido. Amanhã a equipe chama no WhatsApp.</p></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select id="liveNome" style="font-size:15px;padding:9px 14px;width:auto;border-radius:30px"><option>Live Black November</option></select><button class="btn s" id="btnNovaLive">Nova live</button><button class="btn s" id="btnCsv">Baixar planilha</button></div></div>
+  <div class="cols">
+    <div>
+      <div class="bloco">
+        <label for="ig">Instagram da pessoa</label>
+        <div class="arroba"><span>@</span><input type="text" id="ig" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="usuario"></div>
+      </div>
+      <div class="bloco">
+        <h2>Pedido</h2>
+        <div class="sel" id="sel"><span class="vazio" style="padding:6px 0">Toque nos produtos para adicionar.</span></div>
+        <div class="abas" id="abas"></div>
+        <input type="text" class="busca" id="busca" placeholder="Buscar produto ou combo" style="font-size:16px;padding:11px 14px">
+        <div class="grade" id="grade"></div>
+      </div>
+      <div class="bloco">
+        <label for="obs">Observação</label>
+        <textarea id="obs" placeholder="Ex.: quer retirar, prefere entrega, pagamento pelo Pix..."></textarea>
+        <div class="aviso" id="msg"></div>
+        <button class="btn" id="btnSalvar">Salvar pedido</button>
+      </div>
+    </div>
+    <div>
+      <div class="bloco">
+        <h2>Pedidos anotados</h2>
+        <div class="kpis"><div class="kpi"><b id="kTot">0</b><span>pedidos</span></div><div class="kpi"><b id="kNovo">0</b><span>para chamar</span></div><div class="kpi"><b id="kRes">0</b><span>reservas GHK-Cu</span></div></div>
+        <div class="filtros" id="filtros"></div>
+        <div id="lista"><div class="vazio">Carregando...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const CAT = {"combos": [{"id": "c0", "nome": "Combo Beleza de Dentro para Fora", "sub": "Verisol + Vit. C + Ác. Hialurônico + Cápsulas da Beleza", "preco": "169", "tipo": "Combo", "cat": "Beleza e autocuidado", "img": "verisol_caixa_sache-vitc-achialuronico"}, {"id": "c1", "nome": "Combo Pele Iluminada", "sub": "Sérum Luminescence + Creme Ác. Hialurônico/Vit. C", "preco": "119", "tipo": "Combo", "cat": "Skincare", "img": "Serum_Luminecense"}, {"id": "c2", "nome": "Combo Pele Uniforme", "sub": "Creme Alfa Arbutim + Sérum Niacinamida", "preco": "69", "tipo": "Combo", "cat": "Skincare", "img": "Alfa-Arbutim"}, {"id": "c3", "nome": "Combo Cuidado dos Olhos", "sub": "Sérum Área dos Olhos + Sérum I9", "preco": "79", "tipo": "Combo", "cat": "Skincare", "img": "pote_serum_olhos_transp_sombra"}, {"id": "c4", "nome": "Combo Unhas & Cabelos", "sub": "Multivitamínico Cabelos + Base Fortalecedora com Queratina", "preco": "69", "tipo": "Combo", "cat": "Beleza e autocuidado", "img": "multivitaminico"}, {"id": "c5", "nome": "Combo Rotina de Bem-Estar", "sub": "Blend 6 Magnésio + Coenzima Q10", "preco": "64", "tipo": "Combo", "cat": "Suplementação e bem-estar", "img": "blend-6mg"}, {"id": "c6", "nome": "Combo Autocuidado Feminino", "sub": "Amora 600 mg + Loção Hidratante", "preco": "74", "tipo": "Combo", "cat": "Beleza e autocuidado", "img": "amora"}, {"id": "c7", "nome": "Combo Rotina de Sono", "sub": "Passiflora + Blend 6 Magnésio", "preco": "59", "tipo": "Combo", "cat": "Suplementação e bem-estar", "img": "passiflora"}, {"id": "c8", "nome": "Combo Skincare Completo", "sub": "Espuma Limpeza Suave + Sérum Niacinamida + Loção Hidratante", "preco": "89", "tipo": "Combo", "cat": "Skincare", "img": "espuma_hidratante"}, {"id": "c9", "nome": "Combo Rotina Ativa", "sub": "Creatina + Blend 6 Magnésio", "preco": "99", "tipo": "Combo", "cat": "Suplementação e bem-estar", "img": "creatina"}, {"id": "c10", "nome": "Combo Colágeno + Cúrcuma", "sub": "Colágeno Tipo II + Cúrcuma", "preco": "84", "tipo": "Combo", "cat": "Suplementação e bem-estar", "img": "UC-II"}, {"id": "c11", "nome": "Combo Vitalidade", "sub": "Liboost 300 mg + Maca Peruana", "preco": "159", "tipo": "Combo", "cat": "Suplementação e bem-estar", "img": "liboost"}, {"id": "c12", "nome": "Combo Rotina Ativa Plus", "sub": "Creatina + Maca Peruana", "preco": "99", "tipo": "Combo", "cat": "Suplementação e bem-estar", "img": "creatina"}, {"id": "c13", "nome": "Combo Ritual de Skincare", "sub": "Espuma Limpeza Suave + Sérum I9 + Creme Ác. Hialurônico/Vit. C", "preco": "139", "tipo": "Combo", "cat": "Skincare", "img": "espuma_hidratante"}], "produtos": [{"id": "p-amora", "nome": "Amora 600 mg", "tipo": "Produto", "cat": "Produtos", "img": "amora"}, {"id": "p-base_queratina", "nome": "Base Fortalecedora com Queratina", "tipo": "Produto", "cat": "Produtos", "img": "base_queratina"}, {"id": "p-blend-6mg", "nome": "Blend 6 Magnésio", "tipo": "Produto", "cat": "Produtos", "img": "blend-6mg"}, {"id": "p-coenzima_q10", "nome": "Coenzima Q10", "tipo": "Produto", "cat": "Produtos", "img": "coenzima_q10"}, {"id": "p-UC-II", "nome": "Colágeno Tipo II (UC-II®)", "tipo": "Produto", "cat": "Produtos", "img": "UC-II"}, {"id": "p-creatina", "nome": "Creatina FourLab 300 g", "tipo": "Produto", "cat": "Produtos", "img": "creatina"}, {"id": "p-Alfa-Arbutim", "nome": "Creme Alfa Arbutim", "tipo": "Produto", "cat": "Produtos", "img": "Alfa-Arbutim"}, {"id": "p-AC-Hialuronico_2_VitC", "nome": "Creme Ác. Hialurônico + Vit. C", "tipo": "Produto", "cat": "Produtos", "img": "AC-Hialuronico_2_VitC"}, {"id": "p-capsulas_beleza", "nome": "Cápsulas da Beleza", "tipo": "Produto", "cat": "Produtos", "img": "capsulas_beleza"}, {"id": "p-Curcuma", "nome": "Cúrcuma 500 mg", "tipo": "Produto", "cat": "Produtos", "img": "Curcuma"}, {"id": "p-espuma_hidratante", "nome": "Espuma de Limpeza Suave", "tipo": "Produto", "cat": "Produtos", "img": "espuma_hidratante"}, {"id": "p-liboost", "nome": "Liboost® 300 mg", "tipo": "Produto", "cat": "Produtos", "img": "liboost"}, {"id": "p-locao_200g", "nome": "Loção Vit A + Vit E (200 g)", "tipo": "Produto", "cat": "Produtos", "img": "locao_200g"}, {"id": "p-Maca-Peruana", "nome": "Maca Peruana 500 mg", "tipo": "Produto", "cat": "Produtos", "img": "Maca-Peruana"}, {"id": "p-multivitaminico", "nome": "Multivitamínico Cabelos", "tipo": "Produto", "cat": "Produtos", "img": "multivitaminico"}, {"id": "p-passiflora", "nome": "Passiflora 300 mg", "tipo": "Produto", "cat": "Produtos", "img": "passiflora"}, {"id": "p-serum-i9", "nome": "Sérum I9", "tipo": "Produto", "cat": "Produtos", "img": "serum-i9"}, {"id": "p-Serum_Luminecense", "nome": "Sérum Luminescence", "tipo": "Produto", "cat": "Produtos", "img": "Serum_Luminecense"}, {"id": "p-serum_niacinamida", "nome": "Sérum Niacinamida", "tipo": "Produto", "cat": "Produtos", "img": "serum_niacinamida"}, {"id": "p-pote_serum_olhos_transp_sombra", "nome": "Sérum Área dos Olhos", "tipo": "Produto", "cat": "Produtos", "img": "pote_serum_olhos_transp_sombra"}, {"id": "p-verisol_caixa_sache-vitc-achialuronico", "nome": "Verisol + Vit. C + Ác. Hialurônico", "tipo": "Produto", "cat": "Produtos", "img": "verisol_caixa_sache-vitc-achialuronico"}]};
+const RESERVA = { id: 'reserva-ghk', nome: 'RESERVA — Sérum GHK-Cu', tipo: 'Reserva', sub: 'Produto em reserva', reserva: true };
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let aba = 'Combos', sel = {}, pedidos = [], filtro = 'abertos', lives = [];
+const TODOS = () => ({ Reserva: [RESERVA], Combos: CAT.combos, Produtos: CAT.produtos });
+const ST = { novo: 'Novo', contatado: 'Contatado', pago: 'Pago', entregue: 'Entregue', cancelado: 'Cancelado' };
+
+function desenharAbas(){
+  $('abas').innerHTML = ['Combos','Produtos','Reserva'].map(a => `<button class="aba ${a === aba ? 'on' : ''}" data-a="${a}">${a}</button>`).join('');
+  $('abas').querySelectorAll('button').forEach(b => b.onclick = () => { aba = b.dataset.a; desenharAbas(); desenharGrade(); });
+}
+function desenharGrade(){
+  const q = $('busca').value.trim().toLowerCase();
+  const lista = (aba === 'Reserva' ? [RESERVA] : TODOS()[aba]).filter(p => !q || (p.nome + ' ' + (p.sub || '')).toLowerCase().includes(q));
+  $('grade').innerHTML = lista.map(p => `<div class="prod ${p.reserva ? 'reserva' : ''} ${sel[p.id] ? 'on' : ''}" data-id="${p.id}">
+    ${p.reserva ? '<div class="ph">Rs</div>' : `<img src="black/img/${p.img}.png" alt="" loading="lazy">`}<b>${esc(p.nome)}</b>${p.preco ? `<small>R$ ${p.preco},99</small>` : ''}<span class="q">${sel[p.id] ? sel[p.id].qtd : ''}</span></div>`).join('') || '<div class="vazio">Nada encontrado.</div>';
+  $('grade').querySelectorAll('.prod').forEach(el => el.onclick = () => adicionar(el.dataset.id));
+}
+function achar(id){ return [RESERVA, ...CAT.combos, ...CAT.produtos].find(p => p.id === id); }
+function adicionar(id){ const p = achar(id); if(!p) return; sel[id] = sel[id] ? { ...sel[id], qtd: sel[id].qtd + 1 } : { nome: p.nome, tipo: p.tipo, qtd: 1 }; atualizarSel(); }
+function tirar(id){ if(!sel[id]) return; sel[id].qtd--; if(sel[id].qtd <= 0) delete sel[id]; atualizarSel(); }
+function atualizarSel(){
+  const ids = Object.keys(sel);
+  $('sel').innerHTML = ids.length ? ids.map(id => `<span class="chip">${sel[id].qtd}× ${esc(sel[id].nome)}<button onclick="tirar('${id}')" aria-label="Tirar">−</button></span>`).join('') : '<span class="vazio" style="padding:6px 0">Toque nos produtos para adicionar.</span>';
+  desenharGrade();
+}
+window.tirar = tirar;
+$('busca').oninput = desenharGrade;
+
+function msg(t, ok){ const m = $('msg'); m.textContent = t; m.className = 'aviso ' + (ok ? 'ok' : 'er'); clearTimeout(msg.t); msg.t = setTimeout(() => m.className = 'aviso', 4000); }
+function limparIg(v){ return String(v || '').trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/[\/?].*$/, '').replace(/^@+/, '').replace(/\s+/g, '').toLowerCase(); }
+$('ig').addEventListener('input', e => { const p = e.target.selectionStart; e.target.value = limparIg(e.target.value); });
+async function salvar(){
+  const ig = limparIg($('ig').value);
+  if(!ig){ msg('Digite o @ do Instagram.', false); $('ig').focus(); return; }
+  if(!/^[a-z0-9._]{1,30}$/.test(ig)){ msg('Confira o @: só letras, números, ponto e _.', false); return; }
+  const itens = Object.keys(sel).map(id => ({ id, nome: sel[id].nome, tipo: sel[id].tipo, qtd: sel[id].qtd }));
+  if(!itens.length && !$('obs').value.trim()){ msg('Escolha ao menos um produto ou escreva uma observação.', false); return; }
+  $('btnSalvar').disabled = true;
+  const { data, error } = await supa.from('pedidos_live').insert({ live: $('liveNome').value, instagram: ig, itens, observacao: $('obs').value.trim() || null }).select('id');
+  $('btnSalvar').disabled = false;
+  if(error || !data || !data.length){ msg('Não foi possível salvar. Confira a conexão e tente de novo.', false); return; }
+  sel = {}; $('ig').value = ''; $('obs').value = ''; atualizarSel(); msg('Pedido de @' + ig + ' salvo.', true); $('ig').focus(); carregar();
+}
+$('btnSalvar').onclick = salvar;
+
+async function carregar(){
+  const { data, error } = await supa.from('pedidos_live').select('*').order('criado_em', { ascending: false }).limit(1000);
+  if(error){ $('lista').innerHTML = '<div class="vazio">Sem permissão ou sem conexão.</div>'; return; }
+  pedidos = data || [];
+  const nomes = [...new Set(['Live Black November', ...pedidos.map(p => p.live)])];
+  const atual = $('liveNome').value || nomes[0];
+  $('liveNome').innerHTML = nomes.map(n => `<option ${n === atual ? 'selected' : ''}>${esc(n)}</option>`).join('');
+  desenharLista();
+}
+function doLive(){ return pedidos.filter(p => p.live === $('liveNome').value); }
+function desenharLista(){
+  const L = doLive();
+  $('kTot').textContent = L.filter(p => p.status !== 'cancelado').length;
+  $('kNovo').textContent = L.filter(p => p.status === 'novo').length;
+  $('kRes').textContent = L.filter(p => p.status !== 'cancelado').reduce((n, p) => n + (p.itens || []).filter(i => i.id === 'reserva-ghk').reduce((a, i) => a + i.qtd, 0), 0);
+  $('filtros').innerHTML = [['abertos','A fazer'],['todos','Todos'],['pago','Pagos'],['entregue','Entregues'],['cancelado','Cancelados']].map(([k, r]) => `<button class="${k === filtro ? 'on' : ''}" data-f="${k}">${r}</button>`).join('');
+  $('filtros').querySelectorAll('button').forEach(b => b.onclick = () => { filtro = b.dataset.f; desenharLista(); });
+  const F = L.filter(p => filtro === 'todos' ? true : filtro === 'abertos' ? ['novo','contatado'].includes(p.status) : p.status === filtro);
+  $('lista').innerHTML = F.length ? F.map(p => `<div class="ped"><div class="t"><a class="ig" href="https://instagram.com/${esc(p.instagram)}" target="_blank" rel="noopener" style="text-decoration:none">@${esc(p.instagram)}</a><span class="st ${p.status}">${ST[p.status]}</span></div>
+    <div class="h">${new Date(p.criado_em).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}</div>
+    <ul>${(p.itens || []).map(i => `<li>${i.qtd}× ${esc(i.nome)}</li>`).join('') || '<li style="list-style:none;color:var(--gray)">Sem itens (só observação)</li>'}</ul>
+    ${p.observacao ? `<div class="ob">${esc(p.observacao)}</div>` : ''}
+    <div class="acoes">${Object.keys(ST).filter(s => s !== p.status).map(s => `<button onclick="mudar('${p.id}','${s}')">${ST[s]}</button>`).join('')}<button onclick="excluir('${p.id}')" style="color:var(--bad)">Excluir</button></div></div>`).join('') : '<div class="vazio">Nenhum pedido aqui.</div>';
+}
+async function mudar(id, st){
+  const { data, error } = await supa.from('pedidos_live').update({ status: st, atualizado_em: new Date().toISOString() }).eq('id', id).select('id');
+  if(error || !data || !data.length){ msg('Não foi possível atualizar.', false); return; }
+  carregar();
+}
+async function excluir(id){
+  if(!confirm('Excluir este pedido?')) return;
+  const { data, error } = await supa.from('pedidos_live').delete().eq('id', id).select('id');
+  if(error || !data || !data.length){ msg('Não foi possível excluir.', false); return; }
+  carregar();
+}
+window.mudar = mudar; window.excluir = excluir;
+$('liveNome').onchange = desenharLista;
+$('btnNovaLive').onclick = () => { const n = prompt('Nome da nova live (ex.: Live 2 Black November):'); if(!n || !n.trim()) return; const o = document.createElement('option'); o.textContent = n.trim(); $('liveNome').appendChild(o); $('liveNome').value = n.trim(); desenharLista(); };
+$('btnCsv').onclick = () => {
+  const L = doLive(), cel = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const linhas = [['Data','Live','Instagram','Pedido','Observação','Status'].map(cel).join(';')].concat(L.map(p => [new Date(p.criado_em).toLocaleString('pt-BR'), p.live, '@' + p.instagram, (p.itens || []).map(i => i.qtd + 'x ' + i.nome).join(' + '), p.observacao, ST[p.status]].map(cel).join(';')));
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' })); a.download = 'pedidos-live.csv'; a.click();
+};
+(async function init(){ await requireRole(['chefia','recepcao','atendente']); desenharAbas(); desenharGrade(); await carregar(); $('ig').focus(); })();
+</script>
+<script>(function(){var s=document.createElement("script");s.src="hub-sidebar.js?t="+Date.now();document.body.appendChild(s);})();</script>
+</body>
+</html>
