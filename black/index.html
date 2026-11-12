@@ -1,9 +1,24 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Black November Bioflora</title>
+<title>Black November Bioflora | 14 combos e 10% OFF</title>
 <meta name="description" content="Black November Bioflora: 10% OFF em produtos selecionados e 14 combos com preço especial de 12 a 30/11.">
 <meta name="theme-color" content="#12050A">
+<link rel="canonical" href="https://hub.farmaciabioflora.blog.br/black/">
+<meta name="robots" content="index,follow">
+<link rel="icon" type="image/svg+xml" href="favicon.svg"><link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website"><meta property="og:locale" content="pt_BR"><meta property="og:site_name" content="Farmácia Bioflora">
+<meta property="og:title" content="Black November Bioflora: 14 combos e 10% OFF"><meta property="og:description" content="De 12 a 30/11: 10% OFF em produtos selecionados, 14 combos com preço especial e +5% no Pix.">
+<meta property="og:url" content="https://hub.farmaciabioflora.blog.br/black/"><meta property="og:image" content="https://hub.farmaciabioflora.blog.br/black/og-black.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Black November Bioflora"><meta name="twitter:description" content="14 combos com preço especial e 10% OFF de 12 a 30/11."><meta name="twitter:image" content="https://hub.farmaciabioflora.blog.br/black/og-black.png">
+<script>
+/* Rastreamento. GA4: preencha o ID de medição (G-XXXXXXXXXX) abaixo para ligar o Google Analytics. Os utm_* da URL são lidos pelo GA4 e também salvos no Hub. */
+const GA_ID='';
+window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
+if(GA_ID){const g=document.createElement('script');g.async=true;g.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;document.head.appendChild(g);gtag('js',new Date());gtag('config',GA_ID)}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800;900&family=Maven+Pro:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#12050A;--neon:#FF2E6E;--creme:#FBEFE8;--vinho:#8B1A3A;--txt2:#EBCBD4;--f:"Outfit",system-ui,sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
@@ -85,8 +100,20 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 const stageImgs=c=>{const mx=Math.max(...c.itens.map(i=>i.k));return c.itens.map(i=>`<img src="img/${i.img}.png" alt="${esc(i.nome)}" style="height:${Math.round(100*i.k/mx*c.s*(c.itens.length>2?.9:1))}%">`).join("")};
 const price=c=>`<s>de R$ ${c.de}</s><strong><small>R$ </small>${c.por}<small>,99</small></strong>`;
 document.getElementById("secs").innerHTML=CATS.map(cat=>`<section><h2>${cat}</h2><div class="grid">${C.filter(c=>c.cat===cat).map(c=>`<button class="card" data-id="${c.id}" aria-label="Ver detalhes: ${esc(c.n)}"><span class="burst"><b>${c.pct}</b>combo</span><div class="ph">${stageImgs(c)}</div><h3>${esc(c.n)}</h3><p class="comp">${esc(c.c)}</p><div class="pr"><div>${price(c)}</div><span class="more">Ver detalhes →</span></div></button>`).join("")}</div></section>`).join("");
+
+/* ---- rastreamento: utm + eventos (GA4 se houver ID; e tabela link_bio_events do Hub) ---- */
+const _q=new URLSearchParams(location.search),UTM={};
+['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(k=>{let v=_q.get(k);try{if(v)sessionStorage.setItem(k,v);else v=sessionStorage.getItem(k)}catch(e){}if(v)UTM[k]=v});
+let _sb=null;
+function track(event,data){
+ const d=Object.assign({pagina:'black'},data||{},UTM);
+ try{gtag('event',event,d)}catch(e){}
+ try{if(!_sb&&window.supabase)_sb=window.supabase.createClient('https://gbbjpltqmbhlfluqhrmg.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA');
+  if(_sb)_sb.from('link_bio_events').insert({event:'black_'+event,data:d}).then(()=>{})}catch(e){}
+}
+track('page_view');
 const ov=document.getElementById("ov"),mb=document.getElementById("mb");let last=null;
-function open(id){const c=C[id];last=document.activeElement;
+function open(id){const c=C[id];last=document.activeElement;track("combo_aberto",{combo:c.n,preco:c.por});
  const views=[{t:"Juntos",html:stageImgs(c),one:false},...(c.fotos||[]).map(f=>({t:"Foto",html:`<img src="img/${f}" alt="${esc(c.n)}">`,one:true})),...c.itens.map(i=>({t:i.nome,html:`<img src="img/${i.img}.png" alt="${esc(i.nome)}">`,one:true,th:i.img}))];
  mb.innerHTML=`<div class="gal"><div class="stage" id="st"></div><div class="thumbs" id="th">${views.map((v,i)=>`<button aria-pressed="${i==0}" data-v="${i}" aria-label="${esc(v.t)}">${v.th?`<img src="img/${v.th}.png" alt="">`:`<span class="all">${esc(v.t)}</span>`}</button>`).join("")}</div></div>
  <h3 id="mt">${esc(c.n)}</h3><p class="lead">${esc(c.resumo)}</p><div class="price">${price(c)}<span class="pill">${c.pct} no combo</span></div>
