@@ -65,6 +65,9 @@ input:focus,textarea:focus{outline:none;border-color:var(--burgundy);box-shadow:
 .acoes button{border:0;border-radius:20px;padding:7px 12px;font:700 12.5px 'Maven Pro';background:#EFE8EA;color:var(--ink);cursor:pointer}
 .filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .filtros button{border:0;border-radius:20px;padding:7px 13px;font:700 12.5px 'Maven Pro';background:#EFE8EA;color:var(--gray);cursor:pointer}.filtros button.on{background:var(--ink);color:#fff}
+.outro{background:#F8F4F5;border-radius:16px;padding:10px 12px;margin-bottom:12px}.outro b{font-size:13.5px}
+.outro-l{display:grid;grid-template-columns:1fr 120px auto;gap:8px;margin-top:6px}
+@media(max-width:560px){.outro-l{grid-template-columns:1fr 1fr}.outro-l .btn{grid-column:1/3}}
 .vazio{color:var(--gray);text-align:center;padding:20px}
 </style>
 </head>
@@ -82,6 +85,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--burgundy);box-shadow:
         <h2>Pedido</h2>
         <div class="sel" id="sel"><span class="vazio" style="padding:6px 0">Toque nos produtos para adicionar.</span></div>
         <div class="abas" id="abas"></div>
+        <div class="outro"><b>Outro produto (não cadastrado)</b><div class="outro-l"><input type="text" id="oNome" placeholder="Nome do produto" style="font-size:16px;padding:11px 14px"><input type="text" id="oPreco" inputmode="decimal" placeholder="Preço R$" style="font-size:16px;padding:11px 14px"><button class="btn s" id="btnOutro" type="button">Adicionar</button></div></div>
         <input type="text" class="busca" id="busca" placeholder="Buscar produto ou combo" style="font-size:16px;padding:11px 14px">
         <div class="grade" id="grade"></div>
       </div>
@@ -95,7 +99,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--burgundy);box-shadow:
     <div>
       <div class="bloco">
         <h2>Pedidos anotados</h2>
-        <div class="kpis"><div class="kpi"><b id="kTot">0</b><span>pedidos</span></div><div class="kpi"><b id="kNovo">0</b><span>para chamar</span></div><div class="kpi"><b id="kRes">0</b><span>reservas GHK-Cu</span></div></div>
+        <div class="kpis"><div class="kpi"><b id="kPes">0</b><span>pessoas (@)</span></div><div class="kpi"><b id="kTot">0</b><span>pedidos</span></div><div class="kpi"><b id="kNovo">0</b><span>para chamar</span></div><div class="kpi"><b id="kRes">0</b><span>reservas GHK-Cu</span></div></div>
         <div class="filtros" id="filtros"></div>
         <div id="lista"><div class="vazio">Carregando...</div></div>
       </div>
@@ -112,6 +116,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let aba = 'Combos', sel = {}, pedidos = [], filtro = 'abertos', lives = [];
 const TODOS = () => ({ Reserva: [RESERVA], Combos: CAT.combos, Produtos: CAT.produtos });
+const brl = v => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const ST = { novo: 'Novo', contatado: 'Contatado', pago: 'Pago', entregue: 'Entregue', cancelado: 'Cancelado' };
 
 function desenharAbas(){
@@ -126,14 +131,22 @@ function desenharGrade(){
   $('grade').querySelectorAll('.prod').forEach(el => el.onclick = () => adicionar(el.dataset.id));
 }
 function achar(id){ return [RESERVA, ...CAT.combos, ...CAT.produtos].find(p => p.id === id); }
-function adicionar(id){ const p = achar(id); if(!p) return; sel[id] = sel[id] ? { ...sel[id], qtd: sel[id].qtd + 1 } : { nome: p.nome, tipo: p.tipo, qtd: 1 }; atualizarSel(); }
+function adicionar(id){ const p = achar(id); if(!p) return; sel[id] = sel[id] ? { ...sel[id], qtd: sel[id].qtd + 1 } : { nome: p.nome, tipo: p.tipo, qtd: 1, preco: p.preco ? Number(p.preco) + 0.99 : null }; atualizarSel(); }
 function tirar(id){ if(!sel[id]) return; sel[id].qtd--; if(sel[id].qtd <= 0) delete sel[id]; atualizarSel(); }
 function atualizarSel(){
   const ids = Object.keys(sel);
-  $('sel').innerHTML = ids.length ? ids.map(id => `<span class="chip">${sel[id].qtd}× ${esc(sel[id].nome)}<button onclick="tirar('${id}')" aria-label="Tirar">−</button></span>`).join('') : '<span class="vazio" style="padding:6px 0">Toque nos produtos para adicionar.</span>';
+  $('sel').innerHTML = ids.length ? ids.map(id => `<span class="chip">${sel[id].qtd}× ${esc(sel[id].nome)}${sel[id].preco != null ? ' · ' + brl(sel[id].preco) : ''}<button onclick="tirar('${id}')" aria-label="Tirar">−</button></span>`).join('') : '<span class="vazio" style="padding:6px 0">Toque nos produtos para adicionar.</span>';
   desenharGrade();
 }
 window.tirar = tirar;
+const num2 = v => { const n = parseFloat(String(v || '').replace(/\./g, '').replace(',', '.')); return isNaN(n) ? null : n; };
+$('btnOutro').onclick = () => {
+  const nome = $('oNome').value.trim(); if(!nome){ msg('Digite o nome do produto.', false); $('oNome').focus(); return; }
+  const preco = num2($('oPreco').value); if(preco == null || preco < 0){ msg('Digite o preço (ex.: 49,90).', false); $('oPreco').focus(); return; }
+  const id = 'x-' + nome.toLowerCase().replace(/\s+/g, '-') + '-' + preco;
+  sel[id] = sel[id] ? { ...sel[id], qtd: sel[id].qtd + 1 } : { nome, tipo: 'Outro', qtd: 1, preco };
+  $('oNome').value = ''; $('oPreco').value = ''; atualizarSel();
+};
 $('busca').oninput = desenharGrade;
 
 function msg(t, ok){ const m = $('msg'); m.textContent = t; m.className = 'aviso ' + (ok ? 'ok' : 'er'); clearTimeout(msg.t); msg.t = setTimeout(() => m.className = 'aviso', 4000); }
@@ -143,7 +156,7 @@ async function salvar(){
   const ig = limparIg($('ig').value);
   if(!ig){ msg('Digite o @ do Instagram.', false); $('ig').focus(); return; }
   if(!/^[a-z0-9._]{1,30}$/.test(ig)){ msg('Confira o @: só letras, números, ponto e _.', false); return; }
-  const itens = Object.keys(sel).map(id => ({ id, nome: sel[id].nome, tipo: sel[id].tipo, qtd: sel[id].qtd }));
+  const itens = Object.keys(sel).map(id => ({ id, nome: sel[id].nome, tipo: sel[id].tipo, qtd: sel[id].qtd, preco: sel[id].preco == null ? null : sel[id].preco }));
   if(!itens.length && !$('obs').value.trim()){ msg('Escolha ao menos um produto ou escreva uma observação.', false); return; }
   $('btnSalvar').disabled = true;
   const { data, error } = await supa.from('pedidos_live').insert({ live: $('liveNome').value, instagram: ig, itens, observacao: $('obs').value.trim() || null }).select('id');
@@ -163,20 +176,53 @@ async function carregar(){
   desenharLista();
 }
 function doLive(){ return pedidos.filter(p => p.live === $('liveNome').value); }
+function agrupar(lista){
+  const g = {};
+  lista.forEach(p => { (g[p.instagram] = g[p.instagram] || { ig: p.instagram, peds: [] }).peds.push(p); });
+  return Object.values(g).map(x => {
+    const it = {};
+    x.peds.forEach(p => (p.itens || []).forEach(i => { const k = i.nome + '|' + (i.preco == null ? '' : i.preco); it[k] = it[k] ? { ...it[k], qtd: it[k].qtd + i.qtd } : { ...i }; }));
+    x.itens = Object.values(it);
+    x.total = x.itens.reduce((n, i) => n + (i.preco == null ? 0 : i.preco * i.qtd), 0);
+    x.semPreco = x.itens.some(i => i.preco == null);
+    x.obs = x.peds.filter(p => p.observacao).map(p => p.observacao);
+    x.ultimo = x.peds.reduce((a, p) => a > p.criado_em ? a : p.criado_em, '');
+    const sts = [...new Set(x.peds.map(p => p.status))]; x.status = sts.length === 1 ? sts[0] : 'misto';
+    return x;
+  }).sort((a, b) => b.ultimo.localeCompare(a.ultimo));
+}
 function desenharLista(){
-  const L = doLive();
-  $('kTot').textContent = L.filter(p => p.status !== 'cancelado').length;
-  $('kNovo').textContent = L.filter(p => p.status === 'novo').length;
-  $('kRes').textContent = L.filter(p => p.status !== 'cancelado').reduce((n, p) => n + (p.itens || []).filter(i => i.id === 'reserva-ghk').reduce((a, i) => a + i.qtd, 0), 0);
+  const L = doLive(), ativos = L.filter(p => p.status !== 'cancelado');
+  $('kTot').textContent = ativos.length;
+  $('kPes').textContent = new Set(ativos.map(p => p.instagram)).size;
+  $('kNovo').textContent = new Set(L.filter(p => p.status === 'novo').map(p => p.instagram)).size;
+  $('kRes').textContent = ativos.reduce((n, p) => n + (p.itens || []).filter(i => i.id === 'reserva-ghk').reduce((a, i) => a + i.qtd, 0), 0);
   $('filtros').innerHTML = [['abertos','A fazer'],['todos','Todos'],['pago','Pagos'],['entregue','Entregues'],['cancelado','Cancelados']].map(([k, r]) => `<button class="${k === filtro ? 'on' : ''}" data-f="${k}">${r}</button>`).join('');
   $('filtros').querySelectorAll('button').forEach(b => b.onclick = () => { filtro = b.dataset.f; desenharLista(); });
   const F = L.filter(p => filtro === 'todos' ? true : filtro === 'abertos' ? ['novo','contatado'].includes(p.status) : p.status === filtro);
-  $('lista').innerHTML = F.length ? F.map(p => `<div class="ped"><div class="t"><a class="ig" href="https://instagram.com/${esc(p.instagram)}" target="_blank" rel="noopener" style="text-decoration:none">@${esc(p.instagram)}</a><span class="st ${p.status}">${ST[p.status]}</span></div>
-    <div class="h">${new Date(p.criado_em).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}</div>
-    <ul>${(p.itens || []).map(i => `<li>${i.qtd}× ${esc(i.nome)}</li>`).join('') || '<li style="list-style:none;color:var(--gray)">Sem itens (só observação)</li>'}</ul>
-    ${p.observacao ? `<div class="ob">${esc(p.observacao)}</div>` : ''}
-    <div class="acoes">${Object.keys(ST).filter(s => s !== p.status).map(s => `<button onclick="mudar('${p.id}','${s}')">${ST[s]}</button>`).join('')}<button onclick="excluir('${p.id}')" style="color:var(--bad)">Excluir</button></div></div>`).join('') : '<div class="vazio">Nenhum pedido aqui.</div>';
+  const G = agrupar(F);
+  $('lista').innerHTML = G.length ? G.map(x => `<div class="ped"><div class="t"><a class="ig" href="https://instagram.com/${esc(x.ig)}" target="_blank" rel="noopener" style="text-decoration:none">@${esc(x.ig)}</a><span class="st ${x.status === 'misto' ? 'contatado' : x.status}">${x.status === 'misto' ? 'Vários status' : ST[x.status]}</span></div>
+    <div class="h">${x.peds.length} pedido${x.peds.length > 1 ? 's' : ''} · último às ${new Date(x.ultimo).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}</div>
+    <ul>${x.itens.map(i => `<li>${i.qtd}× ${esc(i.nome)}${i.preco != null ? ' <span style="color:var(--gray)">· ' + brl(i.preco) + '</span>' : ''}</li>`).join('') || '<li style="list-style:none;color:var(--gray)">Sem itens (só observação)</li>'}</ul>
+    ${x.total ? `<div style="font-weight:700">Total ${brl(x.total)}${x.semPreco ? ' <small style="font-weight:500;color:var(--gray)">(sem os itens sem preço)</small>' : ''}</div>` : ''}
+    ${x.obs.map(o => `<div class="ob">${esc(o)}</div>`).join('')}
+    <div class="acoes">${Object.keys(ST).filter(s => s !== x.status).map(s => `<button onclick="mudarIg('${esc(x.ig)}','${s}')">${ST[s]}</button>`).join('')}<button onclick="excluirIg('${esc(x.ig)}')" style="color:var(--bad)">Excluir</button></div></div>`).join('') : '<div class="vazio">Nenhum pedido aqui.</div>';
 }
+function idsDoIg(ig){ const ok = p => filtro === 'todos' ? true : filtro === 'abertos' ? ['novo','contatado'].includes(p.status) : p.status === filtro; return doLive().filter(p => p.instagram === ig && ok(p)).map(p => p.id); }
+async function mudarIg(ig, st){
+  const ids = idsDoIg(ig);
+  const { data, error } = await supa.from('pedidos_live').update({ status: st, atualizado_em: new Date().toISOString() }).in('id', ids).select('id');
+  if(error || !data || data.length !== ids.length){ msg('Não foi possível atualizar tudo. Confira e tente de novo.', false); }
+  carregar();
+}
+async function excluirIg(ig){
+  const ids = idsDoIg(ig);
+  if(!confirm('Excluir ' + (ids.length > 1 ? 'os ' + ids.length + ' pedidos' : 'o pedido') + ' de @' + ig + '?')) return;
+  const { data, error } = await supa.from('pedidos_live').delete().in('id', ids).select('id');
+  if(error || !data || data.length !== ids.length){ msg('Não foi possível excluir tudo.', false); }
+  carregar();
+}
+window.mudarIg = mudarIg; window.excluirIg = excluirIg;
 async function mudar(id, st){
   const { data, error } = await supa.from('pedidos_live').update({ status: st, atualizado_em: new Date().toISOString() }).eq('id', id).select('id');
   if(error || !data || !data.length){ msg('Não foi possível atualizar.', false); return; }
@@ -192,8 +238,9 @@ window.mudar = mudar; window.excluir = excluir;
 $('liveNome').onchange = desenharLista;
 $('btnNovaLive').onclick = () => { const n = prompt('Nome da nova live (ex.: Live 2 Black November):'); if(!n || !n.trim()) return; const o = document.createElement('option'); o.textContent = n.trim(); $('liveNome').appendChild(o); $('liveNome').value = n.trim(); desenharLista(); };
 $('btnCsv').onclick = () => {
-  const L = doLive(), cel = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-  const linhas = [['Data','Live','Instagram','Pedido','Observação','Status'].map(cel).join(';')].concat(L.map(p => [new Date(p.criado_em).toLocaleString('pt-BR'), p.live, '@' + p.instagram, (p.itens || []).map(i => i.qtd + 'x ' + i.nome).join(' + '), p.observacao, ST[p.status]].map(cel).join(';')));
+  const cel = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const G = agrupar(doLive().filter(p => p.status !== 'cancelado'));
+  const linhas = [['Instagram','Pedidos','Itens','Total (itens com preço)','Observações','Status'].map(cel).join(';')].concat(G.map(x => ['@' + x.ig, x.peds.length, x.itens.map(i => i.qtd + 'x ' + i.nome + (i.preco != null ? ' (' + brl(i.preco) + ')' : '')).join(' + '), x.total ? brl(x.total) : '', x.obs.join(' | '), x.status === 'misto' ? 'Vários' : ST[x.status]].map(cel).join(';')));
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' })); a.download = 'pedidos-live.csv'; a.click();
 };
 (async function init(){ await requireRole(['chefia','recepcao','atendente']); desenharAbas(); desenharGrade(); await carregar(); $('ig').focus(); })();
