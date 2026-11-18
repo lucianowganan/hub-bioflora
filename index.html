@@ -17,57 +17,15 @@
     --info:#3E6B93; --info-tint:#E9F0F6;
     --warn:#C9922B; --warn-tint:#FBF1E0;
     --headfont: 'Space Grotesk', 'Maven Pro', sans-serif;
-    --sidebar-w: 92px;
+    --sidebar-w: 0px;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:'Maven Pro',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
 
-  /* ---------- Sidebar ---------- */
-  .sidebar{
-    position:fixed;left:14px;top:14px;bottom:14px;width:64px;background:linear-gradient(180deg,#B8325A 0%,#8B1A3A 48%,#4A0E20 100%);border-radius:28px;box-shadow:0 8px 28px rgba(74,14,32,.28);
-    display:flex;flex-direction:column;align-items:stretch;padding:20px 0;z-index:200;overflow:hidden;
-    transition:width .16s ease;
-  }
-  .sidebar:hover{width:250px;overflow-y:auto;}
-  .sidebar.editando{width:250px !important;overflow-y:auto;}
-  .side-arrastavel{cursor:grab;}
-  .side-arrastavel:active{cursor:grabbing;}
-  .side-arrastando{opacity:.35;}
-  .side-drag-over{outline:2px dashed rgba(255,255,255,.6);}
-  .sidebar::-webkit-scrollbar{width:0;}
-  .sidebar .mark-row{display:flex;align-items:center;gap:12px;padding:0 13px;margin-bottom:22px;flex-shrink:0;}
-  .sidebar .mark{width:38px;height:38px;min-width:38px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
-  .sidebar .mark svg{width:38px;height:36px;display:block;}
-  .sidebar .mark-nome{color:#fff;font-family:var(--headfont);font-weight:600;font-size:14.5px;white-space:nowrap;opacity:0;transition:opacity .12s;}
-  .sidebar:hover .mark-nome{opacity:1;}
-  .sidebar nav{display:flex;flex-direction:column;gap:4px;flex:1;}
-  .side-btn{
-    display:flex;align-items:center;gap:14px;height:42px;min-height:42px;border-radius:16px;
-    color:rgba(255,255,255,.7);text-decoration:none;cursor:pointer;border:none;background:transparent;
-    transition:background .15s,color .15s;position:relative;flex-shrink:0;font-family:'Maven Pro',sans-serif;
-    font-size:13px;font-weight:600;width:calc(100% - 16px);margin:0 8px;padding:0 13px;white-space:nowrap;
-    box-sizing:border-box;
-  }
-  .side-btn .side-icon{width:21px;height:21px;min-width:21px;flex-shrink:0;}
-  .side-btn .tooltip{opacity:0;transition:opacity .1s;}
-  .sidebar:hover .side-btn .tooltip{opacity:1;}
-  .side-btn:hover{background:rgba(255,255,255,.1);color:#fff;}
-  .side-btn.active{background:#fff;color:var(--burgundy);}
-  .sidebar .bottom{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
-
-  @media (max-width:720px){
-    .main{margin-left:0;}
-    .sidebar{left:0;right:0;top:auto;bottom:0;width:auto !important;height:calc(64px + env(safe-area-inset-bottom,0px));flex-direction:row;border-radius:0;box-shadow:none;background:linear-gradient(90deg,#B8325A 0%,#8B1A3A 50%,#4A0E20 100%);
-      padding:0 4px env(safe-area-inset-bottom,0px);overflow-x:auto;overflow-y:hidden;align-items:center;}
-    .sidebar .mark-row{display:none;}
-    .sidebar nav{flex-direction:row;gap:0;flex:none;}
-    .sidebar .bottom{flex-direction:row;gap:0;}
-    .side-btn{width:56px;min-width:56px;height:56px;margin:0;padding:0;flex-direction:column;justify-content:center;gap:2px;border-radius:10px;}
-    .side-btn .tooltip{display:none;}
-  }
+  /* A barra lateral vem do hub-sidebar.js (a mesma de todas as páginas do Hub). */
 
   /* ---------- Main ---------- */
-  .main{margin-left:var(--sidebar-w);padding:28px 28px 80px;}
+  .main{margin-left:0;padding:28px 28px 80px;}
   .wrap{max-width:1180px;margin:0 auto;}
 
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
@@ -278,15 +236,6 @@
 </head>
 <body>
 
-<div class="sidebar">
-  <div class="mark-row">
-  <div class="mark"><svg viewBox="195 207 615 585" fill="currentColor" aria-label="Bioflora"><path d="M 732.03 484.81 C 727.37 494.12 729.10 486.62 729.55 482.34 C 734.43 440.52 665.52 412.90 632.56 403.29 C 537.37 375.36 442.48 401.26 346.54 384.37 C 255.64 368.38 201.36 309.15 202.11 215.61 C 240.02 242.57 271.93 263.96 319.07 272.22 C 403.60 287.16 496.01 271.16 580.91 277.85 C 674.45 285.28 766.93 389.32 732.03 484.81 Z"/><path d="M 796.41 656.78 C 785.30 641.92 775.92 631.71 759.03 623.00 C 627.73 555.52 364.76 651.45 281.96 510.55 C 275.58 499.74 266.50 482.17 285.11 482.25 C 327.08 482.32 392.09 478.42 437.28 477.82 C 547.56 476.32 687.19 453.50 764.96 552.29 C 786.28 579.31 803.09 622.63 796.41 656.78 Z"/><path d="M 533.96 781.41 C 374.44 766.02 263.19 624.29 224.68 477.90 C 220.55 461.98 217.09 438.49 217.70 423.10 C 225.13 429.03 241.94 466.27 246.30 475.05 C 297.42 579.24 382.47 680.81 501.38 705.51 C 540.95 713.69 607.98 720.38 641.24 695.23 C 679.07 666.55 674.34 639.75 641.46 609.42 C 680.65 610.40 775.61 619.41 785.37 666.63 C 801.59 745.60 684.10 776.30 626.45 781.41 C 617.74 782.83 612.26 783.66 602.73 783.88 C 591.09 784.03 579.68 784.93 557.68 783.88 C 548.68 783.81 543.12 782.38 533.96 781.41 Z"/><path d="M 720.64 499.77 C 693.92 483.70 660.59 475.59 629.89 470.57 C 630.11 459.08 630.26 446.47 626.58 436.11 C 622.75 425.30 614.35 415.09 608.04 405.55 C 650.53 416.14 740.99 443.54 720.64 499.77 Z"/></svg></div>
-  <span class="mark-nome">Hub Bioflora</span>
-  </div>
-  <nav id="sideNav"></nav>
-  <div class="bottom" id="sideBottom"></div>
-</div>
-
 <div class="main">
   <div class="wrap">
 
@@ -327,6 +276,7 @@
   </div>
 </div>
 
+<script>document.write('<script src="hub-sidebar.js?t='+Date.now()+'"><\/script>');</script>
 <script>
 const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
@@ -383,140 +333,6 @@ const SIDE_ICONES = {
   arrastar: '<circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/>',
 };
 function sideSvg(nome){ return `<svg class="side-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${SIDE_ICONES[nome]}</svg>`; }
-
-const SIDE_MODULOS = [
-  { href:'index.html', icone:'home', label:'Início', perm:null },
-  { href:'tarefas.html', icone:'kanban', label:'Quadro de Tarefas', perm:null },
-  { href:'calendario-interno.html', icone:'calendario', label:'Calendário Interno', perm:null },
-  { href:'rh.html', icone:'pessoas', label:'Central de RH', perm:null },
-  { href:'visitas-medicas.html', icone:'estetoscopio', label:'Visitas de Representantes', perm:'modulo.visitas' },
-  { href:'cliente-fiel.html', icone:'cartao', label:'Cliente Fiel', perm:'modulo.cliente_fiel' },
-  { href:'rotulos.html', icone:'etiqueta', label:'Controle de Rótulos', perm:'modulo.rotulos' },
-  { href:'producao.html', icone:'frasco', label:'Ordem de Produção', perm:'modulo.producao' },
-  { href:'controle-producao.html', icone:'prancheta', label:'Controle de Produção', perm:'modulo.controle_producao' },
-  { href:'reaproveitamento.html', icone:'reciclar', label:'Reaproveitamento', perm:'modulo.reaproveitamento' },
-  { href:'erros.html', icone:'lapis', label:'Registro de Erros', perm:'modulo.erros' },
-  { href:'inclusoes.html', icone:'grafico', label:'Inclusões & Performance', perm:'modulo.inclusoes' },
-  { href:'calendario-editorial.html', icone:'calendario', label:'Calendário Editorial', perm:'modulo.calendario_editorial' },
-  { href:'formulas-complexas.html', icone:'puzzle', label:'Fórmulas Complexas', perm:'modulo.formulas_complexas' },
-  { href:'meus-erros.html', icone:'tendencia', label:'Meus Erros', perm:null },
-  { href:'chat.html', icone:'chat', label:'Chat Interno', perm:null },
-  { href:'wanessia.html', icone:'robo', label:'Wanessia', perm:'modulo.wanessia' },
-  { href:'vendas-yampi.html', icone:'vendas', label:'Vendas (Yampi)', perm:'modulo.vendas' },
-  { href:'email-marketing.html', icone:'email', label:'Email Marketing', perm:'modulo.email_marketing' },
-  { href:'instagram.html', icone:'instagram', label:'Instagram', perm:'modulo.instagram' },
-  { href:'pedidos-live.html', icone:'prancheta', label:'Pedidos da Live', perm:'modulo.pedidos_live' },
-  { href:'vet-contatos.html', icone:'prancheta', label:'Contatos Veterinários', perm:'modulo.vet' },
-  { href:'embalagens.html', icone:'caixa', label:'Controle de Embalagens', perm:'modulo.embalagens' },
-  { href:'conferencia-formulas.html', icone:'prancheta', label:'Conferência de Fórmulas', perm:'modulo.conferencia' },
-  { href:'admin.html', icone:'escudo', label:'Administração', perm:'modulo.admin' },
-  { href:'cargos.html', icone:'escudoCheck', label:'Cargos & Permissões', perm:'modulo.admin' },
-  { href:'resumo-semanal.html', icone:'grafico', label:'Resumo Semanal', perm:'modulo.resumo' },
-  { href:'rastreabilidade.html', icone:'grafico', label:'Rastreabilidade', perm:'modulo.rastreio' },
-];
-
-let sideModoEdicao = false;
-let sideOrdemPersonalizada = null;
-let sideItemArrastadoHref = null;
-let sideTemPermRef = null;
-let sideUserIdRef = null;
-
-function paginaAtualIndex(){ return (location.pathname.split('/').pop() || 'index').replace(/\.html$/, '') + '.html'; }
-try{ if(/\.html$/.test(location.pathname)) history.replaceState(null,'',location.pathname.replace(/index\.html$/,'').replace(/\.html$/,'')+location.search+location.hash); }catch(e){}
-
-function sideModulosVisiveisOrdenados(){
-  const visiveis = SIDE_MODULOS.filter(m => !m.perm || (sideTemPermRef && sideTemPermRef(m.perm)));
-  if(!sideOrdemPersonalizada || !sideOrdemPersonalizada.length) return visiveis;
-  const porHref = {};
-  visiveis.forEach(m => { porHref[m.href] = m; });
-  const ordenados = [];
-  sideOrdemPersonalizada.forEach(href => { if(porHref[href]){ ordenados.push(porHref[href]); delete porHref[href]; } });
-  Object.values(porHref).forEach(m => ordenados.push(m));
-  return ordenados;
-}
-
-function montarSideBotao(m){
-  const atual = paginaAtualIndex() === m.href;
-  const btn = document.createElement('a');
-  btn.href = m.href;
-  btn.className = 'side-btn' + (atual ? ' active' : '');
-  btn.innerHTML = `${sideSvg(m.icone)}<span class="tooltip">${m.label}</span>${sideModoEdicao ? sideSvg('arrastar') : ''}`;
-  return btn;
-}
-
-function renderSideNav(){
-  const nav = document.getElementById('sideNav');
-  const lista = sideModulosVisiveisOrdenados();
-  nav.innerHTML = '';
-  lista.forEach(m => {
-    const btn = montarSideBotao(m);
-    if(sideModoEdicao){
-      btn.draggable = true;
-      btn.classList.add('side-arrastavel');
-      btn.addEventListener('click', (e)=> e.preventDefault());
-      btn.addEventListener('dragstart', ()=>{ sideItemArrastadoHref = m.href; btn.classList.add('side-arrastando'); });
-      btn.addEventListener('dragend', ()=> btn.classList.remove('side-arrastando'));
-      btn.addEventListener('dragover', (e)=>{ e.preventDefault(); btn.classList.add('side-drag-over'); });
-      btn.addEventListener('dragleave', ()=> btn.classList.remove('side-drag-over'));
-      btn.addEventListener('drop', (e)=>{
-        e.preventDefault();
-        btn.classList.remove('side-drag-over');
-        if(!sideItemArrastadoHref || sideItemArrastadoHref === m.href) return;
-        const atualOrdem = lista.map(x=>x.href);
-        const doIdx = atualOrdem.indexOf(sideItemArrastadoHref);
-        const paraIdx = atualOrdem.indexOf(m.href);
-        atualOrdem.splice(doIdx,1);
-        atualOrdem.splice(paraIdx,0,sideItemArrastadoHref);
-        sideOrdemPersonalizada = atualOrdem;
-        renderSideNav();
-        salvarOrdemSidebarIndex(atualOrdem);
-      });
-    }
-    nav.appendChild(btn);
-  });
-}
-
-async function salvarOrdemSidebarIndex(ordem){
-  if(!sideUserIdRef) return;
-  try{
-    await supa.from('preferencias_hub').upsert(
-      { user_id: sideUserIdRef, sidebar_ordem: ordem, atualizado_em: new Date().toISOString() },
-      { onConflict: 'user_id' }
-    );
-  }catch(e){ /* silencioso */ }
-}
-
-function toggleSideModoEdicao(){
-  sideModoEdicao = !sideModoEdicao;
-  document.querySelector('.sidebar').classList.toggle('editando', sideModoEdicao);
-  const btn = document.getElementById('sideBtnEditarOrdem');
-  if(btn) btn.innerHTML = sideModoEdicao ? `${sideSvg('check')}<span class="tooltip">Concluir</span>` : `${sideSvg('editar')}<span class="tooltip">Reorganizar</span>`;
-  renderSideNav();
-}
-window.toggleSideModoEdicao = toggleSideModoEdicao;
-
-function renderSideBottom(){
-  const bottom = document.getElementById('sideBottom');
-  bottom.innerHTML = '';
-  const editarBtn = document.createElement('button');
-  editarBtn.className = 'side-btn';
-  editarBtn.id = 'sideBtnEditarOrdem';
-  editarBtn.innerHTML = `${sideSvg('editar')}<span class="tooltip">Reorganizar</span>`;
-  editarBtn.addEventListener('click', toggleSideModoEdicao);
-  const senhaBtn = document.createElement('a');
-  senhaBtn.href = 'alterar-senha.html';
-  senhaBtn.className = 'side-btn';
-  senhaBtn.title = 'Alterar senha';
-  senhaBtn.innerHTML = `${sideSvg('chave')}<span class="tooltip">Alterar senha</span>`;
-  const sairBtn = document.createElement('button');
-  sairBtn.className = 'side-btn';
-  sairBtn.title = 'Sair';
-  sairBtn.innerHTML = `${sideSvg('sair')}<span class="tooltip">Sair</span>`;
-  sairBtn.addEventListener('click', logout);
-  bottom.appendChild(editarBtn);
-  bottom.appendChild(senhaBtn);
-  bottom.appendChild(sairBtn);
-}
 
 // ============================================================
 // AVISOS EM POP-UP — chefia cria um aviso direcionado a um ou mais
@@ -1176,8 +992,24 @@ const ORDEM_MODULOS_HOME = ['producao','controle-producao','formulas-complexas',
   'cliente-fiel','vendas-yampi','email-marketing','instagram','vet-contatos','calendario-editorial','visitas-medicas','wanessia','admin','cargos','resumo-semanal','rastreabilidade','pedidos-live'];
 function renderModulosHome(temPerm){
   const alvo = document.getElementById('modules');
-  const pos = (m) => { const i = ORDEM_MODULOS_HOME.indexOf(m.href.replace('.html','')); return i < 0 ? 99 : i; };
-  const visiveis = MODULOS_HOME.filter(m => temPerm(m.perm)).sort((x, y) => pos(x) - pos(y));
+  // Fonte única: as áreas e os módulos vêm do hub-sidebar.js. A lista MODULOS_HOME só dá título/descrição/ícone;
+  // módulo novo da barra que ainda não tem descrição aqui aparece mesmo assim (título + "Abrir o módulo").
+  const hubMods = window.HUB_MODULOS || null, hubAreas = window.HUB_AREAS || [];
+  const detalhe = {}; MODULOS_HOME.forEach(m => { detalhe[m.href] = m; });
+  let itens;
+  if(hubMods){
+    itens = hubMods.filter(m => m.href !== 'index.html').map(m => {
+      const d = detalhe[m.href] || {};
+      const area = hubAreas.find(a => a.hrefs.includes(m.href));
+      return { href: m.href, icone: d.icone || m.icone, titulo: d.titulo || m.label, desc: d.desc || 'Abrir o módulo.', perm: d.perm !== undefined ? d.perm : m.perm, grupo: area ? area.label : (d.grupo && GRUPOS_HOME.includes(d.grupo) ? d.grupo : 'Pessoas') };
+    });
+    const ordem = []; hubAreas.forEach(a => a.hrefs.forEach(h => ordem.push(h)));
+    itens.sort((x, y) => { const i = ordem.indexOf(x.href), j = ordem.indexOf(y.href); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
+  } else {
+    const pos = (m) => { const i = ORDEM_MODULOS_HOME.indexOf(m.href.replace('.html','')); return i < 0 ? 99 : i; };
+    itens = MODULOS_HOME.slice().sort((x, y) => pos(x) - pos(y));
+  }
+  const visiveis = itens.filter(m => temPerm(m.perm));
   alvo.innerHTML = GRUPOS_HOME.map(g => {
     const itens = visiveis.filter(m => m.grupo === g);
     if(!itens.length) return '';
@@ -1217,14 +1049,6 @@ async function init(){
   document.getElementById('heroDate').textContent = dataLongaHome();
   document.getElementById('rolePill').textContent = ROLE_LABELS[papel] || '';
 
-  sideTemPermRef = temPerm;
-  sideUserIdRef = session.user.id;
-  try{
-    const { data: pref } = await supa.from('preferencias_hub').select('sidebar_ordem').eq('user_id', session.user.id).maybeSingle();
-    sideOrdemPersonalizada = pref?.sidebar_ordem || null;
-  }catch(e){ sideOrdemPersonalizada = null; }
-  renderSideNav();
-  renderSideBottom();
 
   if(papel === 'sem_papel'){
     document.getElementById('roleBanner').style.display = 'block';

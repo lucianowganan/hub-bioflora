@@ -92,7 +92,8 @@
     { id: 'comercial', label: 'Comercial e marketing', icone: 'vendas', hrefs: ['cliente-fiel.html','pedidos-live.html','vendas-yampi.html','email-marketing.html','instagram.html','calendario-editorial.html','visitas-medicas.html','vet-contatos.html'] },
     { id: 'gestao', label: 'Gestão', icone: 'grafico', hrefs: ['resumo-semanal.html','rastreabilidade.html','wanessia.html','admin.html','cargos.html'] },
   ];
-  const FIXOS_TOPO = ['index.html', 'chat.html'];   // continuam soltos, fora das áreas
+  const FIXOS_TOPO = ['index.html', 'chat.html'];
+  window.HUB_AREAS = AREAS; window.HUB_MODULOS = MODULOS;   // a página inicial usa a mesma lista (fonte única)   // continuam soltos, fora das áreas
   let papelGlobal = null, areaAberta = null;
 
   // Barra de endereço sem ".html" (só visual -- o GitHub Pages serve o mesmo arquivo em /chat e /chat.html)
