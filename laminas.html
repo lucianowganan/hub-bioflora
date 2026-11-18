@@ -293,13 +293,33 @@ body.arrastando,body.arrastando *{cursor:grabbing!important;user-select:none}
  .sel,.b:hover{outline:none!important}.b.arrastado{opacity:1}.ed:empty:before{content:''}.img>span{display:none}
 }
 @media (max-width:720px){#home{inset:0 0 64px 0}}
+
+#modal{z-index:70}
+.kb{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;align-items:start;margin-bottom:8px}
+.kc{background:#EFE8EA;border-radius:16px;padding:10px;min-height:110px;border-top:4px solid var(--c,#999)}
+.kc.sobre{outline:2px dashed var(--ui-acc)}
+.kc h3{font:700 13px 'Maven Pro';margin:2px 4px 8px;display:flex;justify-content:space-between;color:#444}
+.kc h3 span{background:#fff;border-radius:20px;padding:0 9px;font-size:12px}
+.kcard{background:#fff;border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer;box-shadow:0 1px 3px #0001;font-size:13px}
+.kcard:hover{box-shadow:0 3px 10px #0002}
+.kcard b{display:block;font:700 14px 'Maven Pro';margin-bottom:2px}
+.kcard small{display:block;color:#777;line-height:1.35}
+.kcard .atr{color:#B4472F;font-weight:700}
+.kcard .eap{display:inline-block;background:#FBF1E0;color:#8F6210;border-radius:20px;padding:1px 9px;font-size:11px;font-weight:700;margin-top:4px}
+.kcard .acts2{display:flex;gap:4px;margin-top:6px}.kcard .acts2 button{padding:3px 8px;font-size:11px}
+.stbox{display:inline-flex;gap:6px;align-items:center;margin-left:6px;flex-wrap:wrap}
+.stchip{border-radius:20px;padding:3px 12px;font:700 12px 'Maven Pro';background:#EFE8EA;color:#444}
+.stchip.solicitada{background:#EFE8EA}.stchip.em_desenvolvimento{background:#E4EEF9;color:#0B5A99}.stchip.para_aprovacao{background:#FBF1E0;color:#8F6210}.stchip.aprovada{background:#E6F2EC;color:#2F7A5F}
+.eapn{font-size:12px;color:#8F6210;font-weight:600}
+.hist{margin:0;padding:0;list-style:none;max-height:55vh;overflow:auto}.hist li{padding:8px 4px;border-bottom:1px solid #eee;font-size:13px}.hist small{color:#777;display:block}
+.fmd label{display:block;font-weight:700;font-size:12px;margin:10px 0 4px}.fmd input,.fmd textarea,.fmd select{width:100%;padding:9px 11px;border:1px solid var(--ui-line);border-radius:9px;font:600 14px 'Maven Pro'}.fmd textarea{min-height:90px}
 </style>
 </head>
 <body>
 <div id="home">
  <div class="hh"><h1>Lâminas Bioflora</h1><input id="hq" placeholder="Buscar modelo ou lâmina…" oninput="homeRender()"><button onclick="arq.click()">Abrir .json</button></div>
  <div class="hb">
-  <h2>Minhas lâminas</h2><p class="sub">Clique para continuar editando.</p><div class="hgrid" id="hMinhas"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><h2>Fluxo de criação</h2><p class="sub">Arraste o cartão entre as colunas. Só a Wanessa aprova. Lâmina aprovada pode ser alterada, mas quem mexer fica registrado.</p></div><button class="pri" onclick="novaSolicitacao()">+ Nova solicitação</button></div><div class="kb" id="kb"></div>
   <h2>Modelos</h2><p class="sub">Escolha um ponto de partida. Tudo pode ser alterado depois: textos, cores, blocos e páginas.</p><div class="chips" id="chips"></div><div class="hgrid" id="hModelos"></div>
   <h2>Meus arquivos</h2><p class="sub">Logos, selos, fotos de produto e elementos que vocês sempre usam. Ficam salvos no Hub, valem para toda a chefia e aparecem no editor para arrastar.</p>
   <div style="margin-bottom:10px"><button class="pri" onclick="upa.click()">+ Enviar arquivos</button></div><div class="agrid" id="hArq"></div>
@@ -617,6 +637,10 @@ const K='bioflora-laminas-v2';
 const SUPABASE_URL='https://gbbjpltqmbhlfluqhrmg.supabase.co',SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let db={laminas:[]},meuId=null;
+const META={};let souAprov=false,EQUIPE=[];
+const ST_ROT={solicitada:'Solicitadas (a fazer)',em_desenvolvimento:'Em desenvolvimento',para_aprovacao:'Para aprovação',aprovada:'Aprovadas'},ST_UNI={solicitada:'Solicitada',em_desenvolvimento:'Em desenvolvimento',para_aprovacao:'Para aprovação',aprovada:'Aprovada'},ST_COR={solicitada:'#9a8f93',em_desenvolvimento:'#0B5A99',para_aprovacao:'#C9922B',aprovada:'#2F7A5F'};
+const meta=d=>META[d.id]||(META[d.id]={status:'em_desenvolvimento',novo:true});
+const fdt=t=>t?new Date(t).toLocaleDateString('pt-BR')+' '+new Date(t).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
 let doc,sel=null,pgAtiva=0,hist=[];
 function criar(m){const d=migra({id:uid(),nome:MODELOS[m].nome.split(' (')[0],cores:{},...MODELOS[m].fn()});db.laminas.push(d);salvar(d);return d}
 doc=migra({id:uid(),nome:'',cores:{},...MODELOS.branco.fn()});   // espaço de trabalho vazio (não é salvo) até abrir uma lâmina
@@ -625,10 +649,11 @@ let tSalva;const sujos=new Set();let avisouErro=false;
 function stSalva(t){let e=document.getElementById('stSalva');if(!e){e=document.createElement('span');e.id='stSalva';e.style.cssText='font-size:12px;color:#6E6266;margin-left:4px';const sp=document.querySelector('.top .sp');if(sp)sp.before(e)}e.textContent=t}
 function salvar(d){sujos.add(d||doc);clearTimeout(tSalva);stSalva('Salvando…');tSalva=setTimeout(flush,700)}
 async function flush(){clearTimeout(tSalva);const L=[...sujos].filter(d=>db.laminas.includes(d));sujos.clear();if(!L.length){stSalva('');return}
- const {data,error}=await supa.from('laminas').upsert(L.map(d=>({id:d.id,nome:d.nome||'Sem nome',dados:d,atualizado_por:meuId,atualizado_em:new Date().toISOString()})),{onConflict:'id'}).select('id');
+ const {data,error}=await supa.from('laminas').upsert(L.map(d=>{const M=meta(d),r={id:d.id,nome:d.nome||'Sem nome',dados:d,atualizado_por:meuId,atualizado_em:new Date().toISOString()};if(M.novo){r.status=M.status;r.descricao=M.descricao||null;r.prazo=M.prazo||null;r.responsavel_nome=M.resp||null}return r}),{onConflict:'id'}).select('id');
  if(error||!data||data.length!==L.length){L.forEach(d=>sujos.add(d));stSalva('Não salvo');if(!avisouErro){avisouErro=true;avisar('Não foi possível salvar','Confira a conexão. Vou tentar de novo na próxima alteração. Dica: "Baixar .json" guarda uma cópia no seu computador.')}return}
- avisouErro=false;stSalva('Salvo')}
-async function carregaLaminas(){const {data,error}=await supa.from('laminas').select('id,nome,dados').order('atualizado_em',{ascending:false});if(error){avisar('Não foi possível carregar as lâminas','Confira a conexão e recarregue a página.');return}
+ L.forEach(d=>{meta(d).novo=false});avisouErro=false;stSalva('Salvo')}
+async function carregaLaminas(){const {data,error}=await supa.from('laminas').select('id,nome,dados,status,descricao,prazo,responsavel_nome,aprovado_nome,aprovado_em,editado_apos_em,editado_apos_por').order('atualizado_em',{ascending:false});if(error){avisar('Não foi possível carregar as lâminas','Confira a conexão e recarregue a página.');return}
+ (data||[]).forEach(x=>{META[x.id]={status:x.status,descricao:x.descricao,prazo:x.prazo,resp:x.responsavel_nome,aprovado_nome:x.aprovado_nome,aprovado_em:x.aprovado_em,editado_apos_em:x.editado_apos_em,editado_apos_por:x.editado_apos_por}});
  db.laminas=(data||[]).map(x=>migra(Object.assign(x.dados||{},{id:x.id,nome:x.nome})))}
 async function subir(dataUrl,pasta){try{const blob=await (await fetch(dataUrl)).blob();const ext=blob.type==='image/png'?'png':'jpg';const path=pasta+'/'+crypto.randomUUID()+'.'+ext;
  const {error}=await supa.storage.from('laminas').upload(path,blob,{contentType:blob.type,cacheControl:'31536000'});if(error)throw error;
@@ -660,7 +685,7 @@ function pos(){
  document.querySelectorAll('#wrap .pg').forEach(pg=>{const pin=pg.firstChild;const over=[...pin.querySelectorAll('.b')].some(b=>b.scrollHeight>b.clientHeight+8)||pin.scrollHeight>pin.clientHeight+2;pg.classList.toggle('over',over)});
  barra();
 }
-function UI(){
+function UI(){statusBox();
  $('#lista').innerHTML=db.laminas.map(l=>`<option value="${l.id}" ${l.id===doc.id?'selected':''}>${esc(l.nome)}</option>`).join('');
  $('#tema').innerHTML=Object.entries(TEMAS).map(([k,t])=>`<option value="${k}" ${doc.tema===k?'selected':''}>${t.nome}</option>`).join('');
  const base={...TEMAS.vinho,...doc.cores};
@@ -936,8 +961,55 @@ let chip='Todos';const cacheM={};
 function modeloDoc(k){return cacheM[k]=cacheM[k]||migra({id:'m_'+k,nome:MODELOS[k].nome,cores:{},...MODELOS[k].fn()})}
 function thumb(d){if(!d||!d.paginas||!d.paginas.length)return '<div class="thumb vazio">+</div>';const o=doc,os=sel;doc=d;sel=null;let h='';try{h=`<div class="thumb"><div class="doc" style="${vars(d)}">${pgHTML(d.paginas[0],0).replace(/contenteditable="true"/g,'')}</div></div>`}finally{doc=o;sel=os}return h}
 const norm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-function homeRender(){const q=norm($('#hq').value);
- $('#hMinhas').innerHTML=db.laminas.filter(l=>!q||norm(l.nome).includes(q)).map(l=>`<div class="cm" onclick="abrirLam('${l.id}')">${thumb(l)}<b>${esc(l.nome)}</b><small>${l.paginas.length} página${l.paginas.length>1?'s':''} · ${(TEMAS[l.tema]||{}).nome||''}</small><div class="acts" onclick="event.stopPropagation()"><button onclick="dupLam('${l.id}')">Duplicar</button><button onclick="delLam('${l.id}')">Excluir</button></div></div>`).join('')||'<p class="sub">Nenhuma lâmina ainda. Escolha um modelo abaixo.</p>';
+function kanbanRender(q){
+ const hoje=new Date().toISOString().slice(0,10),cols=['solicitada','em_desenvolvimento','para_aprovacao','aprovada'];
+ $('#kb').innerHTML=cols.map(st=>{const L=db.laminas.filter(l=>meta(l).status===st&&(!q||norm(l.nome+' '+(meta(l).descricao||'')).includes(q)));
+  return `<div class="kc" style="--c:${ST_COR[st]}" ondragover="event.preventDefault();this.classList.add('sobre')" ondragleave="this.classList.remove('sobre')" ondrop="soltaCard(event,'${st}')"><h3>${ST_ROT[st]}<span>${L.length}</span></h3>${L.map(l=>{const M=meta(l),atr=M.prazo&&M.prazo<hoje&&st!=='aprovada';
+   return `<div class="kcard" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${l.id}')" onclick="abrirCard('${l.id}')"><b>${esc(l.nome)}</b>${M.descricao?`<small>${esc(M.descricao.slice(0,90))}${M.descricao.length>90?'…':''}</small>`:''}<small>${l.paginas.length} página${l.paginas.length>1?'s':''}${M.resp?' · '+esc(M.resp):''}</small>${M.prazo?`<small class="${atr?'atr':''}">Prazo ${M.prazo.split('-').reverse().join('/')}${atr?' (atrasado)':''}</small>`:''}${st==='aprovada'?`<small>Aprovada por ${esc(M.aprovado_nome||'')} em ${fdt(M.aprovado_em)}</small>`:''}${M.editado_apos_em?`<span class="eap">Editada após aprovação por ${esc(M.editado_apos_por||'')}</span>`:''}<div class="acts2" onclick="event.stopPropagation()"><button onclick="abrirHist('${l.id}')">Histórico</button><button onclick="dupLam('${l.id}')">Duplicar</button><button onclick="delLam('${l.id}')">Excluir</button></div></div>`}).join('')||'<small style="color:#999;padding:4px 6px;display:block">Nada aqui.</small>'}</div>`}).join('')}
+function soltaCard(e,st){e.preventDefault();e.currentTarget.classList.remove('sobre');const id=e.dataTransfer.getData('text/plain');if(id)moverStatus(id,st)}
+async function moverStatus(id,novo,motivo){
+ const d=db.laminas.find(x=>x.id===id);if(!d)return;const M=meta(d);if(M.status===novo)return;
+ if(novo==='aprovada'&&!souAprov)return avisar('Só a Wanessa aprova','Mova a lâmina para "Para aprovação" e avise a Wanessa.');
+ if(M.status==='aprovada'&&!await confirmar('Tirar a lâmina de "Aprovada"?','Ela volta para "'+ST_UNI[novo]+'" e a aprovação é desfeita. Isso fica registrado no histórico.',{ok:'Mover'}))return;
+ await flush();
+ const {data,error}=await supa.from('laminas').update({status:novo,motivo_status:motivo||null}).eq('id',id).select('id,status,aprovado_nome,aprovado_em,editado_apos_em,editado_apos_por');
+ if(error||!data||!data.length)return avisar('Não foi possível mudar o status',error&&/aprova/i.test(error.message||'')?'Só a Wanessa pode aprovar.':'Confira a conexão e tente de novo.');
+ Object.assign(M,{status:data[0].status,aprovado_nome:data[0].aprovado_nome,aprovado_em:data[0].aprovado_em,editado_apos_em:data[0].editado_apos_em,editado_apos_por:data[0].editado_apos_por});
+ if(document.body.classList.contains('inicio'))homeRender();else UI()}
+function abrirCard(id){const d=db.laminas.find(x=>x.id===id);if(!d)return;const M=meta(d);if(M.status==='solicitada'){abrirSolicitacao(id)}else abrirLam(id)}
+function abrirSolicitacao(id){const d=db.laminas.find(x=>x.id===id),M=meta(d);
+ $('#mbox').innerHTML=`<h3 style="margin:0 0 4px">${esc(d.nome)}</h3><p class="sub" style="margin:0 0 10px">Solicitação a fazer${M.resp?' · responsável: '+esc(M.resp):''}${M.prazo?' · prazo '+M.prazo.split('-').reverse().join('/'):''}</p><div style="white-space:pre-wrap;background:#F8F4F5;border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:14px">${esc(M.descricao||'Sem descrição.')}</div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pri" onclick="iniciarSolic('${id}',1)">Iniciar com um modelo</button><button onclick="iniciarSolic('${id}',0)">Iniciar em branco</button><button onclick="abrirHist('${id}')">Histórico</button><button onclick="fechaModal()">Fechar</button></div>`;$('#modal').classList.add('on')}
+async function iniciarSolic(id,comModelo){if(innerWidth<=720)return avisar('Editor no computador','Para editar, abra o Hub no computador.');
+ if(comModelo){const gr={};Object.entries(MODELOS).forEach(([k,m])=>(gr[m.cat||'Base']=gr[m.cat||'Base']||[]).push([k,m]));
+  $('#mbox').innerHTML=`<h3>Escolha o modelo</h3>${Object.entries(gr).map(([g,ms])=>`<div class="grp">${g}</div><div class="lib">${ms.map(([k,m])=>`<button onclick="aplicaModeloSolic('${id}','${k}')"><b>${m.nome}</b><small>${m.desc}</small></button>`).join('')}</div>`).join('')}`;return}
+ await moverStatus(id,'em_desenvolvimento');fechaModal();abrirLam(id)}
+async function aplicaModeloSolic(id,k){const d=db.laminas.find(x=>x.id===id);const m=migra({id:d.id,nome:d.nome,cores:{},...MODELOS[k].fn()});Object.keys(d).forEach(x=>delete d[x]);Object.assign(d,m);salvar(d);await moverStatus(id,'em_desenvolvimento');fechaModal();abrirLam(id)}
+function novaSolicitacao(){
+ $('#mbox').innerHTML=`<h3 style="margin:0 0 4px">Nova solicitação de lâmina</h3><p class="sub" style="margin:0 0 6px">Descreva o que precisa. Ela entra na coluna "Solicitadas" até alguém iniciar.</p><div class="fmd"><label>Título</label><input id="sqT" placeholder="Ex.: Lâmina do Magnésio Bisglicinato">
+ <label>O que precisa ser feito</label><textarea id="sqD" placeholder="Produto, público (médico, nutricionista...), fornecedor de referência, pontos que não podem faltar..."></textarea>
+ <label>Prazo (opcional)</label><input type="date" id="sqP"><label>Responsável (opcional)</label><select id="sqR"><option value="">—</option>${EQUIPE.map(n=>`<option>${esc(n)}</option>`).join('')}</select></div>
+ <div style="display:flex;gap:8px;margin-top:14px"><button class="pri" onclick="criarSolicitacao()">Criar solicitação</button><button onclick="fechaModal()">Cancelar</button></div>`;$('#modal').classList.add('on');setTimeout(()=>$('#sqT').focus(),50)}
+function criarSolicitacao(){const nome=$('#sqT').value.trim();if(!nome)return avisar('Falta o título','Escreva um título para a solicitação.');
+ const d=migra({id:uid(),nome,cores:{},...MODELOS.branco.fn()});db.laminas.push(d);META[d.id]={status:'solicitada',descricao:$('#sqD').value.trim(),prazo:$('#sqP').value||null,resp:$('#sqR').value||null,novo:true};salvar(d);fechaModal();homeRender()}
+async function abrirHist(id){const d=db.laminas.find(x=>x.id===id);
+ $('#mbox').innerHTML=`<h3 style="margin:0 0 8px">Histórico${d?': '+esc(d.nome):''}</h3><p class="sub">Carregando…</p>`;$('#modal').classList.add('on');
+ const {data,error}=await supa.from('laminas_historico').select('*').eq('lamina_id',id).order('criado_em',{ascending:false}).limit(120);
+ const T={criou:'criou a lâmina',editou:'editou',excluiu:'excluiu',aprovou:'aprovou',status:'mudou o status'};
+ const det=x=>{let t=x.detalhe||'';if(x.acao==='status'||x.acao==='aprovou'){const [a,m]=t.split(' | ');const [o,n]=a.split(' > ');t=(ST_UNI[o]&&ST_UNI[n]?ST_UNI[o]+' → '+ST_UNI[n]:a)+(m?'. Motivo: '+m:'')}else if(x.acao==='criou'&&ST_UNI[t])t='como '+ST_UNI[t].toLowerCase();return t};
+ $('#mbox').innerHTML=`<h3 style="margin:0 0 8px">Histórico${d?': '+esc(d.nome):''}</h3>${error?'<p class="sub">Não foi possível carregar.</p>':`<ul class="hist">${(data||[]).map(x=>`<li><b>${esc(x.usuario_nome||'Alguém')}</b> ${T[x.acao]||esc(x.acao)}<small>${esc(det(x))}${det(x)?' · ':''}${fdt(x.criado_em)}</small></li>`).join('')||'<li>Sem registros ainda.</li>'}</ul>`}<div style="margin-top:12px"><button onclick="fechaModal()">Fechar</button></div>`}
+function statusBox(){let b=document.getElementById('stBox');if(!b){b=document.createElement('span');b.id='stBox';b.className='stbox';const sp=document.querySelector('.top .sp');if(sp)sp.before(b)}
+ if(!doc||!db.laminas.includes(doc)){b.innerHTML='';return}const M=meta(doc),st=M.status;
+ let h=`<span class="stchip ${st}">${ST_UNI[st]}</span>`;
+ if(st==='solicitada')h+=`<button onclick="moverStatus('${doc.id}','em_desenvolvimento')">Iniciar</button>`;
+ if(st==='em_desenvolvimento')h+=`<button class="pri" onclick="moverStatus('${doc.id}','para_aprovacao')">Enviar para aprovação</button>`;
+ if(st==='para_aprovacao')h+=souAprov?`<button class="pri" onclick="moverStatus('${doc.id}','aprovada')">Aprovar</button><button onclick="devolverAtual()">Devolver para ajustes</button>`:`<button onclick="moverStatus('${doc.id}','em_desenvolvimento')">Voltar para desenvolvimento</button>`;
+ if(st==='aprovada'){h+=`<span class="eapn">${M.editado_apos_em?'Editada após aprovação por '+esc(M.editado_apos_por||'')+' em '+fdt(M.editado_apos_em):'Aprovada por '+esc(M.aprovado_nome||'')+' em '+fdt(M.aprovado_em)}</span>`;if(M.editado_apos_em&&souAprov)h+=`<button class="pri" onclick="reaprovar('${doc.id}')">Aprovar novamente</button>`}
+ h+=`<button onclick="abrirHist('${doc.id}')">Histórico</button>`;b.innerHTML=h}
+async function devolverAtual(){const m=await pedir('Devolver para ajustes','',{msg:'Escreva o que precisa mudar (fica no histórico).',ok:'Devolver'});if(m===null)return;await moverStatus(doc.id,'em_desenvolvimento',m||'devolvida')}
+async function reaprovar(id){await flush();const d=db.laminas.find(x=>x.id===id),M=meta(d);const {data,error}=await supa.from('laminas').update({motivo_status:'reaprovar'}).eq('id',id).select('id,aprovado_nome,aprovado_em,editado_apos_em,editado_apos_por');
+ if(error||!data||!data.length)return avisar('Não foi possível aprovar de novo','Só a Wanessa pode aprovar.');Object.assign(M,{aprovado_nome:data[0].aprovado_nome,aprovado_em:data[0].aprovado_em,editado_apos_em:data[0].editado_apos_em,editado_apos_por:data[0].editado_apos_por});UI()}
+function homeRender(){const q=norm($('#hq').value);kanbanRender(q);
  const cats=['Todos',...new Set(Object.values(MODELOS).map(m=>m.cat||'Base'))];
  $('#chips').innerHTML=cats.map(c=>`<button class="${c===chip?'on':''}" onclick="chip='${c}';homeRender()">${c}</button>`).join('');
  $('#hModelos').innerHTML=Object.entries(MODELOS).filter(([k,m])=>(chip==='Todos'||(m.cat||'Base')===chip)&&(!q||norm(m.nome+' '+m.desc+' '+m.cat).includes(q))).map(([k,m])=>{const d=modeloDoc(k);
@@ -974,6 +1046,9 @@ async function carregaCatalogo(){try{const lst=await (await fetch('laminas-model
  await requireRole(['chefia']);
  try{const {data:{session}}=await supa.auth.getSession();meuId=session?session.user.id:null}catch(e){}
  await carregaLaminas();
+ try{const {data:ap}=await supa.from('laminas_aprovadores').select('user_id');souAprov=!!(ap||[]).some(r=>r.user_id===meuId)}catch(e){}
+ try{const {data:pf}=await supa.from('perfis').select('nome_exibicao').eq('papel','chefia');EQUIPE=(pf||[]).map(x=>x.nome_exibicao).filter(Boolean).sort()}catch(e){}
+ setInterval(async()=>{if(document.hidden||!document.body.classList.contains('inicio')||sujos.size||document.getElementById('modal').classList.contains('on'))return;await carregaLaminas();homeRender()},45000);
  render();document.body.classList.add('inicio');homeRender();carregaArquivos();carregaCatalogo();
  document.addEventListener('visibilitychange',()=>{if(document.hidden)flush()});
  addEventListener('pagehide',()=>{flush()});
