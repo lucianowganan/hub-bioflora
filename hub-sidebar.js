@@ -75,6 +75,7 @@
     { href: 'email-marketing.html', icone: 'email', label: 'Email Marketing', perm: 'modulo.email_marketing' },
     { href: 'instagram.html', icone: 'instagram', label: 'Instagram', perm: 'modulo.instagram' },
     { href: 'pedidos-live.html', icone: 'prancheta', label: 'Pedidos da Live', perm: 'modulo.pedidos_live' },
+    { href: 'laminas.html', icone: 'lapis', label: 'Lâminas', perm: 'modulo.laminas' },
     { href: 'vet-contatos.html', icone: 'prancheta', label: 'Contatos Veterinários', perm: 'modulo.vet' },
     { href: 'embalagens.html', icone: 'caixa', label: 'Controle de Embalagens', perm: 'modulo.embalagens' },
     { href: 'conferencia-formulas.html', icone: 'prancheta', label: 'Conferência de Fórmulas', perm: 'modulo.conferencia' },
@@ -89,7 +90,7 @@
     { id: 'operacao', label: 'Operação', icone: 'frasco', hrefs: ['rotulos.html','producao.html','controle-producao.html','reaproveitamento.html','formulas-complexas.html','conferencia-formulas.html','embalagens.html'] },
     { id: 'qualidade', label: 'Qualidade', icone: 'escudoCheck', hrefs: ['erros.html','inclusoes.html','meus-erros.html'] },
     { id: 'pessoas', label: 'Pessoas', icone: 'pessoas', hrefs: ['tarefas.html','calendario-interno.html','rh.html'] },
-    { id: 'comercial', label: 'Comercial e marketing', icone: 'vendas', hrefs: ['cliente-fiel.html','pedidos-live.html','vendas-yampi.html','email-marketing.html','instagram.html','calendario-editorial.html','visitas-medicas.html','vet-contatos.html'] },
+    { id: 'comercial', label: 'Comercial e marketing', icone: 'vendas', hrefs: ['cliente-fiel.html','pedidos-live.html','laminas.html','vendas-yampi.html','email-marketing.html','instagram.html','calendario-editorial.html','visitas-medicas.html','vet-contatos.html'] },
     { id: 'gestao', label: 'Gestão', icone: 'grafico', hrefs: ['resumo-semanal.html','rastreabilidade.html','wanessia.html','admin.html','cargos.html'] },
   ];
   const FIXOS_TOPO = ['index.html', 'chat.html'];

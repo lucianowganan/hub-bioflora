@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lâminas — Hub Bioflora</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="favicon.svg"><link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#8B1A3A">
+<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,500;0,700;0,800;1,500&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cal+Sans&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;0,800;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="laminas-icones.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+:root{--ui:#F4EFEC;--ui-line:#dcd8d8;--ui-ink:#222;--ui-acc:#8B1A3A}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Maven Pro',sans-serif;background:var(--ui);color:var(--ui-ink)}
+button,select,input{font:600 13px 'Maven Pro',sans-serif}
+button{border:1px solid var(--ui-line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+button:hover{border-color:#aaa}
+button.pri{background:var(--ui-acc);color:#fff;border-color:var(--ui-acc)}
+select{border:1px solid var(--ui-line);border-radius:8px;padding:6px 8px;background:#fff}
+/* ---------- UI ---------- */
+.top{position:sticky;top:0;z-index:20;display:flex;gap:8px;align-items:center;padding:8px 14px;background:#fff;border-bottom:1px solid var(--ui-line);flex-wrap:wrap}
+.top h1{font:700 17px 'Space Grotesk';color:var(--ui-acc);margin:0 10px 0 0;letter-spacing:-.02em}
+.top .sp{flex:1}
+.app{display:grid;grid-template-columns:230px 1fr;height:calc(100vh - 51px)}
+.rail{background:#fff;border-right:1px solid var(--ui-line);padding:12px;overflow:auto;font-size:12px}
+.rail h4{font:600 11px Poppins;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:14px 0 6px}
+.rail h4:first-child{margin-top:0}
+.rail select,.rail button{width:100%}
+.cores{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px}
+.cores label{display:flex;flex-direction:column;font-size:10px;color:#666}
+.cores input{width:100%;height:24px;border:1px solid var(--ui-line);border-radius:5px;padding:0}
+.pgl{display:flex;flex-direction:column;gap:4px}
+.pgl div{display:flex;align-items:center;gap:3px;padding:4px 6px;border-radius:6px;border:1px solid var(--ui-line);cursor:pointer}
+.pgl div.on{border-color:var(--ui-acc);background:#fbeef1}
+.pgl span{flex:1}.pgl b{font-weight:400;color:#999;padding:0 3px;cursor:pointer}.pgl b:hover{color:var(--ui-acc)}
+.dica{margin-top:16px;line-height:1.45;color:#777;font-size:11.5px}
+.stage{overflow:auto;padding:28px 20px 120px}
+#wrap{margin:0 auto;width:210mm;display:flex;flex-direction:column;gap:26px}
+#tb{position:fixed;z-index:30;display:none;gap:2px;background:#222;border-radius:9px;padding:3px;box-shadow:0 6px 20px #0004;flex-wrap:wrap;max-width:calc(100vw - 312px)}
+#tb button{background:transparent;border:0;color:#fff;padding:5px 8px;font-size:12px;border-radius:6px}
+#tb button:hover{background:#ffffff22}
+#tb i{width:1px;background:#ffffff33;margin:3px 2px}
+#tt{position:fixed;z-index:31;top:58px;left:332px;right:10px;display:none;justify-content:center;pointer-events:none}
+#tt .in{pointer-events:auto;display:flex;gap:4px;align-items:center;background:#fff;border:1px solid var(--ui-line);border-radius:10px;padding:5px 8px;box-shadow:0 6px 20px #0002;flex-wrap:wrap}
+#tt button{padding:4px 8px;min-width:28px}#tt button[data-k=B]{font-weight:800}#tt button[data-k=I]{font-style:italic;font-family:serif}#tt button[data-k=U]{text-decoration:underline}#tt button.on{background:#fbeef1;border-color:var(--ui-acc);color:var(--ui-acc)}
+#tt select{padding:4px 6px}#tt .ff{width:150px}
+#tt input[type=number]{width:52px;border:1px solid var(--ui-line);border-radius:7px;padding:4px}
+#tt input[type=color]{width:30px;height:28px;border:1px solid var(--ui-line);border-radius:7px;padding:1px;background:#fff}
+#tt i{width:1px;height:20px;background:var(--ui-line);margin:0 3px}
+.modal{position:fixed;inset:0;background:#0006;z-index:40;display:none;align-items:center;justify-content:center}
+.modal.on{display:flex}
+.modal .box{background:#fff;border-radius:14px;padding:18px;width:min(640px,94vw);max-height:86vh;overflow:auto}
+.modal h3{margin:0 0 12px;font:800 18px 'Plus Jakarta Sans'}
+.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.lib button{text-align:left;padding:10px;white-space:normal;line-height:1.3}
+.lib small{display:block;color:#888;font-size:11px;margin-top:3px}
+
+/* ---------- Documento ---------- */
+.doc{--gap:3.2mm;--r:5mm}
+.pg{width:210mm;height:297mm;background:var(--bg);color:var(--ink);position:relative;overflow:hidden;box-shadow:0 4px 30px #0002;flex:none;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pg.over{outline:3px solid #fd2e70}
+.pg.over:after{content:'⚠ conteúdo passa do tamanho da página';position:absolute;top:2mm;right:2mm;background:#fd2e70;color:#fff;font:600 11px Poppins;padding:3px 8px;border-radius:6px}
+.pin{position:absolute;inset:0;padding:7mm;display:flex;flex-direction:column;gap:var(--gap)}
+.row{display:flex;gap:var(--gap);min-height:0;flex:0 0 auto}
+.row.grow{flex:1 1 0}
+.b{min-width:0;position:relative;display:flex;flex-direction:column;font-size:3.6mm;line-height:1.42}
+.b.card{border-radius:var(--r);padding:5mm;overflow:hidden}
+.c-p{background:var(--p);color:var(--pi)}.c-s{background:var(--s);color:var(--si)}.c-a{background:var(--a);color:#fff}
+.c-w{background:#fff;color:#181818}.c-d{background:#151515;color:#fff}
+.sel{outline:2px solid #2d8cff;outline-offset:1.5mm}
+.b:hover:not(.sel){outline:1px dashed #2d8cff99;outline-offset:1.5mm}
+.H{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.04em;line-height:1.02}
+.ed{outline:none;min-width:2mm}
+.ed:focus{background:#2d8cff14;border-radius:1mm}
+.ed:empty:before{content:attr(data-ph);opacity:.4}
+.b:not(.sel) .ed:empty:not(:focus){display:none}
+.img{position:relative;overflow:hidden;background:color-mix(in srgb,currentColor 10%,transparent);cursor:pointer}
+.img img{width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none;position:absolute;inset:0}
+.img.contain img{object-fit:contain}
+.img>span{position:absolute;inset:0;display:grid;place-items:center;font-size:3mm;opacity:.55;text-align:center;border:.3mm dashed currentColor;border-radius:inherit;padding:2mm}
+/* titulo */
+.tit{display:flex;flex-direction:column;height:100%}
+.tit .sob{font:600 4.2mm Poppins;letter-spacing:.22em;text-transform:uppercase;opacity:.85;margin-bottom:2mm}
+.tit .t{font-size:13mm}
+.tit .sub{font-size:4.6mm;margin-top:3mm;line-height:1.35}
+.tit.centro{text-align:center}
+.tit.gigante{justify-content:center}.tit.gigante .t{font-size:26mm;white-space:nowrap}
+.tit.medio .t{font-size:8mm}
+/* textoFoto */
+.tf{display:grid;gap:5mm;flex:1;min-height:0}
+.tf.foto-esq{grid-template-columns:.9fr 1.1fr}.tf.foto-dir{grid-template-columns:1.1fr .9fr}
+.tf.foto-dir .img{order:2}
+.tf .img{border-radius:calc(var(--r) - 1mm);min-height:35mm}
+.tf .tt{font-size:7mm;margin-bottom:3mm}
+.b.v-sobre{padding:0}
+.tf.sobre{display:block;position:relative;min-height:60mm}
+.tf.sobre .img{position:absolute;inset:0;border-radius:0}
+.tf.sobre .tx{position:absolute;right:5mm;top:5mm;bottom:5mm;width:50%;text-align:right;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+.tf.sobre .tx .ed{pointer-events:auto}.tf.sobre .tt{font-size:9mm}
+/* foto */
+.b.t-foto{padding:0}.b.t-foto .img{flex:1;min-height:30mm;border-radius:inherit}
+/* destaques */
+.dq{display:flex;gap:4mm;flex:1}
+.dq.linha{flex-direction:row;align-items:flex-start}.dq.linha>div{flex:1;text-align:center}
+.dq.coluna{flex-direction:column;justify-content:space-around;text-align:center}
+.dq .img{width:17mm;height:17mm;border-radius:50%;margin:0 auto 2.5mm;background:var(--a)}
+.dq .img>span{border:0;color:#fff;font-size:2.4mm}
+.dq .ed{font:800 5mm/1.05 'Plus Jakarta Sans';letter-spacing:-.035em}
+.dq.mini{justify-content:space-between}
+.dq.mini>div{display:flex;gap:2mm;align-items:center;text-align:left}.dq.mini .img{width:7mm;height:7mm;margin:0;flex:none}
+.dq.mini .ed{font:600 3.3mm Poppins;letter-spacing:0;text-transform:uppercase}
+/* beneficios */
+.bn .tt{font-size:7mm;text-align:center;margin-bottom:4mm}
+.bi{display:grid;grid-template-columns:14mm 1fr;gap:3mm;align-items:center;margin-bottom:3mm}
+.bi .img{width:14mm;height:14mm;border-radius:50%;background:#fff;color:var(--p)}
+.bi .img>span,.bi .img>svg{border:0}
+.bi .img>svg{width:8mm;height:8mm;position:absolute;inset:3mm}
+.bi .ed{font:700 3.7mm/1.15 'Plus Jakarta Sans';letter-spacing:-.02em;border-top:.4mm solid var(--a);padding-top:1.2mm}
+/* fases */
+.fs{display:grid;gap:3mm}
+.fs>div{background:color-mix(in srgb,currentColor 7%,transparent);border-radius:4mm;padding:0 3mm 4mm;text-align:center}
+.fs .n{width:12mm;height:12mm;margin:0 auto 3mm;background:var(--a);color:#fff;font:800 6.5mm/12mm 'Plus Jakarta Sans';border-radius:0 0 3mm 3mm}
+.fs .nm{font:700 3.7mm 'Plus Jakarta Sans';text-transform:uppercase;color:var(--a);margin-bottom:1.5mm}
+.fs .ds{font-size:3mm;line-height:1.35}
+/* faixa */
+.b.t-faixa.card{padding:2.6mm 5mm;border-radius:2.5mm;text-align:center}
+.b.t-faixa .ed{font:700 4.6mm 'Plus Jakarta Sans';letter-spacing:-.02em}
+/* produto */
+.b.t-produto{border-top:.3mm solid color-mix(in srgb,currentColor 20%,transparent);padding-top:3mm}
+.pd{display:grid;grid-template-columns:44mm 1fr auto;gap:4mm;align-items:start}
+.pd .nm{font-size:5.2mm;color:var(--a);margin-bottom:1.5mm}
+.card .pd .nm{color:inherit}
+.pd .lb{font-weight:700;font-size:3mm;margin-bottom:1mm}
+.pd .pos{font-size:3mm;line-height:1.35}
+.pd ul{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:1.5mm 4mm}
+.pd li{font-size:3mm;line-height:1.3;padding-left:4.5mm;position:relative}
+.pd li:before{content:'';position:absolute;left:0;top:.6mm;width:2.6mm;height:2.6mm;border-radius:50%;background:var(--a)}
+.pd .dir{display:flex;gap:3mm}
+.tags{display:grid;gap:1.2mm;width:27mm}
+.tag{font:700 2.4mm Poppins;text-transform:uppercase;text-align:center;padding:1.2mm 1mm;border-radius:1.2mm;border:.3mm solid currentColor;opacity:.35;cursor:pointer}
+.tag.on{background:var(--p);border-color:var(--p);color:var(--pi);opacity:1}
+.qrc{width:19mm;height:19mm;background:#fff;padding:1mm;border-radius:1.5mm;cursor:pointer;flex:none}.qrc svg{width:100%;height:100%;display:block}
+/* qr */
+.b.t-qr{padding:0}
+.qrb{display:flex;flex-direction:column;gap:var(--gap);height:100%}
+.qrb .pill{border-radius:20mm;padding:3mm 5mm;text-align:center;font:800 4.4mm 'Plus Jakarta Sans';letter-spacing:-.03em;background:var(--s);color:var(--si)}
+.qrb .bx{flex:1;display:grid;grid-template-columns:1fr auto;gap:4mm;align-items:center;border-radius:var(--r);padding:5mm;background:var(--p);color:var(--pi)}
+.qrb .bx .ed{font:800 5mm/1.1 'Plus Jakarta Sans';letter-spacing:-.03em}
+.qrb .qrc{width:30mm;height:30mm;padding:1.5mm}
+/* capa */
+.cp{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
+.cp .sob{font:600 5.5mm Poppins;letter-spacing:.25em;text-transform:uppercase;opacity:.9}
+.cp .t{font-size:15mm;margin-top:2mm}
+.cp .sub{font-size:5mm;margin-top:3mm}
+.b.t-capa.card{padding:14mm 12mm}
+.cp.lateral .gr{display:grid;grid-template-columns:1.2fr .8fr;gap:8mm;flex:1;margin-top:10mm;min-height:0}
+.cp.lateral .img{border-radius:var(--r)}
+.cp ol{list-style:none;margin:0;padding:0;align-self:center}
+.cp li{font:500 5mm Poppins;padding:3.5mm 0;border-bottom:.3mm solid color-mix(in srgb,currentColor 40%,transparent)}
+.b.t-capa.v-fundo,.b.t-capa.v-centro{padding:0}
+.cp.fundo .img{position:absolute;inset:0;border-radius:0}
+.cp.fundo .tx{position:relative;margin-top:auto;padding:30mm 12mm 12mm;background:linear-gradient(transparent,color-mix(in srgb,var(--p) 88%,transparent) 50%);color:var(--pi);pointer-events:none}
+.cp.fundo .tx .ed{pointer-events:auto}
+.cp.centro{text-align:center;padding:12mm 10mm 6mm}
+.cp.centro .t{font-size:24mm;white-space:nowrap}
+.cp.centro .sob{color:var(--a)}
+.cp.centro .img{flex:1;width:100%;margin-top:6mm;background:transparent}
+/* referencias / rodape */
+.rf{font-size:2.8mm;line-height:1.45;opacity:.85}
+.b.t-rodape{flex-direction:row;justify-content:space-between;align-items:flex-end;gap:4mm;font-size:2.5mm;line-height:1.3;padding:0 2mm}
+.rd .rt{font-weight:700;color:var(--a)}
+.pn{font:800 3.4mm 'Plus Jakarta Sans';color:var(--a);white-space:nowrap}
+/* ---- janelas do app (substituem prompt/confirm/alert) ---- */
+#dlg{z-index:80}#dlg .box{width:min(420px,92vw);padding:22px}
+#dlg h3{margin:0 0 6px;font:700 18px 'Space Grotesk';letter-spacing:-.02em}
+#dlg p{margin:0 0 14px;font-size:14px;color:#666;line-height:1.45}
+#dlg input{width:100%;padding:10px 12px;border:1px solid var(--ui-line);border-radius:9px;font:600 15px 'Maven Pro';margin:6px 0 16px;outline:none}
+#dlg input:focus{border-color:var(--ui-acc);box-shadow:0 0 0 3px #8B1A3A22}
+.dact{display:flex;justify-content:flex-end;gap:8px}.dact button{padding:9px 16px;font-size:14px}
+button.perigo{background:#c23b3b;border-color:#c23b3b;color:#fff}
+/* ---- v4: biblioteca inicial, arquivos ---- */
+#home{position:fixed;inset:0 0 0 92px;z-index:60;background:var(--ui);overflow:auto;display:none}
+body.inicio #home{display:block}body.inicio{overflow:hidden}
+.hh{position:sticky;top:0;z-index:2;display:flex;gap:10px;align-items:center;padding:12px 24px;background:#fff;border-bottom:1px solid var(--ui-line)}
+.hh h1{font:800 20px 'Plus Jakarta Sans';color:var(--ui-acc);margin:0 auto 0 0;letter-spacing:-.02em}
+.hh input{width:min(320px,40vw);padding:8px 12px;border:1px solid var(--ui-line);border-radius:9px;font:14px Poppins}
+.hb{padding:10px 24px 60px;max-width:1400px;margin:0 auto}
+.hb h2{font:800 19px 'Plus Jakarta Sans';margin:26px 0 4px;letter-spacing:-.02em}.hb .sub{color:#888;font-size:13px;margin:0 0 12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 14px}.chips button{border-radius:20px;padding:5px 12px}.chips button.on{background:var(--ui-acc);color:#fff;border-color:var(--ui-acc)}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:16px}
+.cm{background:#fff;border:1px solid var(--ui-line);border-radius:12px;padding:10px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:7px}
+.cm:hover{border-color:var(--ui-acc);transform:translateY(-2px);box-shadow:0 8px 20px #0001}
+.cm b{font:700 13.5px 'Plus Jakarta Sans';line-height:1.2}.cm small{font-size:11px;color:#888;line-height:1.3}
+.cm .acts{display:flex;gap:4px}.cm .acts button{flex:1;padding:4px;font-size:11px}
+.thumb{width:150px;height:212px;margin:0 auto;overflow:hidden;border-radius:6px;border:1px solid #eee;background:#fff;position:relative}
+.thumb>.doc{zoom:.189;pointer-events:none}.thumb .tit.gigante .t,.thumb .cp.centro .t{font-size:15mm!important;white-space:normal}.thumb .pg{box-shadow:none}
+.thumb.vazio{display:grid;place-items:center;font-size:40px;color:#ccc}
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.ai{border:1px solid var(--ui-line);border-radius:8px;padding:5px;cursor:pointer;background:#fff;position:relative;text-align:center;font-size:10.5px;user-select:none}
+.ai:hover{border-color:var(--ui-acc)}
+.ai img{width:100%;height:64px;object-fit:contain;background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 0 0/12px 12px;border-radius:5px;display:block;pointer-events:none}
+.ai span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}
+.ai .x{position:absolute;top:2px;right:2px;background:#fff;border:1px solid var(--ui-line);border-radius:50%;width:20px;height:20px;line-height:17px;padding:0;font-size:11px;display:none}.ai:hover .x{display:block}
+.rarq{grid-template-columns:repeat(3,1fr);gap:4px}.rarq .ai{padding:3px}.rarq .ai img{height:44px}.rarq .ai span{display:none}
+.img.alvo{outline:3px solid #2d8cff;outline-offset:-3px}
+.b.t-imagem{padding:0}.b.t-imagem .img{flex:1;background:transparent;min-height:12mm}
+.b.t-imagem .img>span{border-radius:2mm}
+/* ---- v3: rodapé, fundos, arrastar, novos blocos ---- */
+.libr{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.libr .li{border:1px solid var(--ui-line);border-radius:7px;padding:7px 4px;font-size:11px;cursor:grab;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;line-height:1.15;user-select:none;background:#fff}
+.libr .li:hover{border-color:var(--ui-acc);color:var(--ui-acc)}.libr svg{width:18px;height:18px}
+.rail h4 small{text-transform:none;letter-spacing:0;font-weight:400}
+#ghost{position:fixed;z-index:50;pointer-events:none;background:var(--ui-acc);color:#fff;font:600 12px Poppins;padding:5px 10px;border-radius:7px;box-shadow:0 6px 18px #0003;display:none}
+#dropl{position:fixed;z-index:49;pointer-events:none;background:#2d8cff;border-radius:3px;display:none;box-shadow:0 0 0 2px #fff}
+body.arrastando,body.arrastando *{cursor:grabbing!important;user-select:none}
+.b.arrastado{opacity:.3}
+.grp{font:700 12px Poppins;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 6px}
+.icbusca{width:100%;padding:8px 10px;border:1px solid var(--ui-line);border-radius:8px;margin-bottom:10px;font:14px Poppins}
+.icg{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+.icg button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;font-size:9.5px;color:#666;white-space:normal;line-height:1.1}
+.icg svg{width:24px;height:24px;color:var(--ui-ink)}
+.fm label{display:block;font-size:12px;color:#555;margin:10px 0 3px}.fm input[type=text],.fm select{width:100%;padding:7px 9px;border:1px solid var(--ui-line);border-radius:8px}
+.fm .ck{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:13px;color:#333}
+.pg.bg-p{background:var(--p);color:var(--pi)}.pg.bg-s{background:var(--s);color:var(--si)}.pg.bg-d{background:#141414;color:#f2f2f2}.pg.bg-a{background:var(--a);color:#fff}
+.pg.comrod .pin{bottom:12mm;padding-bottom:1mm}
+.rod{position:absolute;left:0;right:0;bottom:0;height:12mm;padding:0 9mm 5mm;display:grid;grid-template-columns:auto 1fr auto;align-items:end;gap:6mm;font-size:2.5mm;line-height:1.3}
+.rod.linha:before{content:'';position:absolute;left:9mm;right:9mm;top:2mm;border-top:.25mm solid currentColor;opacity:.2}
+.rod .r1{font-weight:700;color:var(--a)}.rod .r2{opacity:.8}
+.rod .r3{font:800 3.3mm 'Plus Jakarta Sans';color:var(--a);white-space:nowrap;display:flex;gap:2mm}
+.pg.bg-p .rod .r1,.pg.bg-p .rod .r3,.pg.bg-a .rod .r1,.pg.bg-a .rod .r3{color:inherit}
+.icn>svg{position:absolute;inset:20%;width:60%;height:60%}
+/* sumario */
+.sm .tt{font-size:12mm;margin-bottom:8mm}
+.sm .it{display:grid;grid-template-columns:14mm 1fr auto;align-items:baseline;gap:3mm;padding:4.5mm 0;border-bottom:.3mm solid color-mix(in srgb,currentColor 20%,transparent)}
+.sm .nn{font:800 6mm 'Plus Jakarta Sans';color:var(--a)}.sm .tx{font:700 5.5mm 'Plus Jakarta Sans';letter-spacing:-.02em}.sm .pgn{font-size:4mm;opacity:.7}
+.sm.cards .its{display:grid;grid-template-columns:1fr 1fr;gap:4mm}
+.sm.cards .it{background:var(--s);color:var(--si);border:0;border-radius:4mm;padding:6mm;grid-template-columns:1fr auto}
+.sm.cards .nn{grid-column:1/-1;font-size:11mm}
+/* galeria */
+.gl{display:grid;gap:3mm;flex:1;min-height:40mm;grid-auto-rows:1fr}
+.gl.g2{grid-template-columns:1fr 1fr}.gl.g3{grid-template-columns:1fr 1fr 1fr}.gl.gm{grid-template-columns:2fr 1fr}.gl.gm figure:first-child{grid-row:span 2}
+.gl figure{margin:0;display:flex;flex-direction:column;min-height:0}.gl .img{flex:1;border-radius:3mm;min-height:18mm}.gl .lg{font-size:2.8mm;opacity:.75;margin-top:1.2mm}
+/* grafico */
+.gf .tt{font-size:6mm;margin-bottom:5mm}.gf .lb{font-size:3.3mm;font-weight:600}.gf .fn{font-size:2.6mm;opacity:.65;margin-top:3mm}
+.gf .vl{font:800 5mm 'Plus Jakarta Sans';color:var(--a)}
+.gf.barras .br{display:grid;grid-template-columns:35mm 1fr 20mm;gap:3mm;align-items:center;margin-bottom:3mm}
+.gf .trk{height:8mm;background:color-mix(in srgb,currentColor 8%,transparent);border-radius:2mm;overflow:hidden}
+.gf .bar{height:100%;width:var(--x);background:var(--a);border-radius:2mm;transition:all .3s}
+.gf.colunas .area{display:flex;gap:6mm;align-items:stretch;height:62mm;border-bottom:.3mm solid color-mix(in srgb,currentColor 40%,transparent);padding:0 3mm}
+.gf.colunas .br{flex:1;display:flex;flex-direction:column-reverse;align-items:center;gap:1.5mm;text-align:center}
+.gf.colunas .trk{flex:1;width:100%;background:none;display:flex;align-items:flex-end;border-radius:0}
+.gf.colunas .bar{width:100%;height:var(--x);border-radius:2mm 2mm 0 0}
+.card .gf .vl,.card .nu .v{color:inherit}
+/* numeros */
+.nu{display:flex;gap:5mm}.nu.coluna{flex-direction:column;justify-content:space-around;flex:1}
+.nu>div{flex:1;border-left:.8mm solid var(--a);padding-left:4mm}
+.nu .v{font-size:12mm;color:var(--a)}.nu .t{font-size:3.3mm;line-height:1.35;margin-top:1mm}
+/* tabela */
+.tb{width:100%;border-collapse:separate;border-spacing:0;font-size:3.2mm;border-radius:3mm;overflow:hidden}
+.tb th{background:var(--p);color:var(--pi);text-align:left;padding:2.5mm 3mm;font:700 3.3mm 'Plus Jakarta Sans'}
+.tb td{padding:2.3mm 3mm;border-bottom:.25mm solid color-mix(in srgb,currentColor 15%,transparent);vertical-align:top}
+.tb tr:nth-child(even) td{background:color-mix(in srgb,var(--s) 55%,transparent)}
+/* icone + texto */
+.it2 .img{width:14mm;height:14mm;border-radius:4mm;background:var(--a);color:#fff;margin-bottom:3mm;flex:none}
+.it2 .img>span{border:0;font-size:2.3mm}
+.it2 .tt{font-size:5mm;margin-bottom:1.5mm}.it2.lado{display:grid;grid-template-columns:14mm 1fr;gap:4mm}.it2.lado .img{margin:0}
+/* citacao, divisor */
+.ct{border-left:1.2mm solid var(--a);padding:2mm 0 2mm 6mm}.ct .q{font:italic 500 6.5mm/1.3 'Plus Jakarta Sans'}.ct .a{font-size:3.2mm;margin-top:3mm;opacity:.7}
+.dv{border:0;border-top:.4mm solid var(--a);width:100%;margin:1mm 0;opacity:.6}
+@media print{
+ @page{size:A4;margin:0}
+ body{background:#fff}.top,.rail,#tb,.modal{display:none!important}.app{display:block;height:auto}.stage{padding:0;overflow:visible}
+ #wrap{zoom:1!important;gap:0;width:auto;display:block}
+ .pg{box-shadow:none;break-after:page;outline:none!important}.pg.over:after{display:none}
+ .sel,.b:hover{outline:none!important}.b.arrastado{opacity:1}.ed:empty:before{content:''}.img>span{display:none}
+}
+@media (max-width:720px){#home{inset:0 0 64px 0}}
+</style>
+</head>
+<body>
+<div id="home">
+ <div class="hh"><h1>Lâminas Bioflora</h1><input id="hq" placeholder="Buscar modelo ou lâmina…" oninput="homeRender()"><button onclick="arq.click()">Abrir .json</button></div>
+ <div class="hb">
+  <h2>Minhas lâminas</h2><p class="sub">Clique para continuar editando.</p><div class="hgrid" id="hMinhas"></div>
+  <h2>Modelos</h2><p class="sub">Escolha um ponto de partida. Tudo pode ser alterado depois: textos, cores, blocos e páginas.</p><div class="chips" id="chips"></div><div class="hgrid" id="hModelos"></div>
+  <h2>Meus arquivos</h2><p class="sub">Logos, selos, fotos de produto e elementos que vocês sempre usam. Ficam salvos no Hub, valem para toda a chefia e aparecem no editor para arrastar.</p>
+  <div style="margin-bottom:10px"><button class="pri" onclick="upa.click()">+ Enviar arquivos</button></div><div class="agrid" id="hArq"></div>
+ </div>
+</div>
+<input type="file" id="upa" accept="image/*" multiple hidden onchange="enviarArquivos([...this.files]);this.value=''">
+<div class="top">
+ <button onclick="irHome()" title="Voltar para a biblioteca">← Biblioteca</button>
+ <h1>Lâminas Bioflora</h1>
+ <select id="lista" title="Lâminas salvas (duplo clique renomeia)"></select>
+ <button onclick="renomear()">Renomear</button>
+ <button onclick="duplicarLam()">Duplicar</button>
+ <button onclick="excluirLam()">Excluir</button>
+ <span class="sp"></span>
+ <button onclick="desfazer()" title="Ctrl+Z">↶ Desfazer</button>
+ <button onclick="baixarJSON()">Baixar .json</button>
+ <button onclick="arq.click()">Abrir .json</button>
+ <input type="file" id="arq" accept=".json" hidden onchange="abrirJSON(this.files[0]);this.value=''">
+ <button class="pri" onclick="imprimir()">Exportar PDF</button>
+</div>
+<div class="app">
+ <aside class="rail">
+  <h4>Tema</h4>
+  <select id="tema" onchange="mudaTema(this.value)"></select>
+  <div class="cores" id="cores"></div>
+  <h4>Páginas</h4>
+  <div class="pgl" id="pgl"></div>
+  <div style="display:grid;gap:4px;margin-top:6px">
+   <button class="pri" onclick="abrirPaginas()">+ Página pronta</button>
+   <button onclick="dupPagina()">Duplicar página</button>
+   <button onclick="abrirRodape()">Rodapé e numeração</button>
+  </div>
+  <h4>Meus arquivos <small>— arraste</small></h4>
+  <div class="agrid rarq" id="rarq"></div>
+  <button onclick="upa.click()" style="margin-top:4px">+ Enviar</button>
+  <h4>Blocos <small>— arraste para a página</small></h4>
+  <div class="libr" id="libr"></div>
+  <div class="dica"><b>Como editar</b><br>• Arraste blocos daqui para a página (ou clique para adicionar).<br>• Arraste um bloco da página pelo ✥ ou pela borda para mudar de lugar.<br>• Clique no texto e digite.<br>• Ctrl+B deixa em negrito.<br>• Clique num bloco para ver a barra de ações (mover, largura, cor, desenho…).<br>• Arraste uma foto para reenquadrar; duplo clique troca a foto.<br>• Clique nas etiquetas de fase para ligar/desligar.<br>• Ctrl+Z desfaz.</div>
+ </aside>
+ <main class="stage" id="stage"><div id="wrap" class="doc"></div></main>
+</div>
+<div id="tb"></div><div id="ghost"></div><div id="dropl"></div><div id="tt"><div class="in" id="ttin"></div></div>
+<div class="modal" id="modal" onclick="if(event.target===this)fechaModal()"><div class="box" id="mbox"></div></div>
+<input type="file" id="pick" accept="image/*" hidden>
+<div class="modal" id="dlg"><div class="box"><h3 id="dt"></h3><p id="dm"></p><input id="di" autocomplete="off"><div class="dact"><button id="dc">Cancelar</button><button class="pri" id="dok">OK</button></div></div></div>
+
+<script>
+/* ================= utilidades ================= */
+function dialogo({titulo,msg='',valor=null,ok='OK',cancelar='Cancelar',perigo=false}){return new Promise(res=>{
+ const D=document.getElementById('dlg'),i=document.getElementById('di'),bo=document.getElementById('dok'),bc=document.getElementById('dc'),m=document.getElementById('dm');
+ document.getElementById('dt').textContent=titulo;m.textContent=msg;m.style.display=msg?'':'none';
+ i.style.display=valor===null?'none':'';i.value=valor??'';bo.textContent=ok;bo.className=perigo?'perigo':'pri';
+ bc.style.display=cancelar?'':'none';bc.textContent=cancelar||'';D.classList.add('on');
+ setTimeout(()=>{if(valor!==null){i.focus();i.select()}else bo.focus()},30);
+ const fim=v=>{D.classList.remove('on');D.onkeydown=null;res(v)};
+ bo.onclick=()=>fim(valor===null?true:i.value);bc.onclick=()=>fim(valor===null?false:null);
+ D.onclick=e=>{if(e.target===D)bc.onclick()};
+ D.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();bo.click()}if(e.key==='Escape')bc.onclick()}})}
+const pedir=(titulo,valor,o={})=>dialogo({titulo,valor:valor??'',...o});
+const confirmar=(titulo,msg,o={})=>dialogo({titulo,msg,ok:'Excluir',perigo:true,...o});
+const avisar=(titulo,msg)=>dialogo({titulo,msg,cancelar:null});
+const $=s=>document.querySelector(s);
+const uid=()=>Math.random().toString(36).slice(2,9);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const UIC={image:'<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',link:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',copy:'<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>'};
+const uic=n=>`<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px">${UIC[n]}</svg>`;
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const OK_TAGS=new Set(['B','STRONG','I','EM','U','BR','DIV','P','SPAN','SUB','SUP']);
+function san(html){const t=document.createElement('template');t.innerHTML=html??'';
+ const w=n=>{[...n.childNodes].forEach(c=>{if(c.nodeType===1){w(c);if(!OK_TAGS.has(c.tagName))c.replaceWith(...c.childNodes);else{const cor=c.tagName==='SPAN'&&c.style.color;[...c.attributes].forEach(a=>c.removeAttribute(a.name));if(cor)c.style.color=cor}}else if(c.nodeType!==3)c.remove()})};
+ w(t.content);return t.innerHTML}
+const getP=(o,p)=>p.split('.').reduce((a,k)=>a==null?a:a[k],o);
+function setP(o,p,v){const k=p.split('.'),l=k.pop();(k.length?getP(o,k.join('.')):o)[l]=v}
+function qrSvg(u){try{const q=qrcode(0,'M');q.addData(u||' ');q.make();return q.createSvgTag({cellSize:4,margin:0,scalable:true})}catch(e){return''}}
+const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m7.5 12.5 3 3 6-6.5"/></svg>';
+
+/* ================= temas ================= */
+const TEMAS={
+ vinho:{nome:'Bioflora vinho',p:'#9f1237',pi:'#ffffff',s:'#e4e3e3',si:'#181818',a:'#e1426c',bg:'#ffffff',ink:'#181818'},
+ editorial:{nome:'Editorial claro',p:'#7a1030',pi:'#ffffff',s:'#f6ecee',si:'#3a2a2e',a:'#9f1237',bg:'#fffaf9',ink:'#2a2024'},
+ impacto:{nome:'Impacto escuro',p:'#1b2e2c',pi:'#ffffff',s:'#1d3330',si:'#e8f3f1',a:'#f08a24',bg:'#0b1414',ink:'#f2f2f2'},
+ verde:{nome:'Verde natural',p:'#1f5c4a',pi:'#ffffff',s:'#e6efe9',si:'#1d2b25',a:'#4f9c78',bg:'#ffffff',ink:'#1d2b25'},
+ azul:{nome:'Azul clínico',p:'#1b3a6b',pi:'#ffffff',s:'#e7edf6',si:'#17243a',a:'#3d7fe0',bg:'#ffffff',ink:'#17243a'},
+ lavanda:{nome:'Lavanda',p:'#4b3a78',pi:'#ffffff',s:'#efeaf7',si:'#2a2140',a:'#9b7fd4',bg:'#ffffff',ink:'#2a2140'},
+ areia:{nome:'Terracota',p:'#8c4b2f',pi:'#ffffff',s:'#f3ebe3',si:'#3b2a20',a:'#c97b4a',bg:'#fffdfa',ink:'#3b2a20'},
+ oceano:{nome:'Oceano',p:'#0d4f5c',pi:'#ffffff',s:'#e4f1f2',si:'#10303a',a:'#1aa3a8',bg:'#ffffff',ink:'#10303a'},
+ pers:{nome:'Personalizado…'}};
+const CORES_ROT={p:'Principal',a:'Destaque',s:'Card claro',bg:'Fundo',ink:'Texto',si:'Texto card'};
+function vars(d){const t=d.tema==='pers'?{...TEMAS.vinho,...d.cores}:TEMAS[d.tema]||TEMAS.vinho;
+ return Object.entries(t).filter(([k])=>k!=='nome').map(([k,v])=>`--${k}:${v}`).join(';')}
+
+/* ================= blocos ================= */
+const ST={ff:v=>`font-family:'${v}'`,fs:v=>`font-size:${v}mm`,c:v=>`color:${v}`,al:v=>`text-align:${v}`,lh:v=>`line-height:${v}`,ls:v=>`letter-spacing:${v}em`,tt:v=>`text-transform:${v}`,fw:v=>`font-weight:${v}`,fi:v=>`font-style:${v}`,fu:v=>`text-decoration:${v}`};
+const css=st=>Object.entries(st||{}).filter(([k,v])=>ST[k]&&v!==''&&v!=null).map(([k,v])=>ST[k](v)).join(';');
+const E=(b,p,cls='',ph='Digite...')=>{const st=(b.st||{})[p];return `<div class="ed ${cls}" data-f="${p}" data-ph="${esc(ph)}" ${st&&st.fs?'data-fs="1"':''} style="${css(st)}" contenteditable="true">${san(getP(b,p))}</div>`};
+const IMG=(b,p,cls='',ph='+ foto',vazio='')=>{const v=getP(b,p),pos=getP(b,p+'Pos')||'50% 50%';
+ return `<div class="img ${cls}" data-img="${p}">${v?`<img src="${v}" style="object-position:${pos}" draggable="false">`:vazio||`<span>${ph}</span>`}</div>`};
+const svgIc=(n,sw=1.8)=>typeof ICONES!=='undefined'&&ICONES[n]?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${ICONES[n]}</svg>`:'';
+const ICN=(b,p,vazio='')=>{const ic=getP(b,p+'Ic'),v=getP(b,p);return `<div class="img icn" data-img="${p}" data-icn="1">${ic?svgIc(ic):v?`<img src="${v}" draggable="false">`:vazio||'<span>ícone</span>'}</div>`};
+const L=(b,f,fn)=>(b[f]||[]).map((it,i)=>fn(it,`${f}.${i}`,i)).join('');
+
+const BL={
+ capa:{nome:'Capa',desc:'Título grande com foto (3 desenhos)',w:100,cor:'p',grow:1,vars:['lateral','fundo','centro'],lista:'itens',novo:()=>({t:'Item'}),img:'foto',
+  dados:()=>({sob:'Protocolo',t:'Título da lâmina',sub:'',foto:'',itens:[{t:'Item 1'},{t:'Item 2'}]}),
+  html:b=>{const tx=`${E(b,'sob','sob','Sobretítulo')}${E(b,'t','t H','Título')}${E(b,'sub','sub','Subtítulo')}`;
+   if(b.v==='fundo')return `<div class="cp fundo">${IMG(b,'foto','','+ foto de fundo')}<div class="tx">${tx}</div></div>`;
+   if(b.v==='centro')return `<div class="cp centro">${tx}${IMG(b,'foto','contain','+ foto do produto (PNG sem fundo)')}</div>`;
+   return `<div class="cp lateral">${tx}<div class="gr">${IMG(b,'foto')}<ol>${L(b,'itens',(it,p)=>`<li>${E(b,p+'.t')}</li>`)}</ol></div></div>`}},
+ titulo:{nome:'Título',desc:'Sobretítulo, título e subtítulo',w:100,cor:'none',vars:['esquerda','centro','gigante','medio'],
+  dados:()=>({sob:'',t:'Título',sub:''}),
+  html:b=>`<div class="tit ${b.v}">${E(b,'sob','sob','Sobretítulo')}${E(b,'t','t H fit','Título')}${E(b,'sub','sub','Subtítulo')}</div>`},
+ texto:{nome:'Texto',desc:'Parágrafos livres',w:100,cor:'none',
+  dados:()=>({t:'Escreva aqui o texto. Use <b>Ctrl+B</b> para negrito.'}),html:b=>E(b,'t','','Texto')},
+ textoFoto:{nome:'Texto + foto',desc:'Foto ao lado, ou texto sobre a ilustração',w:100,cor:'s',vars:['foto-esq','foto-dir','sobre'],img:'foto',
+  dados:()=>({titulo:'Título',t:'Texto explicativo.',foto:''}),
+  html:b=>b.v==='sobre'?`<div class="tf sobre">${IMG(b,'foto','','+ ilustração (o texto fica à direita)')}<div class="tx">${E(b,'titulo','tt H','Título')}${E(b,'t','','Texto')}</div></div>`
+   :`<div class="tf ${b.v}">${IMG(b,'foto')}<div>${E(b,'titulo','tt H','Título')}${E(b,'t','','Texto')}</div></div>`},
+ foto:{nome:'Foto',desc:'Imagem que preenche o espaço',w:33,cor:'s',grow:1,img:'foto',dados:()=>({foto:''}),html:b=>IMG(b,'foto')},
+ destaques:{nome:'Destaques',desc:'Círculos/ícones com frases curtas',w:100,cor:'none',vars:['linha','coluna','mini'],lista:'itens',novo:()=>({t:'Destaque',img:''}),
+  dados:()=>({itens:[{t:'Destaque 1',img:''},{t:'Destaque 2',img:''},{t:'Destaque 3',img:''}]}),
+  html:b=>`<div class="dq ${b.v}">${L(b,'itens',(it,p)=>`<div>${ICN(b,p+'.img')}${E(b,p+'.t','H')}</div>`)}</div>`},
+ beneficios:{nome:'Benefícios',desc:'Lista com ícones',w:33,cor:'p',lista:'itens',novo:()=>({t:'Benefício',img:''}),
+  dados:()=>({titulo:'Benefícios:',itens:[{t:'Benefício 1',img:''},{t:'Benefício 2',img:''},{t:'Benefício 3',img:''}]}),
+  html:b=>`<div class="bn">${E(b,'titulo','tt H','Título')}${L(b,'itens',(it,p)=>`<div class="bi">${ICN(b,p+'.img',CHECK)}${E(b,p+'.t')}</div>`)}</div>`},
+ fases:{nome:'Fases',desc:'Etapas numeradas',w:100,cor:'none',lista:'itens',novo:()=>({nome:'Fase',desc:''}),
+  dados:()=>({itens:[{nome:'Pré',desc:'Descrição'},{nome:'Durante',desc:'Descrição'},{nome:'Depois',desc:'Descrição'}]}),
+  html:b=>`<div class="fs" style="grid-template-columns:repeat(${(b.itens||[]).length||1},1fr)">${L(b,'itens',(it,p,i)=>`<div><div class="n">${i+1}</div>${E(b,p+'.nome','nm')}${E(b,p+'.desc','ds')}</div>`)}</div>`},
+ faixa:{nome:'Faixa de título',desc:'Barra colorida separando seções',w:100,cor:'p',dados:()=>({t:'Título da seção'}),html:b=>E(b,'t')},
+ produto:{nome:'Produto / ativo',desc:'Nome, posologia, objetivos, fases e QR',w:100,cor:'none',lista:'objetivos',novo:()=>({t:'Objetivo'}),link:'qr',
+  dados:()=>({nome:'NOME®',pos:'000 mg, uma vez ao dia.',objetivos:[{t:'Objetivo 1'},{t:'Objetivo 2'}],tags:[{t:'Pré',on:0},{t:'Durante',on:1},{t:'Depois',on:1}],qr:''}),
+  html:b=>`<div class="pd"><div>${E(b,'nome','nm H','Nome')}<div class="lb">Posologia:</div>${E(b,'pos','pos')}</div>
+   <div><div class="lb">Objetivo:</div><ul>${L(b,'objetivos',(it,p)=>`<li>${E(b,p+'.t')}</li>`)}</ul></div>
+   <div class="dir">${(b.tags||[]).length?`<div class="tags">${b.tags.map((t,i)=>`<div class="tag ${t.on?'on':''}" data-tag="${i}">${esc(t.t)}</div>`).join('')}</div>`:''}${b.qr?`<div class="qrc" data-link>${qrSvg(b.qr)}</div>`:''}</div></div>`},
+ qr:{nome:'QR “fale com a farmacêutica”',desc:'Chamada + QR code',w:50,cor:'none',link:'url',
+  dados:()=>({pill:'Frase curta sobre o produto',t:'Fale diretamente com a farmacêutica escaneando o QrCode!',url:'https://wa.me/55'}),
+  html:b=>`<div class="qrb">${b.pill!==null?E(b,'pill','pill','Frase curta'):''}<div class="bx">${E(b,'t')}<div class="qrc" data-link>${qrSvg(b.url)}</div></div></div>`},
+ referencias:{nome:'Referências',desc:'Bibliografia em letra pequena',w:100,cor:'none',dados:()=>({t:'Autor et al., 2025.'}),html:b=>`<div class="rf">${E(b,'t','','Referências')}</div>`},
+ rodape:{nome:'Rodapé (antigo)',oculto:1,desc:'RT, aviso e nº da página',w:100,cor:'none',
+  dados:()=>({rt:'Farm. RT Wanessa · CRF 12.629',aviso:'Material destinado exclusivamente a profissionais prescritores.'}),
+  html:b=>`<div class="rd">${E(b,'rt','rt')}${E(b,'aviso')}</div><div class="pn"></div>`},
+ sumario:{nome:'Sumário',desc:'Lista de seções com nº de página',w:100,cor:'none',vars:['lista','cards'],lista:'itens',novo:()=>({t:'Seção',pg:'0'}),
+  dados:()=>({titulo:'Sumário',itens:[{t:'Introdução',pg:'3'},{t:'Mecanismo de ação',pg:'4'},{t:'Evidências',pg:'5'},{t:'Posologia',pg:'6'}]}),
+  html:b=>`<div class="sm ${b.v}">${E(b,'titulo','tt H','Título')}<div class="its">${L(b,'itens',(it,p,i)=>`<div class="it"><span class="nn">${String(i+1).padStart(2,'0')}</span>${E(b,p+'.t','tx')}${E(b,p+'.pg','pgn','pág.')}</div>`)}</div></div>`},
+ galeria:{nome:'Galeria de fotos',desc:'Várias fotos com legenda',w:100,cor:'none',grow:1,vars:['2 colunas','3 colunas','mosaico'],lista:'itens',novo:()=>({foto:'',leg:''}),
+  dados:()=>({itens:[{foto:'',leg:'Legenda'},{foto:'',leg:'Legenda'},{foto:'',leg:'Legenda'},{foto:'',leg:'Legenda'}]}),
+  html:b=>`<div class="gl g${(b.v||'2')[0]}">${L(b,'itens',(it,p)=>`<figure>${IMG(b,p+'.foto')}${E(b,p+'.leg','lg','Legenda')}</figure>`)}</div>`},
+ grafico:{nome:'Gráfico',desc:'Barras ou colunas com valores editáveis',w:100,cor:'none',vars:['barras','colunas'],lista:'itens',novo:()=>({t:'Item',v:'50%'}),
+  dados:()=>({titulo:'Título do gráfico',itens:[{t:'Placebo',v:'20%'},{t:'Grupo A',v:'45%'},{t:'Grupo B',v:'78%'}],fonte:'Fonte: preencher com a referência do estudo.'}),
+  html:b=>{const vs=valores(b);return `<div class="gf ${b.v}">${E(b,'titulo','tt H','Título')}<div class="area">${L(b,'itens',(it,p,i)=>`<div class="br"><div class="lb">${E(b,p+'.t')}</div><div class="trk"><div class="bar" style="--x:${vs[i]}%"></div></div>${E(b,p+'.v','vl')}</div>`)}</div>${E(b,'fonte','fn','Fonte')}</div>`}},
+ numeros:{nome:'Números / resultados',desc:'Números grandes com legenda',w:100,cor:'none',vars:['linha','coluna'],lista:'itens',novo:()=>({v:'XX%',t:'Descrição'}),
+  dados:()=>({itens:[{v:'XX%',t:'descreva o resultado do estudo'},{v:'XX%',t:'descreva o resultado do estudo'},{v:'X sem.',t:'tempo até o resultado'}]}),
+  html:b=>`<div class="nu ${b.v}">${L(b,'itens',(it,p)=>`<div>${E(b,p+'.v','v H')}${E(b,p+'.t','t')}</div>`)}</div>`},
+ tabela:{nome:'Tabela',desc:'Posologia, composição, comparativos',w:100,cor:'none',lista:'linhas',tabela:1,novo:b=>({c:(b.cab||[]).map(()=>({t:''}))}),
+  dados:()=>({cab:[{t:'Ativo'},{t:'Dose'},{t:'Posologia'}],linhas:[{c:[{t:'Ativo A'},{t:'100 mg'},{t:'1x ao dia'}]},{c:[{t:'Ativo B'},{t:'50 mg'},{t:'2x ao dia'}]}]}),
+  html:b=>`<table class="tb"><thead><tr>${L(b,'cab',(c,p)=>`<th>${E(b,p+'.t')}</th>`)}</tr></thead><tbody>${L(b,'linhas',(r,p)=>`<tr>${(r.c||[]).map((c,j)=>`<td>${E(b,p+'.c.'+j+'.t')}</td>`).join('')}</tr>`)}</tbody></table>`},
+ iconeTexto:{nome:'Ícone + texto',desc:'Card com ícone, título e texto',w:33,cor:'s',vars:['topo','lado'],
+  dados:()=>({icone:'',iconeIc:'pill',titulo:'Título',t:'Texto curto explicativo.'}),
+  html:b=>`<div class="it2 ${b.v}">${ICN(b,'icone')}<div>${E(b,'titulo','tt H','Título')}${E(b,'t','','Texto')}</div></div>`},
+ citacao:{nome:'Citação / destaque',desc:'Frase grande em evidência',w:100,cor:'none',dados:()=>({t:'“Uma frase de destaque sobre o produto ou o estudo.”',autor:'Fonte ou autor'}),html:b=>`<div class="ct">${E(b,'t','q')}${E(b,'autor','a','Autor')}</div>`},
+ imagem:{nome:'Imagem / logo',desc:'Logo, selo ou elemento (sem fundo)',w:33,cor:'none',img:'foto',vars:['conter','preencher'],dados:()=>({foto:'',h:25}),
+  html:b=>`<div style="height:${b.grow?'100%':(b.h||25)+'mm'};display:flex">${IMG(b,'foto',b.v==='conter'?'contain':'','+ imagem/logo')}</div>`},
+ divisor:{nome:'Divisor',desc:'Linha separadora',w:100,cor:'none',dados:()=>({}),html:()=>'<hr class="dv">'},
+ espaco:{nome:'Espaço',desc:'Empurra o resto para baixo',w:100,cor:'none',grow:1,dados:()=>({}),html:()=>''},
+};
+function valores(b){const vs=(b.itens||[]).map(i=>parseFloat(String(i.v||'').replace(/<[^>]*>/g,'').replace(',','.'))||0),mx=Math.max(...vs,1);return vs.map(v=>Math.max(0,v/mx*100))}
+const LIBIC={imagem:'gem',capa:'book-open',titulo:'notebook-pen',texto:'clipboard-list',textoFoto:'scan-face',foto:'eye',destaques:'sparkles',beneficios:'circle-check',fases:'timer',faixa:'minus',produto:'pill',qr:'qr-code',referencias:'book-open',sumario:'clipboard-list',galeria:'gem',grafico:'chart-column',numeros:'trending-up',tabela:'clipboard-check',iconeTexto:'star',citacao:'message-circle',divisor:'minus',espaco:'plus'};
+const CORES_BLOCO=['none','p','s','a','w','d'];
+const CORES_NOME={none:'sem fundo',p:'principal',s:'claro',a:'destaque',w:'branco',d:'escuro'};
+function novoBloco(tipo,extra={}){const d=BL[tipo];return {id:uid(),tipo,w:d.w,cor:d.cor,grow:d.grow||0,v:(d.vars||[])[0],...d.dados(),...extra}}
+
+/* ================= modelos ================= */
+const B=novoBloco;
+const FASES4=on=>['Pré-análogo','Durante','Desmame','Manutenção'].map((t,i)=>({t,on:on.includes(i)?1:0}));
+const P=(...blocos)=>({id:uid(),blocos});
+const MODELOS={
+ grid:{cat:'Bioflora (originais)',nome:'Grid (Nano CaHA)',desc:'1 página em cards',fn:()=>({tema:'vinho',paginas:[{id:uid(),blocos:[
+  B('titulo',{w:50,cor:'p',v:'gigante',t:'Nano CaHA'}),
+  B('qr',{w:50,pill:'Bioestimulador de colágeno em forma tópica'}),
+  B('texto',{w:33,cor:'s',t:'<b>Nano CaHa é uma hidroxiapatita de cálcio em escala nanométrica</b> que promove bioestimulação de colágeno, reorganização da matriz extracelular e melhora da qualidade dérmica.<div><br></div><div><b>Biomaterial mineral fisiologicamente presente no organismo</b>, com elevada biocompatibilidade e reconhecido potencial bioativo.</div>'}),
+  B('textoFoto',{w:67,cor:'p',v:'sobre',titulo:'Penetra na pele em escala nano!',t:'Nanopartículas &lt;100 nm que aumentam a área de contato biológico e potencializam os efeitos na pele!'}),
+  B('beneficios',{w:33,grow:1,itens:['Bioestimula a produção de colágeno','Redensifica a matriz dérmica','Melhora firmeza, textura e viço da pele','Suaviza linhas finas de expressão e rugas','Auxilia na recuperação pós-procedimentos estéticos'].map(t=>({t,img:''}))}),
+  B('foto',{w:33}),
+  B('destaques',{w:33,cor:'s',v:'coluna',itens:['Maior área de contato celular','Maior interação com os fibroblastos','Estimula a síntese de colágeno da pele'].map(t=>({t,img:''}))})]}]})},
+ protocolo:{cat:'Bioflora (originais)',nome:'Protocolo (GLP-1)',desc:'Capa + fases + produtos',fn:()=>({tema:'vinho',paginas:[
+  {id:uid(),blocos:[B('capa',{sob:'Protocolo',t:'Suporte GIP e GLP-1',itens:['Pré-análogos','Durante','Desmame','Manutenção'].map(t=>({t}))})]},
+  {id:uid(),blocos:[
+   B('texto',{t:'Este protocolo reúne aliados estratégicos para acompanhar cada etapa do tratamento com análogos de GIP e GLP-1, fortalecendo os resultados, minimizando desconfortos e preservando o equilíbrio metabólico.'}),
+   B('faixa',{t:'Fases'}),
+   B('fases',{itens:[['Pré-análogo','Paciente preparado para o início do tratamento.'],['Durante','Adaptações metabólicas e efeitos terapêuticos.'],['Desmame','Redução gradual da dose, evitando reganho.'],['Manutenção','Consolidação dos resultados.']].map(([nome,desc])=>({nome,desc}))}),
+   B('faixa',{t:'Efeito rebote: um desafio pós-tratamento'}),
+   B('texto',{t:'Pacientes com maior resposta ao tratamento tendem a recuperar mais peso após a interrupção. Estratégias de desmame e manutenção são fundamentais (Wu et al., 2025).'}),
+   B('produto',{nome:'AKKERMAT®',pos:'150 mg, uma vez ao dia, após a refeição.',objetivos:[{t:'Estímulo de GIP e GLP-1'},{t:'Aumento de leptina'},{t:'Redução de grelina'},{t:'Efeito termogênico'}],tags:FASES4([2,3])}),
+   B('produto',{nome:'METABOLAID®',pos:'250 mg, duas vezes ao dia.',objetivos:[{t:'Favorece a liberação de GLP-1 endógeno'},{t:'Efeito browning'}],tags:FASES4([2,3])}),
+   B('espaco')]}]})},
+ editorial:{cat:'Bioflora (originais)',nome:'Editorial (4 Pilares)',desc:'Foto grande + texto corrido',fn:()=>({tema:'editorial',paginas:[
+  {id:uid(),blocos:[B('capa',{v:'fundo',cor:'p',sob:'Bioflora',t:'Os 4 pilares do envelhecimento saudável',sub:'Um guia para o prescritor'})]},
+  {id:uid(),blocos:[B('textoFoto',{v:'foto-dir',cor:'none',grow:1,titulo:'Os 4 pilares do envelhecimento saudável',t:'Envelhecer bem é mais do que aparentar saúde: é preservar energia, equilíbrio e função.<div><br></div><div>O envelhecimento saudável depende de uma abordagem integrada, que considera nutrição, sono, movimento e cuidado com a pele.</div>'}),
+   B('destaques',{v:'linha',itens:['Nutrição','Sono','Movimento','Pele'].map(t=>({t,img:''}))})]}]})},
+ impacto:{cat:'Bioflora (originais)',nome:'Impacto (Progo / Clonapure)',desc:'Fundo escuro, produto ao centro',fn:()=>({tema:'impacto',paginas:[
+  {id:uid(),blocos:[B('capa',{v:'centro',cor:'none',sob:'O futuro do tratamento',t:'PRODUTO',sub:'Frase de impacto do produto'}),
+   B('destaques',{v:'mini',itens:['Mais energia e disposição','Maior performance metabólica','Menos ansiedade'].map(t=>({t,img:''}))}),
+   B('qr',{w:100,pill:null,t:'Fale com a farmacêutica',url:'https://wa.me/55'})]},
+  {id:uid(),blocos:[B('titulo',{v:'medio',sob:'Como funciona',t:'Mecanismo de ação'}),B('textoFoto',{v:'foto-esq',grow:1}),B('produto',{tags:[]})]}]})},
+ branco:{cat:'Bioflora (originais)',nome:'Em branco',desc:'Uma página para montar do zero',fn:()=>({tema:'vinho',paginas:[{id:uid(),blocos:[B('titulo'),B('texto'),B('espaco')]}]})},
+ /* ---------- MATERIAL TÉCNICO ---------- */
+ tec1:{cat:'Material técnico (várias páginas)',nome:'Técnico clássico',desc:'6 págs · vinho · capa lateral, sumário, evidências, posologia',fn:()=>({tema:'vinho',paginas:[
+  P(B('capa',{sob:'Material técnico',t:'Magnésio Bisglicinato',sub:'Guia de prescrição para profissionais',itens:['Mecanismo','Evidências','Posologia','Referências'].map(t=>({t}))})),
+  P(B('sumario',{itens:[['Introdução','3'],['Mecanismo de ação','3'],['Evidências clínicas','4'],['Posologia','5'],['Referências','6']].map(([t,pg])=>({t,pg}))}),B('espaco')),
+  P(B('titulo',{v:'medio',sob:'Introdução',t:'O que é'}),B('textoFoto',{v:'foto-dir',cor:'none',grow:1,titulo:'Forma quelada de alta tolerabilidade',t:'Texto de exemplo: descreva o ativo, sua forma química, biodisponibilidade e diferenciais em relação a outras formas.'}),
+   B('iconeTexto',{iconeIc:'brain',titulo:'Sistema nervoso',t:'Texto curto sobre o benefício.'}),B('iconeTexto',{iconeIc:'bed',titulo:'Sono',t:'Texto curto sobre o benefício.'}),B('iconeTexto',{iconeIc:'biceps-flexed',titulo:'Músculo',t:'Texto curto sobre o benefício.'})),
+  P(B('titulo',{v:'medio',sob:'Evidências',t:'Resultados clínicos'}),B('grafico'),B('numeros'),B('citacao'),B('espaco')),
+  P(B('titulo',{v:'medio',sob:'Como prescrever',t:'Posologia sugerida'}),B('tabela'),B('texto',{cor:'s',t:'<b>Observações:</b> contraindicações, interações e cuidados.'}),B('espaco'),B('qr',{w:100,pill:null})),
+  P(B('titulo',{v:'medio',t:'Referências'}),B('referencias',{t:'1. Autor A, et al. Título do artigo. Revista. Ano.<div>2. Autor B, et al. Título do artigo. Revista. Ano.</div>'}),B('espaco'))]})},
+ tec2:{cat:'Material técnico (várias páginas)',nome:'Técnico científico',desc:'6 págs · azul · capa com foto de fundo, gráficos e protocolo',fn:()=>({tema:'azul',paginas:[
+  P(B('capa',{v:'fundo',sob:'Dossiê científico',t:'Probiótico Lactobacillus',sub:'Mecanismos, evidências e protocolos'})),
+  P(B('sumario',{v:'cards',itens:[['Mecanismo','3'],['Evidências','4'],['Protocolos','5'],['Referências','6']].map(([t,pg])=>({t,pg}))}),B('espaco')),
+  P(B('titulo',{v:'medio',sob:'Como funciona',t:'Mecanismo de ação'}),B('textoFoto',{v:'sobre',cor:'p',grow:1,titulo:'Eixo intestino–cérebro',t:'Texto de exemplo sobre o mecanismo, apoiado na ilustração ao lado.'}),B('numeros',{cor:'s'})),
+  P(B('titulo',{v:'medio',sob:'Evidências',t:'O que os estudos mostram'}),B('grafico',{v:'colunas',w:50,cor:'s'}),B('texto',{w:50,t:'<b>Desenho do estudo:</b> população, duração, dose e desfecho principal.<div><br></div><div>Resuma em 3 a 4 linhas o achado mais relevante para o prescritor.</div>'}),B('grafico'),B('espaco')),
+  P(B('faixa',{t:'Protocolos sugeridos'}),B('produto',{nome:'Fórmula 1',tags:[{t:'Agudo',on:1},{t:'Manutenção',on:0}]}),B('produto',{nome:'Fórmula 2',tags:[{t:'Agudo',on:0},{t:'Manutenção',on:1}]}),B('tabela'),B('espaco')),
+  P(B('titulo',{v:'medio',t:'Referências'}),B('referencias'),B('espaco'),B('qr',{w:100,pill:null}))]})},
+ tec3:{cat:'Material técnico (várias páginas)',nome:'Técnico natural',desc:'5 págs · verde · produto ao centro, ícones e galeria',fn:()=>({tema:'verde',paginas:[
+  P(B('capa',{v:'centro',cor:'s',sob:'Fitoterapia',t:'Ashwagandha',sub:'Adaptógeno para estresse e sono'})),
+  P(B('titulo',{v:'medio',sob:'Sobre o ativo',t:'Origem e padronização'}),B('texto',{t:'Texto de exemplo: origem botânica, parte utilizada, padronização do extrato e marcadores ativos.'}),
+   B('destaques',{v:'linha',itens:[['leaf','Extrato padronizado'],['moon','Qualidade do sono'],['brain','Foco e cognição'],['heart-pulse','Resposta ao estresse']].map(([ic,t])=>({t,img:'',imgIc:ic}))}),B('galeria',{v:'mosaico',itens:[{foto:'',leg:'Raiz'},{foto:'',leg:'Extrato'},{foto:'',leg:'Cápsulas'}]})),
+  P(B('titulo',{v:'medio',sob:'Benefícios',t:'Para quem indicar'}),B('iconeTexto',{v:'lado',w:50,iconeIc:'smile',titulo:'Ansiedade leve',t:'Texto curto.'}),B('iconeTexto',{v:'lado',w:50,iconeIc:'bed',titulo:'Insônia',t:'Texto curto.'}),
+   B('iconeTexto',{v:'lado',w:50,iconeIc:'battery-charging',titulo:'Fadiga',t:'Texto curto.'}),B('iconeTexto',{v:'lado',w:50,iconeIc:'dumbbell',titulo:'Performance',t:'Texto curto.'}),B('citacao'),B('espaco')),
+  P(B('titulo',{v:'medio',sob:'Como prescrever',t:'Posologia'}),B('tabela'),B('produto',{tags:[]}),B('espaco')),
+  P(B('espaco'),B('titulo',{v:'centro',t:'Fale com a nossa farmacêutica',sub:'Fórmulas personalizadas para o seu paciente.'}),B('qr',{w:100,pill:null}),B('espaco'),B('referencias'))]})},
+ /* ---------- LÂMINAS RÁPIDAS (2 folhas) ---------- */
+ rap1:{cat:'Lâmina rápida (2 folhas)',nome:'Rápida impacto',desc:'Fundo escuro · produto ao centro · cards de ícone',fn:()=>({tema:'impacto',paginas:[
+  P(B('capa',{v:'centro',cor:'none',sob:'Lançamento',t:'PRODUTO',sub:'Frase de impacto do produto'}),B('destaques',{v:'mini',itens:[['zap','Mais energia'],['flame','Termogênico'],['smile','Bem-estar']].map(([ic,t])=>({t,img:'',imgIc:ic}))})),
+  P(B('titulo',{v:'medio',sob:'Por que prescrever',t:'Diferenciais do ativo'}),B('iconeTexto',{iconeIc:'atom',titulo:'Tecnologia',t:'Texto curto.'}),B('iconeTexto',{iconeIc:'timer',titulo:'Ação rápida',t:'Texto curto.'}),B('iconeTexto',{iconeIc:'shield-check',titulo:'Segurança',t:'Texto curto.'}),
+   B('numeros'),B('tabela'),B('espaco'),B('qr',{w:100,pill:null}))]})},
+ rap2:{cat:'Lâmina rápida (2 folhas)',nome:'Rápida editorial',desc:'Foto de capa · texto + números · benefícios',fn:()=>({tema:'editorial',paginas:[
+  P(B('capa',{v:'fundo',sob:'Bioflora',t:'Título editorial da lâmina',sub:'Subtítulo que resume a proposta'})),
+  P(B('titulo',{v:'medio',sob:'Entenda',t:'Uma abordagem integrada'}),B('texto',{w:67,t:'Texto corrido de exemplo. Explique o contexto clínico, a proposta da fórmula e por que ela faz sentido para o paciente.'}),B('numeros',{w:33,v:'coluna',itens:[{v:'XX%',t:'resultado 1'},{v:'XX%',t:'resultado 2'}]}),
+   B('beneficios',{w:50,grow:1}),B('foto',{w:50}),B('qr',{w:100,pill:null}))]})},
+ rap3:{cat:'Lâmina rápida (2 folhas)',nome:'Rápida oceano',desc:'Título + foto · gráfico e produto no verso',fn:()=>({tema:'oceano',paginas:[
+  P(B('titulo',{sob:'Novidade',t:'Nome do ativo',sub:'Uma linha que explica o benefício principal.'}),B('textoFoto',{v:'foto-esq',grow:1,titulo:'Como age',t:'Texto de exemplo sobre o mecanismo.'}),
+   B('destaques',{v:'linha',itens:[['droplets','Hidratação'],['sparkles','Luminosidade'],['shield-plus','Barreira']].map(([ic,t])=>({t,img:'',imgIc:ic}))})),
+  P(B('grafico',{cor:'s'}),B('produto',{tags:[]}),B('produto',{tags:[]}),B('citacao'),B('espaco'),B('qr',{w:100,pill:null}))]})},
+ /* ---------- GRID 1 PÁGINA ---------- */
+ grid1:{cat:'Grid 1 página (rápida, estilo Nano CaHA)',nome:'Grid mosaico',desc:'Verde · título + ícone, foto + benefícios, números',fn:()=>({tema:'verde',paginas:[
+  P(B('titulo',{w:67,cor:'p',v:'gigante',t:'Nome Ativo'}),B('iconeTexto',{w:33,iconeIc:'leaf',titulo:'100% natural',t:'Frase curta de apoio.'}),
+   B('foto',{w:50}),B('beneficios',{w:50,grow:1}),B('numeros',{cor:'s'}),B('qr',{w:100,pill:null}))]})},
+ grid2:{cat:'Grid 1 página (rápida, estilo Nano CaHA)',nome:'Grid clínico',desc:'Azul · ilustração grande, ícones e tabela',fn:()=>({tema:'azul',paginas:[
+  P(B('titulo',{v:'centro',sob:'Lâmina técnica',t:'Nome do Ativo',sub:'Benefício principal em uma linha.'}),B('textoFoto',{v:'sobre',cor:'p',grow:1,titulo:'Mecanismo em destaque',t:'Texto curto sobre a ação.'}),
+   B('destaques',{cor:'s',v:'linha',itens:[['heart-pulse','Cardio'],['brain','Cognição'],['bone','Ossos'],['shield-check','Imunidade']].map(([ic,t])=>({t,img:'',imgIc:ic}))}),
+   B('tabela',{w:67}),B('qr',{w:33,pill:null,t:'Fale com a farmacêutica'}))]})},
+ grid3:{cat:'Grid 1 página (rápida, estilo Nano CaHA)',nome:'Grid terracota',desc:'Terracota · título gigante, texto + foto, 3 colunas',fn:()=>({tema:'areia',paginas:[
+  P(B('titulo',{cor:'p',v:'gigante',t:'Nome Ativo'}),B('texto',{w:50,cor:'s',t:'<b>Descrição curta do ativo em negrito</b>, seguida de uma explicação simples do que ele faz e para quem é indicado.'}),B('foto',{w:50,cor:'s'}),
+   B('beneficios',{w:33,grow:1}),B('numeros',{w:33,v:'coluna',cor:'s',itens:[{v:'XX%',t:'resultado'},{v:'XX%',t:'resultado'}]}),B('qr',{w:33,pill:null,t:'Fale com a farmacêutica'}))]})},
+
+ /* ---------- v4: mais modelos ---------- */
+ tec4:{cat:'Material técnico (várias páginas)',nome:'Técnico lavanda',desc:'4 págs · colágeno · capa com foto de fundo, mecanismo e tabela',fn:()=>({tema:'lavanda',paginas:[
+  P(B('capa',{v:'fundo',sob:'Dermonutrição',t:'Peptídeos de colágeno',sub:'Firmeza e elasticidade de dentro para fora'})),
+  P(B('titulo',{v:'medio',sob:'Mecanismo',t:'Como os peptídeos agem'}),B('textoFoto',{v:'sobre',cor:'p',grow:1,titulo:'Sinalização para os fibroblastos',t:'Texto de exemplo sobre absorção e sinalização dos peptídeos bioativos.'}),
+   B('iconeTexto',{iconeIc:'sparkles',titulo:'Firmeza',t:'Texto curto.'}),B('iconeTexto',{iconeIc:'droplets',titulo:'Hidratação',t:'Texto curto.'}),B('iconeTexto',{iconeIc:'scan-face',titulo:'Rugas',t:'Texto curto.'})),
+  P(B('titulo',{v:'medio',sob:'Evidências',t:'Resultados'}),B('grafico',{v:'colunas'}),B('numeros',{cor:'s'}),B('citacao'),B('espaco')),
+  P(B('titulo',{v:'medio',sob:'Prescrição',t:'Sugestões de fórmula'}),B('tabela'),B('produto',{tags:[]}),B('espaco'),B('referencias'),B('qr',{w:100,pill:null}))]})},
+ tec5:{cat:'Material técnico (várias páginas)',nome:'Dossiê terracota',desc:'5 págs · vitamina D · sumário em cards, números e galeria',fn:()=>({tema:'areia',paginas:[
+  P(B('capa',{sob:'Dossiê',t:'Vitamina D3 + K2',sub:'Ossos, imunidade e metabolismo',itens:['Fisiologia','Deficiência','Evidências','Posologia'].map(t=>({t}))})),
+  P(B('sumario',{v:'cards',itens:[['Fisiologia','3'],['Deficiência','3'],['Evidências','4'],['Posologia','5']].map(([t,pg])=>({t,pg}))}),B('citacao',{t:'“Destaque aqui o dado epidemiológico mais relevante para o prescritor.”'}),B('espaco')),
+  P(B('titulo',{v:'medio',sob:'Fisiologia',t:'Por que a combinação'}),B('texto',{w:50,t:'Texto de exemplo sobre a ação complementar das duas vitaminas.'}),B('textoFoto',{w:50,v:'foto-esq',cor:'s',titulo:'Sinergia',t:'Texto curto.'}),
+   B('destaques',{v:'linha',itens:[['bone','Ossos'],['shield-check','Imunidade'],['heart-pulse','Cardiovascular'],['sun','Síntese cutânea']].map(([ic,t])=>({t,img:'',imgIc:ic}))}),B('espaco')),
+  P(B('titulo',{v:'medio',sob:'Evidências',t:'O que dizem os estudos'}),B('numeros'),B('grafico'),B('galeria',{v:'3 colunas',grow:1,itens:[{foto:'',leg:'Figura 1'},{foto:'',leg:'Figura 2'},{foto:'',leg:'Figura 3'}]})),
+  P(B('titulo',{v:'medio',sob:'Como prescrever',t:'Posologia'}),B('tabela'),B('texto',{cor:'s',t:'<b>Monitoramento:</b> orientações de exames e ajuste de dose.'}),B('espaco'),B('referencias'))]})},
+ tec6:{cat:'Material técnico (várias páginas)',nome:'Técnico escuro premium',desc:'4 págs · performance · fundo escuro e gráficos',fn:()=>({tema:'impacto',paginas:[
+  P(B('capa',{v:'centro',cor:'none',sob:'Performance',t:'CREATINA',sub:'Força, energia e cognição'})),
+  P(B('titulo',{v:'medio',sob:'Mecanismo',t:'Sistema ATP-CP'}),B('textoFoto',{v:'foto-dir',grow:1,cor:'s'}),B('numeros')),
+  P(B('titulo',{v:'medio',sob:'Evidências',t:'Resultados em força e massa magra'}),B('grafico',{cor:'s'}),B('grafico',{v:'colunas',w:50}),B('citacao',{w:50})),
+  P(B('titulo',{v:'medio',sob:'Prescrição',t:'Protocolos'}),B('produto',{nome:'Saturação',tags:[{t:'Fase 1',on:1},{t:'Fase 2',on:0}]}),B('produto',{nome:'Manutenção',tags:[{t:'Fase 1',on:0},{t:'Fase 2',on:1}]}),B('tabela'),B('espaco'),B('qr',{w:100,pill:null}))]})},
+ prot2:{cat:'Protocolo',nome:'Protocolo intestino',desc:'3 págs · verde · fases + produtos com QR',fn:()=>({tema:'verde',paginas:[
+  P(B('capa',{sob:'Protocolo',t:'Saúde intestinal',itens:['Remover','Repor','Reinocular','Reparar'].map(t=>({t}))})),
+  P(B('texto',{t:'Texto de introdução do protocolo: objetivo clínico e para quem se aplica.'}),B('faixa',{t:'Fases'}),B('fases',{itens:[['Remover','Descrição curta.'],['Repor','Descrição curta.'],['Reinocular','Descrição curta.'],['Reparar','Descrição curta.']].map(([nome,desc])=>({nome,desc}))}),
+   B('faixa',{t:'Fase 1 e 2'}),B('produto',{tags:FASES4([0,1]).map((t,i)=>({...t,t:['Remover','Repor','Reinocular','Reparar'][i]}))}),B('produto',{tags:FASES4([1]).map((t,i)=>({...t,t:['Remover','Repor','Reinocular','Reparar'][i]}))}),B('espaco')),
+  P(B('faixa',{t:'Fase 3 e 4'}),B('produto',{tags:FASES4([2]).map((t,i)=>({...t,t:['Remover','Repor','Reinocular','Reparar'][i]}))}),B('produto',{tags:FASES4([3]).map((t,i)=>({...t,t:['Remover','Repor','Reinocular','Reparar'][i]}))}),B('citacao'),B('espaco'),B('referencias'))]})},
+ prot3:{cat:'Protocolo',nome:'Protocolo performance',desc:'2 págs · azul · tabela por horário + produtos',fn:()=>({tema:'azul',paginas:[
+  P(B('titulo',{cor:'p',sob:'Protocolo',t:'Performance e recuperação',sub:'Suporte nutricional para praticantes de atividade física.'}),B('destaques',{v:'linha',itens:[['zap','Pré-treino'],['dumbbell','Intra'],['biceps-flexed','Pós-treino'],['bed','Noite']].map(([ic,t])=>({t,img:'',imgIc:ic}))}),
+   B('tabela',{cab:[{t:'Momento'},{t:'Fórmula'},{t:'Dose'}],linhas:[['Pré-treino','Fórmula A','1 dose'],['Pós-treino','Fórmula B','1 dose'],['Noite','Fórmula C','1 dose']].map(r=>({c:r.map(t=>({t}))}))}),B('espaco')),
+  P(B('produto',{nome:'Fórmula A',tags:[]}),B('produto',{nome:'Fórmula B',tags:[]}),B('produto',{nome:'Fórmula C',tags:[]}),B('espaco'),B('qr',{w:100,pill:null}))]})},
+ rap4:{cat:'Lâmina rápida (2 folhas)',nome:'Rápida comparativa',desc:'Vinho · tabela comparativa entre formas do ativo',fn:()=>({tema:'vinho',paginas:[
+  P(B('titulo',{v:'gigante',cor:'p',t:'Nome Ativo'}),B('texto',{t:'<b>Frase-resumo do diferencial</b> e um parágrafo explicando por que esta forma do ativo é a melhor escolha.'}),
+   B('iconeTexto',{iconeIc:'atom',titulo:'Biodisponível',t:'Texto curto.'}),B('iconeTexto',{iconeIc:'shield-check',titulo:'Tolerável',t:'Texto curto.'}),B('iconeTexto',{iconeIc:'timer',titulo:'Ação contínua',t:'Texto curto.'}),B('foto',{grow:1,cor:'s'})),
+  P(B('titulo',{v:'medio',sob:'Comparativo',t:'Por que esta forma?'}),B('tabela',{cab:[{t:'Critério'},{t:'Esta forma'},{t:'Forma comum'}],linhas:[['Absorção','Alta','Média'],['Tolerância','Alta','Variável'],['Dose','Menor','Maior']].map(r=>({c:r.map(t=>({t}))}))}),
+   B('numeros'),B('espaco'),B('qr',{w:100,pill:null}))]})},
+ rap5:{cat:'Lâmina rápida (2 folhas)',nome:'Rápida sono',desc:'Lavanda · capa com foto e passos da rotina',fn:()=>({tema:'lavanda',paginas:[
+  P(B('capa',{v:'fundo',sob:'Sono e bem-estar',t:'Noites melhores',sub:'Um protocolo simples para o paciente'})),
+  P(B('titulo',{v:'medio',sob:'Rotina',t:'Passo a passo'}),B('fases',{itens:[['Fim da tarde','Descrição.'],['Jantar','Descrição.'],['2 h antes','Descrição.'],['Deitar','Descrição.']].map(([nome,desc])=>({nome,desc}))}),
+   B('beneficios',{w:50,grow:1,titulo:'O que melhora'}),B('textoFoto',{w:50,v:'foto-esq',cor:'s',titulo:'Fórmula sugerida',t:'Composição e posologia.'}),B('qr',{w:100,pill:null}))]})},
+ rap6:{cat:'Lâmina rápida (2 folhas)',nome:'Rápida skincare',desc:'Editorial · 3 produtos de rotina (manhã, noite, semanal)',fn:()=>({tema:'editorial',paginas:[
+  P(B('titulo',{v:'centro',sob:'Rotina de skincare',t:'Pele saudável',sub:'Três passos simples, fórmulas personalizadas.'}),B('galeria',{v:'3 colunas',itens:[{foto:'',leg:'Manhã'},{foto:'',leg:'Noite'},{foto:'',leg:'Semanal'}]}),
+   B('destaques',{v:'mini',itens:[['sun','Proteção'],['moon','Renovação'],['droplets','Hidratação']].map(([ic,t])=>({t,img:'',imgIc:ic}))})),
+  P(B('faixa',{t:'Manhã'}),B('produto',{tags:[]}),B('faixa',{t:'Noite'}),B('produto',{tags:[]}),B('faixa',{t:'Semanal'}),B('produto',{tags:[]}),B('espaco'),B('qr',{w:100,pill:null}))]})},
+ grid4:{cat:'Grid 1 página (rápida, estilo Nano CaHA)',nome:'Grid oceano',desc:'Oceano · título + QR, ilustração e 3 cards',fn:()=>({tema:'oceano',paginas:[
+  P(B('titulo',{w:50,cor:'p',v:'gigante',t:'Hidrata+'}),B('qr',{w:50,pill:'Frase curta do produto'}),B('textoFoto',{v:'sobre',cor:'p',grow:1,titulo:'Hidratação profunda',t:'Texto curto sobre o mecanismo.'}),
+   B('iconeTexto',{iconeIc:'droplets',titulo:'Barreira',t:'Texto curto.'}),B('iconeTexto',{iconeIc:'sparkles',titulo:'Viço',t:'Texto curto.'}),B('iconeTexto',{iconeIc:'shield-check',titulo:'Proteção',t:'Texto curto.'}))]})},
+ grid5:{cat:'Grid 1 página (rápida, estilo Nano CaHA)',nome:'Grid impacto',desc:'Escuro · produto em destaque e números',fn:()=>({tema:'impacto',paginas:[
+  P(B('titulo',{v:'gigante',t:'PRÉ-TREINO'}),B('foto',{w:67,grow:1,cor:'s'}),B('destaques',{w:33,v:'coluna',cor:'s',itens:[['zap','Energia'],['flame','Foco'],['activity','Resistência']].map(([ic,t])=>({t,img:'',imgIc:ic}))}),
+   B('qr',{w:100,pill:null}))]})},
+ grid6:{cat:'Grid 1 página (rápida, estilo Nano CaHA)',nome:'Grid lavanda',desc:'Lavanda · cabelo e unhas · benefícios + foto',fn:()=>({tema:'lavanda',paginas:[
+  P(B('titulo',{w:67,cor:'p',v:'gigante',t:'Cabelo & Unhas'}),B('iconeTexto',{w:33,cor:'s',iconeIc:'gem',titulo:'Fortalecimento',t:'Frase curta.'}),
+   B('texto',{w:33,cor:'s',t:'<b>Descrição do ativo</b> e para quem é indicado.'}),B('foto',{w:67,grow:1}),B('beneficios',{w:50}),B('qr',{w:50,pill:null}))]})},
+ grid7:{cat:'Grid 1 página (rápida, estilo Nano CaHA)',nome:'Grid editorial',desc:'Editorial claro · foto grande e texto elegante',fn:()=>({tema:'editorial',paginas:[
+  P(B('textoFoto',{v:'foto-esq',cor:'none',grow:1,titulo:'Título elegante do ativo',t:'Texto corrido de exemplo, com tom editorial, explicando o ativo e sua proposta.'}),B('divisor'),
+   B('numeros',{itens:[{v:'XX%',t:'resultado'},{v:'XX%',t:'resultado'},{v:'XX',t:'resultado'}]}),B('citacao',{w:67}),B('qr',{w:33,pill:null,t:'Fale com a farmacêutica'}))]})},
+ grid8:{cat:'Grid 1 página (rápida, estilo Nano CaHA)',nome:'Grid vinho clássico',desc:'Vinho · variação do Nano CaHA com gráfico',fn:()=>({tema:'vinho',paginas:[
+  P(B('titulo',{w:50,cor:'p',v:'gigante',t:'Nome Ativo'}),B('qr',{w:50,pill:'Frase curta do produto'}),B('texto',{w:33,cor:'s',t:'<b>Descrição do ativo</b> em duas ou três linhas.'}),B('grafico',{w:67,cor:'s'}),
+   B('beneficios',{w:33,grow:1}),B('foto',{w:33}),B('numeros',{w:33,v:'coluna',cor:'s',itens:[{v:'XX%',t:'resultado'},{v:'XX%',t:'resultado'}]}))]})},
+
+};
+
+/* ================= estado ================= */
+const K='bioflora-laminas-v2';
+const SUPABASE_URL='https://gbbjpltqmbhlfluqhrmg.supabase.co',SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
+const supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+let db={laminas:[]},meuId=null;
+let doc,sel=null,pgAtiva=0,hist=[];
+function criar(m){const d=migra({id:uid(),nome:MODELOS[m].nome.split(' (')[0],cores:{},...MODELOS[m].fn()});db.laminas.push(d);salvar(d);return d}
+doc=migra({id:uid(),nome:'',cores:{},...MODELOS.branco.fn()});   // espaço de trabalho vazio (não é salvo) até abrir uma lâmina
+
+let tSalva;const sujos=new Set();let avisouErro=false;
+function stSalva(t){let e=document.getElementById('stSalva');if(!e){e=document.createElement('span');e.id='stSalva';e.style.cssText='font-size:12px;color:#6E6266;margin-left:4px';const sp=document.querySelector('.top .sp');if(sp)sp.before(e)}e.textContent=t}
+function salvar(d){sujos.add(d||doc);clearTimeout(tSalva);stSalva('Salvando…');tSalva=setTimeout(flush,700)}
+async function flush(){clearTimeout(tSalva);const L=[...sujos].filter(d=>db.laminas.includes(d));sujos.clear();if(!L.length){stSalva('');return}
+ const {data,error}=await supa.from('laminas').upsert(L.map(d=>({id:d.id,nome:d.nome||'Sem nome',dados:d,atualizado_por:meuId,atualizado_em:new Date().toISOString()})),{onConflict:'id'}).select('id');
+ if(error||!data||data.length!==L.length){L.forEach(d=>sujos.add(d));stSalva('Não salvo');if(!avisouErro){avisouErro=true;avisar('Não foi possível salvar','Confira a conexão. Vou tentar de novo na próxima alteração. Dica: "Baixar .json" guarda uma cópia no seu computador.')}return}
+ avisouErro=false;stSalva('Salvo')}
+async function carregaLaminas(){const {data,error}=await supa.from('laminas').select('id,nome,dados').order('atualizado_em',{ascending:false});if(error){avisar('Não foi possível carregar as lâminas','Confira a conexão e recarregue a página.');return}
+ db.laminas=(data||[]).map(x=>migra(Object.assign(x.dados||{},{id:x.id,nome:x.nome})))}
+async function subir(dataUrl,pasta){try{const blob=await (await fetch(dataUrl)).blob();const ext=blob.type==='image/png'?'png':'jpg';const path=pasta+'/'+crypto.randomUUID()+'.'+ext;
+ const {error}=await supa.storage.from('laminas').upload(path,blob,{contentType:blob.type,cacheControl:'31536000'});if(error)throw error;
+ return {url:supa.storage.from('laminas').getPublicUrl(path).data.publicUrl,path}}catch(e){return {url:dataUrl,path:null}}}
+function snap(){hist.push(JSON.stringify(doc));if(hist.length>60)hist.shift()}
+function desfazer(){if(!hist.length)return;const d=JSON.parse(hist.pop());Object.keys(doc).forEach(k=>delete doc[k]);Object.assign(doc,d);sel=null;render()}
+function acha(id){for(const [pi,p] of doc.paginas.entries()){const i=p.blocos.findIndex(b=>b.id===id);if(i>-1)return{p,pi,i,b:p.blocos[i]}}return null}
+
+/* ================= render ================= */
+function linhas(blocos){const rows=[];let r=[],s=0;for(const b of blocos){if(r.length&&s+b.w>100.5){rows.push(r);r=[];s=0}r.push(b);s+=b.w}if(r.length)rows.push(r);return rows}
+function htmlBloco(b){const d=BL[b.tipo];if(!d)return'';const card=b.cor&&b.cor!=='none';
+ return `<div class="b t-${b.tipo} v-${b.v||''} ${card?'card c-'+b.cor:''} ${sel===b.id?'sel':''}" data-b="${b.id}" style="flex:${b.w} 1 0">${d.html(b)}</div>`}
+function temRod(p,pi){const r=doc.rod;return r&&r.on&&!p.semRod&&!(pi===0&&!r.capa)}
+function rodHTML(pi){const r=doc.rod,n=(r.num||'').replace('{n}',pi+1+(+r.ini||0)).replace('{t}',doc.paginas.length+(+r.ini||0));
+ return `<div class="rod ${r.linha?'linha':''}"><div class="ed r1" data-rod="esq" data-ph="Texto (ex.: RT)" contenteditable="true">${san(r.esq)}</div><div class="ed r2" data-rod="meio" data-ph="Aviso" contenteditable="true">${san(r.meio)}</div><div class="r3"><span class="ed" data-rod="dir" data-ph="Marca" contenteditable="true">${san(r.dir)}</span><span>${esc(n)}</span></div></div>`}
+function migra(d){if(!d.rod){const r=d.paginas.flatMap(p=>p.blocos).find(b=>b.tipo==='rodape');
+ d.rod={on:1,esq:r?r.rt:'Farm. RT Wanessa · CRF 12.629',meio:r?r.aviso:'Material destinado exclusivamente a profissionais prescritores.',dir:'Bioflora',num:'{n}',capa:0,linha:1,ini:0};
+ d.paginas.forEach(p=>p.blocos=p.blocos.filter(b=>b.tipo!=='rodape'))}return d}
+function pgHTML(p,pi){const rd=temRod(p,pi);return `<div class="pg ${rd?'comrod':''} ${p.bg?'bg-'+p.bg:''}" data-pg="${pi}"><div class="pin">${linhas(p.blocos).map(r=>`<div class="row ${r.some(b=>b.grow)?'grow':''}">${r.map(htmlBloco).join('')}</div>`).join('')}</div>${rd?rodHTML(pi):''}</div>`}
+function render(){
+ const w=$('#wrap');const z=w.style.zoom;w.setAttribute('style',vars(doc));w.style.zoom=z;
+ w.innerHTML=doc.paginas.map(pgHTML).join('');
+ w.querySelectorAll('.pg').forEach((pg,i)=>pg.querySelectorAll('.pn').forEach(n=>n.textContent=i+1));
+ pos();UI();salvar();
+}
+function pos(){
+ const z=Math.min(1,($('#stage').clientWidth-40)/794);$('#wrap').style.zoom=z;
+ document.querySelectorAll('#wrap .tit.gigante .fit, #wrap .cp.centro .t').forEach(el=>{if(el.dataset.fs)return;let f=el.closest('.cp')?24:26;el.style.fontSize=f+'mm';const box=el.parentElement;while(f>8&&el.scrollWidth>box.clientWidth+1){f-=.5;el.style.fontSize=f+'mm'}});
+ document.querySelectorAll('#wrap .pg').forEach(pg=>{const pin=pg.firstChild;const over=[...pin.querySelectorAll('.b')].some(b=>b.scrollHeight>b.clientHeight+8)||pin.scrollHeight>pin.clientHeight+2;pg.classList.toggle('over',over)});
+ barra();
+}
+function UI(){
+ $('#lista').innerHTML=db.laminas.map(l=>`<option value="${l.id}" ${l.id===doc.id?'selected':''}>${esc(l.nome)}</option>`).join('');
+ $('#tema').innerHTML=Object.entries(TEMAS).map(([k,t])=>`<option value="${k}" ${doc.tema===k?'selected':''}>${t.nome}</option>`).join('');
+ const base={...TEMAS.vinho,...doc.cores};
+ $('#cores').innerHTML=doc.tema==='pers'?Object.entries(CORES_ROT).map(([k,r])=>`<label>${r}<input type="color" value="${base[k]}" oninput="corPers('${k}',this.value)"></label>`).join(''):'';
+ if(pgAtiva>=doc.paginas.length)pgAtiva=doc.paginas.length-1;
+ $('#pgl').innerHTML=doc.paginas.map((p,i)=>`<div class="${i===pgAtiva?'on':''}" onclick="irPg(${i})"><span>Página ${i+1}</span><b onclick="event.stopPropagation();movePg(${i},-1)" title="Subir">↑</b><b onclick="event.stopPropagation();movePg(${i},1)" title="Descer">↓</b><b onclick="event.stopPropagation();rodPg(${i})" title="Rodapé nesta página (liga/desliga)" style="${temRod(p,i)?'':'opacity:.3'}">#</b><b onclick="event.stopPropagation();bgPg(${i})" title="Cor de fundo da página">◐</b><b onclick="event.stopPropagation();delPg(${i})" title="Excluir">✕</b></div>`).join('');
+ if(!$('#libr').innerHTML)$('#libr').innerHTML=Object.entries(BL).filter(([k,d])=>!d.oculto).map(([k,d])=>`<div class="li" title="${esc(d.desc)}" onmousedown="iniciaDrag(event,{novo:'${k}'})">${svgIc(LIBIC[k]||'plus')}${d.nome}</div>`).join('');
+}
+function corPers(k,v){doc.cores[k]=v;const w=$('#wrap'),z=w.style.zoom;w.setAttribute('style',vars(doc));w.style.zoom=z;salvar()}
+window.addEventListener('resize',pos);
+
+/* ================= barra do bloco ================= */
+function barra(){
+ const tb=$('#tb');const el=sel&&document.querySelector(`[data-b="${sel}"]`);const f=sel&&acha(sel);
+ if(!el||!f){tb.style.display='none';return}
+ const b=f.b,d=BL[b.tipo],r=el.getBoundingClientRect();
+ const bt=(a,t,tt='')=>`<button onmousedown="event.preventDefault()" onclick="acao('${a}')" title="${tt}">${t}</button>`;
+ tb.innerHTML=[`<button onmousedown="iniciaDrag(event,{id:sel})" title="Arraste para mover" style="cursor:grab">✥</button>`,bt('up','↑','Mover para cima'),bt('down','↓','Mover para baixo'),'<i></i>',
+  bt('w',`↔ ${b.w}%`,'Largura do bloco'),bt('cor','● '+CORES_NOME[b.cor||'none'],'Cor de fundo do bloco'),bt('grow',b.grow?'⇕ estica':'⇕ auto','Altura: esticar para preencher a página'),
+  d.vars&&d.vars.length>1?bt('v','◐ '+b.v,'Trocar desenho'):'',
+  d.lista?bt('add',d.tabela?'+ linha':'+ item')+bt('rem',d.tabela?'− linha':'− item'):'',d.tabela?bt('col+','+ coluna')+bt('col-','− coluna'):'',
+  b.tipo==='imagem'?bt('alt','↕ '+(b.h||25)+'mm','Altura'):'',d.img?bt('foto',uic('image')+' foto')+(b[d.img]?bt('fit','centralizar')+bt('semfoto','sem foto'):''):'',
+  d.link?bt('link',uic('link')+' link QR'):'',b.tipo==='produto'?bt('tags','fases'):'',
+  '<i></i>',bt('dup',uic('copy'),'Duplicar'),bt('del',uic('trash'),'Excluir')].join('');
+ tb.style.display='flex';
+ const h=tb.offsetHeight,top=r.top-h-8;tb.style.top=(top<58?Math.min(r.bottom+8,innerHeight-h-8):top)+'px';
+ tb.style.left=Math.max(240,Math.min(r.left,innerWidth-tb.offsetWidth-10))+'px';
+}
+$('#stage').addEventListener('scroll',barra);
+async function acao(a){
+ const f=acha(sel);if(!f)return;const {p,i,b}=f,d=BL[b.tipo];
+ if(!['foto','link','tags'].includes(a))snap();
+ const W=[100,67,50,33];
+ switch(a){
+  case 'up':if(i>0)[p.blocos[i-1],p.blocos[i]]=[p.blocos[i],p.blocos[i-1]];else if(f.pi>0){p.blocos.splice(i,1);doc.paginas[f.pi-1].blocos.push(b)}break;
+  case 'down':if(i<p.blocos.length-1)[p.blocos[i+1],p.blocos[i]]=[p.blocos[i],p.blocos[i+1]];else if(f.pi<doc.paginas.length-1){p.blocos.splice(i,1);doc.paginas[f.pi+1].blocos.unshift(b)}break;
+  case 'w':b.w=W[(W.indexOf(b.w)+1)%W.length];break;
+  case 'cor':b.cor=CORES_BLOCO[(CORES_BLOCO.indexOf(b.cor||'none')+1)%CORES_BLOCO.length];break;
+  case 'grow':b.grow=b.grow?0:1;break;
+  case 'alt':{const H=[12,18,25,35,50,70];b.h=H[(H.indexOf(b.h||25)+1)%H.length];break}
+  case 'v':b.v=d.vars[(d.vars.indexOf(b.v)+1)%d.vars.length];break;
+  case 'add':(b[d.lista]=b[d.lista]||[]).push(d.novo(b));break;
+  case 'col+':b.cab.push({t:'Coluna'});b.linhas.forEach(r=>r.c.push({t:''}));break;
+  case 'col-':if(b.cab.length>1){b.cab.pop();b.linhas.forEach(r=>r.c.pop())}break;
+  case 'rem':if(b[d.lista]?.length)b[d.lista].pop();break;
+  case 'foto':return escolheFoto(b,d.img);
+  case 'fit':b[d.img+'Pos']='50% 50%';break;
+  case 'semfoto':b[d.img]='';break;
+  case 'link':{const u=await pedir('Link do QR code',b[d.link]||'https://wa.me/55',{msg:'WhatsApp (ex.: https://wa.me/5511999999999) ou site. Deixe vazio para remover.',ok:'Salvar'});if(u===null)return;snap();b[d.link]=u.trim();break}
+  case 'tags':{const t=await pedir('Fases deste produto',(b.tags||[]).map(t=>t.t).join(', '),{msg:'Separe por vírgula. Deixe vazio para não mostrar fases.',ok:'Salvar'});if(t===null)return;snap();const old=b.tags||[];b.tags=t.split(',').map(s=>s.trim()).filter(Boolean).map((s,k)=>({t:s,on:old[k]?.on||0}));break}
+  case 'dup':{const n=clone(b);n.id=uid();p.blocos.splice(i+1,0,n);sel=n.id;break}
+  case 'del':p.blocos.splice(i,1);sel=null;break;
+ }
+ render();
+}
+
+/* ================= interação no documento ================= */
+const wrap=$('#wrap');
+wrap.addEventListener('input',e=>{const ed=e.target.closest('.ed');if(!ed)return;
+ if(ed.dataset.rod){doc.rod[ed.dataset.rod]=ed.innerHTML;document.querySelectorAll(`[data-rod="${ed.dataset.rod}"]`).forEach(x=>{if(x!==ed)x.innerHTML=ed.innerHTML});salvar();return}const f=acha(ed.closest('[data-b]').dataset.b);if(!f)return;
+ if(!ed._snap){snap();ed._snap=1}setP(f.b,ed.dataset.f,ed.innerHTML);salvar();
+ if(f.b.tipo==='grafico'){const vs=valores(f.b);ed.closest('[data-b]').querySelectorAll('.bar').forEach((x,i)=>x.style.setProperty('--x',vs[i]+'%'))}
+ clearTimeout(ed._t);ed._t=setTimeout(pos,ed.classList.contains('fit')||ed.closest('.cp.centro')?0:250)});
+/* ================= barra de texto (estilo Canva) ================= */
+const FONTES=['Plus Jakarta Sans', 'Poppins', 'Cal Sans', 'Montserrat', 'Inter', 'Raleway', 'Oswald', 'Bebas Neue', 'Playfair Display', 'DM Serif Display', 'Lora', 'Cormorant Garamond'];
+let edA=null,rng=null;
+document.addEventListener('selectionchange',()=>{const s=getSelection();if(!s.rangeCount)return;const n=s.anchorNode,el=n&&(n.nodeType===1?n:n.parentElement);const ed=el&&el.closest&&el.closest('#wrap .ed:not([data-rod])');if(ed){rng=s.getRangeAt(0).cloneRange();if(ed!==edA){edA=ed;barraTexto()}else marcaTexto()}});
+document.addEventListener('mousedown',e=>{if(!e.target.closest('#wrap .ed,#tt')&&edA){edA=null;$('#tt').style.display='none'}});
+function stDe(ed){const b=acha(ed.closest('[data-b]').dataset.b).b;return((b.st||{})[ed.dataset.f])||{}}
+function barraTexto(){
+ if(!edA){$('#tt').style.display='none';return}
+ const st=stDe(edA),cs=getComputedStyle(edA),fam=(st.ff||cs.fontFamily.split(',')[0].replace(/["']/g,'')).trim();
+ const fs=st.fs||Math.round(parseFloat(cs.fontSize)/3.7795*2)/2;
+ const bt=(f,t,tt)=>`<button onmousedown="event.preventDefault()" onclick="${f}" title="${tt}" data-k="${t}">${t}</button>`;
+ $('#ttin').innerHTML=`<select class="ff" onchange="estilo('ff',this.value)" title="Fonte">${FONTES.map(f=>`<option ${f===fam?'selected':''} style="font-family:'${f}'">${f}</option>`).join('')}</select>
+  <button onmousedown="event.preventDefault()" onclick="tam(-.5)" title="Diminuir">−</button><input type="number" id="ttfs" step=".5" min="1" value="${fs}" onchange="estilo('fs',this.value)" title="Tamanho (mm)"><button onmousedown="event.preventDefault()" onclick="tam(.5)" title="Aumentar">+</button><i></i>
+  <input type="color" value="${rgbHex(st.c||cs.color)}" onmousedown="guardaSel()" oninput="corTexto(this.value)" title="Cor do texto (só no trecho selecionado, ou no campo todo)"><i></i>
+  ${bt("fmt('bold','fw','800','400')",'B','Negrito')}${bt("fmt('italic','fi','italic','normal')",'I','Itálico')}${bt("fmt('underline','fu','underline','none')",'U','Sublinhado')}${bt("estilo('tt',stDe(edA).tt==='uppercase'?'none':'uppercase')",'Aa','MAIÚSCULAS')}<i></i>
+  ${['left','center','right','justify'].map((a,i)=>bt(`estilo('al','${a}')`,['⇤','≡','⇥','☰'][i],['Esquerda','Centro','Direita','Justificado'][i])).join('')}<i></i>
+  <select onchange="estilo('lh',this.value)" title="Entrelinha"><option value="">entrelinha</option>${[.9,1,1.15,1.3,1.5,1.8].map(v=>`<option ${st.lh==v?'selected':''}>${v}</option>`).join('')}</select>
+  <select onchange="estilo('ls',this.value)" title="Espaçamento entre letras"><option value="">espaçamento</option>${[-.06,-.04,-.02,0,.05,.1,.2].map(v=>`<option ${st.ls==v?'selected':''}>${v}</option>`).join('')}</select>
+  ${bt('limpaEstilo()','↺','Voltar ao estilo padrão')}`;
+ $('#tt').style.display='flex';marcaTexto();
+}
+function marcaTexto(){if(!edA)return;const st=stDe(edA),al=st.al||getComputedStyle(edA).textAlign;
+ document.querySelectorAll('#ttin button').forEach(b=>{const k=b.dataset.k;b.classList.toggle('on',(k==='B'&&(document.queryCommandState('bold')))||(k==='U'&&document.queryCommandState('underline'))||(k==='Aa'&&st.tt==='uppercase')||({'⇤':'left','≡':'center','⇥':'right','☰':'justify'}[k]===al)||(k==='I'&&document.queryCommandState('italic')))})}
+function rgbHex(c){const m=String(c).match(/\d+/g);if(!m||String(c).startsWith('#'))return String(c).startsWith('#')?c:'#000000';return'#'+m.slice(0,3).map(x=>(+x).toString(16).padStart(2,'0')).join('')}
+function estilo(k,v){if(!edA)return;const f=acha(edA.closest('[data-b]').dataset.b);snap();const b=f.b;b.st=b.st||{};const st=b.st[edA.dataset.f]=b.st[edA.dataset.f]||{};
+ if(v===''||v==null)delete st[k];else st[k]=k==='fs'||k==='lh'||k==='ls'?+v:v;
+ edA.setAttribute('style',css(st));if(st.fs)edA.dataset.fs=1;else delete edA.dataset.fs;salvar();pos();barraTexto()}
+function tam(d){const v=Math.max(1,(+$('#ttfs').value||4)+d);estilo('fs',v)}
+function guardaSel(){const s=getSelection();if(s.rangeCount&&edA&&edA.contains(s.anchorNode))rng=s.getRangeAt(0).cloneRange()}
+function restauraSel(){if(!rng)return false;const s=getSelection();s.removeAllRanges();s.addRange(rng);return !rng.collapsed}
+function corTexto(v){if(!edA)return;if(rng&&!rng.collapsed&&edA.contains(rng.commonAncestorContainer)){edA.focus();restauraSel();document.execCommand('styleWithCSS',false,true);document.execCommand('foreColor',false,v);guardaSel()}else estilo('c',v)}
+function fmt(cmd,k,on,off){if(!edA)return;if(restauraSel()){edA.focus();document.execCommand(cmd);marcaTexto()}else{const st=stDe(edA);estilo(k,st[k]===on?off:on)}}
+function limpaEstilo(){if(!edA)return;const b=acha(edA.closest('[data-b]').dataset.b).b;snap();if(b.st)delete b.st[edA.dataset.f];edA.removeAttribute('style');delete edA.dataset.fs;salvar();pos();barraTexto()}
+wrap.addEventListener('focusout',e=>{const ed=e.target.closest&&e.target.closest('.ed');if(ed)ed._snap=0});
+wrap.addEventListener('paste',e=>{if(!e.target.closest('.ed'))return;e.preventDefault();document.execCommand('insertText',false,e.clipboardData.getData('text/plain'))});
+wrap.addEventListener('mousedown',e=>{
+ const bEl=e.target.closest('[data-b]');const pg=e.target.closest('.pg');
+ if(pg&&pgAtiva!==+pg.dataset.pg){pgAtiva=+pg.dataset.pg;UI()}
+ if(!bEl){if(sel){sel=null;document.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));barra()}return}
+ if(sel!==bEl.dataset.b){document.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));sel=bEl.dataset.b;bEl.classList.add('sel');setTimeout(barra)}
+ if(!e.target.closest('.ed,.img,[data-tag],[data-link],.rod')&&e.button===0){iniciaDrag(e,{id:bEl.dataset.b});return}
+ const im=e.target.closest('.img');
+ if(im&&im.querySelector('img')&&!e.target.closest('.ed')){
+  e.preventDefault();const b=acha(sel).b,k=im.dataset.img+'Pos';const [x0,y0]=(getP(b,k)||'50% 50%').split(' ').map(parseFloat);
+  const sx=e.clientX,sy=e.clientY,r=im.getBoundingClientRect(),img=im.querySelector('img');let mov=0;
+  const mv=ev=>{const dx=(ev.clientX-sx)/r.width*100,dy=(ev.clientY-sy)/r.height*100;if(Math.abs(dx)+Math.abs(dy)>1)mov=1;
+   img.style.objectPosition=`${Math.max(0,Math.min(100,x0-dx)).toFixed(1)}% ${Math.max(0,Math.min(100,y0-dy)).toFixed(1)}%`};
+  const up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);if(mov){snap();setP(b,k,img.style.objectPosition);salvar()}};
+  addEventListener('mousemove',mv);addEventListener('mouseup',up);
+ }
+});
+wrap.addEventListener('click',e=>{
+ const t=e.target;const bEl=t.closest('[data-b]');if(!bEl)return;const b=acha(bEl.dataset.b).b;
+ const tag=t.closest('[data-tag]');if(tag){snap();b.tags[+tag.dataset.tag].on^=1;return render()}
+ if(t.closest('[data-link]')){sel=b.id;return acao('link')}
+ if(window._arrastou)return;
+ const im=t.closest('.img');if(im&&!t.closest('.ed')){if(im.dataset.icn){if(!im.querySelector('img,svg')||im.querySelector('span'))abrirIcones(b,im.dataset.img)}else if(!im.querySelector('img'))escolheFoto(b,im.dataset.img)}
+});
+wrap.addEventListener('dblclick',e=>{const im=e.target.closest('.img');if(!im||e.target.closest('.ed'))return;const b=acha(e.target.closest('[data-b]').dataset.b).b;im.dataset.icn?abrirIcones(b,im.dataset.img):escolheFoto(b,im.dataset.img)});
+let fotoAlvo=null;
+function escolheFoto(b,campo){fotoAlvo={b,campo};
+ $('#mbox').innerHTML=`<h3>Escolher imagem</h3><div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><button class="pri" onclick="fotoDoPC()">Enviar do computador</button><label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="guardar"> guardar também em Meus arquivos</label></div>
+ <div class="grp">Meus arquivos</div>${ARQ.length?`<div class="agrid">${ARQ.map(a=>`<div class="ai" onclick="aplicaFoto(ARQ.find(x=>x.id==='${a.id}').data)"><img src="${a.data}"><span>${esc(a.nome)}</span></div>`).join('')}</div>`:'<p style="color:#888;font-size:13px">Nenhum arquivo salvo ainda. Use “guardar também em Meus arquivos” ou a área Meus arquivos da biblioteca.</p>'}`;
+ $('#modal').classList.add('on')}
+function fotoDoPC(){const pk=$('#pick'),g=$('#guardar')?.checked;pk.onchange=async()=>{const f=pk.files[0];pk.value='';if(!f)return;const {campo}=fotoAlvo;
+ const data=(await subir(await reduz(f,/img$|icone$/.test(campo)?400:1800),'fotos')).url;if(g){await arqPut(f.name,await reduz(f,1800))}aplicaFoto(data)};pk.click()}
+function aplicaFoto(data){if(!fotoAlvo)return;const {b,campo}=fotoAlvo;snap();setP(b,campo,data);setP(b,campo+'Ic','');setP(b,campo+'Pos','50% 50%');fechaModal();render()}
+function reduz(file,max){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{
+ const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+ c.getContext('2d').drawImage(im,0,0,c.width,c.height);r(c.toDataURL(file.type==='image/png'?'image/png':'image/jpeg',.88))};im.src=fr.result};fr.readAsDataURL(file)})}
+document.addEventListener('keydown',e=>{
+ const emTexto=e.target.closest&&e.target.closest('.ed,input,textarea,select');
+ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'&&!emTexto){e.preventDefault();desfazer()}
+ if((e.key==='Delete'||e.key==='Backspace')&&sel&&!emTexto){e.preventDefault();acao('del')}
+ if(e.key==='Escape'){if($('#modal').classList.contains('on'))return fechaModal();sel=null;document.activeElement.blur();render()}
+});
+
+/* ================= páginas ================= */
+function irPg(i){pgAtiva=i;UI();document.querySelectorAll('.pg')[i].scrollIntoView({behavior:'smooth',block:'start'})}
+function addPagina(){novaPagina('branco')}
+function novaPagina(k){snap();doc.paginas.splice(pgAtiva+1,0,{id:uid(),blocos:PAGINAS[k].fn()});pgAtiva=Math.min(pgAtiva+1,doc.paginas.length-1);fechaModal();render();irPg(pgAtiva)}
+function rodPg(i){snap();const p=doc.paginas[i];if(i===0&&!doc.rod.capa){doc.rod.capa=1;p.semRod=0}else p.semRod=temRod(p,i)?1:0;render()}
+function bgPg(i){snap();const o=['','p','s','d','a'],p=doc.paginas[i];p.bg=o[(o.indexOf(p.bg||'')+1)%o.length];render()}
+function dupPagina(){snap();const p=clone(doc.paginas[pgAtiva]);p.id=uid();p.blocos.forEach(b=>b.id=uid());doc.paginas.splice(pgAtiva+1,0,p);pgAtiva++;render();irPg(pgAtiva)}
+async function delPg(i){if(doc.paginas.length<2)return avisar('Não dá para excluir','A lâmina precisa ter pelo menos uma página.');if(!await confirmar('Excluir a página '+(i+1)+'?','Dá para desfazer com Ctrl+Z.'))return;snap();doc.paginas.splice(i,1);sel=null;render()}
+function movePg(i,d){const j=i+d;if(j<0||j>=doc.paginas.length)return;snap();[doc.paginas[i],doc.paginas[j]]=[doc.paginas[j],doc.paginas[i]];pgAtiva=j;render()}
+
+
+/* ================= arrastar e soltar ================= */
+let drag=null;
+function iniciaDrag(e,payload){if(e.button!==0)return;e.preventDefault();drag={...payload,x:e.clientX,y:e.clientY,on:0,alvo:null};window._arrastou=false;
+ addEventListener('mousemove',moveDrag);addEventListener('mouseup',fimDrag)}
+function moveDrag(e){if(!drag)return;
+ if(!drag.on){if(Math.abs(e.clientX-drag.x)+Math.abs(e.clientY-drag.y)<6)return;drag.on=1;window._arrastou=true;document.body.classList.add('arrastando');
+  const g=$('#ghost');g.innerHTML=drag.arq?uic('image')+' '+esc((ARQ.find(a=>a.id===drag.arq)||{}).nome):drag.novo?'+ '+esc(BL[drag.novo].nome):'✥ '+esc(BL[acha(drag.id).b.tipo].nome);g.style.display='block';$('#tb').style.display='none';
+  if(drag.id)document.querySelector(`[data-b="${drag.id}"]`)?.classList.add('arrastado')}
+ const g=$('#ghost');g.style.left=e.clientX+12+'px';g.style.top=e.clientY+12+'px';
+ const el=document.elementFromPoint(e.clientX,e.clientY),L=$('#dropl');drag.alvo=null;L.style.display='none';if(!el)return;
+ document.querySelectorAll('.img.alvo').forEach(x=>x.classList.remove('alvo'));
+ if(drag.arq){const im=el.closest('#wrap .img');if(im){im.classList.add('alvo');drag.alvo={img:im.dataset.img,bid:im.closest('[data-b]').dataset.b};return}}
+ const bEl=el.closest('[data-b]');
+ if(bEl&&bEl.dataset.b!==drag.id){const r=bEl.getBoundingClientRect(),lado=bEl.parentElement.children.length>1;
+  const antes=lado?e.clientX<r.left+r.width/2:e.clientY<r.top+r.height/2;drag.alvo={id:bEl.dataset.b,antes};
+  Object.assign(L.style,lado?{left:(antes?r.left-5:r.right+2)+'px',top:r.top+'px',width:'4px',height:r.height+'px'}:{left:r.left+'px',top:(antes?r.top-5:r.bottom+2)+'px',width:r.width+'px',height:'4px'});L.style.display='block';return}
+ const pg=el.closest('.pg');if(pg&&!bEl){const pin=pg.querySelector('.pin'),r=pin.getBoundingClientRect(),last=pin.lastElementChild;
+  const y=last?last.getBoundingClientRect().bottom+2:r.top+20;drag.alvo={pg:+pg.dataset.pg};
+  Object.assign(L.style,{left:r.left+20+'px',top:Math.min(y,r.bottom-6)+'px',width:r.width-40+'px',height:'4px',display:'block'})}
+}
+function fimDrag(){removeEventListener('mousemove',moveDrag);removeEventListener('mouseup',fimDrag);
+ const d=drag;drag=null;document.body.classList.remove('arrastando');$('#ghost').style.display='none';$('#dropl').style.display='none';
+ document.querySelectorAll('.arrastado').forEach(x=>x.classList.remove('arrastado'));
+ setTimeout(()=>window._arrastou=false,0);
+ document.querySelectorAll('.img.alvo').forEach(x=>x.classList.remove('alvo'));
+ if(!d)return;const A=d.arq&&ARQ.find(a=>a.id===d.arq);
+ if(!d.on){if(A){const f=sel&&acha(sel),di=f&&BL[f.b.tipo].img;if(di){fotoAlvo={b:f.b,campo:di};aplicaFoto(A.data)}else{d.novo='imagem';inserir('imagem');acha(sel).b.foto=A.data;render()}return}if(d.novo)inserir(d.novo);else barra();return}
+ if(d.alvo&&d.alvo.img&&A){fotoAlvo={b:acha(d.alvo.bid).b,campo:d.alvo.img};aplicaFoto(A.data);return}
+ if(!d.alvo){barra();return}
+ snap();let blk;
+ if(d.id){const f=acha(d.id);blk=f.b;f.p.blocos.splice(f.i,1)}else blk=A?novoBloco('imagem',{foto:A.data}):novoBloco(d.novo);
+ if(d.alvo.id){const t=acha(d.alvo.id);t.p.blocos.splice(t.i+(d.alvo.antes?0:1),0,blk);pgAtiva=t.pi}
+ else{doc.paginas[d.alvo.pg].blocos.push(blk);pgAtiva=d.alvo.pg}
+ sel=blk.id;render()}
+
+/* ================= páginas prontas ================= */
+const PAGINAS={
+ branco:{nome:'Em branco',desc:'Título e texto',fn:()=>[B('titulo'),B('texto')]},
+ capa:{nome:'Capa',desc:'Título com foto lateral',fn:()=>[B('capa')]},
+ capaFundo:{nome:'Capa com foto de fundo',desc:'Foto ocupando a página',fn:()=>[B('capa',{v:'fundo'})]},
+ sumario:{nome:'Sumário',desc:'Índice das seções',fn:()=>[B('sumario'),B('espaco')]},
+ info:{nome:'Informações',desc:'Título, texto, foto e destaques',fn:()=>[B('titulo',{v:'medio',sob:'Seção',t:'Título da seção'}),B('textoFoto',{v:'foto-dir',cor:'none',grow:1}),B('destaques',{v:'linha'})]},
+ mecanismo:{nome:'Mecanismo de ação',desc:'Ilustração + 3 cards',fn:()=>[B('titulo',{v:'medio',sob:'Como funciona',t:'Mecanismo de ação'}),B('textoFoto',{v:'sobre',cor:'p',grow:1}),B('iconeTexto',{iconeIc:'atom'}),B('iconeTexto',{iconeIc:'dna'}),B('iconeTexto',{iconeIc:'activity'})]},
+ imagens:{nome:'Imagens',desc:'Galeria de fotos',fn:()=>[B('titulo',{v:'medio',t:'Galeria'}),B('galeria')]},
+ graficos:{nome:'Gráficos',desc:'Gráfico de barras + colunas',fn:()=>[B('titulo',{v:'medio',sob:'Evidências',t:'Resultados do estudo'}),B('grafico'),B('grafico',{v:'colunas',w:50}),B('texto',{w:50,cor:'s',t:'Explique aqui o desenho do estudo: população, duração, dose e desfecho.'})]},
+ resultados:{nome:'Resultados',desc:'Números grandes + citação',fn:()=>[B('titulo',{v:'medio',sob:'Resultados',t:'O que os estudos mostram'}),B('numeros'),B('citacao'),B('espaco')]},
+ posologia:{nome:'Posologia / tabela',desc:'Tabela de doses',fn:()=>[B('titulo',{v:'medio',sob:'Como prescrever',t:'Posologia sugerida'}),B('tabela'),B('texto',{cor:'s',t:'<b>Observações:</b> contraindicações, interações e cuidados.'})]},
+ protocolo:{nome:'Protocolo',desc:'Faixa + produtos com fases',fn:()=>[B('faixa'),B('texto'),B('produto'),B('produto'),B('espaco')]},
+ referencias:{nome:'Referências',desc:'Bibliografia',fn:()=>[B('titulo',{v:'medio',t:'Referências'}),B('referencias',{t:'1. Autor A, et al. Título do artigo. Revista. Ano;vol(n):páginas.<div>2. Autor B, et al. Título do artigo. Revista. Ano;vol(n):páginas.</div>'})]},
+ contra:{nome:'Contracapa / contato',desc:'Chamada final com QR',fn:()=>[B('espaco'),B('titulo',{v:'centro',t:'Fale com a nossa farmacêutica',sub:'Tire dúvidas e solicite fórmulas personalizadas.'}),B('qr',{w:100,pill:null}),B('espaco')]},
+};
+function abrirPaginas(){$('#mbox').innerHTML=`<h3>Adicionar página pronta</h3><p style="margin:-6px 0 12px;font-size:13px;color:#777">Entra depois da página ${pgAtiva+1}.</p><div class="lib">${Object.entries(PAGINAS).map(([k,m])=>`<button onclick="novaPagina('${k}')"><b>${m.nome}</b><small>${m.desc}</small></button>`).join('')}</div>`;$('#modal').classList.add('on')}
+
+/* ================= rodapé ================= */
+function abrirRodape(){const r=doc.rod;
+ $('#mbox').innerHTML=`<h3>Rodapé e numeração</h3><div class="fm">
+ <label class="ck"><input type="checkbox" ${r.on?'checked':''} onchange="rodSet('on',this.checked?1:0)"> Mostrar rodapé</label>
+ <label class="ck"><input type="checkbox" ${r.capa?'checked':''} onchange="rodSet('capa',this.checked?1:0)"> Mostrar também na primeira página (capa)</label>
+ <label class="ck"><input type="checkbox" ${r.linha?'checked':''} onchange="rodSet('linha',this.checked?1:0)"> Linha separadora</label>
+ <label>Texto da esquerda (RT)</label><input type="text" value="${esc(r.esq.replace(/<[^>]*>/g,''))}" oninput="rodSet('esq',esc(this.value))">
+ <label>Texto do meio (aviso)</label><input type="text" value="${esc(r.meio.replace(/<[^>]*>/g,''))}" oninput="rodSet('meio',esc(this.value))">
+ <label>Texto da direita (marca)</label><input type="text" value="${esc(r.dir.replace(/<[^>]*>/g,''))}" oninput="rodSet('dir',esc(this.value))">
+ <label>Numeração</label><select onchange="rodSet('num',this.value)">${[['','Sem número'],['{n}','3'],['Página {n}','Página 3'],['{n} / {t}','3 / 8'],['Página {n} de {t}','Página 3 de 8'],['{n}'.padStart(1),'']].slice(0,5).map(([v,t])=>`<option value="${v}" ${r.num===v?'selected':''}>${t}</option>`).join('')}</select>
+ <label>Começar a contar a partir de (soma ao nº)</label><input type="text" value="${+r.ini||0}" oninput="rodSet('ini',parseInt(this.value)||0)">
+ <p style="font-size:12px;color:#888;margin-top:12px">Dica: os textos do rodapé também podem ser editados clicando direto neles na página. Para tirar o rodapé de uma página só, use o botão # na lista de páginas.</p>
+ <div style="text-align:right;margin-top:10px"><button class="pri" onclick="fechaModal()">Pronto</button></div></div>`;$('#modal').classList.add('on')}
+let rodT;function rodSet(k,v){if(!rodT)snap();clearTimeout(rodT);rodT=setTimeout(()=>rodT=null,800);doc.rod[k]=v;render()}
+
+/* ================= ícones ================= */
+const ICTAG={pill:'cápsula remédio comprimido',tablets:'comprimido remédio','pill-bottle':'frasco pote remédio',syringe:'seringa injeção caneta',
+ 'flask-conical':'laboratório manipulação fórmula','flask-round':'laboratório manipulação','test-tube':'tubo exame laboratório','test-tubes':'exames laboratório',
+ microscope:'pesquisa ciência estudo',dna:'genética célula',atom:'molécula ciência',heart:'coração saúde','heart-pulse':'coração cardio batimento',activity:'atividade batimento metabolismo',
+ stethoscope:'médico consulta',hospital:'hospital clínica',cross:'saúde cruz',thermometer:'febre temperatura',leaf:'folha natural planta fitoterápico',sprout:'broto natural crescimento',
+ trees:'natureza','flower-2':'flor floral',droplet:'gota água hidratação óleo',droplets:'gotas hidratação',flame:'fogo termogênico energia queima',sun:'sol vitamina d energia',
+ moon:'lua sono noite','moon-star':'sono noite',brain:'cérebro cognição mente foco memória',bone:'osso ossos articulação',apple:'maçã fruta nutrição',salad:'salada alimentação dieta',
+ carrot:'cenoura vegetal',citrus:'laranja vitamina c',cherry:'fruta',wheat:'trigo fibra glúten',milk:'leite cálcio',egg:'ovo proteína',fish:'peixe ômega',coffee:'café cafeína',
+ 'glass-water':'água hidratação',dumbbell:'treino academia músculo exercício',bike:'exercício cardio',footprints:'caminhada passos','biceps-flexed':'músculo força hipertrofia',
+ bed:'cama sono descanso',smile:'humor feliz bem-estar',frown:'triste humor','shield-check':'proteção imunidade segurança','shield-plus':'imunidade defesa',sparkles:'brilho pele beleza estética',
+ sparkle:'brilho',zap:'energia disposição','battery-charging':'energia recarga',scale:'balança peso emagrecimento',weight:'peso',timer:'tempo liberação',clock:'horário',hourglass:'tempo envelhecimento',
+ baby:'bebê gestante infantil',eye:'olho visão',ear:'ouvido',hand:'mão',
+ 'hand-heart':'cuidado',wind:'respiração ar',waves:'fluxo',snowflake:'frio',
+ 'clipboard-list':'lista prescrição','clipboard-check':'prescrição aprovado','notebook-pen':'anotação receita','book-open':'estudo livro','graduation-cap':'educação estudo',award:'prêmio qualidade',
+ 'badge-check':'certificado qualidade',medal:'medalha',star:'estrela destaque',target:'alvo objetivo','trending-up':'aumento crescimento','trending-down':'redução queda',
+ 'chart-line':'gráfico','chart-column':'gráfico barras','chart-pie':'gráfico pizza',gauge:'desempenho',check:'ok','circle-check':'ok benefício',info:'informação','circle-alert':'atenção alerta',
+ user:'pessoa paciente',users:'pessoas pacientes','person-standing':'pessoa corpo',house:'casa','map-pin':'local endereço',phone:'telefone contato','message-circle':'whatsapp mensagem',mail:'email',
+ 'qr-code':'qr',calendar:'data',package:'entrega',gift:'presente',
+ 'cigarette-off':'parar de fumar',ban:'proibido',recycle:'sustentável',earth:'planeta',bug:'bactéria',shell:'concha',feather:'leveza',gem:'joia premium',crown:'premium',fingerprint:'individual personalizado','scan-face':'rosto pele facial'};
+let icAlvo=null;
+function abrirIcones(b,campo){icAlvo={b,campo};
+ $('#mbox').innerHTML=`<h3>Escolher ícone</h3><input class="icbusca" id="icq" placeholder="Buscar: cápsula, sono, coração, energia, pele..." oninput="listaIcones(this.value)">
+ <div style="display:flex;gap:6px;margin-bottom:10px"><button onclick="fechaModal();escolheFoto(icAlvo.b,icAlvo.campo)">Enviar imagem própria</button><button onclick="poeIcone('')">Sem ícone</button></div><div class="icg" id="icg"></div>`;
+ $('#modal').classList.add('on');listaIcones('');setTimeout(()=>$('#icq').focus(),50)}
+function listaIcones(q){q=q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+ $('#icg').innerHTML=Object.keys(ICONES).filter(n=>!q||(n+' '+(ICTAG[n]||'')).normalize('NFD').replace(/[̀-ͯ]/g,'').includes(q)).map(n=>`<button onclick="poeIcone('${n}')" title="${n}">${svgIc(n)}${(ICTAG[n]||n).split(' ')[0]}</button>`).join('')||'<p style="color:#888">Nenhum ícone encontrado.</p>'}
+function poeIcone(n){if(!icAlvo)return;snap();setP(icAlvo.b,icAlvo.campo+'Ic',n);if(n)setP(icAlvo.b,icAlvo.campo,'');fechaModal();render()}
+
+/* ================= biblioteca / modelos ================= */
+function abrirLib(){
+ $('#mbox').innerHTML=`<h3>Adicionar bloco</h3><p style="margin:-6px 0 12px;font-size:13px;color:#777">Entra ${sel?'logo abaixo do bloco selecionado':'no fim da página '+(pgAtiva+1)}.</p><div class="lib">${Object.entries(BL).map(([k,d])=>`<button onclick="inserir('${k}')"><b>${d.nome}</b><small>${d.desc}</small></button>`).join('')}</div>`;
+ $('#modal').classList.add('on')}
+function inserir(tipo){snap();const nb=novoBloco(tipo);const f=sel&&acha(sel);
+ if(f)f.p.blocos.splice(f.i+1,0,nb);else{const bl=doc.paginas[pgAtiva].blocos;const r=bl.findIndex(b=>b.tipo==='rodape');bl.splice(r>-1?r:bl.length,0,nb)}
+ sel=nb.id;fechaModal();render()}
+function abrirModelos(){
+ const gr={};Object.entries(MODELOS).forEach(([k,m])=>(gr[m.cat||'Base']=gr[m.cat||'Base']||[]).push([k,m]));
+ $('#mbox').innerHTML=`<h3>Nova lâmina a partir de um modelo</h3>${Object.entries(gr).map(([g,ms])=>`<div class="grp">${g}</div><div class="lib">${ms.map(([k,m])=>`<button onclick="novaLam('${k}')"><b>${m.nome}</b><small>${m.desc}</small></button>`).join('')}</div>`).join('')}`;
+ $('#modal').classList.add('on')}
+function fechaModal(){$('#modal').classList.remove('on')}
+async function novaLam(m){const nome=await pedir('Nome da nova lâmina',MODELOS[m].nome.split(' (')[0],{ok:'Criar'});if(nome===null)return;doc=criar(m);doc.nome=nome||doc.nome;db.atual=doc.id;hist=[];sel=null;pgAtiva=0;fechaModal();render()}
+function duplicarLam(){const d=clone(doc);d.id=uid();d.nome+=' (cópia)';db.laminas.push(d);salvar(d);doc=d;db.atual=d.id;hist=[];render()}
+async function excluirLam(){if(db.laminas.length<2)return avisar('Não dá para excluir','Esta é a única lâmina.');if(!await confirmar(`Excluir "${doc.nome}"?`,'Esta ação não pode ser desfeita.'))return;const idDel=doc.id;db.laminas=db.laminas.filter(l=>l!==doc);doc=db.laminas[0];db.atual=doc.id;hist=[];await supa.from('laminas').delete().eq('id',idDel);render()}
+async function renomear(){const n=await pedir('Renomear lâmina',doc.nome,{ok:'Salvar'});if(n){doc.nome=n;UI();salvar()}}
+$('#lista').onchange=e=>{doc=db.laminas.find(l=>l.id===e.target.value);db.atual=doc.id;hist=[];sel=null;pgAtiva=0;render()};
+function mudaTema(t){snap();doc.tema=t;render()}
+function baixarJSON(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(doc)],{type:'application/json'}));a.download='lamina-'+doc.nome.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'-')+'.json';a.click()}
+function abrirJSON(f){if(!f)return;f.text().then(t=>{try{const o=migra(JSON.parse(t));if(!o.paginas)throw 0;o.id=uid();db.laminas.push(o);salvar(o);doc=o;db.atual=o.id;abrirEditor()}catch(e){avisar('Arquivo inválido','Escolha um arquivo .json salvo por este gerador.')}})}
+function imprimir(){sel=null;document.activeElement.blur();render();setTimeout(()=>print(),150)}
+addEventListener('beforeprint',()=>$('#wrap').style.zoom=1);addEventListener('afterprint',pos);
+
+/* ================= biblioteca inicial ================= */
+let chip='Todos';const cacheM={};
+function modeloDoc(k){return cacheM[k]=cacheM[k]||migra({id:'m_'+k,nome:MODELOS[k].nome,cores:{},...MODELOS[k].fn()})}
+function thumb(d){if(!d||!d.paginas||!d.paginas.length)return '<div class="thumb vazio">+</div>';const o=doc,os=sel;doc=d;sel=null;let h='';try{h=`<div class="thumb"><div class="doc" style="${vars(d)}">${pgHTML(d.paginas[0],0).replace(/contenteditable="true"/g,'')}</div></div>`}finally{doc=o;sel=os}return h}
+const norm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function homeRender(){const q=norm($('#hq').value);
+ $('#hMinhas').innerHTML=db.laminas.filter(l=>!q||norm(l.nome).includes(q)).map(l=>`<div class="cm" onclick="abrirLam('${l.id}')">${thumb(l)}<b>${esc(l.nome)}</b><small>${l.paginas.length} página${l.paginas.length>1?'s':''} · ${(TEMAS[l.tema]||{}).nome||''}</small><div class="acts" onclick="event.stopPropagation()"><button onclick="dupLam('${l.id}')">Duplicar</button><button onclick="delLam('${l.id}')">Excluir</button></div></div>`).join('')||'<p class="sub">Nenhuma lâmina ainda. Escolha um modelo abaixo.</p>';
+ const cats=['Todos',...new Set(Object.values(MODELOS).map(m=>m.cat||'Base'))];
+ $('#chips').innerHTML=cats.map(c=>`<button class="${c===chip?'on':''}" onclick="chip='${c}';homeRender()">${c}</button>`).join('');
+ $('#hModelos').innerHTML=Object.entries(MODELOS).filter(([k,m])=>(chip==='Todos'||(m.cat||'Base')===chip)&&(!q||norm(m.nome+' '+m.desc+' '+m.cat).includes(q))).map(([k,m])=>{const d=modeloDoc(k);
+  return `<div class="cm" onclick="usarModelo('${k}')">${thumb(d)}<b>${esc(m.nome)}</b><small>${esc(m.desc)}</small></div>`}).join('');
+ arqRender()}
+async function usarModelo(k){if(innerWidth<=720)return avisar('Editor no computador','No celular dá para ver a biblioteca. Para criar ou editar lâminas, abra o Hub no computador.');const nome=await pedir('Nome da nova lâmina',MODELOS[k].nome,{msg:'Modelo: '+MODELOS[k].nome,ok:'Criar e editar'});if(nome===null)return;doc=criar(k);doc.nome=nome||doc.nome;db.atual=doc.id;abrirEditor()}
+function abrirLam(id){if(innerWidth<=720)return avisar('Editor no computador','No celular dá para ver a biblioteca. Para editar, abra o Hub no computador.');doc=db.laminas.find(l=>l.id===id);db.atual=id;abrirEditor()}
+function abrirEditor(){document.body.classList.remove('inicio');hist=[];sel=null;pgAtiva=0;fechaModal();render();$('#stage').scrollTop=0}
+function irHome(){sel=null;edA=null;$('#tt').style.display='none';$('#tb').style.display='none';flush();document.body.classList.add('inicio');homeRender()}
+function dupLam(id){const d=clone(db.laminas.find(l=>l.id===id));d.id=uid();d.nome+=' (cópia)';db.laminas.push(d);salvar(d);homeRender()}
+async function delLam(id){const l=db.laminas.find(x=>x.id===id);if(!await confirmar(`Excluir "${l.nome}"?`,'Esta ação não pode ser desfeita.'))return;db.laminas=db.laminas.filter(x=>x!==l);const {error}=await supa.from('laminas').delete().eq('id',l.id);if(error){db.laminas.push(l);return avisar('Não foi possível excluir','Confira a conexão e tente de novo.')}if(doc===l){doc=db.laminas[0]||migra({id:uid(),nome:'',cores:{},...MODELOS.branco.fn()});db.atual=doc.id}homeRender()}
+function abrirModelos(){irHome()}
+
+/* ================= meus arquivos (IndexedDB) ================= */
+let ARQ=[];
+const urlArq=c=>supa.storage.from('laminas').getPublicUrl(c).data.publicUrl;
+async function carregaArquivos(){try{const {data,error}=await supa.from('laminas_arquivos').select('*').order('criado_em',{ascending:false});if(error)throw error;ARQ=(data||[]).map(a=>({id:a.id,nome:a.nome,caminho:a.caminho,data:urlArq(a.caminho)}))}catch(e){ARQ=[]}arqRender()}
+async function arqPut(nome,data){const r=await subir(data,'arquivos');if(!r.path)return avisar('Não foi possível enviar o arquivo','Confira a conexão e tente de novo.');
+ const {error}=await supa.from('laminas_arquivos').insert({nome:String(nome).replace(/\.[^.]+$/,''),caminho:r.path});if(error)return avisar('Não foi possível salvar o arquivo','Sem permissão ou sem conexão.');await carregaArquivos()}
+async function enviarArquivos(fs){for(const f of fs)await arqPut(f.name,await reduz(f,1800))}
+async function apagarArq(id){if(!await confirmar('Apagar este arquivo?','As lâminas que já usam esta imagem não mudam.',{ok:'Apagar'}))return;const a=ARQ.find(x=>x.id===id);await supa.from('laminas_arquivos').delete().eq('id',id);if(a&&a.caminho)await supa.storage.from('laminas').remove([a.caminho]);carregaArquivos()}
+async function renomearArq(id){const a=ARQ.find(x=>x.id===id),n=await pedir('Nome do arquivo',a.nome,{ok:'Salvar'});if(!n)return;await supa.from('laminas_arquivos').update({nome:n}).eq('id',id);carregaArquivos()}
+function arqRender(){
+ const h=$('#hArq');if(h)h.innerHTML=ARQ.map(a=>`<div class="ai" title="Duplo clique para renomear" ondblclick="renomearArq('${a.id}')"><img src="${a.data}"><span>${esc(a.nome)}</span><button class="x" onclick="apagarArq('${a.id}')">✕</button></div>`).join('')||'<p class="sub" style="grid-column:1/-1">Nenhum arquivo ainda.</p>';
+ const r=$('#rarq');if(r)r.innerHTML=ARQ.map(a=>`<div class="ai" title="${esc(a.nome)} — arraste para a página ou para um espaço de foto" onmousedown="iniciaDrag(event,{arq:'${a.id}'})"><img src="${a.data}"><span>${esc(a.nome)}</span></div>`).join('')||'<p style="grid-column:1/-1;color:#999;font-size:11px;margin:0">Nada salvo ainda.</p>'}
+
+/* ================= catálogo de lâminas prontas (pasta laminas/) ================= */
+async function carregaCatalogo(){try{const lst=await (await fetch('laminas-modelos/catalogo.json',{cache:'no-store'})).json();
+ for(const f of lst){const o=migra(await (await fetch('laminas-modelos/'+f,{cache:'no-store'})).json());
+  MODELOS['arq_'+f]={cat:'Bioflora (originais)',nome:o.nome,desc:o.paginas.length+' págs · pronta (falta inserir as imagens)',fn:()=>{const c=clone(o);delete c.id;delete c.nome;c.paginas.forEach(p=>{p.id=uid();p.blocos.forEach(b=>b.id=uid())});return c}}}
+ }catch(e){}homeRender()}
+
+(async function init(){
+ await requireRole(['chefia']);
+ try{const {data:{session}}=await supa.auth.getSession();meuId=session?session.user.id:null}catch(e){}
+ await carregaLaminas();
+ render();document.body.classList.add('inicio');homeRender();carregaArquivos();carregaCatalogo();
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)flush()});
+ addEventListener('pagehide',()=>{flush()});
+})();
+</script>
+<script>(function(){var s=document.createElement("script");s.src="hub-sidebar.js?t="+Date.now();document.body.appendChild(s);})();</script>
+</body>
+</html>

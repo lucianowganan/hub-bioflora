@@ -360,3 +360,9 @@ Decisão: **sem app nativo/loja**. Caminho: responsivo por módulo + **PWA** (in
 - Perfil: foto opcional (recorte quadrado 256px, JPEG, `fiel_foto_salvar`), dados mascarados (`fiel_extras`), botão "Conferir e atualizar meus dados" (formulário completo de confirmação), avisos push (depende das chaves VAPID, ainda não criadas), Sair.
 - Banners: aba "Banners" no Cliente Fiel da equipe (`cliente-fiel-banners.js`), tabela `fiel_banners` (período, ordem, cor ou imagem, link https). Imagens no bucket público `fiel`.
 - `PEDIDOS_ATIVOS=false` continua: sem "Meus pedidos" e sem botão de pedir brinde. Migração: `migracao-99-cliente-fiel-perfil-banners.sql`.
+
+## 25. Lâminas (laminas.html, só chefia)
+- Editor de lâminas de visitação (estilo Canva) vindo do protótipo `entrega-hub-laminas`. Arquivos: `laminas.html` (app inteiro), `laminas-icones.js` (ícones Lucide das lâminas), `laminas-modelos/` (catálogo de lâminas prontas; NÃO usar a pasta `laminas/`, que colidiria com a URL /laminas).
+- Dados no Supabase: `laminas` (JSON da lâmina em `dados`, status rascunho/em_revisao/aprovada — o fluxo de aprovação da Wanessa ainda não existe), `laminas_arquivos` (Meus arquivos), bucket público `laminas` (fotos). Tudo só chefia (`is_chefia()`); permissão `modulo.laminas`. Migração 101.
+- Salva sozinho (700 ms após editar) com indicador "Salvo"; duas pessoas editando a mesma lâmina: vale a última gravação. No celular só a biblioteca (editor só no computador).
+- Pendências do documento original: aprovação da Wanessa, salvar lâmina como modelo, exportar PNG por página, gerar imagem com IA e importar PDF de fornecedor (os dois últimos exigem chave guardada em edge function).
