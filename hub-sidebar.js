@@ -44,6 +44,7 @@
     chave: '<circle cx="8" cy="15" r="3.3"/><path d="M10.3 12.7 18 5m0 0h-3.2M18 5v3.2M14.7 8.3l2 2"/>',
     sair: '<path d="M9.5 20H5.5a1.5 1.5 0 0 1-1.5-1.5v-13A1.5 1.5 0 0 1 5.5 4h4"/><path d="M15.5 16.5 20 12l-4.5-4.5"/><path d="M20 12H9.5"/>',
     editar: '<path d="M4 20l1-4.2L15.5 5.3a1.7 1.7 0 0 1 2.4 0l.8.8a1.7 1.7 0 0 1 0 2.4L8.2 19 4 20Z"/><path d="M13.7 7.1l3.2 3.2"/>',
+    seta: '<path d="M9 5.5 15.5 12 9 18.5"/>',
     check: '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>',
     arrastar: '<circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/>',
   };
@@ -82,6 +83,17 @@
     { href: 'resumo-semanal.html', icone: 'grafico', label: 'Resumo Semanal', perm: 'modulo.resumo' },
     { href: 'rastreabilidade.html', icone: 'grafico', label: 'Rastreabilidade', perm: 'modulo.rastreio' },
   ];
+
+  // Áreas (só para a chefia): a barra mostra as áreas e, ao clicar, abre os módulos de cada uma.
+  const AREAS = [
+    { id: 'operacao', label: 'Operação', icone: 'frasco', hrefs: ['rotulos.html','producao.html','controle-producao.html','reaproveitamento.html','formulas-complexas.html','conferencia-formulas.html','embalagens.html'] },
+    { id: 'qualidade', label: 'Qualidade', icone: 'escudoCheck', hrefs: ['erros.html','inclusoes.html','meus-erros.html'] },
+    { id: 'pessoas', label: 'Pessoas', icone: 'pessoas', hrefs: ['tarefas.html','calendario-interno.html','rh.html'] },
+    { id: 'comercial', label: 'Comercial e marketing', icone: 'vendas', hrefs: ['cliente-fiel.html','pedidos-live.html','vendas-yampi.html','email-marketing.html','instagram.html','calendario-editorial.html','visitas-medicas.html','vet-contatos.html'] },
+    { id: 'gestao', label: 'Gestão', icone: 'grafico', hrefs: ['resumo-semanal.html','rastreabilidade.html','wanessia.html','admin.html','cargos.html'] },
+  ];
+  const FIXOS_TOPO = ['index.html', 'chat.html'];   // continuam soltos, fora das áreas
+  let papelGlobal = null, areaAberta = null;
 
   // Barra de endereço sem ".html" (só visual -- o GitHub Pages serve o mesmo arquivo em /chat e /chat.html)
   try{
@@ -125,6 +137,22 @@
       .hs-arrastando{opacity:.35;}
       .hs-drag-over{outline:2px dashed rgba(255,255,255,.6);}
       .hub-sidebar .hs-bottom{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+
+      /* tablet/celular sem mouse: tocar numa área abre a barra (não existe "passar o mouse") */
+      .hub-sidebar.hs-toque{width:250px;overflow-y:auto}
+      .hub-sidebar.hs-toque .hs-mark-nome,.hub-sidebar.hs-toque .hs-btn .hs-label{opacity:1}
+      .hub-sidebar.hs-toque .hs-area .hs-seta{opacity:.8}
+      .hub-sidebar.hs-toque .hs-sub.aberta{display:flex}
+      .hs-area{justify-content:flex-start}
+      .hs-area .hs-seta{margin-left:auto;width:16px;height:16px;min-width:16px;opacity:0;transition:transform .15s,opacity .1s;}
+      .hub-sidebar:hover .hs-area .hs-seta{opacity:.8}
+      .hs-area.aberta .hs-seta{transform:rotate(90deg)}
+      .hs-area.tem-ativo{background:rgba(255,255,255,.16);color:#fff}
+      .hs-sub{display:none;flex-direction:column;gap:2px;margin:0 8px 4px 8px;padding-left:12px;border-left:2px solid rgba(255,255,255,.18);margin-left:22px;width:auto}
+      .hub-sidebar:hover .hs-sub.aberta{display:flex}
+      .hs-sub .hs-btn{height:36px;min-height:36px;width:100%;margin:0;font-size:12.5px;gap:10px;padding:0 10px;border-radius:12px}
+      .hs-sub .hs-btn .hs-icon{width:18px;height:18px;min-width:18px}
+      .hs-sub .hs-btn .hs-label{opacity:1}
 
       @media (max-width:720px){
         body{padding-left:env(safe-area-inset-left,0px) !important;padding-right:env(safe-area-inset-right,0px);padding-bottom:calc(64px + env(safe-area-inset-bottom,0px)) !important;}
@@ -177,8 +205,41 @@
     return ordenados;
   }
 
+  function agrupadoAtivo(){ return papelGlobal === 'chefia' && !modoEdicaoSidebar && window.innerWidth > 720; }
+
+  function renderNavAgrupado(){
+    const lista = modulosVisiveisOrdenados(), porHref = {};
+    lista.forEach(m => { porHref[m.href] = m; });
+    const usados = new Set(FIXOS_TOPO);
+    const atual = paginaAtual();
+    const areaDaPagina = (AREAS.find(a => a.hrefs.includes(atual)) || {}).id || null;
+    if(areaAberta === null) areaAberta = areaDaPagina;
+    navRefEl.innerHTML = '';
+    FIXOS_TOPO.forEach(h => { if(porHref[h]) navRefEl.appendChild(montarBotao(porHref[h])); });
+    AREAS.forEach(a => {
+      // dentro da área, respeita a ordem personalizada; o que não está na lista ainda vai para o final
+      const itens = lista.filter(m => a.hrefs.includes(m.href));
+      itens.forEach(m => usados.add(m.href));
+      if(!itens.length) return;
+      const aberta = areaAberta === a.id;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'hs-btn hs-area' + (aberta ? ' aberta' : '') + (a.id === areaDaPagina ? ' tem-ativo' : '');
+      b.innerHTML = `${svg(a.icone)}<span class="hs-label">${a.label}</span>${svg('seta').replace('class="hs-icon"', 'class="hs-icon hs-seta"')}`;
+      b.addEventListener('click', (e) => { e.stopPropagation(); areaAberta = areaAberta === a.id ? null : a.id; const sb = document.querySelector('.hub-sidebar'); if(sb) sb.classList.add('hs-toque'); renderNav(); });
+      navRefEl.appendChild(b);
+      const sub = document.createElement('div');
+      sub.className = 'hs-sub' + (aberta ? ' aberta' : '');
+      itens.forEach(m => sub.appendChild(montarBotao(m)));
+      navRefEl.appendChild(sub);
+    });
+    // módulos novos que ainda não estão em nenhuma área: aparecem soltos no fim (nada some)
+    lista.filter(m => !usados.has(m.href)).forEach(m => navRefEl.appendChild(montarBotao(m)));
+  }
+
   function renderNav(){
     if(!navRefEl) return;
+    if(agrupadoAtivo()){ renderNavAgrupado(); return; }
     const lista = modulosVisiveisOrdenados();
     navRefEl.innerHTML = '';
     lista.forEach(m => {
@@ -320,6 +381,7 @@
 
       const minhasPermissoes = await buscarMinhasPermissoes(supa, papel);
       minhasPermissoesRefGlobal = minhasPermissoes;
+      papelGlobal = papel;
       supaRefGlobal = supa;
       userIdRefGlobal = session.user.id;
 
@@ -525,6 +587,10 @@
     document.body.appendChild(overlay);
     document.getElementById('hsAvisoFechar').addEventListener('click', () => overlay.remove());
   }
+
+  document.addEventListener('click', (e) => { const sb = document.querySelector('.hub-sidebar'); if(sb && sb.classList.contains('hs-toque') && !sb.contains(e.target)) sb.classList.remove('hs-toque'); });
+  let larguraAnt = window.innerWidth;
+  window.addEventListener('resize', () => { const m = (w) => w > 720; if(m(larguraAnt) !== m(window.innerWidth)){ larguraAnt = window.innerWidth; renderNav(); } else larguraAnt = window.innerWidth; });
 
   function iniciar(){
     // PWA: registra o service worker (instalação na tela inicial)
