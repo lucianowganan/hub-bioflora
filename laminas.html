@@ -481,7 +481,7 @@ const BL={
   html:b=>`<div class="it2 ${b.v}">${ICN(b,'icone')}<div>${E(b,'titulo','tt H','Título')}${E(b,'t','','Texto')}</div></div>`},
  citacao:{nome:'Citação / destaque',desc:'Frase grande em evidência',w:100,cor:'none',dados:()=>({t:'“Uma frase de destaque sobre o produto ou o estudo.”',autor:'Fonte ou autor'}),html:b=>`<div class="ct">${E(b,'t','q')}${E(b,'autor','a','Autor')}</div>`},
  imagem:{nome:'Imagem / logo',desc:'Logo, selo ou elemento (sem fundo)',w:33,cor:'none',img:'foto',vars:['conter','preencher'],dados:()=>({foto:'',h:25}),
-  html:b=>`<div style="height:${b.grow?'100%':(b.h||25)+'mm'};display:flex">${IMG(b,'foto',b.v==='conter'?'contain':'','+ imagem/logo')}</div>`},
+  html:b=>`<div style="height:${b.grow?'100%':(b.h||25)+'mm'};display:flex;padding:${b.mar||0}mm;box-sizing:border-box"><div style="flex:1;min-width:0;display:flex;transform:scale(${(b.esc||100)/100})">${IMG(b,'foto',b.v==='conter'?'contain':'','+ imagem/logo')}</div></div>`},
  divisor:{nome:'Divisor',desc:'Linha separadora',w:100,cor:'none',dados:()=>({}),html:()=>'<hr class="dv">'},
  espaco:{nome:'Espaço',desc:'Empurra o resto para baixo',w:100,cor:'none',grow:1,dados:()=>({}),html:()=>''},
 };
@@ -708,7 +708,7 @@ function barra(){
   bt('w',`↔ ${b.w}%`,'Largura do bloco'),bt('cor','● '+CORES_NOME[b.cor||'none'],'Cor de fundo do bloco'),bt('grow',b.grow?'⇕ estica':'⇕ auto','Altura: esticar para preencher a página'),
   d.vars&&d.vars.length>1?bt('v','◐ '+b.v,'Trocar desenho'):'',
   d.lista?bt('add',d.tabela?'+ linha':'+ item')+bt('rem',d.tabela?'− linha':'− item'):'',d.tabela?bt('col+','+ coluna')+bt('col-','− coluna'):'',
-  b.tipo==='imagem'?bt('alt','↕ '+(b.h||25)+'mm','Altura'):'',d.img?bt('foto',uic('image')+' foto')+(b[d.img]?bt('fit','centralizar')+bt('semfoto','sem foto')+(ehSvg(b[d.img])?bt('corvet','Cores do vetor','Trocar as cores do SVG'):''):''):'',
+  b.tipo==='imagem'?bt('alt','↕ '+(b.h||25)+'mm','Altura')+bt('esc','Escala '+(b.esc||100)+'%','Tamanho da imagem dentro do espaço')+bt('mar','Margem '+(b.mar||0)+'mm','Espaço em volta da imagem'):'',d.img?bt('foto',uic('image')+' foto')+(b[d.img]?bt('fit','centralizar')+bt('semfoto','sem foto')+(ehSvg(b[d.img])?bt('corvet','Cores do vetor','Trocar as cores do SVG'):''):''):'',
   d.link?bt('link',uic('link')+' link QR'):'',b.tipo==='produto'?bt('tags','fases'):'',
   '<i></i>',bt('dup',uic('copy'),'Duplicar'),bt('del',uic('trash'),'Excluir')].join('');
  tb.style.display='flex';
@@ -726,6 +726,8 @@ async function acao(a){
   case 'w':b.w=W[(W.indexOf(b.w)+1)%W.length];break;
   case 'cor':b.cor=CORES_BLOCO[(CORES_BLOCO.indexOf(b.cor||'none')+1)%CORES_BLOCO.length];break;
   case 'grow':b.grow=b.grow?0:1;break;
+  case 'esc':{const v=await pedir('Escala da imagem (%)',String(b.esc||100),{msg:'De 20 a 200. 100 = tamanho normal; menos que 100 deixa a imagem menor dentro do espaço.',ok:'Aplicar'});if(v===null)return;const n=parseInt(v,10);if(!(n>=20&&n<=200))return avisar('Valor inválido','Digite um número de 20 a 200.');snap();b.esc=n;break}
+  case 'mar':{const v=await pedir('Margem em volta (mm)',String(b.mar||0),{msg:'De 0 a 40 mm. Afasta a imagem das bordas do bloco.',ok:'Aplicar'});if(v===null)return;const n=parseFloat(String(v).replace(',','.'));if(!(n>=0&&n<=40))return avisar('Valor inválido','Digite um número de 0 a 40.');snap();b.mar=n;break}
   case 'alt':{const H=[12,18,25,35,50,70];b.h=H[(H.indexOf(b.h||25)+1)%H.length];break}
   case 'v':b.v=d.vars[(d.vars.indexOf(b.v)+1)%d.vars.length];break;
   case 'add':(b[d.lista]=b[d.lista]||[]).push(d.novo(b));break;
