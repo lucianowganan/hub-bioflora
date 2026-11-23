@@ -326,7 +326,7 @@ body.arrastando,body.arrastando *{cursor:grabbing!important;user-select:none}
   <div style="margin-bottom:10px"><button class="pri" onclick="upa.click()">+ Enviar arquivos</button></div><div class="agrid" id="hArq"></div>
  </div>
 </div>
-<input type="file" id="upa" accept="image/*" multiple hidden onchange="enviarArquivos([...this.files]);this.value=''">
+<input type="file" id="upa" accept="image/*,.svg,.pdf" multiple hidden onchange="enviarArquivos([...this.files]);this.value=''">
 <div class="top">
  <button onclick="irHome()" title="Voltar para a biblioteca">← Biblioteca</button>
  <h1>Lâminas Bioflora</h1>
@@ -364,7 +364,7 @@ body.arrastando,body.arrastando *{cursor:grabbing!important;user-select:none}
 </div>
 <div id="tb"></div><div id="ghost"></div><div id="dropl"></div><div id="tt"><div class="in" id="ttin"></div></div>
 <div class="modal" id="modal" onclick="if(event.target===this)fechaModal()"><div class="box" id="mbox"></div></div>
-<input type="file" id="pick" accept="image/*" hidden>
+<input type="file" id="pick" accept="image/*,.svg" hidden>
 <div class="modal" id="dlg"><div class="box"><h3 id="dt"></h3><p id="dm"></p><input id="di" autocomplete="off"><div class="dact"><button id="dc">Cancelar</button><button class="pri" id="dok">OK</button></div></div></div>
 
 <script>
@@ -656,7 +656,7 @@ async function flush(){clearTimeout(tSalva);const L=[...sujos].filter(d=>db.lami
 async function carregaLaminas(){const {data,error}=await supa.from('laminas').select('id,nome,dados,status,descricao,prazo,responsavel_nome,aprovado_nome,aprovado_em,editado_apos_em,editado_apos_por').order('atualizado_em',{ascending:false});if(error){avisar('Não foi possível carregar as lâminas','Confira a conexão e recarregue a página.');return}
  (data||[]).forEach(x=>{META[x.id]={status:x.status,descricao:x.descricao,prazo:x.prazo,resp:x.responsavel_nome,aprovado_nome:x.aprovado_nome,aprovado_em:x.aprovado_em,editado_apos_em:x.editado_apos_em,editado_apos_por:x.editado_apos_por}});
  db.laminas=(data||[]).map(x=>migra(Object.assign(x.dados||{},{id:x.id,nome:x.nome})))}
-async function subir(dataUrl,pasta){try{const blob=await (await fetch(dataUrl)).blob();const ext=blob.type==='image/png'?'png':'jpg';const path=pasta+'/'+crypto.randomUUID()+'.'+ext;
+async function subir(dataUrl,pasta){try{const blob=await (await fetch(dataUrl)).blob();const ext=blob.type==='image/png'?'png':blob.type==='image/svg+xml'?'svg':'jpg';const path=pasta+'/'+crypto.randomUUID()+'.'+ext;
  const {error}=await supa.storage.from('laminas').upload(path,blob,{contentType:blob.type,cacheControl:'31536000'});if(error)throw error;
  return {url:supa.storage.from('laminas').getPublicUrl(path).data.publicUrl,path}}catch(e){return {url:dataUrl,path:null}}}
 function snap(){hist.push(JSON.stringify(doc));if(hist.length>60)hist.shift()}
@@ -708,7 +708,7 @@ function barra(){
   bt('w',`↔ ${b.w}%`,'Largura do bloco'),bt('cor','● '+CORES_NOME[b.cor||'none'],'Cor de fundo do bloco'),bt('grow',b.grow?'⇕ estica':'⇕ auto','Altura: esticar para preencher a página'),
   d.vars&&d.vars.length>1?bt('v','◐ '+b.v,'Trocar desenho'):'',
   d.lista?bt('add',d.tabela?'+ linha':'+ item')+bt('rem',d.tabela?'− linha':'− item'):'',d.tabela?bt('col+','+ coluna')+bt('col-','− coluna'):'',
-  b.tipo==='imagem'?bt('alt','↕ '+(b.h||25)+'mm','Altura'):'',d.img?bt('foto',uic('image')+' foto')+(b[d.img]?bt('fit','centralizar')+bt('semfoto','sem foto'):''):'',
+  b.tipo==='imagem'?bt('alt','↕ '+(b.h||25)+'mm','Altura'):'',d.img?bt('foto',uic('image')+' foto')+(b[d.img]?bt('fit','centralizar')+bt('semfoto','sem foto')+(ehSvg(b[d.img])?bt('corvet','Cores do vetor','Trocar as cores do SVG'):''):''):'',
   d.link?bt('link',uic('link')+' link QR'):'',b.tipo==='produto'?bt('tags','fases'):'',
   '<i></i>',bt('dup',uic('copy'),'Duplicar'),bt('del',uic('trash'),'Excluir')].join('');
  tb.style.display='flex';
@@ -734,7 +734,8 @@ async function acao(a){
   case 'rem':if(b[d.lista]?.length)b[d.lista].pop();break;
   case 'foto':return escolheFoto(b,d.img);
   case 'fit':b[d.img+'Pos']='50% 50%';break;
-  case 'semfoto':b[d.img]='';break;
+  case 'semfoto':b[d.img]='';b[d.img+'Svg']='';b[d.img+'Map']={};break;
+  case 'corvet':return abrirCoresVetor(b,d.img);
   case 'link':{const u=await pedir('Link do QR code',b[d.link]||'https://wa.me/55',{msg:'WhatsApp (ex.: https://wa.me/5511999999999) ou site. Deixe vazio para remover.',ok:'Salvar'});if(u===null)return;snap();b[d.link]=u.trim();break}
   case 'tags':{const t=await pedir('Fases deste produto',(b.tags||[]).map(t=>t.t).join(', '),{msg:'Separe por vírgula. Deixe vazio para não mostrar fases.',ok:'Salvar'});if(t===null)return;snap();const old=b.tags||[];b.tags=t.split(',').map(s=>s.trim()).filter(Boolean).map((s,k)=>({t:s,on:old[k]?.on||0}));break}
   case 'dup':{const n=clone(b);n.id=uid();p.blocos.splice(i+1,0,n);sel=n.id;break}
@@ -810,11 +811,57 @@ wrap.addEventListener('click',e=>{
 });
 wrap.addEventListener('dblclick',e=>{const im=e.target.closest('.img');if(!im||e.target.closest('.ed'))return;const b=acha(e.target.closest('[data-b]').dataset.b).b;im.dataset.icn?abrirIcones(b,im.dataset.img):escolheFoto(b,im.dataset.img)});
 let fotoAlvo=null;
+
+/* ===== vetores SVG: envio seguro e troca de cores no editor ===== */
+const ehSvg=u=>/^data:image\/svg\+xml/i.test(u||'')||/\.svg([?#]|$)/i.test(u||'');
+const svgUrl=t=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(t);
+function limpaSvg(txt){try{const d=new DOMParser().parseFromString(txt,'image/svg+xml');const r=d.documentElement;if(d.querySelector('parsererror')||!r||r.nodeName.toLowerCase()!=='svg')return null;
+ d.querySelectorAll('script,foreignObject,iframe,object,embed,audio,video,animate,set').forEach(n=>n.remove());
+ d.querySelectorAll('*').forEach(n=>[...n.attributes].forEach(a=>{const nm=a.name.toLowerCase();if(/^on/.test(nm)||(/(^|:)href$/.test(nm)&&!/^#|^data:image\/(png|jpe?g|webp|gif)/i.test(a.value.trim())))n.removeAttribute(a.name)}));
+ if(!r.getAttribute('viewBox')&&r.getAttribute('width')&&r.getAttribute('height')){const w=parseFloat(r.getAttribute('width')),h=parseFloat(r.getAttribute('height'));if(w>0&&h>0)r.setAttribute('viewBox',`0 0 ${w} ${h}`)}
+ return new XMLSerializer().serializeToString(r)}catch(e){return null}}
+const _cx=document.createElement('canvas').getContext('2d');
+function corHex(v){v=String(v||'').trim();if(!v||/^(none|currentcolor|transparent|inherit|url\()/i.test(v))return null;_cx.fillStyle='#010203';_cx.fillStyle=v;const r=_cx.fillStyle;return r==='#010203'&&!/^#010203$/i.test(v)?null:(r[0]==='#'?r.toLowerCase():null)}
+const ATR_COR=['fill','stroke','stop-color','flood-color','color'];
+const TOK_COR=/#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)/g;
+function coresSvg(txt){const d=new DOMParser().parseFromString(txt,'image/svg+xml'),set=new Set();let padrao=false;
+ d.querySelectorAll('*').forEach(n=>{ATR_COR.forEach(a=>{const h=corHex(n.getAttribute(a));if(h)set.add(h)});
+  const st=n.getAttribute('style')||'';(st.match(TOK_COR)||[]).forEach(t=>{const h=corHex(t);if(h)set.add(h)});
+  if(n.nodeName.toLowerCase()==='style')(n.textContent.match(TOK_COR)||[]).forEach(t=>{const h=corHex(t);if(h)set.add(h)});
+  if(/^(path|rect|circle|ellipse|polygon|polyline|text)$/i.test(n.nodeName)&&!n.hasAttribute('fill')&&!/fill\s*:/i.test(st)&&!n.closest('[fill]')&&!d.querySelector('style'))padrao=true});
+ return{cores:[...set],padrao}}
+function recolorSvg(txt,mapa){const d=new DOMParser().parseFromString(txt,'image/svg+xml'),r=d.documentElement;
+ const troca=t=>{const h=corHex(t);return h&&mapa[h]?mapa[h]:t};
+ d.querySelectorAll('*').forEach(n=>{ATR_COR.forEach(a=>{if(n.hasAttribute(a)){const h=corHex(n.getAttribute(a));if(h&&mapa[h])n.setAttribute(a,mapa[h])}});
+  if(n.hasAttribute('style'))n.setAttribute('style',n.getAttribute('style').replace(TOK_COR,troca));
+  if(n.nodeName.toLowerCase()==='style')n.textContent=n.textContent.replace(TOK_COR,troca)});
+ if(mapa.__padrao&&!r.hasAttribute('fill'))r.setAttribute('fill',mapa.__padrao);
+ return new XMLSerializer().serializeToString(r)}
+async function svgTexto(b,campo){if(b[campo+'Svg'])return b[campo+'Svg'];const u=b[campo];let t;
+ if(/^data:/i.test(u)){const i=u.indexOf(',');t=/;base64/i.test(u.slice(0,i))?decodeURIComponent(escape(atob(u.slice(i+1)))):decodeURIComponent(u.slice(i+1))}else t=await (await fetch(u)).text();
+ return limpaSvg(t)}
+let cvAlvo=null;
+async function abrirCoresVetor(b,campo){let txt;try{txt=await svgTexto(b,campo)}catch(e){txt=null}
+ if(!txt)return avisar('Não foi possível ler o vetor','O arquivo SVG parece estar com problema. Tente enviar de novo.');
+ const {cores,padrao}=coresSvg(txt);if(!cores.length&&!padrao)return avisar('Sem cores para trocar','Este SVG não tem cores definidas que o editor consiga alterar.');
+ const mapa0=Object.assign({},b[campo+'Map']||{});cvAlvo={b,campo,txt,mapa:mapa0};
+ const itens=[...cores.map(c=>[c,c]),...(padrao?[['__padrao','#000000']]:[])];
+ $('#mbox').innerHTML=`<h3 style="margin:0 0 4px">Cores do vetor</h3><p class="sub" style="margin:0 0 10px">Troque cada cor do desenho. Vale só para esta imagem na lâmina.</p>
+ <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start"><div id="cvPrev" style="width:180px;height:180px;border:1px solid var(--ui-line);border-radius:10px;background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 0 0/14px 14px;display:flex;align-items:center;justify-content:center"></div>
+ <div style="flex:1;min-width:200px">${itens.map(([k,c])=>`<label style="display:flex;gap:10px;align-items:center;margin-bottom:8px;font-size:13px"><input type="color" data-k="${k}" value="${(cvAlvo.mapa[k]||c)}" style="width:44px;height:30px;padding:0;border:1px solid var(--ui-line);border-radius:6px"><span>${k==='__padrao'?'Preenchimento padrão (preto)':'Cor original '+c}</span></label>`).join('')}</div></div>
+ <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="pri" onclick="aplicaCoresVetor()">Aplicar</button><button onclick="restauraCoresVetor()">Voltar às cores originais</button><button onclick="fechaModal()">Cancelar</button></div>`;
+ const prev=()=>{const m={};$('#mbox').querySelectorAll('input[data-k]').forEach(i=>{m[i.dataset.k]=i.value});cvAlvo.novo=m;$('#cvPrev').innerHTML=`<img style="max-width:100%;max-height:100%" src="${svgUrl(recolorSvg(txt,m))}">`};
+ $('#mbox').querySelectorAll('input[data-k]').forEach(i=>i.oninput=prev);prev();$('#modal').classList.add('on')}
+function aplicaCoresVetor(){if(!cvAlvo)return;const {b,campo,txt,novo}=cvAlvo;const m={};Object.keys(novo).forEach(k=>{if(k==='__padrao'?novo[k].toLowerCase()!=='#000000':novo[k].toLowerCase()!==k)m[k]=novo[k]});
+ snap();b[campo+'Svg']=txt;b[campo+'Map']=m;b[campo]=svgUrl(recolorSvg(txt,m));fechaModal();render()}
+function restauraCoresVetor(){if(!cvAlvo)return;const {b,campo,txt}=cvAlvo;snap();b[campo+'Svg']=txt;b[campo+'Map']={};b[campo]=svgUrl(txt);fechaModal();render()}
+async function lerSvgArquivo(f){return limpaSvg(await f.text())}
 function escolheFoto(b,campo){fotoAlvo={b,campo};
  $('#mbox').innerHTML=`<h3>Escolher imagem</h3><div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><button class="pri" onclick="fotoDoPC()">Enviar do computador</button><label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="guardar"> guardar também em Meus arquivos</label></div>
  <div class="grp">Meus arquivos</div>${ARQ.length?`<div class="agrid">${ARQ.map(a=>`<div class="ai" onclick="aplicaFoto(ARQ.find(x=>x.id==='${a.id}').data)"><img src="${a.data}"><span>${esc(a.nome)}</span></div>`).join('')}</div>`:'<p style="color:#888;font-size:13px">Nenhum arquivo salvo ainda. Use “guardar também em Meus arquivos” ou a área Meus arquivos da biblioteca.</p>'}`;
  $('#modal').classList.add('on')}
 function fotoDoPC(){const pk=$('#pick'),g=$('#guardar')?.checked;pk.onchange=async()=>{const f=pk.files[0];pk.value='';if(!f)return;const {campo}=fotoAlvo;
+ if(f.type==='image/svg+xml'||/\.svg$/i.test(f.name)){const t=await lerSvgArquivo(f);if(!t)return avisar('SVG inválido','Não consegui ler esse arquivo SVG. Exporte de novo do Illustrator, Canva ou Inkscape.');if(g)await arqPut(f.name,svgUrl(t));aplicaFoto(svgUrl(t));const bb=fotoAlvo&&fotoAlvo.b;return}
  const data=(await subir(await reduz(f,/img$|icone$/.test(campo)?400:1800),'fotos')).url;if(g){await arqPut(f.name,await reduz(f,1800))}aplicaFoto(data)};pk.click()}
 function aplicaFoto(data){if(!fotoAlvo)return;const {b,campo}=fotoAlvo;snap();setP(b,campo,data);setP(b,campo+'Ic','');setP(b,campo+'Pos','50% 50%');fechaModal();render()}
 function reduz(file,max){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{
@@ -1030,7 +1077,7 @@ const urlArq=c=>supa.storage.from('laminas').getPublicUrl(c).data.publicUrl;
 async function carregaArquivos(){try{const {data,error}=await supa.from('laminas_arquivos').select('*').order('criado_em',{ascending:false});if(error)throw error;ARQ=(data||[]).map(a=>({id:a.id,nome:a.nome,caminho:a.caminho,data:urlArq(a.caminho)}))}catch(e){ARQ=[]}arqRender()}
 async function arqPut(nome,data){const r=await subir(data,'arquivos');if(!r.path)return avisar('Não foi possível enviar o arquivo','Confira a conexão e tente de novo.');
  const {error}=await supa.from('laminas_arquivos').insert({nome:String(nome).replace(/\.[^.]+$/,''),caminho:r.path});if(error)return avisar('Não foi possível salvar o arquivo','Sem permissão ou sem conexão.');await carregaArquivos()}
-async function enviarArquivos(fs){for(const f of fs)await arqPut(f.name,await reduz(f,1800))}
+async function enviarArquivos(fs){for(const f of fs){if(f.type==='image/svg+xml'||/\.svg$/i.test(f.name)){const t=await lerSvgArquivo(f);if(!t){avisar('SVG inválido',f.name+': não consegui ler. Exporte de novo do Illustrator, Canva ou Inkscape.');continue}await arqPut(f.name,svgUrl(t))}else if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)){avisar('PDF não é aceito aqui','Para trocar cores dentro do editor, o arquivo precisa ser SVG. Exporte o PDF como SVG (Illustrator: Salvar como SVG) e envie de novo.')}else await arqPut(f.name,await reduz(f,1800))}}
 async function apagarArq(id){const a=ARQ.find(x=>x.id===id);if(!a)return;
  const usos=db.laminas.filter(d=>JSON.stringify(d).includes(a.caminho));
  const msg=usos.length?`Esta imagem está em uso em ${usos.length} lâmina${usos.length>1?'s':''} (${usos.slice(0,3).map(d=>d.nome).join(', ')}${usos.length>3?'…':''}). Ela sai da biblioteca "Meus arquivos", mas continua nas lâminas que já a usam.`:'O arquivo será apagado da biblioteca e do armazenamento.';
