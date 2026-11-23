@@ -1039,7 +1039,7 @@ function arqRender(){
 /* ================= catálogo de lâminas prontas (pasta laminas/) ================= */
 async function carregaCatalogo(){try{const lst=await (await fetch('laminas-modelos/catalogo.json',{cache:'no-store'})).json();
  for(const f of lst){const o=migra(await (await fetch('laminas-modelos/'+f,{cache:'no-store'})).json());
-  MODELOS['arq_'+f]={cat:'Bioflora (originais)',nome:o.nome,desc:o.paginas.length+' págs · pronta (falta inserir as imagens)',fn:()=>{const c=clone(o);delete c.id;delete c.nome;c.paginas.forEach(p=>{p.id=uid();p.blocos.forEach(b=>b.id=uid())});return c}}}
+  MODELOS['arq_'+f]={cat:'Bioflora (originais)',nome:o.nome,desc:o.desc||(o.paginas.length+' págs · pronta (falta inserir as imagens)'),fn:()=>{const c=clone(o);delete c.id;delete c.nome;c.paginas.forEach(p=>{p.id=uid();p.blocos.forEach(b=>b.id=uid())});return c}}}
  }catch(e){}homeRender()}
 
 (async function init(){
