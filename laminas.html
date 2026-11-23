@@ -219,6 +219,7 @@ body.inicio #home{display:block}body.inicio{overflow:hidden}
 .ai img{width:100%;height:64px;object-fit:contain;background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 0 0/12px 12px;border-radius:5px;display:block;pointer-events:none}
 .ai span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}
 .ai .x{position:absolute;top:2px;right:2px;background:#fff;border:1px solid var(--ui-line);border-radius:50%;width:20px;height:20px;line-height:17px;padding:0;font-size:11px;display:none}.ai:hover .x{display:block}
+.ai .x{cursor:pointer}@media (hover:none){.ai .x{display:block}}
 .rarq{grid-template-columns:repeat(3,1fr);gap:4px}.rarq .ai{padding:3px}.rarq .ai img{height:44px}.rarq .ai span{display:none}
 .img.alvo{outline:3px solid #2d8cff;outline-offset:-3px}
 .b.t-imagem{padding:0}.b.t-imagem .img{flex:1;background:transparent;min-height:12mm}
@@ -1030,11 +1031,16 @@ async function carregaArquivos(){try{const {data,error}=await supa.from('laminas
 async function arqPut(nome,data){const r=await subir(data,'arquivos');if(!r.path)return avisar('Não foi possível enviar o arquivo','Confira a conexão e tente de novo.');
  const {error}=await supa.from('laminas_arquivos').insert({nome:String(nome).replace(/\.[^.]+$/,''),caminho:r.path});if(error)return avisar('Não foi possível salvar o arquivo','Sem permissão ou sem conexão.');await carregaArquivos()}
 async function enviarArquivos(fs){for(const f of fs)await arqPut(f.name,await reduz(f,1800))}
-async function apagarArq(id){if(!await confirmar('Apagar este arquivo?','As lâminas que já usam esta imagem não mudam.',{ok:'Apagar'}))return;const a=ARQ.find(x=>x.id===id);await supa.from('laminas_arquivos').delete().eq('id',id);if(a&&a.caminho)await supa.storage.from('laminas').remove([a.caminho]);carregaArquivos()}
+async function apagarArq(id){const a=ARQ.find(x=>x.id===id);if(!a)return;
+ const usos=db.laminas.filter(d=>JSON.stringify(d).includes(a.caminho));
+ const msg=usos.length?`Esta imagem está em uso em ${usos.length} lâmina${usos.length>1?'s':''} (${usos.slice(0,3).map(d=>d.nome).join(', ')}${usos.length>3?'…':''}). Ela sai da biblioteca "Meus arquivos", mas continua nas lâminas que já a usam.`:'O arquivo será apagado da biblioteca e do armazenamento.';
+ if(!await confirmar('Apagar "'+a.nome+'"?',msg,{ok:'Apagar'}))return;
+ const {error}=await supa.from('laminas_arquivos').delete().eq('id',id);if(error)return avisar('Não foi possível apagar','Confira a conexão e tente de novo.');
+ if(!usos.length&&a.caminho)await supa.storage.from('laminas').remove([a.caminho]);carregaArquivos()}
 async function renomearArq(id){const a=ARQ.find(x=>x.id===id),n=await pedir('Nome do arquivo',a.nome,{ok:'Salvar'});if(!n)return;await supa.from('laminas_arquivos').update({nome:n}).eq('id',id);carregaArquivos()}
 function arqRender(){
  const h=$('#hArq');if(h)h.innerHTML=ARQ.map(a=>`<div class="ai" title="Duplo clique para renomear" ondblclick="renomearArq('${a.id}')"><img src="${a.data}"><span>${esc(a.nome)}</span><button class="x" onclick="apagarArq('${a.id}')">✕</button></div>`).join('')||'<p class="sub" style="grid-column:1/-1">Nenhum arquivo ainda.</p>';
- const r=$('#rarq');if(r)r.innerHTML=ARQ.map(a=>`<div class="ai" title="${esc(a.nome)} — arraste para a página ou para um espaço de foto" onmousedown="iniciaDrag(event,{arq:'${a.id}'})"><img src="${a.data}"><span>${esc(a.nome)}</span></div>`).join('')||'<p style="grid-column:1/-1;color:#999;font-size:11px;margin:0">Nada salvo ainda.</p>'}
+ const r=$('#rarq');if(r)r.innerHTML=ARQ.map(a=>`<div class="ai" title="${esc(a.nome)} — arraste para a página ou para um espaço de foto" onmousedown="iniciaDrag(event,{arq:'${a.id}'})"><img src="${a.data}"><span>${esc(a.nome)}</span><button class="x" title="Apagar arquivo" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();apagarArq('${a.id}')">✕</button></div>`).join('')||'<p style="grid-column:1/-1;color:#999;font-size:11px;margin:0">Nada salvo ainda.</p>'}
 
 /* ================= catálogo de lâminas prontas (pasta laminas/) ================= */
 async function carregaCatalogo(){try{const lst=await (await fetch('laminas-modelos/catalogo.json',{cache:'no-store'})).json();
