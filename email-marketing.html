@@ -51,6 +51,16 @@
   .tag-status.erro{background:var(--bad-tint);color:var(--bad);}
   .empty-state{text-align:center;padding:24px;color:var(--gray);font-size:12.5px;}
   .aviso-config{background:#FBF1E0;color:#8A6512;border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:16px;}
+  .abas{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .aba{border:1px solid var(--line);background:#fff;border-radius:20px;padding:8px 16px;font:600 13px 'Maven Pro',sans-serif;cursor:pointer;color:var(--gray)}
+  .aba.on{background:var(--burgundy);border-color:var(--burgundy);color:#fff}
+  .aba small{opacity:.8;margin-left:4px}
+  .field select{font-family:'Maven Pro',sans-serif;font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .tag-lista{font-size:9.5px;font-weight:700;text-transform:uppercase;padding:2px 9px;border-radius:20px;background:var(--burgundy-tint);color:var(--burgundy)}
+  .tag-lista.blog{background:#E4EEF9;color:#0B5A99}
+  .tag-status.ativo{background:var(--good-tint);color:var(--good)}.tag-status.descadastrado{background:var(--bad-tint);color:var(--bad)}.tag-status.semconsent{background:#FBF1E0;color:#8A6512}
+  .busca{width:100%;max-width:320px;font:inherit;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:10px}
+  .scroll{max-height:420px;overflow:auto}
   .progresso-envio{font-size:12.5px;color:var(--gray);margin-top:10px;}
 
   /* ---------- Responsivo (celular / tela dividida estreita) ---------- */
@@ -84,7 +94,7 @@
   <header class="top">
     <div class="brand-text">
       <h1>Email Marketing</h1>
-      <p>Farmácia Bioflora — envia pra base de clientes com e-mail, via Brevo</p>
+      <p>Farmácia Bioflora — duas listas separadas: Cadastros (Cliente Fiel) e Blog (newsletter)</p>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
       <a href="index.html" class="btn secondary">← Voltar ao Hub</a>
@@ -92,18 +102,42 @@
     </div>
   </header>
 
-  <div class="panel">
+  <div id="resumoContatos" class="kpi-row"></div>
+
+  <div class="abas" id="abas">
+    <button class="aba on" data-a="nova">Nova campanha</button>
+    <button class="aba" data-a="cadastros">Cadastros <small id="nCad"></small></button>
+    <button class="aba" data-a="blog">Blog <small id="nBlog"></small></button>
+    <button class="aba" data-a="hist">Histórico</button>
+  </div>
+
+  <div class="panel" id="pNova">
     <h2>Nova campanha</h2>
-    <p class="desc">Envia pra todo mundo do Cliente Fiel que tem e-mail cadastrado. O corpo aceita HTML simples (parágrafos, negrito, links).</p>
-    <div id="resumoContatos" class="kpi-row"></div>
+    <p class="desc">Escolha a lista que vai receber. As duas nunca se misturam: cada campanha vai para uma lista só. O corpo aceita HTML simples (parágrafos, negrito, links).</p>
+    <div class="field"><label>Enviar para</label><select id="campLista" onchange="atualizaDestino()"><option value="cadastros">Cadastros (clientes do Cliente Fiel com e-mail)</option><option value="blog">Blog (quem assinou a newsletter, ativos e com consentimento)</option></select><div id="destinoInfo" style="font-size:12.5px;color:var(--gray);margin-top:4px"></div></div>
     <div class="field"><label>Assunto</label><input id="campAssunto" placeholder="Ex: Novidade da semana na Bioflora"></div>
     <div class="field"><label>Corpo do e-mail (HTML)</label><textarea id="campCorpo" placeholder="&lt;p&gt;Olá!&lt;/p&gt;&lt;p&gt;Essa semana...&lt;/p&gt;"></textarea></div>
     <button class="btn" id="btnEnviar" onclick="enviarCampanha()">Enviar campanha</button>
     <div class="progresso-envio" id="progressoEnvio"></div>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="pCad" style="display:none">
+    <h2>Cadastros (Cliente Fiel)</h2>
+    <p class="desc">Clientes cadastrados no Cliente Fiel que têm e-mail. Para corrigir ou apagar um e-mail, edite o cliente no módulo Cliente Fiel.</p>
+    <input class="busca" id="buscaCad" placeholder="Buscar por nome ou e-mail" oninput="desenhaCad()">
+    <div class="scroll" id="tabCad"></div>
+  </div>
+
+  <div class="panel" id="pBlog" style="display:none">
+    <h2>Blog (newsletter)</h2>
+    <p class="desc">Pessoas que se inscreveram pelo blog. Só recebem campanha os <b>ativos com consentimento</b>. "Descadastrar" tira da lista de envio e dá para reativar depois.</p>
+    <input class="busca" id="buscaBlog" placeholder="Buscar por e-mail ou página de origem" oninput="desenhaBlog()">
+    <div class="scroll" id="tabBlog"></div>
+  </div>
+
+  <div class="panel" id="pHist" style="display:none">
     <h2>Histórico de campanhas</h2>
+    <div class="field" style="max-width:260px"><label>Mostrar</label><select id="filtroHist" onchange="desenhaHist()"><option value="">Todas as listas</option><option value="cadastros">Só Cadastros</option><option value="blog">Só Blog</option></select></div>
     <div id="listaCampanhas"></div>
   </div>
 
@@ -114,40 +148,86 @@ const SUPABASE_URL = 'https://gbbjpltqmbhlfluqhrmg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiYmpwbHRxbWJobGZsdXFocm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDY3ODAsImV4cCI6MjA5ODkyMjc4MH0.Gi3iw6IMyJ_6wrOG3WOcHPTW5Mo1IROTH3x_2qTyzrA';
 const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let contatosComEmail = [];
+let cadastros = [], blog = [], campanhas = [];
+const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fdt = t => t ? new Date(t).toLocaleString('pt-BR') : '—';
+const LISTA_ROT = { cadastros: 'Cadastros', blog: 'Blog' };
 
 async function init(){
   await requireRole(['chefia','gestao']);
-  await carregarContatos();
-  await carregarCampanhas();
+  document.getElementById('abas').querySelectorAll('.aba').forEach(b => b.onclick = () => mostraAba(b.dataset.a));
+  await Promise.all([carregarCadastros(), carregarBlog(), carregarCampanhas()]);
+  resumo(); atualizaDestino();
 }
-
-async function carregarContatos(){
-  const { data, error } = await supa.from('clientes_fidelidade').select('nome,email').not('email','is',null).neq('email','');
-  if(error){
-    document.getElementById('resumoContatos').innerHTML = `<div class="kpi" style="grid-column:span 3;"><div class="label">Erro ao carregar contatos</div><div style="font-size:12.5px;color:var(--bad);margin-top:4px;">${error.message} — os nomes de coluna podem ser diferentes do esperado (nome, email) na tabela clientes_fidelidade.</div></div>`;
-    return;
-  }
-  contatosComEmail = data || [];
+function mostraAba(a){
+  document.querySelectorAll('.aba').forEach(b => b.classList.toggle('on', b.dataset.a === a));
+  ['Nova:nova','Cad:cadastros','Blog:blog','Hist:hist'].forEach(x => { const [id, k] = x.split(':'); document.getElementById('p' + id).style.display = k === a ? '' : 'none'; });
+}
+const blogEnviaveis = () => blog.filter(c => c.status === 'ativo' && c.consentimento === true);
+function resumo(){
+  const descad = blog.filter(c => c.status !== 'ativo').length;
   document.getElementById('resumoContatos').innerHTML = `
-    <div class="kpi"><div class="label">Contatos com e-mail</div><div class="value">${contatosComEmail.length}</div></div>
-  `;
+    <div class="kpi"><div class="label">Cadastros com e-mail</div><div class="value">${cadastros.length}</div></div>
+    <div class="kpi"><div class="label">Blog: aptos a receber</div><div class="value">${blogEnviaveis().length}</div></div>
+    <div class="kpi"><div class="label">Blog: descadastrados / sem consentimento</div><div class="value">${blog.length - blogEnviaveis().length}</div></div>`;
+  document.getElementById('nCad').textContent = '(' + cadastros.length + ')';
+  document.getElementById('nBlog').textContent = '(' + blog.length + ')';
 }
+function atualizaDestino(){
+  const l = document.getElementById('campLista').value, n = l === 'blog' ? blogEnviaveis().length : cadastros.length;
+  document.getElementById('destinoInfo').textContent = n + ' destinatário(s) nesta lista.';
+}
+async function carregarCadastros(){
+  const { data, error } = await supa.from('clientes_fidelidade').select('nome,email').not('email','is',null).neq('email','');
+  if(error){ document.getElementById('tabCad').innerHTML = `<div class="empty-state">Erro ao carregar: ${esc(error.message)}</div>`; return; }
+  const vistos = new Set();   // um e-mail só uma vez, mesmo que apareça em mais de um cadastro
+  cadastros = (data || []).filter(c => { const k = c.email.trim().toLowerCase(); if(!k || vistos.has(k)) return false; vistos.add(k); return true; });
+  desenhaCad();
+}
+function desenhaCad(){
+  const q = (document.getElementById('buscaCad').value || '').trim().toLowerCase();
+  const L = cadastros.filter(c => !q || (c.nome + ' ' + c.email).toLowerCase().includes(q));
+  document.getElementById('tabCad').innerHTML = L.length ? `<table><thead><tr><th>Nome</th><th>E-mail</th></tr></thead><tbody>${L.map(c => `<tr><td>${esc(c.nome)}</td><td>${esc(c.email)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty-state">Nenhum contato.</div>';
+}
+async function carregarBlog(){
+  const { data, error } = await supa.from('blog_newsletter').select('*').order('criado_em', { ascending: false });
+  if(error){ document.getElementById('tabBlog').innerHTML = `<div class="empty-state">Sem permissão ou erro ao carregar: ${esc(error.message)}</div>`; return; }
+  blog = data || []; desenhaBlog();
+}
+function desenhaBlog(){
+  const q = (document.getElementById('buscaBlog').value || '').trim().toLowerCase();
+  const L = blog.filter(c => !q || ((c.email || '') + ' ' + (c.origem || '')).toLowerCase().includes(q));
+  document.getElementById('tabBlog').innerHTML = L.length ? `<table><thead><tr><th>E-mail</th><th>Origem</th><th>Situação</th><th>Inscrito em</th><th></th></tr></thead><tbody>${L.map(c => {
+    const ativo = c.status === 'ativo', sit = !ativo ? ['descadastrado','Descadastrado'] : c.consentimento ? ['ativo','Ativo'] : ['semconsent','Sem consentimento'];
+    return `<tr><td>${esc(c.email)}</td><td>${esc(c.origem || '—')}</td><td><span class="tag-status ${sit[0]}">${sit[1]}</span></td><td>${fdt(c.criado_em)}</td><td><button class="btn small secondary" onclick="mudaBlog(${c.id}, '${ativo ? 'descadastrado' : 'ativo'}')">${ativo ? 'Descadastrar' : 'Reativar'}</button></td></tr>`}).join('')}</tbody></table>` : '<div class="empty-state">Nenhuma inscrição ainda.</div>';
+}
+async function mudaBlog(id, status){
+  const { data, error } = await supa.from('blog_newsletter').update({ status }).eq('id', id).select('id');
+  if(error || !data || !data.length){ alert('Não foi possível atualizar (sem permissão ou sem conexão).'); return; }
+  const c = blog.find(x => x.id === id); if(c) c.status = status;
+  desenhaBlog(); resumo(); atualizaDestino();
+}
+window.mudaBlog = mudaBlog;
 
 async function carregarCampanhas(){
   const { data } = await supa.from('email_campanhas').select('*').order('criado_em', {ascending:false});
-  const campanhas = data || [];
-  document.getElementById('listaCampanhas').innerHTML = campanhas.length ? `
+  campanhas = data || []; desenhaHist();
+}
+function desenhaHist(){
+  const f = document.getElementById('filtroHist').value;
+  const L = campanhas.filter(c => !f || c.lista === f);
+  document.getElementById('listaCampanhas').innerHTML = L.length ? `
     <table>
-      <thead><tr><th>Assunto</th><th>Status</th><th>Destinatários</th><th>Sucesso</th><th>Falha</th><th>Enviado em</th></tr></thead>
+      <thead><tr><th>Lista</th><th>Assunto</th><th>Status</th><th>Destinatários</th><th>Sucesso</th><th>Falha</th><th>Enviado em</th></tr></thead>
       <tbody>
-        ${campanhas.map(c => `<tr>
-          <td>${c.assunto}</td>
+        ${L.map(c => `<tr>
+          <td><span class="tag-lista ${c.lista}">${LISTA_ROT[c.lista] || c.lista}</span></td>
+          <td>${esc(c.assunto)}${c.erro ? `<div style="font-size:11.5px;color:var(--bad)">${esc(c.erro)}</div>` : ''}</td>
           <td><span class="tag-status ${c.status}">${c.status}</span></td>
           <td>${c.total_destinatarios}</td>
           <td>${c.total_sucesso}</td>
           <td>${c.total_falha}</td>
-          <td>${c.enviado_em ? new Date(c.enviado_em).toLocaleString('pt-BR') : '—'}</td>
+          <td>${fdt(c.enviado_em)}</td>
         </tr>`).join('')}
       </tbody>
     </table>
@@ -155,13 +235,15 @@ async function carregarCampanhas(){
 }
 
 async function enviarCampanha(){
+  const lista = document.getElementById('campLista').value;
+  const destinatarios = lista === 'blog' ? blogEnviaveis().map(c => ({ email: c.email, nome: '' })) : cadastros;
   const assunto = document.getElementById('campAssunto').value.trim();
   const corpoHtml = document.getElementById('campCorpo').value.trim();
   const progresso = document.getElementById('progressoEnvio');
 
   if(!assunto || !corpoHtml){ alert('Preenche assunto e corpo do e-mail.'); return; }
-  if(!contatosComEmail.length){ alert('Não tem nenhum contato com e-mail cadastrado no Cliente Fiel ainda.'); return; }
-  if(!confirm(`Confirma enviar esse e-mail pra ${contatosComEmail.length} contato(s)?`)) return;
+  if(!destinatarios.length){ alert('Essa lista não tem nenhum destinatário apto agora.'); return; }
+  if(!confirm(`Confirma enviar esse e-mail para a lista ${LISTA_ROT[lista].toUpperCase()} (${destinatarios.length} contato(s))?`)) return;
 
   const btn = document.getElementById('btnEnviar');
   btn.disabled = true;
@@ -169,15 +251,15 @@ async function enviarCampanha(){
   const { data: { session } } = await supa.auth.getSession();
 
   const { data: campanha, error: erroCampanha } = await supa.from('email_campanhas').insert({
-    assunto, corpo_html: corpoHtml, status: 'enviando',
-    total_destinatarios: contatosComEmail.length, criado_por: session.user.id
+    assunto, corpo_html: corpoHtml, lista, status: 'enviando',
+    total_destinatarios: destinatarios.length, criado_por: session.user.id
   }).select().single();
   if(erroCampanha){ alert('Erro ao criar campanha: '+erroCampanha.message); btn.disabled = false; return; }
 
-  let sucesso = 0, falha = 0;
-  for(let i=0; i<contatosComEmail.length; i++){
-    const contato = contatosComEmail[i];
-    progresso.textContent = `Enviando ${i+1} de ${contatosComEmail.length}...`;
+  let sucesso = 0, falha = 0, parou = null;
+  for(let i=0; i<destinatarios.length; i++){
+    const contato = destinatarios[i];
+    progresso.textContent = `Enviando ${i+1} de ${destinatarios.length}...`;
 
     try{
       const resp = await fetch(`${SUPABASE_URL}/functions/v1/brevo-proxy`, {
@@ -185,7 +267,8 @@ async function enviarCampanha(){
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
         body: JSON.stringify({ destinatarioEmail: contato.email, destinatarioNome: contato.nome, assunto, corpoHtml }),
       });
-      const resultado = await resp.json();
+      if(resp.status === 404){ parou = 'A função de envio de e-mail ainda não está configurada (brevo-proxy não existe). Nada foi enviado.'; break; }
+      const resultado = await resp.json().catch(() => ({}));
       if(resp.ok && resultado.sucesso){
         sucesso++;
         await supa.from('email_campanha_envios').insert({ campanha_id: campanha.id, email: contato.email, nome: contato.nome, status: 'enviado', enviado_em: new Date().toISOString() });
@@ -200,14 +283,13 @@ async function enviarCampanha(){
   }
 
   await supa.from('email_campanhas').update({
-    status: falha === contatosComEmail.length ? 'erro' : 'enviado',
-    total_sucesso: sucesso, total_falha: falha, enviado_em: new Date().toISOString()
+    status: parou || falha === destinatarios.length ? 'erro' : 'enviado', erro: parou,
+    total_sucesso: sucesso, total_falha: falha, enviado_em: parou ? null : new Date().toISOString()
   }).eq('id', campanha.id);
 
-  progresso.textContent = `Concluído: ${sucesso} enviado(s), ${falha} falha(s).`;
+  progresso.textContent = parou ? parou : `Concluído: ${sucesso} enviado(s), ${falha} falha(s).`;
   btn.disabled = false;
-  document.getElementById('campAssunto').value = '';
-  document.getElementById('campCorpo').value = '';
+  if(!parou){ document.getElementById('campAssunto').value = ''; document.getElementById('campCorpo').value = ''; }
   await carregarCampanhas();
 }
 window.enviarCampanha = enviarCampanha;
