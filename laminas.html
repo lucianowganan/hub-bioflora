@@ -445,7 +445,7 @@ const BL={
   html:b=>{const tx=`${E(b,'sob','sob','Sobretítulo')}${E(b,'t','t H','Título')}${E(b,'sub','sub','Subtítulo')}`;
    if(b.v==='fundo')return `<div class="cp fundo">${IMG(b,'foto','','+ foto de fundo')}<div class="tx">${tx}</div></div>`;
    if(b.v==='centro')return `<div class="cp centro">${tx}${IMG(b,'foto','contain','+ foto do produto (PNG sem fundo)')}</div>`;
-   return `<div class="cp lateral">${tx}<div class="gr">${IMG(b,'foto')}<ol>${L(b,'itens',(it,p)=>`<li>${E(b,p+'.t')}</li>`)}</ol></div></div>`}},
+   return `<div class="cp lateral">${tx}<div class="gr" ${(b.hide||{}).foto||(b.hide||{}).itens?'style="grid-template-columns:1fr"':''}>${(b.hide||{}).foto?'':IMG(b,'foto')}${(b.hide||{}).itens?'':`<ol>${L(b,'itens',(it,p)=>`<li>${E(b,p+'.t')}</li>`)}</ol>`}</div></div>`}},
  titulo:{nome:'Título',desc:'Sobretítulo, título e subtítulo',w:100,cor:'none',vars:['esquerda','centro','gigante','medio'],
   dados:()=>({sob:'',t:'Título',sub:''}),
   html:b=>`<div class="tit ${b.v}">${E(b,'sob','sob','Sobretítulo')}${E(b,'t','t H fit','Título')}${E(b,'sub','sub','Subtítulo')}</div>`},
@@ -454,7 +454,7 @@ const BL={
  textoFoto:{nome:'Texto + foto',desc:'Foto ao lado, ou texto sobre a ilustração',w:100,cor:'s',vars:['foto-esq','foto-dir','sobre'],img:'foto',
   dados:()=>({titulo:'Título',t:'Texto explicativo.',foto:''}),
   html:b=>b.v==='sobre'?`<div class="tf sobre">${IMG(b,'foto','','+ ilustração (o texto fica à direita)')}<div class="tx">${E(b,'titulo','tt H','Título')}${E(b,'t','','Texto')}</div></div>`
-   :`<div class="tf ${b.v}">${IMG(b,'foto')}<div>${E(b,'titulo','tt H','Título')}${E(b,'t','','Texto')}</div></div>`},
+   :(b.hide||{}).foto?`<div class="tf ${b.v}" style="display:block"><div>${E(b,'titulo','tt H','Título')}${E(b,'t','','Texto')}</div></div>`:`<div class="tf ${b.v}">${IMG(b,'foto')}<div>${E(b,'titulo','tt H','Título')}${E(b,'t','','Texto')}</div></div>`},
  foto:{nome:'Foto',desc:'Imagem que preenche o espaço',w:33,cor:'s',grow:1,img:'foto',dados:()=>({foto:''}),html:b=>IMG(b,'foto')},
  destaques:{nome:'Destaques',desc:'Círculos/ícones com frases curtas',w:100,cor:'none',vars:['linha','coluna','mini'],lista:'itens',novo:()=>({t:'Destaque',img:''}),
   dados:()=>({itens:[{t:'Destaque 1',img:''},{t:'Destaque 2',img:''},{t:'Destaque 3',img:''}]}),
@@ -469,11 +469,11 @@ const BL={
  produto:{nome:'Produto / ativo',desc:'Nome, posologia, objetivos, fases e QR',w:100,cor:'none',lista:'objetivos',novo:()=>({t:'Objetivo'}),link:'qr',
   dados:()=>({nome:'NOME®',pos:'000 mg, uma vez ao dia.',objetivos:[{t:'Objetivo 1'},{t:'Objetivo 2'}],tags:[{t:'Pré',on:0},{t:'Durante',on:1},{t:'Depois',on:1}],qr:''}),
   html:b=>`<div class="pd"><div>${E(b,'nome','nm H','Nome')}<div class="lb">Posologia:</div>${E(b,'pos','pos')}</div>
-   <div><div class="lb">Objetivo:</div><ul>${L(b,'objetivos',(it,p)=>`<li>${E(b,p+'.t')}</li>`)}</ul></div>
-   <div class="dir">${(b.tags||[]).length?`<div class="tags">${b.tags.map((t,i)=>`<div class="tag ${t.on?'on':''}" data-tag="${i}">${esc(t.t)}</div>`).join('')}</div>`:''}${b.qr?`<div class="qrc" data-link>${qrSvg(b.qr)}</div>`:''}</div></div>`},
+   ${(b.hide||{}).objetivos?'':`<div><div class="lb">Objetivo:</div><ul>${L(b,'objetivos',(it,p)=>`<li>${E(b,p+'.t')}</li>`)}</ul></div>`}
+   <div class="dir">${(b.tags||[]).length&&!(b.hide||{}).tags?`<div class="tags">${b.tags.map((t,i)=>`<div class="tag ${t.on?'on':''}" data-tag="${i}">${esc(t.t)}</div>`).join('')}</div>`:''}${b.qr&&!(b.hide||{}).qr?`<div class="qrc" data-link>${qrSvg(b.qr)}</div>`:''}</div></div>`},
  qr:{nome:'QR “fale com a farmacêutica”',desc:'Chamada + QR code',w:50,cor:'none',link:'url',
   dados:()=>({pill:'Frase curta sobre o produto',t:'Fale diretamente com a farmacêutica escaneando o QrCode!',url:'https://wa.me/55'}),
-  html:b=>`<div class="qrb">${b.pill!==null?E(b,'pill','pill','Frase curta'):''}<div class="bx">${E(b,'t')}<div class="qrc" data-link>${qrSvg(b.url)}</div></div></div>`},
+  html:b=>`<div class="qrb">${b.pill!==null?E(b,'pill','pill','Frase curta'):''}<div class="bx">${E(b,'t')}${(b.hide||{}).qrcode?'':`<div class="qrc" data-link>${qrSvg(b.url)}</div>`}</div></div>`},
  referencias:{nome:'Referências',desc:'Bibliografia em letra pequena',w:100,cor:'none',dados:()=>({t:'Autor et al., 2025.'}),html:b=>`<div class="rf">${E(b,'t','','Referências')}</div>`},
  rodape:{nome:'Rodapé (antigo)',oculto:1,desc:'RT, aviso e nº da página',w:100,cor:'none',
   dados:()=>({rt:'Farm. RT Wanessa · CRF 12.629',aviso:'Material destinado exclusivamente a profissionais prescritores.'}),
@@ -496,7 +496,7 @@ const BL={
   return `<table class="tb ${cw?'fx':''}">${cw}<thead><tr>${(b.cab||[]).map((c,i)=>`<th${nw(c.t)}>${E(b,'cab.'+i+'.t')}</th>`).join('')}</tr></thead><tbody>${(b.linhas||[]).map((r,i)=>`<tr>${(r.c||[]).map((c,j)=>`<td${nw(c.t)}>${E(b,'linhas.'+i+'.c.'+j+'.t')}</td>`).join('')}</tr>`).join('')}</tbody></table>`}},
  iconeTexto:{nome:'Ícone + texto',desc:'Card com ícone, título e texto',w:33,cor:'s',vars:['topo','lado'],
   dados:()=>({icone:'',iconeIc:'pill',titulo:'Título',t:'Texto curto explicativo.'}),
-  html:b=>`<div class="it2 ${b.v}">${ICN(b,'icone')}<div>${E(b,'titulo','tt H','Título')}${E(b,'t','','Texto')}</div></div>`},
+  html:b=>`<div class="it2 ${b.v}">${(b.hide||{}).icone?'':ICN(b,'icone')}<div>${E(b,'titulo','tt H','Título')}${E(b,'t','','Texto')}</div></div>`},
  citacao:{nome:'Citação / destaque',desc:'Frase grande em evidência',w:100,cor:'none',dados:()=>({t:'“Uma frase de destaque sobre o produto ou o estudo.”',autor:'Fonte ou autor'}),html:b=>`<div class="ct">${E(b,'t','q')}${E(b,'autor','a','Autor')}</div>`},
  imagem:{nome:'Imagem / logo',desc:'Logo, selo ou elemento (sem fundo)',w:33,cor:'none',img:'foto',vars:['conter','preencher'],dados:()=>({foto:'',h:25}),
   html:b=>`<div style="height:${b.grow?'100%':(b.h||25)+'mm'};display:flex;padding:${b.mar||0}mm;box-sizing:border-box"><div style="flex:1;min-width:0;display:flex;transform:scale(${(b.esc||100)/100})">${IMG(b,'foto',b.v==='conter'?'contain':'','+ imagem/logo')}</div></div>`},
@@ -728,7 +728,7 @@ function barra(){
  const b=f.b,d=BL[b.tipo],r=el.getBoundingClientRect();
  const bt=(a,t,tt='')=>`<button onmousedown="event.preventDefault()" onclick="acao('${a}')" title="${tt}">${t}</button>`;
  tb.innerHTML=[`<button onmousedown="iniciaMover(event)" title="Arraste para mover" style="cursor:grab">✥</button>`,bt('up','↑','Mover para cima'),bt('down','↓','Mover para baixo'),'<i></i>',
-  bt('w',`↔ ${b.w}%`,'Largura do bloco'),bt('tam','Tamanho','Largura, altura e espaço interno do bloco'),(camposDoBloco(b).length>=2||Object.keys(b.hide||{}).length)?bt('campos','Campos','Mostrar ou apagar partes do bloco (sobretítulo, subtítulo...)'):'',d.tabela?bt('colw','Colunas','Largura das colunas'):'',bt('cor','● '+CORES_NOME[b.cor||'none'],'Cor de fundo do bloco'),bt('corlivre','Cor livre','Escolher qualquer cor de fundo e de texto só para este bloco'),bt('grow',b.grow?'⇕ estica':'⇕ auto','Altura: esticar para preencher a página'),
+  bt('w',`↔ ${b.w}%`,'Largura do bloco'),bt('tam','Tamanho','Largura, altura e espaço interno do bloco'),(camposDoBloco(b).length>=1)?bt('campos','Campos','Mostrar ou apagar partes do bloco (sobretítulo, subtítulo...)'):'',d.tabela?bt('colw','Colunas','Largura das colunas'):'',bt('cor','● '+CORES_NOME[b.cor||'none'],'Cor de fundo do bloco'),bt('corlivre','Cor livre','Escolher qualquer cor de fundo e de texto só para este bloco'),bt('grow',b.grow?'⇕ estica':'⇕ auto','Altura: esticar para preencher a página'),
   d.vars&&d.vars.length>1?bt('v','◐ '+b.v,'Trocar desenho'):'',
   d.lista?bt('add',d.tabela?'+ linha':'+ item')+bt('rem',d.tabela?'− linha':'− item'):'',d.tabela?bt('col+','+ coluna')+bt('col-','− coluna'):'',
   b.tipo==='imagem'?bt('alt','↕ '+(b.h||25)+'mm','Altura')+bt('esc','Escala '+(b.esc||100)+'%','Tamanho da imagem dentro do espaço')+bt('mar','Margem '+(b.mar||0)+'mm','Espaço em volta da imagem'):'',d.img?bt('foto',uic('image')+' foto')+(b[d.img]?bt('fit','centralizar')+bt('semfoto','sem foto')+bt('tint','Pintar imagem','Pintar a imagem toda de uma cor só (bom para logos)')+(ehSvg(b[d.img])?bt('corvet','Cores do vetor','Trocar as cores do SVG'):''):''):'',
@@ -849,8 +849,9 @@ let fotoAlvo=null;
 
 
 /* ===== tamanho, campos, colunas e layout livre ===== */
-const ROT_CAMPO={sob:'Sobretítulo',t:'Título / texto principal',sub:'Subtítulo',titulo:'Título',autor:'Autor / fonte',fonte:'Fonte do gráfico',pill:'Frase de chamada',pos:'Posologia',nome:'Nome',leg:'Legenda'};
-function camposDoBloco(b){const el=document.querySelector(`[data-b="${b.id}"]`),set=new Set(Object.keys(b.hide||{}).filter(k=>b.hide[k]));if(el)el.querySelectorAll('[data-f]').forEach(e=>{const f=e.dataset.f;if(!/\./.test(f))set.add(f)});return [...set]}
+const ROT_CAMPO={qrcode:'Código QR',objetivos:'Objetivos',tags:'Fases (Pré / Durante / Depois)',itens:'Lista de tópicos',foto:'Foto / ilustração',icone:'Ícone',sob:'Sobretítulo',t:'Texto principal',qr:'Código QR',sub:'Subtítulo',titulo:'Título',autor:'Autor / fonte',fonte:'Fonte do gráfico',pill:'Frase de chamada',pos:'Posologia',nome:'Nome',leg:'Legenda'};
+const EXTRAS={qr:[['qrcode','Código QR']],produto:[['objetivos','Objetivos'],['tags','Fases (Pré / Durante / Depois)'],['qr','Código QR']],capa:[['foto','Foto'],['itens','Lista de tópicos']],textoFoto:[['foto','Foto / ilustração']],iconeTexto:[['icone','Ícone']]};
+function camposDoBloco(b){const el=document.querySelector(`[data-b="${b.id}"]`),set=new Set(Object.keys(b.hide||{}).filter(k=>b.hide[k]));if(el)el.querySelectorAll('[data-f]').forEach(e=>{const f=e.dataset.f;if(!/\./.test(f))set.add(f)});(EXTRAS[b.tipo]||[]).forEach(([k])=>set.add(k));return [...set]}
 let cpAlvo=null;
 function abrirCampos(b){cpAlvo={b,sn:0};const ks=camposDoBloco(b);
  $('#mbox').innerHTML=`<h3 style="margin:0 0 4px">Campos do bloco</h3><p class="sub" style="margin:0 0 10px">Desmarque o que você não vai usar: o campo some do bloco e o espaço dele é liberado. Dá para marcar de novo a qualquer momento.</p>
