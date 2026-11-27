@@ -276,6 +276,11 @@ body.arrastando,body.arrastando *{cursor:grabbing!important;user-select:none}
 .nu .v{font-size:12mm;color:var(--a)}.nu .t{font-size:3.3mm;line-height:1.35;margin-top:1mm}
 /* tabela */
 .tb.fx{table-layout:fixed}.tb td.nw,.tb th.nw{white-space:nowrap}
+.pg>.pin{z-index:1}.pg>.rod{z-index:2}
+.mk{position:absolute;z-index:3;cursor:move;box-sizing:border-box}.mk.mkb{z-index:0}.mk.mkn{pointer-events:none}
+.mk.selm{outline:.4mm dashed #2d8cff;outline-offset:.5mm}
+.mk .mrz{display:none;position:absolute;right:0;bottom:0;width:4mm;height:4mm;background:#2d8cff;border:.4mm solid #fff;border-radius:1mm;cursor:nwse-resize}.mk.selm .mrz{display:block}
+.mkl{display:flex;gap:6px;align-items:center;border:1px solid var(--ui-line);border-radius:8px;padding:4px 6px;margin-bottom:4px;font-size:11.5px;cursor:pointer;background:#fff}.mkl:hover,.mkl.on{border-color:var(--ui-acc)}.mkl img{width:34px;height:20px;object-fit:contain;background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 0 0/8px 8px}
 .pin.livre{display:block;padding:0}.pin.livre>.b{position:absolute}
 .b .rz{display:none;position:absolute;right:0;bottom:0;width:4mm;height:4mm;background:#2d8cff;border:.4mm solid #fff;border-radius:1mm;cursor:nwse-resize;z-index:6}
 .b.sel .rz{display:block}.pin.livre>.b.sel{cursor:move}
@@ -292,6 +297,7 @@ body.arrastando,body.arrastando *{cursor:grabbing!important;user-select:none}
 .ct{border-left:1.2mm solid var(--a);padding:2mm 0 2mm 6mm}.ct .q{font:italic 500 6.5mm/1.3 'Plus Jakarta Sans'}.ct .a{font-size:3.2mm;margin-top:3mm;opacity:.7}
 .dv{border:0;border-top:.4mm solid var(--a);width:100%;margin:1mm 0;opacity:.6}
 @media print{
+ .mrz{display:none!important}.mk.selm{outline:none!important}
  .rz{display:none!important}
  @page{size:A4;margin:0}
  html,body{height:auto!important;overflow:visible!important}html body,html body.inicio{background:#fff;padding:0!important;padding-left:0!important;margin:0!important;width:auto!important;min-width:0!important}.top,.rail,#tb,#tt,.modal,#home,#dlg,#ghost,#dropl,.hub-sidebar,#hub-a11y,.a11y-btn,[id^=hub-],[class*=a11y]{display:none!important}.app{display:block;height:auto}.stage{padding:0;overflow:visible;margin:0}
@@ -359,6 +365,8 @@ body.arrastando,body.arrastando *{cursor:grabbing!important;user-select:none}
    <button onclick="dupPagina()">Duplicar página</button>
    <button id="bLivre" onclick="alternaLivre()">Liberar layout desta página</button>
    <button onclick="abrirRodape()">Rodapé e numeração</button>
+   <button onclick="abrirMarca()">+ Logo / marca d'água</button>
+   <div id="lmarcas" style="margin-top:6px"></div>
   </div>
   <h4>Meus arquivos <small>— arraste</small></h4>
   <div class="agrid rarq" id="rarq"></div>
@@ -684,10 +692,10 @@ function htmlBloco(b,livre,idx){const d=BL[b.tipo];if(!d)return'';const card=b.c
  return `<div class="b t-${b.tipo} v-${b.v||''} ${lv?'card c-p':card?'card c-'+b.cor:''} ${sel===b.id?'sel':''}" data-b="${b.id}" style="${est}${lv?`--p:${b.bgc};--pi:${b.fgc||contr(b.bgc)};`:''}${!lv&&b.fgc?`color:${b.fgc};`:''}">${d.html(b)}${livre?'<i class="rz" data-rz="1"></i>':''}</div>`}function temRod(p,pi){const r=doc.rod;return r&&r.on&&!p.semRod&&!(pi===0&&!r.capa)}
 function rodHTML(pi){const r=doc.rod,n=(r.num||'').replace('{n}',pi+1+(+r.ini||0)).replace('{t}',doc.paginas.length+(+r.ini||0));
  return `<div class="rod ${r.linha?'linha':''}"><div class="ed r1" data-rod="esq" data-ph="Texto (ex.: RT)" contenteditable="true">${san(r.esq)}</div><div class="ed r2" data-rod="meio" data-ph="Aviso" contenteditable="true">${san(r.meio)}</div><div class="r3">${r.logo?`<span class="rlogo" style="height:${r.logoH||6}mm;width:${(r.logoH||6)*(r.logoR||3)}mm">${r.logoTint?maskImg(r.logo,'50% 50%','contain',r.logoTint):`<img src="${r.logo}" style="height:100%;width:100%;object-fit:contain" draggable="false">`}</span>`:`<span class="ed" data-rod="dir" data-ph="Marca" contenteditable="true">${san(r.dir)}</span>`}<span>${esc(n)}</span></div></div>`}
-function migra(d){if(!d.rod){const r=d.paginas.flatMap(p=>p.blocos).find(b=>b.tipo==='rodape');
+function migra(d){if(!d.marcas)d.marcas=[];if(!d.rod){const r=d.paginas.flatMap(p=>p.blocos).find(b=>b.tipo==='rodape');
  d.rod={on:1,esq:r?r.rt:'Farm. RT Wanessa · CRF 12.629',meio:r?r.aviso:'Material destinado exclusivamente a profissionais prescritores.',dir:'Bioflora',num:'{n}',capa:0,linha:1,ini:0};
  d.paginas.forEach(p=>p.blocos=p.blocos.filter(b=>b.tipo!=='rodape'))}return d}
-function pgHTML(p,pi){const rd=temRod(p,pi);return `<div class="pg ${rd?'comrod':''} ${p.bg?'bg-'+p.bg:''}" data-pg="${pi}">${p.livre?`<div class="pin livre">${p.blocos.map((b,i)=>htmlBloco(b,true,i)).join('')}</div>`:`<div class="pin">${linhas(p.blocos).map(r=>`<div class="row ${r.some(b=>b.grow)?'grow':''}">${r.map(b=>htmlBloco(b)).join('')}</div>`).join('')}</div>`}${rd?rodHTML(pi):''}</div>`}
+function pgHTML(p,pi){const rd=temRod(p,pi);return `<div class="pg ${rd?'comrod':''} ${p.bg?'bg-'+p.bg:''}" data-pg="${pi}">${marcasHTML(pi,'a')}${p.livre?`<div class="pin livre">${p.blocos.map((b,i)=>htmlBloco(b,true,i)).join('')}</div>`:`<div class="pin">${linhas(p.blocos).map(r=>`<div class="row ${r.some(b=>b.grow)?'grow':''}">${r.map(b=>htmlBloco(b)).join('')}</div>`).join('')}</div>`}${rd?rodHTML(pi):''}${marcasHTML(pi,'f')}</div>`}
 function render(){
  const w=$('#wrap');const z=w.style.zoom;w.setAttribute('style',vars(doc));w.style.zoom=z;
  w.innerHTML=doc.paginas.map(pgHTML).join('');
@@ -697,10 +705,10 @@ function render(){
 function pos(){
  const z=Math.min(1,($('#stage').clientWidth-40)/794);$('#wrap').style.zoom=z;
  document.querySelectorAll('#wrap .tit.gigante .fit, #wrap .cp.centro .t').forEach(el=>{if(el.dataset.fs)return;let f=el.closest('.cp')?24:26;el.style.fontSize=f+'mm';const box=el.parentElement;while(f>8&&el.scrollWidth>box.clientWidth+1){f-=.5;el.style.fontSize=f+'mm'}});
- document.querySelectorAll('#wrap .pg').forEach(pg=>{const pin=pg.firstChild;const over=pin.classList.contains('livre')?false:([...pin.querySelectorAll('.b')].some(b=>b.scrollHeight>b.clientHeight+8)||pin.scrollHeight>pin.clientHeight+2);pg.classList.toggle('over',over)});
+ document.querySelectorAll('#wrap .pg').forEach(pg=>{const pin=pg.querySelector(':scope>.pin');const over=pin.classList.contains('livre')?false:([...pin.querySelectorAll('.b')].some(b=>b.scrollHeight>b.clientHeight+8)||pin.scrollHeight>pin.clientHeight+2);pg.classList.toggle('over',over)});
  barra();
 }
-function UI(){statusBox();{const bl=$('#bLivre'),pg=doc.paginas[pgAtiva];if(bl)bl.textContent=pg&&pg.livre?'Voltar ao layout automático':'Liberar layout desta página'}
+function UI(){statusBox();listaMarcas();{const bl=$('#bLivre'),pg=doc.paginas[pgAtiva];if(bl)bl.textContent=pg&&pg.livre?'Voltar ao layout automático':'Liberar layout desta página'}
  $('#lista').innerHTML=db.laminas.map(l=>`<option value="${l.id}" ${l.id===doc.id?'selected':''}>${esc(l.nome)}</option>`).join('');
  $('#tema').innerHTML=Object.entries(TEMAS).map(([k,t])=>`<option value="${k}" ${doc.tema===k?'selected':''}>${t.nome}</option>`).join('');
  const base={...TEMAS.vinho,...doc.cores};
@@ -714,6 +722,7 @@ window.addEventListener('resize',pos);
 
 /* ================= barra do bloco ================= */
 function barra(){
+ if(selM)return barraMarca();
  const tb=$('#tb');const el=sel&&document.querySelector(`[data-b="${sel}"]`);const f=sel&&acha(sel);
  if(!el||!f){tb.style.display='none';return}
  const b=f.b,d=BL[b.tipo],r=el.getBoundingClientRect();
@@ -808,6 +817,10 @@ function limpaEstilo(){if(!edA)return;const b=acha(edA.closest('[data-b]').datas
 wrap.addEventListener('focusout',e=>{const ed=e.target.closest&&e.target.closest('.ed');if(ed)ed._snap=0});
 wrap.addEventListener('paste',e=>{if(!e.target.closest('.ed'))return;e.preventDefault();document.execCommand('insertText',false,e.clipboardData.getData('text/plain'))});
 wrap.addEventListener('mousedown',e=>{
+ const mEl=e.target.closest('[data-m]');
+ if(mEl&&e.button===0){const pgE=mEl.closest('.pg');if(pgE&&pgAtiva!==+pgE.dataset.pg){pgAtiva=+pgE.dataset.pg;UI()}sel=null;document.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));if(selM!==mEl.dataset.m){selM=mEl.dataset.m;document.querySelectorAll('.selm').forEach(x=>x.classList.remove('selm'));mEl.classList.add('selm');setTimeout(barra);listaMarcas()}
+  if(e.target.closest('[data-mrz]'))iniciaRedimMarca(e,selM);else iniciaMoveMarca(e,selM);return}
+ if(selM){selM=null;document.querySelectorAll('.selm').forEach(x=>x.classList.remove('selm'));barra();listaMarcas()}
  const bEl=e.target.closest('[data-b]');const pg=e.target.closest('.pg');
  if(pg&&pgAtiva!==+pg.dataset.pg){pgAtiva=+pg.dataset.pg;UI()}
  if(!bEl){if(sel){sel=null;document.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));barra()}return}
@@ -863,7 +876,7 @@ function abrirColunas(b){clwAlvo=b;const n=(b.cab||[]).length,cw=b.colw&&b.colw.
  <div style="display:flex;gap:8px;margin-top:12px"><button class="pri" onclick="aplicaColunas()">Aplicar</button><button onclick="aplicaColunas(1)">Automático</button><button onclick="fechaModal()">Cancelar</button></div>`;$('#modal').classList.add('on')}
 function aplicaColunas(auto){const b=clwAlvo;if(!b)return;snap();if(auto)delete b.colw;else{const v=[...document.querySelectorAll('.cwi')].map(i=>Math.max(5,parseFloat(String(i.value).replace(',','.'))||10)),t=v.reduce((a,x)=>a+x,0);b.colw=v.map(x=>Math.round(x/t*1000)/10)}fechaModal();render()}
 function iniciaMover(e){const f=sel&&acha(sel);if(f&&f.p.livre)return iniciaMoveLivre(e,sel);iniciaDrag(e,{id:sel})}
-function pxMm(id){const el=document.querySelector(`[data-b="${id}"]`);return el?el.closest('.pg').getBoundingClientRect().width/210:1}
+function pxMm(id,mid){const el=document.querySelector(mid?`[data-m="${mid}"]`:`[data-b="${id}"]`);return el?el.closest('.pg').getBoundingClientRect().width/210:1}
 function iniciaMoveLivre(e,id){if(e.button!==0)return;e.preventDefault();const f=acha(id),b=f.b,k=pxMm(id),x0=e.clientX,y0=e.clientY,bx=b.x==null?10:b.x,by=b.y==null?10:b.y;let mov=0;
  const mv=ev=>{const dx=(ev.clientX-x0)/k,dy=(ev.clientY-y0)/k;if(!mov&&Math.abs(dx)+Math.abs(dy)<1.2)return;if(!mov){snap();mov=1}b.x=Math.round(Math.max(0,Math.min(205,bx+dx))*2)/2;b.y=Math.round(Math.max(0,Math.min(292,by+dy))*2)/2;const el=document.querySelector(`[data-b="${id}"]`);if(el){el.style.left=b.x+'mm';el.style.top=b.y+'mm'}barra()};
  const up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);if(mov){window._arrastou=true;setTimeout(()=>window._arrastou=false,0);salvar()}};
@@ -878,6 +891,62 @@ async function alternaLivre(){const pg=doc.paginas[pgAtiva];if(!pg)return;
   pg.blocos.forEach(b=>{const el=pgEl.querySelector(`[data-b="${b.id}"]`);if(!el)return;const r=el.getBoundingClientRect();b.x=Math.round((r.left-r0.left)/k*2)/2;b.y=Math.round((r.top-r0.top)/k*2)/2;b.fw=Math.round(r.width/k*2)/2;b.fh=Math.round(r.height/k*2)/2});
   pg.livre=1;render()}
  else{if(!await confirmar('Voltar ao layout automático?','Os blocos voltam a se alinhar sozinhos e as posições e tamanhos livres desta página são esquecidos. Dá para desfazer com Ctrl+Z.',{ok:'Voltar ao automático'}))return;snap();pg.livre=0;render()}}
+
+
+/* ===== logos e marcas d'água (soltas na página, por cima ou por baixo do conteúdo) ===== */
+let selM=null,mkOpt={estilo:'canto',todas:0};
+const marcasDe=pi=>(doc.marcas||[]).filter(m=>m.pg===-1||m.pg===pi);
+const achaMarca=id=>(doc.marcas||[]).find(m=>m.id===id);
+function marcasHTML(pi,cam){return marcasDe(pi).filter(m=>(m.cam||'f')===cam).map(m=>{
+ const tint=m.srcTint,op=m.op==null?1:m.op,sl=selM===m.id?' selm':'',big=(m.tile||m.w>=90)&&selM!==m.id?' mkn':'',cls=`mk ${cam==='a'?'mkb':''}${big}${sl}`;
+ if(m.tile)return `<div class="${cls} mkn" data-m="${m.id}" style="inset:-25%;transform:rotate(${m.rot==null?-25:m.rot}deg);opacity:${op};${tint?`background:${tint};-webkit-mask:url('${m.src}') 0 0/${m.w}mm auto space;mask:url('${m.src}') 0 0/${m.w}mm auto space`:`background:url('${m.src}') 0 0/${m.w}mm auto space`}"></div>`;
+ const h=m.w/(m.r||3);
+ return `<div class="${cls}" data-m="${m.id}" style="left:${m.x}mm;top:${m.y}mm;width:${m.w}mm;height:${h}mm;opacity:${op};${m.rot?`transform:rotate(${m.rot}deg);`:''}">${tint?maskImg(m.src,'50% 50%','contain',tint):`<img src="${m.src}" style="width:100%;height:100%;object-fit:contain;display:block" draggable="false">`}<i class="mrz" data-mrz="1"></i></div>`}).join('')}
+function selMarca(id){selM=id;sel=null;const m=achaMarca(id);if(m&&m.pg>=0)pgAtiva=m.pg;render();const el=document.querySelector(`[data-m="${id}"]`);if(el&&!m.tile)el.scrollIntoView({block:'nearest'})}
+function listaMarcas(){const el=$('#lmarcas');if(!el)return;const L=marcasDe(pgAtiva);el.innerHTML=L.map(m=>`<div class="mkl ${selM===m.id?'on':''}" onclick="selMarca('${m.id}')"><img src="${m.src}" alt=""><span style="flex:1">${m.tile?'Padrão repetido':(m.w>=90?"Marca d'água":'Logo')} ${m.pg===-1?'(todas as páginas)':''}</span></div>`).join('')}
+function abrirMarca(){
+ $('#mbox').innerHTML=`<h3 style="margin:0 0 4px">Logo ou marca d'água</h3><p class="sub" style="margin:0 0 10px">A imagem fica solta sobre a página, independente dos blocos que estiverem embaixo. Depois você arrasta, redimensiona (canto azul) e ajusta transparência, cor e camada.</p>
+ <div class="grp">1. Como colocar</div>
+ ${[['canto','Logo pequena no canto inferior direito'],['centro',"Marca d'água grande, ao centro e transparente"],['padrao',"Padrão repetido em grade (marca d'água)"],['solta','Logo solta (eu posiciono)']].map(([v,t])=>`<label style="display:flex;gap:8px;align-items:center;margin:4px 0;font-size:14px"><input type="radio" name="mkE" value="${v}" ${mkOpt.estilo===v?'checked':''} onchange="mkOpt.estilo=this.value"> ${t}</label>`).join('')}
+ <label style="display:flex;gap:8px;align-items:center;margin:10px 0 4px;font-size:14px"><input type="checkbox" ${mkOpt.todas?'checked':''} onchange="mkOpt.todas=this.checked?1:0"> Repetir em todas as páginas</label>
+ <div class="grp" style="margin-top:10px">2. Qual imagem</div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pri" onclick="criaMarca('/laminas-modelos/img/logo-bioflora.png')">Logo da Bioflora</button><button onclick="criaMarca('/laminas-modelos/img/logo-bioflora.png','#ffffff')">Logo da Bioflora (branca)</button><button onclick="fechaModal();escolheFoto({},'src',criaMarca)">Outro arquivo ou Meus arquivos…</button></div>`;
+ $('#modal').classList.add('on')}
+function criaMarca(src,tint){return new Promise(ok=>{const im=new Image();im.onload=()=>{let r=im.naturalWidth&&im.naturalHeight?im.naturalWidth/im.naturalHeight:2;go(r)};im.onerror=()=>go(2);im.src=src;
+ function go(r){const e=mkOpt.estilo;snap();const m={id:uid(),src,r,pg:mkOpt.todas?-1:pgAtiva,cam:'f',op:1,rot:0,tile:0};if(tint)m.srcTint=tint;
+  if(e==='canto'){m.w=34;m.x=210-34-8;m.y=297-34/r-8}
+  else if(e==='centro'){m.w=140;m.x=35;m.y=(297-140/r)/2;m.op=.1}
+  else if(e==='padrao'){m.w=45;m.tile=1;m.op=.1;m.rot=-25;m.x=0;m.y=0}
+  else{m.w=50;m.x=80;m.y=120}
+  (doc.marcas=doc.marcas||[]).push(m);selM=m.id;sel=null;fechaModal();render();ok()}})}
+function iniciaMoveMarca(e,id){if(e.button!==0)return;const m=achaMarca(id);if(!m||m.tile)return;e.preventDefault();const k=pxMm(null,id),x0=e.clientX,y0=e.clientY,bx=m.x,by=m.y;let mov=0;
+ const mv=ev=>{const dx=(ev.clientX-x0)/k,dy=(ev.clientY-y0)/k;if(!mov&&Math.abs(dx)+Math.abs(dy)<1.2)return;if(!mov){snap();mov=1}m.x=Math.round((bx+dx)*2)/2;m.y=Math.round((by+dy)*2)/2;const el=document.querySelector(`[data-m="${id}"]`);if(el){el.style.left=m.x+'mm';el.style.top=m.y+'mm'}barra()};
+ const up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);if(mov){window._arrastou=true;setTimeout(()=>window._arrastou=false,0);salvar();render()}};
+ addEventListener('mousemove',mv);addEventListener('mouseup',up)}
+function iniciaRedimMarca(e,id){if(e.button!==0)return;const m=achaMarca(id);if(!m)return;e.preventDefault();e.stopPropagation();const k=pxMm(null,id),x0=e.clientX,w0=m.w;let mov=0;
+ const mv=ev=>{const dw=(ev.clientX-x0)/k;if(!mov&&Math.abs(dw)<1.2)return;if(!mov){snap();mov=1}m.w=Math.round(Math.max(6,Math.min(250,w0+dw))*2)/2;const el=document.querySelector(`[data-m="${id}"]`);if(el&&!m.tile){el.style.width=m.w+'mm';el.style.height=(m.w/(m.r||3))+'mm'}barra()};
+ const up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);if(mov){window._arrastou=true;setTimeout(()=>window._arrastou=false,0);salvar();render()}};
+ addEventListener('mousemove',mv);addEventListener('mouseup',up)}
+function barraMarca(){const tb=$('#tb'),m=achaMarca(selM),el=m&&document.querySelector(`[data-m="${selM}"]`);if(!m||!el){tb.style.display='none';return}
+ const bt=(a,t,tt='')=>`<button onmousedown="event.preventDefault()" onclick="acaoMarca('${a}')" title="${tt}">${t}</button>`;
+ tb.innerHTML=[bt('op','Transparência '+Math.round((1-(m.op==null?1:m.op))*100)+'%','Quanto a imagem fica transparente'),bt('cam',m.cam==='a'?'Atrás do conteúdo':'Na frente','Camada: por cima ou por baixo dos blocos'),bt('esc',m.pg===-1?'Em todas as páginas':'Só nesta página','Onde aparece'),bt('tile',m.tile?'Padrão repetido':'Peça única','Alternar entre peça única e padrão repetido'),bt('tint','Pintar','Pintar a imagem de uma cor só'),ehSvg(m.src)?bt('vet','Cores do vetor'):'',bt('pos','Tamanho/posição'),m.tile?'':bt('rot','Girar'),'<i></i>',bt('dup',uic('copy'),'Duplicar'),bt('del',uic('trash'),'Excluir')].join('');
+ tb.style.display='flex';const r=el.getBoundingClientRect(),h=tb.offsetHeight,top=r.top-h-8;tb.style.top=(top<58?Math.min(r.bottom+8,innerHeight-h-8):top)+'px';tb.style.left=Math.max(240,Math.min(r.left,innerWidth-tb.offsetWidth-10))+'px'}
+async function acaoMarca(a){const m=achaMarca(selM);if(!m)return;
+ if(a==='tint')return abrirTinta(m,'src');if(a==='vet')return abrirCoresVetor(m,'src');if(a==='pos')return abrirPosMarca(m);
+ if(a==='op'){const v=await pedir('Transparência (%)',String(Math.round((1-(m.op==null?1:m.op))*100)),{msg:'0 = totalmente visível, 90 = quase invisível (bom para marca d\'água).',ok:'Aplicar'});if(v===null)return;const n=parseFloat(String(v).replace(',','.'));if(!(n>=0&&n<=95))return avisar('Valor inválido','Digite de 0 a 95.');snap();m.op=Math.round((1-n/100)*100)/100;render();return}
+ if(a==='rot'){const v=await pedir('Girar (graus)',String(m.rot||0),{msg:'De -180 a 180. 0 = reto.',ok:'Aplicar'});if(v===null)return;const n=parseFloat(String(v).replace(',','.'));if(isNaN(n)||n<-180||n>180)return avisar('Valor inválido','Digite de -180 a 180.');snap();m.rot=n;render();return}
+ snap();
+ if(a==='cam')m.cam=m.cam==='a'?'f':'a';
+ else if(a==='esc')m.pg=m.pg===-1?pgAtiva:-1;
+ else if(a==='tile'){m.tile=m.tile?0:1;if(m.tile&&m.w>60)m.w=45;if(m.tile&&(m.op==null||m.op>.3))m.op=.1}
+ else if(a==='dup'){const c=clone(m);c.id=uid();c.x=(c.x||0)+6;c.y=(c.y||0)+6;doc.marcas.push(c);selM=c.id}
+ else if(a==='del'){doc.marcas=doc.marcas.filter(x=>x!==m);selM=null}
+ render()}
+function abrirPosMarca(m){
+ $('#mbox').innerHTML=`<h3 style="margin:0 0 4px">Tamanho e posição</h3><p class="sub" style="margin:0 0 10px">Em milímetros (a página tem 210 × 297 mm). A altura acompanha a largura.</p>
+ ${[['pmX','Esquerda (mm)',m.x],['pmY','Topo (mm)',m.y],['pmW','Largura (mm)',m.w]].map(([i,t,v])=>`<label style="display:flex;gap:8px;align-items:center;margin-bottom:8px;font-size:14px"><span style="width:150px">${t}</span><input id="${i}" type="text" value="${v}" style="width:90px;padding:6px 8px;border:1px solid var(--ui-line);border-radius:8px"></label>`).join('')}
+ <div style="display:flex;gap:8px;margin-top:12px"><button class="pri" onclick="aplicaPosMarca()">Aplicar</button><button onclick="fechaModal()">Cancelar</button></div>`;$('#modal').classList.add('on')}
+function aplicaPosMarca(){const m=achaMarca(selM);if(!m)return;const n=id=>parseFloat(String($('#'+id).value).replace(',','.'));snap();const x=n('pmX'),y=n('pmY'),w=n('pmW');if(!isNaN(x))m.x=x;if(!isNaN(y))m.y=y;if(!isNaN(w))m.w=Math.max(6,Math.min(250,w));fechaModal();render()}
 
 /* ===== vetores SVG: envio seguro e troca de cores no editor ===== */
 const ehSvg=u=>/^data:image\/svg\+xml/i.test(u||'')||/\.svg([?#]|$)/i.test(u||'');
@@ -924,20 +993,21 @@ function aplicaCoresVetor(){if(!cvAlvo)return;const {b,campo,txt,novo}=cvAlvo;co
  snap();setP(b,campo+'Svg',txt);setP(b,campo+'Map',m);setP(b,campo,svgUrl(recolorSvg(txt,m)));fechaModal();render()}
 function restauraCoresVetor(){if(!cvAlvo)return;const {b,campo,txt}=cvAlvo;snap();setP(b,campo+'Svg',txt);setP(b,campo+'Map',{});setP(b,campo,svgUrl(txt));fechaModal();render()}
 async function lerSvgArquivo(f){return limpaSvg(await f.text())}
-function escolheFoto(b,campo){fotoAlvo={b,campo};
+function escolheFoto(b,campo,cb){fotoAlvo={b,campo,cb};
  $('#mbox').innerHTML=`<h3>Escolher imagem</h3><div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><button class="pri" onclick="fotoDoPC()">Enviar do computador</button><label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="guardar"> guardar também em Meus arquivos</label></div>
  <div class="grp">Meus arquivos</div>${ARQ.length?`<div class="agrid">${ARQ.map(a=>`<div class="ai" onclick="aplicaFoto(ARQ.find(x=>x.id==='${a.id}').data)"><img src="${a.data}"><span>${esc(a.nome)}</span></div>`).join('')}</div>`:'<p style="color:#888;font-size:13px">Nenhum arquivo salvo ainda. Use “guardar também em Meus arquivos” ou a área Meus arquivos da biblioteca.</p>'}`;
  $('#modal').classList.add('on')}
 function fotoDoPC(){const pk=$('#pick'),g=$('#guardar')?.checked;pk.onchange=async()=>{const f=pk.files[0];pk.value='';if(!f)return;const {campo}=fotoAlvo;
  if(f.type==='image/svg+xml'||/\.svg$/i.test(f.name)){const t=await lerSvgArquivo(f);if(!t)return avisar('SVG inválido','Não consegui ler esse arquivo SVG. Exporte de novo do Illustrator, Canva ou Inkscape.');if(g)await arqPut(f.name,svgUrl(t));aplicaFoto(svgUrl(t));const bb=fotoAlvo&&fotoAlvo.b;return}
  const data=(await subir(await reduz(f,/img$|icone$/.test(campo)?400:1800),'fotos')).url;if(g){await arqPut(f.name,await reduz(f,1800))}aplicaFoto(data)};pk.click()}
-function aplicaFoto(data){if(!fotoAlvo)return;const {b,campo}=fotoAlvo;snap();setP(b,campo,data);setP(b,campo+'Ic','');setP(b,campo+'Pos','50% 50%');fechaModal();render()}
+function aplicaFoto(data){if(!fotoAlvo)return;const {b,campo,cb}=fotoAlvo;if(cb){fotoAlvo=null;fechaModal();cb(data);return}snap();setP(b,campo,data);setP(b,campo+'Ic','');setP(b,campo+'Pos','50% 50%');fechaModal();render()}
 function reduz(file,max){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{
  const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
  c.getContext('2d').drawImage(im,0,0,c.width,c.height);r(c.toDataURL(file.type==='image/png'?'image/png':'image/jpeg',.88))};im.src=fr.result};fr.readAsDataURL(file)})}
 document.addEventListener('keydown',e=>{
  const emTexto=e.target.closest&&e.target.closest('.ed,input,textarea,select');
  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'&&!emTexto){e.preventDefault();desfazer()}
+ if((e.key==='Delete'||e.key==='Backspace')&&selM&&!emTexto){e.preventDefault();acaoMarca('del')}
  if((e.key==='Delete'||e.key==='Backspace')&&sel&&!emTexto){e.preventDefault();acao('del')}
  if(e.key==='Escape'){if($('#modal').classList.contains('on'))return fechaModal();sel=null;document.activeElement.blur();render()}
 });
