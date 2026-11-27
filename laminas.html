@@ -275,6 +275,11 @@ body.arrastando,body.arrastando *{cursor:grabbing!important;user-select:none}
 .nu>div{flex:1;border-left:.8mm solid var(--a);padding-left:4mm}
 .nu .v{font-size:12mm;color:var(--a)}.nu .t{font-size:3.3mm;line-height:1.35;margin-top:1mm}
 /* tabela */
+.tb.fx{table-layout:fixed}.tb td.nw,.tb th.nw{white-space:nowrap}
+.pin.livre{display:block;padding:0}.pin.livre>.b{position:absolute}
+.b .rz{display:none;position:absolute;right:0;bottom:0;width:4mm;height:4mm;background:#2d8cff;border:.4mm solid #fff;border-radius:1mm;cursor:nwse-resize;z-index:6}
+.b.sel .rz{display:block}.pin.livre>.b.sel{cursor:move}
+.rod .rlogo{display:inline-block;position:relative}
 .tb{width:100%;border-collapse:separate;border-spacing:0;font-size:3.2mm;border-radius:3mm;overflow:hidden}
 .tb th{background:var(--p);color:var(--pi);text-align:left;padding:2.5mm 3mm;font:700 3.3mm 'Plus Jakarta Sans'}
 .tb td{padding:2.3mm 3mm;border-bottom:.25mm solid color-mix(in srgb,currentColor 15%,transparent);vertical-align:top}
@@ -287,6 +292,7 @@ body.arrastando,body.arrastando *{cursor:grabbing!important;user-select:none}
 .ct{border-left:1.2mm solid var(--a);padding:2mm 0 2mm 6mm}.ct .q{font:italic 500 6.5mm/1.3 'Plus Jakarta Sans'}.ct .a{font-size:3.2mm;margin-top:3mm;opacity:.7}
 .dv{border:0;border-top:.4mm solid var(--a);width:100%;margin:1mm 0;opacity:.6}
 @media print{
+ .rz{display:none!important}
  @page{size:A4;margin:0}
  html,body{height:auto!important;overflow:visible!important}html body,html body.inicio{background:#fff;padding:0!important;padding-left:0!important;margin:0!important;width:auto!important;min-width:0!important}.top,.rail,#tb,#tt,.modal,#home,#dlg,#ghost,#dropl,.hub-sidebar,#hub-a11y,.a11y-btn,[id^=hub-],[class*=a11y]{display:none!important}.app{display:block;height:auto}.stage{padding:0;overflow:visible;margin:0}
  #wrap{zoom:1!important;gap:0;width:auto;display:block}
@@ -351,6 +357,7 @@ body.arrastando,body.arrastando *{cursor:grabbing!important;user-select:none}
   <div style="display:grid;gap:4px;margin-top:6px">
    <button class="pri" onclick="abrirPaginas()">+ Página pronta</button>
    <button onclick="dupPagina()">Duplicar página</button>
+   <button id="bLivre" onclick="alternaLivre()">Liberar layout desta página</button>
    <button onclick="abrirRodape()">Rodapé e numeração</button>
   </div>
   <h4>Meus arquivos <small>— arraste</small></h4>
@@ -415,7 +422,7 @@ function vars(d){const t=d.tema==='pers'?{...TEMAS.vinho,...d.cores}:TEMAS[d.tem
 /* ================= blocos ================= */
 const ST={ff:v=>`font-family:'${v}'`,fs:v=>`font-size:${v}mm`,c:v=>`color:${v}`,al:v=>`text-align:${v}`,lh:v=>`line-height:${v}`,ls:v=>`letter-spacing:${v}em`,tt:v=>`text-transform:${v}`,fw:v=>`font-weight:${v}`,fi:v=>`font-style:${v}`,fu:v=>`text-decoration:${v}`};
 const css=st=>Object.entries(st||{}).filter(([k,v])=>ST[k]&&v!==''&&v!=null).map(([k,v])=>ST[k](v)).join(';');
-const E=(b,p,cls='',ph='Digite...')=>{const st=(b.st||{})[p];return `<div class="ed ${cls}" data-f="${p}" data-ph="${esc(ph)}" ${st&&st.fs?'data-fs="1"':''} style="${css(st)}" contenteditable="true">${san(getP(b,p))}</div>`};
+const E=(b,p,cls='',ph='Digite...')=>{if((b.hide||{})[p])return '';const st=(b.st||{})[p];return `<div class="ed ${cls}" data-f="${p}" data-ph="${esc(ph)}" ${st&&st.fs?'data-fs="1"':''} style="${css(st)}" contenteditable="true">${san(getP(b,p))}</div>`};
 const maskImg=(v,pos,tam,cor)=>`<div style="position:absolute;inset:0;background:${cor};-webkit-mask:url('${v}') ${pos} / ${tam} no-repeat;mask:url('${v}') ${pos} / ${tam} no-repeat"></div>`;
 const IMG=(b,p,cls='',ph='+ foto',vazio='')=>{const v=getP(b,p),pos=getP(b,p+'Pos')||'50% 50%',tint=getP(b,p+'Tint');
  return `<div class="img ${cls}" data-img="${p}">${v?(tint?maskImg(v,pos,/contain/.test(cls)?'contain':'cover',tint):`<img src="${v}" style="object-position:${pos}" draggable="false">`):vazio||`<span>${ph}</span>`}</div>`};
@@ -477,7 +484,8 @@ const BL={
   html:b=>`<div class="nu ${b.v}">${L(b,'itens',(it,p)=>`<div>${E(b,p+'.v','v H')}${E(b,p+'.t','t')}</div>`)}</div>`},
  tabela:{nome:'Tabela',desc:'Posologia, composição, comparativos',w:100,cor:'none',lista:'linhas',tabela:1,novo:b=>({c:(b.cab||[]).map(()=>({t:''}))}),
   dados:()=>({cab:[{t:'Ativo'},{t:'Dose'},{t:'Posologia'}],linhas:[{c:[{t:'Ativo A'},{t:'100 mg'},{t:'1x ao dia'}]},{c:[{t:'Ativo B'},{t:'50 mg'},{t:'2x ao dia'}]}]}),
-  html:b=>`<table class="tb"><thead><tr>${L(b,'cab',(c,p)=>`<th>${E(b,p+'.t')}</th>`)}</tr></thead><tbody>${L(b,'linhas',(r,p)=>`<tr>${(r.c||[]).map((c,j)=>`<td>${E(b,p+'.c.'+j+'.t')}</td>`).join('')}</tr>`)}</tbody></table>`},
+  html:b=>{const nw=t=>String(t||'').replace(/<[^>]*>/g,'').trim().length<=16?' class="nw"':'';const cw=b.colw&&b.colw.length===(b.cab||[]).length?`<colgroup>${b.colw.map(w=>`<col style="width:${w}%">`).join('')}</colgroup>`:'';
+  return `<table class="tb ${cw?'fx':''}">${cw}<thead><tr>${(b.cab||[]).map((c,i)=>`<th${nw(c.t)}>${E(b,'cab.'+i+'.t')}</th>`).join('')}</tr></thead><tbody>${(b.linhas||[]).map((r,i)=>`<tr>${(r.c||[]).map((c,j)=>`<td${nw(c.t)}>${E(b,'linhas.'+i+'.c.'+j+'.t')}</td>`).join('')}</tr>`).join('')}</tbody></table>`}},
  iconeTexto:{nome:'Ícone + texto',desc:'Card com ícone, título e texto',w:33,cor:'s',vars:['topo','lado'],
   dados:()=>({icone:'',iconeIc:'pill',titulo:'Título',t:'Texto curto explicativo.'}),
   html:b=>`<div class="it2 ${b.v}">${ICN(b,'icone')}<div>${E(b,'titulo','tt H','Título')}${E(b,'t','','Texto')}</div></div>`},
@@ -667,16 +675,19 @@ function acha(id){for(const [pi,p] of doc.paginas.entries()){const i=p.blocos.fi
 
 /* ================= render ================= */
 function linhas(blocos){const rows=[];let r=[],s=0;for(const b of blocos){if(r.length&&s+b.w>100.5){rows.push(r);r=[];s=0}r.push(b);s+=b.w}if(r.length)rows.push(r);return rows}
-function htmlBloco(b){const d=BL[b.tipo];if(!d)return'';const card=b.cor&&b.cor!=='none';
- const lv=!!b.bgc;
- return `<div class="b t-${b.tipo} v-${b.v||''} ${lv?'card c-p':card?'card c-'+b.cor:''} ${sel===b.id?'sel':''}" data-b="${b.id}" style="flex:${b.w} 1 0;${lv?`--p:${b.bgc};--pi:${b.fgc||contr(b.bgc)};`:''}${!lv&&b.fgc?`color:${b.fgc};`:''}">${d.html(b)}</div>`}
-function temRod(p,pi){const r=doc.rod;return r&&r.on&&!p.semRod&&!(pi===0&&!r.capa)}
+function htmlBloco(b,livre,idx){const d=BL[b.tipo];if(!d)return'';const card=b.cor&&b.cor!=='none';
+ const lv=!!b.bgc;let est;
+ if(livre){const x=b.x==null?10:b.x,y=b.y==null?10+(idx||0)*8:b.y,w=b.fw||Math.round(190*b.w/100);est=`left:${x}mm;top:${y}mm;width:${w}mm;${b.fh?`min-height:${b.fh}mm;`:''}`}
+ else est=b.wl?`flex:0 1 ${b.w}%;max-width:${b.w}%;`:`flex:${b.w} 1 0;`;
+ if(b.hmm)est+=`min-height:${b.hmm}mm;`;
+ if(b.pad!=null&&b.pad!=='')est+=`padding:${b.pad}mm;`;
+ return `<div class="b t-${b.tipo} v-${b.v||''} ${lv?'card c-p':card?'card c-'+b.cor:''} ${sel===b.id?'sel':''}" data-b="${b.id}" style="${est}${lv?`--p:${b.bgc};--pi:${b.fgc||contr(b.bgc)};`:''}${!lv&&b.fgc?`color:${b.fgc};`:''}">${d.html(b)}${livre?'<i class="rz" data-rz="1"></i>':''}</div>`}function temRod(p,pi){const r=doc.rod;return r&&r.on&&!p.semRod&&!(pi===0&&!r.capa)}
 function rodHTML(pi){const r=doc.rod,n=(r.num||'').replace('{n}',pi+1+(+r.ini||0)).replace('{t}',doc.paginas.length+(+r.ini||0));
- return `<div class="rod ${r.linha?'linha':''}"><div class="ed r1" data-rod="esq" data-ph="Texto (ex.: RT)" contenteditable="true">${san(r.esq)}</div><div class="ed r2" data-rod="meio" data-ph="Aviso" contenteditable="true">${san(r.meio)}</div><div class="r3"><span class="ed" data-rod="dir" data-ph="Marca" contenteditable="true">${san(r.dir)}</span><span>${esc(n)}</span></div></div>`}
+ return `<div class="rod ${r.linha?'linha':''}"><div class="ed r1" data-rod="esq" data-ph="Texto (ex.: RT)" contenteditable="true">${san(r.esq)}</div><div class="ed r2" data-rod="meio" data-ph="Aviso" contenteditable="true">${san(r.meio)}</div><div class="r3">${r.logo?`<span class="rlogo" style="height:${r.logoH||6}mm;width:${(r.logoH||6)*(r.logoR||3)}mm">${r.logoTint?maskImg(r.logo,'50% 50%','contain',r.logoTint):`<img src="${r.logo}" style="height:100%;width:100%;object-fit:contain" draggable="false">`}</span>`:`<span class="ed" data-rod="dir" data-ph="Marca" contenteditable="true">${san(r.dir)}</span>`}<span>${esc(n)}</span></div></div>`}
 function migra(d){if(!d.rod){const r=d.paginas.flatMap(p=>p.blocos).find(b=>b.tipo==='rodape');
  d.rod={on:1,esq:r?r.rt:'Farm. RT Wanessa · CRF 12.629',meio:r?r.aviso:'Material destinado exclusivamente a profissionais prescritores.',dir:'Bioflora',num:'{n}',capa:0,linha:1,ini:0};
  d.paginas.forEach(p=>p.blocos=p.blocos.filter(b=>b.tipo!=='rodape'))}return d}
-function pgHTML(p,pi){const rd=temRod(p,pi);return `<div class="pg ${rd?'comrod':''} ${p.bg?'bg-'+p.bg:''}" data-pg="${pi}"><div class="pin">${linhas(p.blocos).map(r=>`<div class="row ${r.some(b=>b.grow)?'grow':''}">${r.map(htmlBloco).join('')}</div>`).join('')}</div>${rd?rodHTML(pi):''}</div>`}
+function pgHTML(p,pi){const rd=temRod(p,pi);return `<div class="pg ${rd?'comrod':''} ${p.bg?'bg-'+p.bg:''}" data-pg="${pi}">${p.livre?`<div class="pin livre">${p.blocos.map((b,i)=>htmlBloco(b,true,i)).join('')}</div>`:`<div class="pin">${linhas(p.blocos).map(r=>`<div class="row ${r.some(b=>b.grow)?'grow':''}">${r.map(b=>htmlBloco(b)).join('')}</div>`).join('')}</div>`}${rd?rodHTML(pi):''}</div>`}
 function render(){
  const w=$('#wrap');const z=w.style.zoom;w.setAttribute('style',vars(doc));w.style.zoom=z;
  w.innerHTML=doc.paginas.map(pgHTML).join('');
@@ -686,10 +697,10 @@ function render(){
 function pos(){
  const z=Math.min(1,($('#stage').clientWidth-40)/794);$('#wrap').style.zoom=z;
  document.querySelectorAll('#wrap .tit.gigante .fit, #wrap .cp.centro .t').forEach(el=>{if(el.dataset.fs)return;let f=el.closest('.cp')?24:26;el.style.fontSize=f+'mm';const box=el.parentElement;while(f>8&&el.scrollWidth>box.clientWidth+1){f-=.5;el.style.fontSize=f+'mm'}});
- document.querySelectorAll('#wrap .pg').forEach(pg=>{const pin=pg.firstChild;const over=[...pin.querySelectorAll('.b')].some(b=>b.scrollHeight>b.clientHeight+8)||pin.scrollHeight>pin.clientHeight+2;pg.classList.toggle('over',over)});
+ document.querySelectorAll('#wrap .pg').forEach(pg=>{const pin=pg.firstChild;const over=pin.classList.contains('livre')?false:([...pin.querySelectorAll('.b')].some(b=>b.scrollHeight>b.clientHeight+8)||pin.scrollHeight>pin.clientHeight+2);pg.classList.toggle('over',over)});
  barra();
 }
-function UI(){statusBox();
+function UI(){statusBox();{const bl=$('#bLivre'),pg=doc.paginas[pgAtiva];if(bl)bl.textContent=pg&&pg.livre?'Voltar ao layout automático':'Liberar layout desta página'}
  $('#lista').innerHTML=db.laminas.map(l=>`<option value="${l.id}" ${l.id===doc.id?'selected':''}>${esc(l.nome)}</option>`).join('');
  $('#tema').innerHTML=Object.entries(TEMAS).map(([k,t])=>`<option value="${k}" ${doc.tema===k?'selected':''}>${t.nome}</option>`).join('');
  const base={...TEMAS.vinho,...doc.cores};
@@ -707,8 +718,8 @@ function barra(){
  if(!el||!f){tb.style.display='none';return}
  const b=f.b,d=BL[b.tipo],r=el.getBoundingClientRect();
  const bt=(a,t,tt='')=>`<button onmousedown="event.preventDefault()" onclick="acao('${a}')" title="${tt}">${t}</button>`;
- tb.innerHTML=[`<button onmousedown="iniciaDrag(event,{id:sel})" title="Arraste para mover" style="cursor:grab">✥</button>`,bt('up','↑','Mover para cima'),bt('down','↓','Mover para baixo'),'<i></i>',
-  bt('w',`↔ ${b.w}%`,'Largura do bloco'),bt('cor','● '+CORES_NOME[b.cor||'none'],'Cor de fundo do bloco'),bt('corlivre','Cor livre','Escolher qualquer cor de fundo e de texto só para este bloco'),bt('grow',b.grow?'⇕ estica':'⇕ auto','Altura: esticar para preencher a página'),
+ tb.innerHTML=[`<button onmousedown="iniciaMover(event)" title="Arraste para mover" style="cursor:grab">✥</button>`,bt('up','↑','Mover para cima'),bt('down','↓','Mover para baixo'),'<i></i>',
+  bt('w',`↔ ${b.w}%`,'Largura do bloco'),bt('tam','Tamanho','Largura, altura e espaço interno do bloco'),(camposDoBloco(b).length>=2||Object.keys(b.hide||{}).length)?bt('campos','Campos','Mostrar ou apagar partes do bloco (sobretítulo, subtítulo...)'):'',d.tabela?bt('colw','Colunas','Largura das colunas'):'',bt('cor','● '+CORES_NOME[b.cor||'none'],'Cor de fundo do bloco'),bt('corlivre','Cor livre','Escolher qualquer cor de fundo e de texto só para este bloco'),bt('grow',b.grow?'⇕ estica':'⇕ auto','Altura: esticar para preencher a página'),
   d.vars&&d.vars.length>1?bt('v','◐ '+b.v,'Trocar desenho'):'',
   d.lista?bt('add',d.tabela?'+ linha':'+ item')+bt('rem',d.tabela?'− linha':'− item'):'',d.tabela?bt('col+','+ coluna')+bt('col-','− coluna'):'',
   b.tipo==='imagem'?bt('alt','↕ '+(b.h||25)+'mm','Altura')+bt('esc','Escala '+(b.esc||100)+'%','Tamanho da imagem dentro do espaço')+bt('mar','Margem '+(b.mar||0)+'mm','Espaço em volta da imagem'):'',d.img?bt('foto',uic('image')+' foto')+(b[d.img]?bt('fit','centralizar')+bt('semfoto','sem foto')+bt('tint','Pintar imagem','Pintar a imagem toda de uma cor só (bom para logos)')+(ehSvg(b[d.img])?bt('corvet','Cores do vetor','Trocar as cores do SVG'):''):''):'',
@@ -741,6 +752,9 @@ async function acao(a){
   case 'fit':b[d.img+'Pos']='50% 50%';break;
   case 'semfoto':b[d.img]='';b[d.img+'Svg']='';b[d.img+'Map']={};b[d.img+'Tint']='';break;
   case 'corvet':return abrirCoresVetor(b,d.img);
+  case 'tam':return abrirTamanho(b);
+  case 'campos':return abrirCampos(b);
+  case 'colw':return abrirColunas(b);
   case 'tint':return abrirTinta(b,d.img);
   case 'corlivre':return abrirCorLivre(b);
   case 'link':{const u=await pedir('Link do QR code',b[d.link]||'https://wa.me/55',{msg:'WhatsApp (ex.: https://wa.me/5511999999999) ou site. Deixe vazio para remover.',ok:'Salvar'});if(u===null)return;snap();b[d.link]=u.trim();break}
@@ -798,7 +812,8 @@ wrap.addEventListener('mousedown',e=>{
  if(pg&&pgAtiva!==+pg.dataset.pg){pgAtiva=+pg.dataset.pg;UI()}
  if(!bEl){if(sel){sel=null;document.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));barra()}return}
  if(sel!==bEl.dataset.b){document.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));sel=bEl.dataset.b;bEl.classList.add('sel');setTimeout(barra)}
- if(!e.target.closest('.ed,.img,[data-tag],[data-link],.rod')&&e.button===0){iniciaDrag(e,{id:bEl.dataset.b});return}
+ if(e.target.closest('[data-rz]')&&e.button===0){iniciaRedim(e,bEl.dataset.b);return}
+ if(!e.target.closest('.ed,.img,[data-tag],[data-link],.rod')&&e.button===0){const ff=acha(bEl.dataset.b);if(ff&&ff.p.livre)iniciaMoveLivre(e,bEl.dataset.b);else iniciaDrag(e,{id:bEl.dataset.b});return}
  const im=e.target.closest('.img');
  if(im&&im.querySelector('img')&&!e.target.closest('.ed')){
   e.preventDefault();const b=acha(sel).b,k=im.dataset.img+'Pos';const [x0,y0]=(getP(b,k)||'50% 50%').split(' ').map(parseFloat);
@@ -818,6 +833,51 @@ wrap.addEventListener('click',e=>{
 });
 wrap.addEventListener('dblclick',e=>{const im=e.target.closest('.img');if(!im||e.target.closest('.ed'))return;const b=acha(e.target.closest('[data-b]').dataset.b).b;im.dataset.icn?abrirIcones(b,im.dataset.img):escolheFoto(b,im.dataset.img)});
 let fotoAlvo=null;
+
+
+/* ===== tamanho, campos, colunas e layout livre ===== */
+const ROT_CAMPO={sob:'Sobretítulo',t:'Título / texto principal',sub:'Subtítulo',titulo:'Título',autor:'Autor / fonte',fonte:'Fonte do gráfico',pill:'Frase de chamada',pos:'Posologia',nome:'Nome',leg:'Legenda'};
+function camposDoBloco(b){const el=document.querySelector(`[data-b="${b.id}"]`),set=new Set(Object.keys(b.hide||{}).filter(k=>b.hide[k]));if(el)el.querySelectorAll('[data-f]').forEach(e=>{const f=e.dataset.f;if(!/\./.test(f))set.add(f)});return [...set]}
+let cpAlvo=null;
+function abrirCampos(b){cpAlvo={b,sn:0};const ks=camposDoBloco(b);
+ $('#mbox').innerHTML=`<h3 style="margin:0 0 4px">Campos do bloco</h3><p class="sub" style="margin:0 0 10px">Desmarque o que você não vai usar: o campo some do bloco e o espaço dele é liberado. Dá para marcar de novo a qualquer momento.</p>
+ ${ks.map(k=>`<label style="display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:14px"><input type="checkbox" ${(b.hide||{})[k]?'':'checked'} onchange="setCampo('${k}',this.checked)"> ${ROT_CAMPO[k]||k}</label>`).join('')}
+ <div style="margin-top:12px"><button class="pri" onclick="fechaModal()">Pronto</button></div>`;$('#modal').classList.add('on')}
+function setCampo(k,v){if(!cpAlvo)return;if(!cpAlvo.sn){snap();cpAlvo.sn=1}const b=cpAlvo.b;b.hide=b.hide||{};if(v)delete b.hide[k];else b.hide[k]=1;render()}
+let tmAlvo=null;
+function abrirTamanho(b){tmAlvo=b;const f=acha(b.id),livre=f&&f.p.livre;
+ const num=(id,rot,val,ph)=>`<label style="display:flex;gap:8px;align-items:center;margin-bottom:8px;font-size:14px"><span style="width:170px">${rot}</span><input id="${id}" type="text" value="${val==null?'':val}" placeholder="${ph||''}" style="width:90px;padding:6px 8px;border:1px solid var(--ui-line);border-radius:8px"></label>`;
+ $('#mbox').innerHTML=`<h3 style="margin:0 0 4px">Tamanho do bloco</h3><p class="sub" style="margin:0 0 10px">${livre?'Esta página está com o layout livre: tudo em milímetros (a página tem 210 × 297 mm).':'Largura em % da linha. Deixe a altura vazia para o bloco se ajustar ao conteúdo.'}</p>
+ ${livre?num('tmX','Posição da esquerda (mm)',b.x==null?10:b.x)+num('tmY','Posição do topo (mm)',b.y==null?10:b.y)+num('tmW','Largura (mm)',b.fw||Math.round(190*b.w/100))+num('tmH','Altura mínima (mm)',b.fh||'','automática'):num('tmW','Largura (%)',b.w)+num('tmH','Altura mínima (mm)',b.hmm||'','automática')}
+ ${num('tmP','Espaço interno (mm)',b.pad==null?'':b.pad,'padrão')}
+ <div style="display:flex;gap:8px;margin-top:12px"><button class="pri" onclick="aplicaTamanho()">Aplicar</button><button onclick="fechaModal()">Cancelar</button></div>`;$('#modal').classList.add('on')}
+function aplicaTamanho(){const b=tmAlvo;if(!b)return;const f=acha(b.id),livre=f&&f.p.livre;const n=id=>{const v=String($('#'+id).value).replace(',','.').trim();return v===''?null:parseFloat(v)};
+ snap();const pd=n('tmP');b.pad=pd==null||isNaN(pd)?null:Math.max(0,Math.min(40,pd));
+ if(livre){const x=n('tmX'),y=n('tmY'),w=n('tmW'),h=n('tmH');if(x!=null&&!isNaN(x))b.x=Math.max(0,Math.min(200,x));if(y!=null&&!isNaN(y))b.y=Math.max(0,Math.min(290,y));if(w!=null&&!isNaN(w))b.fw=Math.max(10,Math.min(210,w));b.fh=h==null||isNaN(h)?0:Math.max(0,h)}
+ else{const w=n('tmW'),h=n('tmH');if(w!=null&&!isNaN(w)){b.w=Math.max(10,Math.min(100,w));b.wl=1}b.hmm=h==null||isNaN(h)?0:Math.max(0,h)}
+ fechaModal();render()}
+let clwAlvo=null;
+function abrirColunas(b){clwAlvo=b;const n=(b.cab||[]).length,cw=b.colw&&b.colw.length===n?b.colw:null;
+ $('#mbox').innerHTML=`<h3 style="margin:0 0 4px">Largura das colunas</h3><p class="sub" style="margin:0 0 10px">Em % da tabela. Se a soma não der 100, o app ajusta. Textos curtos (como "1 cápsula") já ficam numa linha só.</p>
+ ${(b.cab||[]).map((c,i)=>`<label style="display:flex;gap:8px;align-items:center;margin-bottom:8px;font-size:14px"><span style="width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(String(c.t||'Coluna '+(i+1)).replace(/<[^>]*>/g,''))}</span><input class="cwi" type="text" value="${cw?cw[i]:Math.round(100/n)}" style="width:70px;padding:6px 8px;border:1px solid var(--ui-line);border-radius:8px"> %</label>`).join('')}
+ <div style="display:flex;gap:8px;margin-top:12px"><button class="pri" onclick="aplicaColunas()">Aplicar</button><button onclick="aplicaColunas(1)">Automático</button><button onclick="fechaModal()">Cancelar</button></div>`;$('#modal').classList.add('on')}
+function aplicaColunas(auto){const b=clwAlvo;if(!b)return;snap();if(auto)delete b.colw;else{const v=[...document.querySelectorAll('.cwi')].map(i=>Math.max(5,parseFloat(String(i.value).replace(',','.'))||10)),t=v.reduce((a,x)=>a+x,0);b.colw=v.map(x=>Math.round(x/t*1000)/10)}fechaModal();render()}
+function iniciaMover(e){const f=sel&&acha(sel);if(f&&f.p.livre)return iniciaMoveLivre(e,sel);iniciaDrag(e,{id:sel})}
+function pxMm(id){const el=document.querySelector(`[data-b="${id}"]`);return el?el.closest('.pg').getBoundingClientRect().width/210:1}
+function iniciaMoveLivre(e,id){if(e.button!==0)return;e.preventDefault();const f=acha(id),b=f.b,k=pxMm(id),x0=e.clientX,y0=e.clientY,bx=b.x==null?10:b.x,by=b.y==null?10:b.y;let mov=0;
+ const mv=ev=>{const dx=(ev.clientX-x0)/k,dy=(ev.clientY-y0)/k;if(!mov&&Math.abs(dx)+Math.abs(dy)<1.2)return;if(!mov){snap();mov=1}b.x=Math.round(Math.max(0,Math.min(205,bx+dx))*2)/2;b.y=Math.round(Math.max(0,Math.min(292,by+dy))*2)/2;const el=document.querySelector(`[data-b="${id}"]`);if(el){el.style.left=b.x+'mm';el.style.top=b.y+'mm'}barra()};
+ const up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);if(mov){window._arrastou=true;setTimeout(()=>window._arrastou=false,0);salvar()}};
+ addEventListener('mousemove',mv);addEventListener('mouseup',up)}
+function iniciaRedim(e,id){if(e.button!==0)return;e.preventDefault();e.stopPropagation();const f=acha(id),b=f.b,k=pxMm(id),el=document.querySelector(`[data-b="${id}"]`),r=el.getBoundingClientRect(),x0=e.clientX,y0=e.clientY,w0=r.width/k,h0=r.height/k;let mov=0;
+ const mv=ev=>{const dw=(ev.clientX-x0)/k,dh=(ev.clientY-y0)/k;if(!mov&&Math.abs(dw)+Math.abs(dh)<1.2)return;if(!mov){snap();mov=1}b.fw=Math.round(Math.max(10,Math.min(210-(b.x||0),w0+dw))*2)/2;b.fh=Math.round(Math.max(6,Math.min(297,h0+dh))*2)/2;el.style.width=b.fw+'mm';el.style.minHeight=b.fh+'mm';barra()};
+ const up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);if(mov){window._arrastou=true;setTimeout(()=>window._arrastou=false,0);pos();salvar()}};
+ addEventListener('mousemove',mv);addEventListener('mouseup',up)}
+async function alternaLivre(){const pg=doc.paginas[pgAtiva];if(!pg)return;
+ if(!pg.livre){if(!await confirmar('Liberar o layout desta página?','Os blocos ficam onde estão agora, mas cada um passa a ser movido (arraste) e redimensionado (canto azul) livremente, sem alinhar sozinho. Dá para desfazer com Ctrl+Z.',{ok:'Liberar'}))return;
+  snap();const pgEl=document.querySelectorAll('#wrap .pg')[pgAtiva],r0=pgEl.getBoundingClientRect(),k=r0.width/210;
+  pg.blocos.forEach(b=>{const el=pgEl.querySelector(`[data-b="${b.id}"]`);if(!el)return;const r=el.getBoundingClientRect();b.x=Math.round((r.left-r0.left)/k*2)/2;b.y=Math.round((r.top-r0.top)/k*2)/2;b.fw=Math.round(r.width/k*2)/2;b.fh=Math.round(r.height/k*2)/2});
+  pg.livre=1;render()}
+ else{if(!await confirmar('Voltar ao layout automático?','Os blocos voltam a se alinhar sozinhos e as posições e tamanhos livres desta página são esquecidos. Dá para desfazer com Ctrl+Z.',{ok:'Voltar ao automático'}))return;snap();pg.livre=0;render()}}
 
 /* ===== vetores SVG: envio seguro e troca de cores no editor ===== */
 const ehSvg=u=>/^data:image\/svg\+xml/i.test(u||'')||/\.svg([?#]|$)/i.test(u||'');
@@ -955,6 +1015,8 @@ function abrirRodape(){const r=doc.rod;
  <label>Texto da esquerda (RT)</label><input type="text" value="${esc(r.esq.replace(/<[^>]*>/g,''))}" oninput="rodSet('esq',esc(this.value))">
  <label>Texto do meio (aviso)</label><input type="text" value="${esc(r.meio.replace(/<[^>]*>/g,''))}" oninput="rodSet('meio',esc(this.value))">
  <label>Texto da direita (marca)</label><input type="text" value="${esc(r.dir.replace(/<[^>]*>/g,''))}" oninput="rodSet('dir',esc(this.value))">
+ <label>Logo no lugar do texto da direita</label>
+ <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button onclick="fechaModal();escolheFoto(doc.rod,'logo')">${r.logo?'Trocar logo':'Escolher logo'}</button>${r.logo?`<button onclick="rodSet('logo','');abrirRodape()">Tirar logo</button><button onclick="fechaModal();abrirTinta(doc.rod,'logo')">Pintar de uma cor</button>${ehSvg(r.logo)?`<button onclick="fechaModal();abrirCoresVetor(doc.rod,'logo')">Cores do vetor</button>`:''}<span style="font-size:12px">Altura (mm)</span><input type="text" value="${r.logoH||6}" style="width:60px" oninput="rodSet('logoH',Math.max(2,Math.min(20,parseFloat(String(this.value).replace(',','.'))||6)))"><span style="font-size:12px">Largura (mm)</span><input type="text" value="${Math.round((r.logoH||6)*(r.logoR||3))}" style="width:60px" oninput="rodSet('logoR',Math.max(2,Math.min(80,parseFloat(String(this.value).replace(',','.'))||18))/(r.logoH||6))">`:''}</div>
  <label>Numeração</label><select onchange="rodSet('num',this.value)">${[['','Sem número'],['{n}','3'],['Página {n}','Página 3'],['{n} / {t}','3 / 8'],['Página {n} de {t}','Página 3 de 8'],['{n}'.padStart(1),'']].slice(0,5).map(([v,t])=>`<option value="${v}" ${r.num===v?'selected':''}>${t}</option>`).join('')}</select>
  <label>Começar a contar a partir de (soma ao nº)</label><input type="text" value="${+r.ini||0}" oninput="rodSet('ini',parseInt(this.value)||0)">
  <p style="font-size:12px;color:#888;margin-top:12px">Dica: os textos do rodapé também podem ser editados clicando direto neles na página. Para tirar o rodapé de uma página só, use o botão # na lista de páginas.</p>
