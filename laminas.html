@@ -320,7 +320,7 @@ body.arrastando,body.arrastando *{cursor:grabbing!important;user-select:none}
 <div id="home">
  <div class="hh"><h1>Lâminas Bioflora</h1><input id="hq" placeholder="Buscar modelo ou lâmina…" oninput="homeRender()"><button onclick="arq.click()">Abrir .json</button></div>
  <div class="hb">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><h2>Fluxo de criação</h2><p class="sub">Arraste o cartão entre as colunas. Só a Wanessa aprova. Lâmina aprovada pode ser alterada, mas quem mexer fica registrado.</p></div><button class="pri" onclick="novaSolicitacao()">+ Nova solicitação</button></div><div class="kb" id="kb"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><h2>Fluxo de criação</h2><p class="sub">Arraste o cartão entre as colunas. Só a Wanessa aprova. Lâmina aprovada pode ser alterada, mas quem mexer fica registrado.</p></div><button class="pri" onclick="novaSolicitacao()">+ Nova solicitação</button></div><div id="bnDocs"></div><div class="kb" id="kb"></div>
   <h2>Modelos</h2><p class="sub">Escolha um ponto de partida. Tudo pode ser alterado depois: textos, cores, blocos e páginas.</p><div class="chips" id="chips"></div><div class="hgrid" id="hModelos"></div>
   <h2>Meus arquivos</h2><p class="sub">Logos, selos, fotos de produto e elementos que vocês sempre usam. Ficam salvos no Hub, valem para toda a chefia e aparecem no editor para arrastar.</p>
   <div style="margin-bottom:10px"><button class="pri" onclick="upa.click()">+ Enviar arquivos</button></div><div class="agrid" id="hArq"></div>
@@ -416,10 +416,12 @@ function vars(d){const t=d.tema==='pers'?{...TEMAS.vinho,...d.cores}:TEMAS[d.tem
 const ST={ff:v=>`font-family:'${v}'`,fs:v=>`font-size:${v}mm`,c:v=>`color:${v}`,al:v=>`text-align:${v}`,lh:v=>`line-height:${v}`,ls:v=>`letter-spacing:${v}em`,tt:v=>`text-transform:${v}`,fw:v=>`font-weight:${v}`,fi:v=>`font-style:${v}`,fu:v=>`text-decoration:${v}`};
 const css=st=>Object.entries(st||{}).filter(([k,v])=>ST[k]&&v!==''&&v!=null).map(([k,v])=>ST[k](v)).join(';');
 const E=(b,p,cls='',ph='Digite...')=>{const st=(b.st||{})[p];return `<div class="ed ${cls}" data-f="${p}" data-ph="${esc(ph)}" ${st&&st.fs?'data-fs="1"':''} style="${css(st)}" contenteditable="true">${san(getP(b,p))}</div>`};
-const IMG=(b,p,cls='',ph='+ foto',vazio='')=>{const v=getP(b,p),pos=getP(b,p+'Pos')||'50% 50%';
- return `<div class="img ${cls}" data-img="${p}">${v?`<img src="${v}" style="object-position:${pos}" draggable="false">`:vazio||`<span>${ph}</span>`}</div>`};
+const maskImg=(v,pos,tam,cor)=>`<div style="position:absolute;inset:0;background:${cor};-webkit-mask:url('${v}') ${pos} / ${tam} no-repeat;mask:url('${v}') ${pos} / ${tam} no-repeat"></div>`;
+const IMG=(b,p,cls='',ph='+ foto',vazio='')=>{const v=getP(b,p),pos=getP(b,p+'Pos')||'50% 50%',tint=getP(b,p+'Tint');
+ return `<div class="img ${cls}" data-img="${p}">${v?(tint?maskImg(v,pos,/contain/.test(cls)?'contain':'cover',tint):`<img src="${v}" style="object-position:${pos}" draggable="false">`):vazio||`<span>${ph}</span>`}</div>`};
 const svgIc=(n,sw=1.8)=>typeof ICONES!=='undefined'&&ICONES[n]?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${ICONES[n]}</svg>`:'';
-const ICN=(b,p,vazio='')=>{const ic=getP(b,p+'Ic'),v=getP(b,p);return `<div class="img icn" data-img="${p}" data-icn="1">${ic?svgIc(ic):v?`<img src="${v}" draggable="false">`:vazio||'<span>ícone</span>'}</div>`};
+const ICN=(b,p,vazio='')=>{const ic=getP(b,p+'Ic'),v=getP(b,p),cor=getP(b,p+'IcCor'),bg=getP(b,p+'BgCor'),tint=getP(b,p+'Tint');
+ return `<div class="img icn" data-img="${p}" data-icn="1" style="${bg?`background:${bg};`:''}${cor?`color:${cor};`:''}">${ic?svgIc(ic):v?(tint?maskImg(v,'50% 50%','contain',tint):`<img src="${v}" draggable="false">`):vazio||'<span>ícone</span>'}</div>`};
 const L=(b,f,fn)=>(b[f]||[]).map((it,i)=>fn(it,`${f}.${i}`,i)).join('');
 
 const BL={
@@ -650,11 +652,11 @@ let tSalva;const sujos=new Set();let avisouErro=false;
 function stSalva(t){let e=document.getElementById('stSalva');if(!e){e=document.createElement('span');e.id='stSalva';e.style.cssText='font-size:12px;color:#6E6266;margin-left:4px';const sp=document.querySelector('.top .sp');if(sp)sp.before(e)}e.textContent=t}
 function salvar(d){sujos.add(d||doc);clearTimeout(tSalva);stSalva('Salvando…');tSalva=setTimeout(flush,700)}
 async function flush(){clearTimeout(tSalva);const L=[...sujos].filter(d=>db.laminas.includes(d));sujos.clear();if(!L.length){stSalva('');return}
- const {data,error}=await supa.from('laminas').upsert(L.map(d=>{const M=meta(d),r={id:d.id,nome:d.nome||'Sem nome',dados:d,atualizado_por:meuId,atualizado_em:new Date().toISOString()};if(M.novo){r.status=M.status;r.descricao=M.descricao||null;r.prazo=M.prazo||null;r.responsavel_nome=M.resp||null}return r}),{onConflict:'id'}).select('id');
+ const {data,error}=await supa.from('laminas').upsert(L.map(d=>{const M=meta(d),r={id:d.id,nome:d.nome||'Sem nome',dados:d,atualizado_por:meuId,atualizado_em:new Date().toISOString()};if(M.novo){r.status=M.status;r.descricao=M.descricao||null;r.prazo=M.prazo||null;r.responsavel_nome=M.resp||null;r.origem=M.origem||null}return r}),{onConflict:'id'}).select('id');
  if(error||!data||data.length!==L.length){L.forEach(d=>sujos.add(d));stSalva('Não salvo');if(!avisouErro){avisouErro=true;avisar('Não foi possível salvar','Confira a conexão. Vou tentar de novo na próxima alteração. Dica: "Baixar .json" guarda uma cópia no seu computador.')}return}
  L.forEach(d=>{meta(d).novo=false});avisouErro=false;stSalva('Salvo')}
-async function carregaLaminas(){const {data,error}=await supa.from('laminas').select('id,nome,dados,status,descricao,prazo,responsavel_nome,aprovado_nome,aprovado_em,editado_apos_em,editado_apos_por').order('atualizado_em',{ascending:false});if(error){avisar('Não foi possível carregar as lâminas','Confira a conexão e recarregue a página.');return}
- (data||[]).forEach(x=>{META[x.id]={status:x.status,descricao:x.descricao,prazo:x.prazo,resp:x.responsavel_nome,aprovado_nome:x.aprovado_nome,aprovado_em:x.aprovado_em,editado_apos_em:x.editado_apos_em,editado_apos_por:x.editado_apos_por}});
+async function carregaLaminas(){const {data,error}=await supa.from('laminas').select('id,nome,dados,status,descricao,prazo,responsavel_nome,aprovado_nome,aprovado_em,editado_apos_em,editado_apos_por,origem').order('atualizado_em',{ascending:false});if(error){avisar('Não foi possível carregar as lâminas','Confira a conexão e recarregue a página.');return}
+ (data||[]).forEach(x=>{META[x.id]={status:x.status,descricao:x.descricao,prazo:x.prazo,resp:x.responsavel_nome,aprovado_nome:x.aprovado_nome,aprovado_em:x.aprovado_em,editado_apos_em:x.editado_apos_em,editado_apos_por:x.editado_apos_por,origem:x.origem}});
  db.laminas=(data||[]).map(x=>migra(Object.assign(x.dados||{},{id:x.id,nome:x.nome})))}
 async function subir(dataUrl,pasta){try{const blob=await (await fetch(dataUrl)).blob();const ext=blob.type==='image/png'?'png':blob.type==='image/svg+xml'?'svg':'jpg';const path=pasta+'/'+crypto.randomUUID()+'.'+ext;
  const {error}=await supa.storage.from('laminas').upload(path,blob,{contentType:blob.type,cacheControl:'31536000'});if(error)throw error;
@@ -666,7 +668,8 @@ function acha(id){for(const [pi,p] of doc.paginas.entries()){const i=p.blocos.fi
 /* ================= render ================= */
 function linhas(blocos){const rows=[];let r=[],s=0;for(const b of blocos){if(r.length&&s+b.w>100.5){rows.push(r);r=[];s=0}r.push(b);s+=b.w}if(r.length)rows.push(r);return rows}
 function htmlBloco(b){const d=BL[b.tipo];if(!d)return'';const card=b.cor&&b.cor!=='none';
- return `<div class="b t-${b.tipo} v-${b.v||''} ${card?'card c-'+b.cor:''} ${sel===b.id?'sel':''}" data-b="${b.id}" style="flex:${b.w} 1 0">${d.html(b)}</div>`}
+ const lv=!!b.bgc;
+ return `<div class="b t-${b.tipo} v-${b.v||''} ${lv?'card c-p':card?'card c-'+b.cor:''} ${sel===b.id?'sel':''}" data-b="${b.id}" style="flex:${b.w} 1 0;${lv?`--p:${b.bgc};--pi:${b.fgc||contr(b.bgc)};`:''}${!lv&&b.fgc?`color:${b.fgc};`:''}">${d.html(b)}</div>`}
 function temRod(p,pi){const r=doc.rod;return r&&r.on&&!p.semRod&&!(pi===0&&!r.capa)}
 function rodHTML(pi){const r=doc.rod,n=(r.num||'').replace('{n}',pi+1+(+r.ini||0)).replace('{t}',doc.paginas.length+(+r.ini||0));
  return `<div class="rod ${r.linha?'linha':''}"><div class="ed r1" data-rod="esq" data-ph="Texto (ex.: RT)" contenteditable="true">${san(r.esq)}</div><div class="ed r2" data-rod="meio" data-ph="Aviso" contenteditable="true">${san(r.meio)}</div><div class="r3"><span class="ed" data-rod="dir" data-ph="Marca" contenteditable="true">${san(r.dir)}</span><span>${esc(n)}</span></div></div>`}
@@ -705,10 +708,10 @@ function barra(){
  const b=f.b,d=BL[b.tipo],r=el.getBoundingClientRect();
  const bt=(a,t,tt='')=>`<button onmousedown="event.preventDefault()" onclick="acao('${a}')" title="${tt}">${t}</button>`;
  tb.innerHTML=[`<button onmousedown="iniciaDrag(event,{id:sel})" title="Arraste para mover" style="cursor:grab">✥</button>`,bt('up','↑','Mover para cima'),bt('down','↓','Mover para baixo'),'<i></i>',
-  bt('w',`↔ ${b.w}%`,'Largura do bloco'),bt('cor','● '+CORES_NOME[b.cor||'none'],'Cor de fundo do bloco'),bt('grow',b.grow?'⇕ estica':'⇕ auto','Altura: esticar para preencher a página'),
+  bt('w',`↔ ${b.w}%`,'Largura do bloco'),bt('cor','● '+CORES_NOME[b.cor||'none'],'Cor de fundo do bloco'),bt('corlivre','Cor livre','Escolher qualquer cor de fundo e de texto só para este bloco'),bt('grow',b.grow?'⇕ estica':'⇕ auto','Altura: esticar para preencher a página'),
   d.vars&&d.vars.length>1?bt('v','◐ '+b.v,'Trocar desenho'):'',
   d.lista?bt('add',d.tabela?'+ linha':'+ item')+bt('rem',d.tabela?'− linha':'− item'):'',d.tabela?bt('col+','+ coluna')+bt('col-','− coluna'):'',
-  b.tipo==='imagem'?bt('alt','↕ '+(b.h||25)+'mm','Altura')+bt('esc','Escala '+(b.esc||100)+'%','Tamanho da imagem dentro do espaço')+bt('mar','Margem '+(b.mar||0)+'mm','Espaço em volta da imagem'):'',d.img?bt('foto',uic('image')+' foto')+(b[d.img]?bt('fit','centralizar')+bt('semfoto','sem foto')+(ehSvg(b[d.img])?bt('corvet','Cores do vetor','Trocar as cores do SVG'):''):''):'',
+  b.tipo==='imagem'?bt('alt','↕ '+(b.h||25)+'mm','Altura')+bt('esc','Escala '+(b.esc||100)+'%','Tamanho da imagem dentro do espaço')+bt('mar','Margem '+(b.mar||0)+'mm','Espaço em volta da imagem'):'',d.img?bt('foto',uic('image')+' foto')+(b[d.img]?bt('fit','centralizar')+bt('semfoto','sem foto')+bt('tint','Pintar imagem','Pintar a imagem toda de uma cor só (bom para logos)')+(ehSvg(b[d.img])?bt('corvet','Cores do vetor','Trocar as cores do SVG'):''):''):'',
   d.link?bt('link',uic('link')+' link QR'):'',b.tipo==='produto'?bt('tags','fases'):'',
   '<i></i>',bt('dup',uic('copy'),'Duplicar'),bt('del',uic('trash'),'Excluir')].join('');
  tb.style.display='flex';
@@ -736,8 +739,10 @@ async function acao(a){
   case 'rem':if(b[d.lista]?.length)b[d.lista].pop();break;
   case 'foto':return escolheFoto(b,d.img);
   case 'fit':b[d.img+'Pos']='50% 50%';break;
-  case 'semfoto':b[d.img]='';b[d.img+'Svg']='';b[d.img+'Map']={};break;
+  case 'semfoto':b[d.img]='';b[d.img+'Svg']='';b[d.img+'Map']={};b[d.img+'Tint']='';break;
   case 'corvet':return abrirCoresVetor(b,d.img);
+  case 'tint':return abrirTinta(b,d.img);
+  case 'corlivre':return abrirCorLivre(b);
   case 'link':{const u=await pedir('Link do QR code',b[d.link]||'https://wa.me/55',{msg:'WhatsApp (ex.: https://wa.me/5511999999999) ou site. Deixe vazio para remover.',ok:'Salvar'});if(u===null)return;snap();b[d.link]=u.trim();break}
   case 'tags':{const t=await pedir('Fases deste produto',(b.tags||[]).map(t=>t.t).join(', '),{msg:'Separe por vírgula. Deixe vazio para não mostrar fases.',ok:'Salvar'});if(t===null)return;snap();const old=b.tags||[];b.tags=t.split(',').map(s=>s.trim()).filter(Boolean).map((s,k)=>({t:s,on:old[k]?.on||0}));break}
   case 'dup':{const n=clone(b);n.id=uid();p.blocos.splice(i+1,0,n);sel=n.id;break}
@@ -816,7 +821,8 @@ let fotoAlvo=null;
 
 /* ===== vetores SVG: envio seguro e troca de cores no editor ===== */
 const ehSvg=u=>/^data:image\/svg\+xml/i.test(u||'')||/\.svg([?#]|$)/i.test(u||'');
-const svgUrl=t=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(t);
+const svgUrl=t=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(t).replace(/'/g,'%27').replace(/\(/g,'%28').replace(/\)/g,'%29');
+const contr=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return '#181818';const n=parseInt(m[1],16),r=n>>16,g=n>>8&255,b=n&255;return (0.299*r+0.587*g+0.114*b)/255>0.6?'#181818':'#ffffff'};
 function limpaSvg(txt){try{const d=new DOMParser().parseFromString(txt,'image/svg+xml');const r=d.documentElement;if(d.querySelector('parsererror')||!r||r.nodeName.toLowerCase()!=='svg')return null;
  d.querySelectorAll('script,foreignObject,iframe,object,embed,audio,video,animate,set').forEach(n=>n.remove());
  d.querySelectorAll('*').forEach(n=>[...n.attributes].forEach(a=>{const nm=a.name.toLowerCase();if(/^on/.test(nm)||(/(^|:)href$/.test(nm)&&!/^#|^data:image\/(png|jpe?g|webp|gif)/i.test(a.value.trim())))n.removeAttribute(a.name)}));
@@ -839,14 +845,14 @@ function recolorSvg(txt,mapa){const d=new DOMParser().parseFromString(txt,'image
   if(n.nodeName.toLowerCase()==='style')n.textContent=n.textContent.replace(TOK_COR,troca)});
  if(mapa.__padrao&&!r.hasAttribute('fill'))r.setAttribute('fill',mapa.__padrao);
  return new XMLSerializer().serializeToString(r)}
-async function svgTexto(b,campo){if(b[campo+'Svg'])return b[campo+'Svg'];const u=b[campo];let t;
+async function svgTexto(b,campo){if(getP(b,campo+'Svg'))return getP(b,campo+'Svg');const u=getP(b,campo);let t;
  if(/^data:/i.test(u)){const i=u.indexOf(',');t=/;base64/i.test(u.slice(0,i))?decodeURIComponent(escape(atob(u.slice(i+1)))):decodeURIComponent(u.slice(i+1))}else t=await (await fetch(u)).text();
  return limpaSvg(t)}
 let cvAlvo=null;
 async function abrirCoresVetor(b,campo){let txt;try{txt=await svgTexto(b,campo)}catch(e){txt=null}
  if(!txt)return avisar('Não foi possível ler o vetor','O arquivo SVG parece estar com problema. Tente enviar de novo.');
  const {cores,padrao}=coresSvg(txt);if(!cores.length&&!padrao)return avisar('Sem cores para trocar','Este SVG não tem cores definidas que o editor consiga alterar.');
- const mapa0=Object.assign({},b[campo+'Map']||{});cvAlvo={b,campo,txt,mapa:mapa0};
+ const mapa0=Object.assign({},getP(b,campo+'Map')||{});cvAlvo={b,campo,txt,mapa:mapa0};
  const itens=[...cores.map(c=>[c,c]),...(padrao?[['__padrao','#000000']]:[])];
  $('#mbox').innerHTML=`<h3 style="margin:0 0 4px">Cores do vetor</h3><p class="sub" style="margin:0 0 10px">Troque cada cor do desenho. Vale só para esta imagem na lâmina.</p>
  <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start"><div id="cvPrev" style="width:180px;height:180px;border:1px solid var(--ui-line);border-radius:10px;background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 0 0/14px 14px;display:flex;align-items:center;justify-content:center"></div>
@@ -855,8 +861,8 @@ async function abrirCoresVetor(b,campo){let txt;try{txt=await svgTexto(b,campo)}
  const prev=()=>{const m={};$('#mbox').querySelectorAll('input[data-k]').forEach(i=>{m[i.dataset.k]=i.value});cvAlvo.novo=m;$('#cvPrev').innerHTML=`<img style="max-width:100%;max-height:100%" src="${svgUrl(recolorSvg(txt,m))}">`};
  $('#mbox').querySelectorAll('input[data-k]').forEach(i=>i.oninput=prev);prev();$('#modal').classList.add('on')}
 function aplicaCoresVetor(){if(!cvAlvo)return;const {b,campo,txt,novo}=cvAlvo;const m={};Object.keys(novo).forEach(k=>{if(k==='__padrao'?novo[k].toLowerCase()!=='#000000':novo[k].toLowerCase()!==k)m[k]=novo[k]});
- snap();b[campo+'Svg']=txt;b[campo+'Map']=m;b[campo]=svgUrl(recolorSvg(txt,m));fechaModal();render()}
-function restauraCoresVetor(){if(!cvAlvo)return;const {b,campo,txt}=cvAlvo;snap();b[campo+'Svg']=txt;b[campo+'Map']={};b[campo]=svgUrl(txt);fechaModal();render()}
+ snap();setP(b,campo+'Svg',txt);setP(b,campo+'Map',m);setP(b,campo,svgUrl(recolorSvg(txt,m)));fechaModal();render()}
+function restauraCoresVetor(){if(!cvAlvo)return;const {b,campo,txt}=cvAlvo;snap();setP(b,campo+'Svg',txt);setP(b,campo+'Map',{});setP(b,campo,svgUrl(txt));fechaModal();render()}
 async function lerSvgArquivo(f){return limpaSvg(await f.text())}
 function escolheFoto(b,campo){fotoAlvo={b,campo};
  $('#mbox').innerHTML=`<h3>Escolher imagem</h3><div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><button class="pri" onclick="fotoDoPC()">Enviar do computador</button><label style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="guardar"> guardar também em Meus arquivos</label></div>
@@ -974,9 +980,37 @@ const ICTAG={pele:'pele derme epiderme cutânea',glow:'glow luminosidade pele ra
  user:'pessoa paciente',users:'pessoas pacientes','person-standing':'pessoa corpo',house:'casa','map-pin':'local endereço',phone:'telefone contato','message-circle':'whatsapp mensagem',mail:'email',
  'qr-code':'qr',calendar:'data',package:'entrega',gift:'presente',
  'cigarette-off':'parar de fumar',ban:'proibido',recycle:'sustentável',earth:'planeta',bug:'bactéria',shell:'concha',feather:'leveza',gem:'joia premium',crown:'premium',fingerprint:'individual personalizado','scan-face':'rosto pele facial'};
+
+function abrirCorLivre(b){
+ const bg=b.bgc||'#8B1A3A',fg=b.fgc||contr(bg);
+ $('#mbox').innerHTML=`<h3 style="margin:0 0 4px">Cor livre do bloco</h3><p class="sub" style="margin:0 0 10px">Vale só para este bloco, além do tema da lâmina.</p>
+ <label style="display:flex;gap:10px;align-items:center;margin-bottom:10px;font-size:14px"><input type="checkbox" id="clB" ${b.bgc?'checked':''}> Cor de fundo <input type="color" id="clBv" value="${bg}" style="width:50px;height:32px;padding:0"></label>
+ <label style="display:flex;gap:10px;align-items:center;margin-bottom:14px;font-size:14px"><input type="checkbox" id="clF" ${b.fgc?'checked':''}> Cor do texto <input type="color" id="clFv" value="${fg}" style="width:50px;height:32px;padding:0"></label>
+ <p class="sub" style="margin:0 0 12px">Se você marcar só o fundo, o texto escolhe sozinho claro ou escuro para ficar legível.</p>
+ <div style="display:flex;gap:8px"><button class="pri" onclick="aplicaCorLivre()">Aplicar</button><button onclick="limpaCorLivre()">Voltar ao padrão</button><button onclick="fechaModal()">Cancelar</button></div>`;
+ clAlvo=b;['clBv','clFv'].forEach(i=>$('#'+i).oninput=()=>{$('#'+i.slice(0,-1)).checked=true});$('#modal').classList.add('on')}
+let clAlvo=null;
+function aplicaCorLivre(){if(!clAlvo)return;snap();clAlvo.bgc=$('#clB').checked?$('#clBv').value:'';clAlvo.fgc=$('#clF').checked?$('#clFv').value:'';fechaModal();render()}
+function limpaCorLivre(){if(!clAlvo)return;snap();clAlvo.bgc='';clAlvo.fgc='';fechaModal();render()}
+let tnAlvo=null;
+function abrirTinta(b,campo){tnAlvo={b,campo};const t=getP(b,campo+'Tint')||'#ffffff';
+ $('#mbox').innerHTML=`<h3 style="margin:0 0 4px">Pintar imagem</h3><p class="sub" style="margin:0 0 10px">Pinta a imagem inteira de uma cor só, mantendo o formato (transparência). Funciona bem em logos e selos de uma cor. Em fotos vira uma silhueta.</p>
+ <label style="display:flex;gap:10px;align-items:center;margin-bottom:14px;font-size:14px">Cor <input type="color" id="tnV" value="${t}" style="width:60px;height:34px;padding:0"></label>
+ <div style="display:flex;gap:8px"><button class="pri" onclick="aplicaTinta()">Aplicar</button><button onclick="limpaTinta()">Tirar a cor (original)</button><button onclick="fechaModal()">Cancelar</button></div>`;$('#modal').classList.add('on')}
+function aplicaTinta(){if(!tnAlvo)return;snap();setP(tnAlvo.b,tnAlvo.campo+'Tint',$('#tnV').value);fechaModal();render()}
+function limpaTinta(){if(!tnAlvo)return;snap();setP(tnAlvo.b,tnAlvo.campo+'Tint','');fechaModal();render()}
+function corIcone(chave,v){if(!icAlvo)return;if(!icAlvo.sn){snap();icAlvo.sn=1}setP(icAlvo.b,icAlvo.campo+chave,v);render()}
 let icAlvo=null;
 function abrirIcones(b,campo){icAlvo={b,campo};
- $('#mbox').innerHTML=`<h3>Escolher ícone</h3><input class="icbusca" id="icq" placeholder="Buscar: cápsula, sono, coração, energia, pele..." oninput="listaIcones(this.value)">
+ const cI=getP(b,campo+'IcCor')||'#ffffff',cB=getP(b,campo+'BgCor')||'#8B1A3A',img=getP(b,campo),ehv=img&&ehSvg(img);
+ $('#mbox').innerHTML=`<h3>Escolher ícone</h3>
+ <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;background:#F8F4F5;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:13px">
+  <label style="display:flex;gap:6px;align-items:center">Cor do ícone <input type="color" value="${cI}" oninput="corIcone('IcCor',this.value)" style="width:38px;height:28px;padding:0"></label>
+  <label style="display:flex;gap:6px;align-items:center">Cor da bolinha <input type="color" value="${cB}" oninput="corIcone('BgCor',this.value)" style="width:38px;height:28px;padding:0"></label>
+  <button onclick="corIcone('IcCor','');corIcone('BgCor','');fechaModal()">Voltar às cores do tema</button>
+  ${img?`<button onclick="fechaModal();abrirTinta(icAlvo.b,icAlvo.campo)">Pintar imagem</button>${ehv?`<button onclick="fechaModal();abrirCoresVetor(icAlvo.b,icAlvo.campo)">Cores do vetor</button>`:''}`:''}
+ </div>
+ <input class="icbusca" id="icq" placeholder="Buscar: cápsula, sono, coração, energia, pele..." oninput="listaIcones(this.value)">
  <div style="display:flex;gap:6px;margin-bottom:10px"><button onclick="fechaModal();escolheFoto(icAlvo.b,icAlvo.campo)">Enviar imagem própria</button><button onclick="poeIcone('')">Sem ícone</button></div><div class="icg" id="icg"></div>`;
  $('#modal').classList.add('on');listaIcones('');setTimeout(()=>$('#icq').focus(),50)}
 function listaIcones(q){q=q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
@@ -1015,7 +1049,7 @@ function kanbanRender(q){
  const hoje=new Date().toISOString().slice(0,10),cols=['solicitada','em_desenvolvimento','para_aprovacao','aprovada'];
  $('#kb').innerHTML=cols.map(st=>{const L=db.laminas.filter(l=>meta(l).status===st&&(!q||norm(l.nome+' '+(meta(l).descricao||'')).includes(q)));
   return `<div class="kc" style="--c:${ST_COR[st]}" ondragover="event.preventDefault();this.classList.add('sobre')" ondragleave="this.classList.remove('sobre')" ondrop="soltaCard(event,'${st}')"><h3>${ST_ROT[st]}<span>${L.length}</span></h3>${L.map(l=>{const M=meta(l),atr=M.prazo&&M.prazo<hoje&&st!=='aprovada';
-   return `<div class="kcard" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${l.id}')" onclick="abrirCard('${l.id}')"><b>${esc(l.nome)}</b>${M.descricao?`<small>${esc(M.descricao.slice(0,90))}${M.descricao.length>90?'…':''}</small>`:''}<small>${l.paginas.length} página${l.paginas.length>1?'s':''}${M.resp?' · '+esc(M.resp):''}</small>${M.prazo?`<small class="${atr?'atr':''}">Prazo ${M.prazo.split('-').reverse().join('/')}${atr?' (atrasado)':''}</small>`:''}${st==='aprovada'?`<small>Aprovada por ${esc(M.aprovado_nome||'')} em ${fdt(M.aprovado_em)}</small>`:''}${M.editado_apos_em?`<span class="eap">Editada após aprovação por ${esc(M.editado_apos_por||'')}</span>`:''}<div class="acts2" onclick="event.stopPropagation()"><button onclick="abrirHist('${l.id}')">Histórico</button><button onclick="dupLam('${l.id}')">Duplicar</button><button onclick="delLam('${l.id}')">Excluir</button></div></div>`}).join('')||'<small style="color:#999;padding:4px 6px;display:block">Nada aqui.</small>'}</div>`}).join('')}
+   return `<div class="kcard" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${l.id}')" onclick="abrirCard('${l.id}')"><b>${esc(l.nome)}</b>${M.descricao?`<small>${esc(M.descricao.slice(0,90))}${M.descricao.length>90?'…':''}</small>`:''}<small>${l.paginas.length} página${l.paginas.length>1?'s':''}${M.resp?' · '+esc(M.resp):''}</small>${M.prazo?`<small class="${atr?'atr':''}">Prazo ${M.prazo.split('-').reverse().join('/')}${atr?' (atrasado)':''}</small>`:''}${st==='aprovada'?`<small>Aprovada por ${esc(M.aprovado_nome||'')} em ${fdt(M.aprovado_em)}</small>`:''}${M.origem?`<span class="eap" style="background:#E4EEF9;color:#0B5A99" title="${esc(M.origem)}">Veio de documento</span>`:''}${M.editado_apos_em?`<span class="eap">Editada após aprovação por ${esc(M.editado_apos_por||'')}</span>`:''}<div class="acts2" onclick="event.stopPropagation()"><button onclick="abrirHist('${l.id}')">Histórico</button><button onclick="dupLam('${l.id}')">Duplicar</button><button onclick="delLam('${l.id}')">Excluir</button></div></div>`}).join('')||'<small style="color:#999;padding:4px 6px;display:block">Nada aqui.</small>'}</div>`}).join('')}
 function soltaCard(e,st){e.preventDefault();e.currentTarget.classList.remove('sobre');const id=e.dataTransfer.getData('text/plain');if(id)moverStatus(id,st)}
 async function moverStatus(id,novo,motivo){
  const d=db.laminas.find(x=>x.id===id);if(!d)return;const M=meta(d);if(M.status===novo)return;
@@ -1059,7 +1093,15 @@ function statusBox(){let b=document.getElementById('stBox');if(!b){b=document.cr
 async function devolverAtual(){const m=await pedir('Devolver para ajustes','',{msg:'Escreva o que precisa mudar (fica no histórico).',ok:'Devolver'});if(m===null)return;await moverStatus(doc.id,'em_desenvolvimento',m||'devolvida')}
 async function reaprovar(id){await flush();const d=db.laminas.find(x=>x.id===id),M=meta(d);const {data,error}=await supa.from('laminas').update({motivo_status:'reaprovar'}).eq('id',id).select('id,aprovado_nome,aprovado_em,editado_apos_em,editado_apos_por');
  if(error||!data||!data.length)return avisar('Não foi possível aprovar de novo','Só a Wanessa pode aprovar.');Object.assign(M,{aprovado_nome:data[0].aprovado_nome,aprovado_em:data[0].aprovado_em,editado_apos_em:data[0].editado_apos_em,editado_apos_por:data[0].editado_apos_por});UI()}
-function homeRender(){const q=norm($('#hq').value);kanbanRender(q);
+let docsPend=[];
+async function verificaDocumentos(){try{const cat=await (await fetch('laminas-documentos/catalogo.json',{cache:'no-store'})).json();let disp=[];try{disp=JSON.parse(localStorage.getItem('lam_docs_dispensados')||'[]')}catch(e){}
+ docsPend=cat.filter(c=>!db.laminas.some(l=>l.id===c.id)&&!disp.includes(c.id))}catch(e){docsPend=[]}}
+function bannerDocs(){const el=$('#bnDocs');if(!el)return;if(!docsPend.length){el.innerHTML='';return}
+ el.innerHTML=`<div style="background:#E4EEF9;border-radius:14px;padding:12px 16px;margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:220px;font-size:14px"><b>${docsPend.length} lâmina${docsPend.length>1?'s':''} com texto pronta${docsPend.length>1?'s':''}</b>, montada${docsPend.length>1?'s':''} a partir de documentos enviados: ${docsPend.map(c=>esc(c.origem)).join('; ')}.</div><button class="pri" onclick="importaDocumentos()">Adicionar às minhas lâminas</button><button onclick="dispensaDocumentos()">Agora não</button></div>`}
+async function importaDocumentos(){let n=0;for(const c of docsPend){try{const o=migra(await (await fetch('laminas-documentos/'+c.arquivo,{cache:'no-store'})).json());o.id=c.id;db.laminas.push(o);META[o.id]={status:'em_desenvolvimento',origem:'Documento: '+c.origem,novo:true};salvar(o);n++}catch(e){}}
+ docsPend=[];homeRender();flush();avisar(n+' lâmina'+(n===1?'':'s')+' adicionada'+(n===1?'':'s'),'Elas aparecem em "Em desenvolvimento" com a etiqueta "Veio de documento". Revise o texto e envie para aprovação.')}
+function dispensaDocumentos(){try{localStorage.setItem('lam_docs_dispensados',JSON.stringify(docsPend.map(c=>c.id)))}catch(e){}docsPend=[];bannerDocs()}
+function homeRender(){const q=norm($('#hq').value);kanbanRender(q);bannerDocs();
  const cats=['Todos',...new Set(Object.values(MODELOS).map(m=>m.cat||'Base'))];
  $('#chips').innerHTML=cats.map(c=>`<button class="${c===chip?'on':''}" onclick="chip='${c}';homeRender()">${c}</button>`).join('');
  $('#hModelos').innerHTML=Object.entries(MODELOS).filter(([k,m])=>(chip==='Todos'||(m.cat||'Base')===chip)&&(!q||norm(m.nome+' '+m.desc+' '+m.cat).includes(q))).map(([k,m])=>{const d=modeloDoc(k);
@@ -1100,7 +1142,7 @@ async function carregaCatalogo(){try{const lst=await (await fetch('laminas-model
 (async function init(){
  await requireRole(['chefia']);
  try{const {data:{session}}=await supa.auth.getSession();meuId=session?session.user.id:null}catch(e){}
- await carregaLaminas();
+ await carregaLaminas();await verificaDocumentos();
  try{const {data:ap}=await supa.from('laminas_aprovadores').select('user_id');souAprov=!!(ap||[]).some(r=>r.user_id===meuId)}catch(e){}
  try{const {data:pf}=await supa.from('perfis').select('nome_exibicao').eq('papel','chefia');EQUIPE=(pf||[]).map(x=>x.nome_exibicao).filter(Boolean).sort()}catch(e){}
  setInterval(async()=>{if(document.hidden||!document.body.classList.contains('inicio')||sujos.size||document.getElementById('modal').classList.contains('on'))return;await carregaLaminas();homeRender()},45000);
